@@ -28,7 +28,7 @@ typedef unsigned int        uint32_t;
 typedef signed int          sint32_t;
 typedef unsigned long long  uint64_t;
 typedef signed long long    sint64_t;
-typedef char                chr8_t;
+typedef unsigned char       chr8_t;
 typedef unsigned short      chr16_t;
 
 typedef union

@@ -89,7 +89,7 @@ namespace DS
 
         /* Constructor for DS::String */
         StringBuffer(const char_type* stringData, size_t length)
-        { m_buffer = new _buffer(stringData, length); }
+            : m_buffer(new _buffer(stringData, length)) { }
         friend class String;
     };
 
@@ -114,14 +114,14 @@ namespace DS
         bool operator!=(const String& other) { return !operator==(other); }
         String& operator+=(const char* strconst);
         String& operator+=(const String& other);
-        String operator+(const char* strconst);
-        String operator+(const String& other);
+        String operator+(const char* strconst) { return String(*this) += strconst; }
+        String operator+(const String& other) { return String(*this) += other; }
 
         int compare(const char* strconst, CaseSensitivity cs = e_CaseSensitive);
         int compare(const String& other, CaseSensitivity cs = e_CaseSensitive);
 
         size_t length() const { return m_data.length(); }
-        const char* c_str() const { return static_cast<const char*>(m_data.data()); }
+        const char* c_str() const { return reinterpret_cast<const char*>(m_data.data()); }
         bool isNull() const { return m_data.isNull(); }
         bool isEmpty() const { return m_data.isEmpty(); }
 
@@ -129,9 +129,9 @@ namespace DS
         StringBuffer<chr8_t> toRaw() const;
         StringBuffer<chr8_t> toUtf8() const;
         StringBuffer<chr16_t> toUtf16() const;
-        static String FromRaw(chr8_t* string, ssize_t length = -1);
-        static String FromUtf8(chr8_t* string, ssize_t length = -1);
-        static String FromUtf16(chr16_t* string, ssize_t length = -1);
+        static String FromRaw(const chr8_t* string, ssize_t length = -1);
+        static String FromUtf8(const chr8_t* string, ssize_t length = -1);
+        static String FromUtf16(const chr16_t* string, ssize_t length = -1);
 
         String toUpper() const;
         String toLower() const;

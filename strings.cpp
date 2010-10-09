@@ -168,7 +168,7 @@ static void utf8_to_raw(chr8_t** dest, size_t* destlen,
                 *dptr++ = *sptr++;
             }
         }
-        dest[convlen] = 0;
+        (*dest)[convlen] = 0;
     }
 }
 
@@ -228,7 +228,7 @@ static void utf8_to_utf16(chr16_t** dest, size_t* destlen,
                 *dptr++ = *sptr++;
             }
         }
-        dest[convlen] = 0;
+        (*dest)[convlen] = 0;
     }
 }
 
@@ -259,4 +259,120 @@ DS::String& DS::String::operator+=(const char* strconst)
         m_data = StringBuffer<chr8_t>(buffer, m_data.m_buffer->m_length + addlen);
     }
     return *this;
+}
+
+DS::String& DS::String::operator+=(const String& other)
+{
+    if (isEmpty())
+        return operator=(other);
+
+    if (!other.isEmpty()) {
+        chr8_t* buffer = new chr8_t[m_data.m_buffer->m_length + other.m_data.m_buffer->m_length + 1];
+        memcpy(buffer, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
+        memcpy(buffer + m_data.m_buffer->m_length, other.m_data.m_buffer->m_string, other.m_data.m_buffer->m_length);
+        buffer[m_data.m_buffer->m_length + other.m_data.m_buffer->m_length] = 0;
+        m_data = StringBuffer<chr8_t>(buffer, m_data.m_buffer->m_length + other.m_data.m_buffer->m_length);
+    }
+    return *this;
+}
+
+int DS::String::compare(const char* strconst, CaseSensitivity cs)
+{
+    if (isEmpty())
+        return (!strconst || *strconst == 0) ? 0 : -1;
+    if (!strconst || *strconst == 0)
+        return 1;
+    if (cs == e_CaseSensitive)
+        return strcmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string), strconst);
+    else
+        return strcasecmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string), strconst);
+}
+
+int DS::String::compare(const String& other, CaseSensitivity cs)
+{
+    if (isEmpty())
+        return other.isEmpty() ? 0 : -1;
+    if (other.isEmpty())
+        return 1;
+    if (cs == e_CaseSensitive)
+        return strcmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string),
+                      reinterpret_cast<const char*>(other.m_data.m_buffer->m_string));
+    else
+        return strcasecmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string),
+                          reinterpret_cast<const char*>(other.m_data.m_buffer->m_string));
+}
+
+DS::StringBuffer<chr8_t> DS::String::toRaw() const
+{
+    if (isNull())
+        return StringBuffer<chr8_t>();
+
+    chr8_t* buffer;
+    size_t length;
+    utf8_to_raw(&buffer, &length, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
+    return StringBuffer<chr8_t>(buffer, length);
+}
+
+DS::StringBuffer<chr8_t> DS::String::toUtf8() const
+{
+    /* Provide a deep copy so the original string doesn't affect this buffer. */
+    if (isNull())
+        return StringBuffer<chr8_t>();
+
+    chr8_t* buffer = new chr8_t[m_data.m_buffer->m_length + 1];
+    memcpy(buffer, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
+    buffer[m_data.m_buffer->m_length] = 0;
+    return StringBuffer<chr8_t>(buffer, m_data.m_buffer->m_length);
+}
+
+DS::StringBuffer<chr16_t> DS::String::toUtf16() const
+{
+    if (isNull())
+        return StringBuffer<chr16_t>();
+
+    chr16_t* buffer;
+    size_t length;
+    utf8_to_utf16(&buffer, &length, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
+    return StringBuffer<chr16_t>(buffer, length);
+}
+
+DS::String DS::String::FromRaw(const chr8_t* string, ssize_t length)
+{
+    if (!string)
+        return String();
+
+    chr8_t* buffer;
+    size_t buflen;
+    raw_to_utf8(&buffer, &buflen, string, length);
+    String result;
+    result.m_data = StringBuffer<chr8_t>(buffer, buflen);
+    return result;
+}
+
+DS::String DS::String::FromUtf8(const chr8_t* string, ssize_t length)
+{
+    if (!string)
+        return String();
+
+    if (length < 0)
+        length = tstrlen(string);
+    chr8_t* buffer = new chr8_t[length + 1];
+    memcpy(buffer, string, length);
+    buffer[length] = 0;
+    String result;
+    result.m_data = StringBuffer<chr8_t>(buffer, length);
+    return result;
+}
+
+DS::String DS::String::FromUtf16(const chr16_t* string, ssize_t length)
+{
+    if (!string)
+        return String();
+
+    chr8_t* buffer;
+    size_t buflen;
+    utf16_to_utf8(&buffer, &buflen, string, length);
+    String result;
+    result.m_data = StringBuffer<chr8_t>(buffer, buflen);
+    return result;
 }
