@@ -16,6 +16,8 @@
  ******************************************************************************/
 
 #include "strings.h"
+#include "errors.h"
+#include <cstdio>
 
 template <typename char_type>
 static size_t tstrlen(const char_type* string)
@@ -57,7 +59,7 @@ static void raw_to_utf8(chr8_t** dest, size_t* destlen,
             }
             ++sptr;
         }
-        dest[convlen] = 0;
+        (*dest)[convlen] = 0;
     }
 }
 
@@ -122,7 +124,7 @@ static void utf16_to_utf8(chr8_t** dest, size_t* destlen,
             }
             ++sptr;
         }
-        dest[convlen] = 0;
+        (*dest)[convlen] = 0;
     }
 }
 
@@ -375,4 +377,31 @@ DS::String DS::String::FromUtf16(const chr16_t* string, ssize_t length)
     String result;
     result.m_data = StringBuffer<chr8_t>(buffer, buflen);
     return result;
+}
+
+DS::String DS::String::Format(const char* fmt, ... )
+{
+    va_list aptr;
+    va_start(aptr, fmt);
+    String result = FormatV(fmt, aptr);
+    va_end(aptr);
+    return result;
+}
+
+DS::String DS::String::FormatV(const char* fmt, va_list aptr)
+{
+    char buffer[256];
+    va_list aptr_save;
+    va_copy(aptr_save, aptr);
+    int chars = vsnprintf(buffer, 256, fmt, aptr);
+    DS_DASSERT(chars >= 0);
+    if (chars >= 256) {
+        va_copy(aptr, aptr_save);
+        char* bigbuf = new char[chars+1];
+        vsnprintf(bigbuf, chars+1, fmt, aptr);
+        DS::String result(bigbuf);
+        delete[] bigbuf;
+        return result;
+    }
+    return DS::String(buffer);
 }

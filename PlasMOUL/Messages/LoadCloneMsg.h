@@ -24,9 +24,10 @@ namespace MOUL
 {
     class LoadCloneMsg : public Message
     {
+        FACTORY_CREATABLE(LoadCloneMsg)
+
     protected:
         LoadCloneMsg(uint16_t type) : Message(type) { }
-        friend class Factory;
     };
 }
 

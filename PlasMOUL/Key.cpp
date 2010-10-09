@@ -83,3 +83,21 @@ void MOUL::Uoid::write(DS::Stream* stream)
         stream->write<uint32_t>(m_clonePlayerId);
     }
 }
+
+void MOUL::Key::read(DS::Stream* stream)
+{
+    if (stream->readBool()) {
+        Uoid data;
+        data.read(stream);
+        operator=(data);
+    } else {
+        operator=(Key());
+    }
+}
+
+void MOUL::Key::write(DS::Stream* stream)
+{
+    stream->writeBool(!isNull());
+    if (!isNull())
+        m_data->m_uoid.write(stream);
+}

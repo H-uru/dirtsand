@@ -84,6 +84,75 @@ namespace MOUL
         DS::String m_name;
         uint32_t m_id, m_cloneId, m_clonePlayerId;
     };
+
+    class Key
+    {
+    public:
+        Key() : m_data(0) { }
+
+        Key(const Key& copy) : m_data(copy.m_data)
+        {
+            if (m_data)
+                ++m_data->m_refs;
+        }
+
+        Key(const Uoid& copy)
+        {
+            m_data = new _keydata;
+            m_data->m_refs = 1;
+            m_data->m_uoid = copy;
+        }
+
+        ~Key()
+        {
+            if (m_data && --m_data->m_refs)
+                delete m_data;
+        }
+
+        Key& operator=(const Key& copy)
+        {
+            if (copy.m_data)
+                ++copy.m_data->m_refs;
+            if (m_data && --m_data->m_refs)
+                delete m_data;
+            m_data = copy.m_data;
+            return *this;
+        }
+
+        Key& operator=(const Uoid& copy)
+        {
+            if (m_data && --m_data->m_refs)
+                delete m_data;
+            m_data = new _keydata;
+            m_data->m_refs = 1;
+            m_data->m_uoid = copy;
+            return *this;
+        }
+
+        bool operator==(const Key& other) const { return m_data == other.m_data; }
+        bool operator!=(const Key& other) const { return m_data != other.m_data; }
+        bool isNull() const { return m_data == 0; }
+
+        Location location() const { return m_data ? m_data->m_uoid.m_location : Location::Invalid; }
+        uint8_t loadMask() const { return m_data ? m_data->m_uoid.m_loadMask : 0xFF; }
+        uint16_t type() const { return m_data ? m_data->m_uoid.m_type : 0x8000; }
+        DS::String name() const { return m_data ? m_data->m_uoid.m_name : DS::String(); }
+        uint32_t id() const { return m_data ? m_data->m_uoid.m_id : 0; }
+        uint32_t cloneId() const { return m_data ? m_data->m_uoid.m_cloneId : 0; }
+        uint32_t clonePlayerId() const { return m_data ? m_data->m_uoid.m_clonePlayerId : 0; }
+
+        /* Note: these will NOT keep synchronized copies.  You need some
+           form of Resource Manager to handle that. */
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+
+    private:
+        struct _keydata
+        {
+            Uoid m_uoid;
+            int m_refs;
+        }* m_data;
+    };
 }
 
 #endif

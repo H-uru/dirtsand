@@ -1,11 +1,29 @@
-#include "strings.h"
-#include <cstdio>
+#include "factory.h"
+#include "errors.h"
+
+/* Test for Creatable parsing */
+static uint8_t msgbuf[] = {
+0xB4, 0x03, 0x01, 0x10, 0x00, 0x00, 0xCA, 0x74, 0x71, 0x4A, 0x70, 0x8E,
+0x01, 0x00, 0x99, 0x58, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x06, 0xFF,
+0x04, 0x00, 0x01, 0x00, 0x4E, 0x00, 0x00, 0x00, 0x04, 0xF0, 0xB2, 0x9E,
+0x93, 0x9A, 0x02, 0x00, 0x00, 0x00, 0x99, 0x58, 0x00, 0x00,
+};
 
 int main(int argc, char* argv[])
 {
-    DS::String str = "blah";
-    printf("%d,%d|%s|\n", str.length(), str.toRaw().length(), str.toRaw().data());
-    str += DS::String::FromUtf8(reinterpret_cast<const chr8_t*>("\xef\xbf\xbd"));
-    printf("%d,%d|%s|\n", str.length(), str.toRaw().length(), str.toUtf8().data());
+    DS::BufferStream stream(msgbuf, sizeof(msgbuf));
+    uint16_t ctype = stream.read<uint16_t>();
+    MOUL::Creatable* cre = MOUL::Factory::Create(ctype);
+    cre->read(&stream);
+    DS_DASSERT(stream.atEof());
+    cre->unref();
+
     return 0;
 }
+
+/* Test for Network I/O *
+int main(int argc, char* argv[])
+{
+
+}
+*/

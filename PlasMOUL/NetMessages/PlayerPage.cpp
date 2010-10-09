@@ -15,20 +15,18 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "factory.h"
+#include "PlayerPage.h"
 
-#include "NetMessages/PlayerPage.h"
-
-MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
+void MOUL::NetMsgPlayerPage::read(DS::Stream* stream)
 {
-    switch (type) {
-/* THAR BE MAJICK HERE */
-#define CREATABLE_TYPE(id, cre) \
-    case id: return new cre(id);
-#include "creatable_types.h"
-#undef CREATABLE_TYPE
-    case 0x8000: return static_cast<Creatable*>(0);
-    default:
-        throw FactoryException();
-    }
+    MOUL::NetMessage::read(stream);
+    m_unload = stream->read<uint8_t>();
+    m_uoid.read(stream);
+}
+
+void MOUL::NetMsgPlayerPage::write(DS::Stream* stream)
+{
+    MOUL::NetMessage::write(stream);
+    stream->write<uint8_t>(m_unload);
+    m_uoid.write(stream);
 }

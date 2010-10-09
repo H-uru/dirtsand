@@ -15,20 +15,38 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "factory.h"
+#ifndef _DS_ERRORS_H
+#define _DS_ERRORS_H
 
-#include "NetMessages/PlayerPage.h"
+#include "errno.h"
+#include <exception>
 
-MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
+namespace DS
 {
-    switch (type) {
-/* THAR BE MAJICK HERE */
-#define CREATABLE_TYPE(id, cre) \
-    case id: return new cre(id);
-#include "creatable_types.h"
-#undef CREATABLE_TYPE
-    case 0x8000: return static_cast<Creatable*>(0);
-    default:
-        throw FactoryException();
-    }
+    class AssertException : public std::exception
+    {
+    public:
+        AssertException(const char* cond, const char* file, long line)
+            : m_cond(cond) { }
+        virtual ~AssertException() throw() { }
+
+        virtual const char* what() const throw()
+        { return "[AssertException] Assertion Failed"; }
+
+    public:
+        const char* m_cond;
+        const char* m_file;
+        long line;
+    };
 }
+
+#define DS_PASSERT(cond) \
+    if (!(cond)) throw DS::AssertException(#cond, __FILE__, __LINE__)
+
+#ifdef DEBUG
+#define DS_DASSERT(cond) DS_PASSERT(cond)
+#else
+#define DS_DASSERT(cond)
+#endif
+
+#endif

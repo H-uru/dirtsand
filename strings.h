@@ -21,6 +21,7 @@
 #include "config.h"
 #include <vector>
 #include <cstring>
+#include <cstdarg>
 
 /* Important note:  Strings passed in as raw character constants (e.g. "blah")
  * are assumed to be in UTF-8 format, for the sake of minimal conversion
@@ -61,11 +62,11 @@ namespace DS
 
         StringBuffer<char_type>& operator=(const StringBuffer<char_type>& copy)
         {
+            if (copy.m_buffer)
+                ++copy.m_buffer->m_refs;
             if (m_buffer && --m_buffer->m_refs == 0)
                 delete m_buffer;
             m_buffer = copy.m_buffer;
-            if (m_buffer)
-                ++m_buffer->m_refs;
             return *this;
         }
 
@@ -146,6 +147,10 @@ namespace DS
         String left(ssize_t length);
         String right(ssize_t length);
         String mid(size_t start, ssize_t length);
+
+        /* Formatting */
+        String Format(const char* fmt, ...);
+        String FormatV(const char* fmt, va_list aptr);
 
     private:
         StringBuffer<chr8_t> m_data;

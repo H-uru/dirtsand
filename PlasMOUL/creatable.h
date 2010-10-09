@@ -21,6 +21,10 @@
 #include "config.h"
 #include "streams.h"
 
+#define FACTORY_CREATABLE(type) \
+    protected: friend class Factory; \
+    public: static type* Create() { return new type(ID_##type); }
+
 namespace MOUL
 {
     enum CreatableTypes

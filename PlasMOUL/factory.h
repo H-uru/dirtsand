@@ -26,14 +26,14 @@ namespace MOUL
     class Factory
     {
     public:
-        static Creatable* Create(uint16_t type);
+        static Creatable* Create (uint16_t type);
     };
 
     class FactoryException : public std::exception
     {
     public:
         virtual const char* what() const throw()
-        { return "FactoryException: Unknown creatable ID"; }
+        { return "[FactoryException] Unknown creatable ID"; }
     };
 }
 

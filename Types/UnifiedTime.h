@@ -15,20 +15,29 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "factory.h"
+#ifndef _DS_UNIFIEDTIME_H
+#define _DS_UNIFIEDTIME_H
 
-#include "NetMessages/PlayerPage.h"
+#include "streams.h"
+#include <time.h>
 
-MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
+namespace DS
 {
-    switch (type) {
-/* THAR BE MAJICK HERE */
-#define CREATABLE_TYPE(id, cre) \
-    case id: return new cre(id);
-#include "creatable_types.h"
-#undef CREATABLE_TYPE
-    case 0x8000: return static_cast<Creatable*>(0);
-    default:
-        throw FactoryException();
-    }
+    class UnifiedTime
+    {
+    public:
+        UnifiedTime() : m_secs(0), m_micros(0) { }
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+
+    public:
+        union {
+            uint32_t m_secs;
+            time_t m_time;
+        };
+        uint32_t m_micros;
+    };
 }
+
+#endif

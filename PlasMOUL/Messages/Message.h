@@ -19,6 +19,8 @@
 #define _MOUL_MESSAGE_H
 
 #include "creatable.h"
+#include "Key.h"
+#include <vector>
 
 namespace MOUL
 {
@@ -47,11 +49,16 @@ namespace MOUL
             e_NetCreatedRemotely        = (1<<17),
         };
 
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
     protected:
         Message(uint16_t type)
             : Creatable(type), m_timestamp(0.0), m_bcastFlags(0) { }
 
     public:
+        Key m_sender;
+        std::vector<Key> m_receivers;
         double m_timestamp;
         uint32_t m_bcastFlags;
     };

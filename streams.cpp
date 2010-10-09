@@ -16,6 +16,10 @@
  ******************************************************************************/
 
 #include "streams.h"
+#include "errors.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 DS::String DS::Stream::readString(size_t length, DS::StringType format)
 {
@@ -102,4 +106,80 @@ void DS::Stream::writeSafeString(const String& value, DS::StringType format)
         writeBytes(data, length * sizeof(chr8_t));
         delete[] data;
     }
+}
+
+void DS::FileStream::open(const char* filename, const char* mode)
+{
+    if (m_file)
+        fclose(m_file);
+    m_file = fopen(filename, mode);
+    if (!m_file)
+        throw FileIOException(strerror(errno));
+}
+
+uint32_t DS::FileStream::size()
+{
+    struct stat statbuf;
+    fstat(fileno(m_file), &statbuf);
+    return static_cast<uint32_t>(statbuf.st_size);
+}
+
+bool DS::FileStream::atEof()
+{
+    int ch = fgetc(m_file);
+    fputc(ch, m_file);
+    return (ch == EOF);
+}
+
+
+DS::BufferStream::BufferStream(const void* data, size_t size)
+    : m_position(0)
+{
+    if (data) {
+        m_size = m_alloc = size;
+        m_buffer = new uint8_t[m_alloc];
+        memcpy(m_buffer, data, m_size);
+    } else {
+        m_buffer = 0;
+        m_size = m_alloc = 0;
+    }
+}
+
+ssize_t DS::BufferStream::readBytes(void* buffer, size_t count)
+{
+    if (m_position + count > m_size)
+        count = m_size - m_position;
+    memcpy(buffer, m_buffer + m_position, count);
+    m_position += count;
+    return count;
+}
+
+ssize_t DS::BufferStream::writeBytes(const void* buffer, size_t count)
+{
+    if (m_position + count > m_alloc) {
+        // Resize stream
+        size_t bigger = m_alloc ? m_alloc * 2 : 4096;
+        uint8_t* newbuffer = new uint8_t[bigger];
+        memcpy(newbuffer, m_buffer, m_size);
+        delete[] m_buffer;
+        m_buffer = newbuffer;
+        m_alloc = bigger;
+    }
+    memcpy(m_buffer + m_position, buffer, count);
+    m_position += count;
+    if (m_position > m_size)
+        m_size = m_position;
+    return count;
+}
+
+void DS::BufferStream::seek(sint32_t offset, int whence)
+{
+    if (whence == SEEK_SET)
+        m_position = offset;
+    else if (whence == SEEK_CUR)
+        m_position += offset;
+    else if (whence == SEEK_END)
+        m_position = m_size - offset;
+
+    DS_PASSERT(static_cast<sint32_t>(m_position) >= 0 && m_position <= m_size);
 }

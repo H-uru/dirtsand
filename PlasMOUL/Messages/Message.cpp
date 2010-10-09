@@ -17,3 +17,22 @@
 
 #include "Message.h"
 
+void MOUL::Message::read(DS::Stream* stream)
+{
+    m_sender.read(stream);
+    m_receivers.resize(stream->read<uint32_t>());
+    for (size_t i=0; i<m_receivers.size(); ++i)
+        m_receivers[i].read(stream);
+    m_timestamp = stream->read<double>();
+    m_bcastFlags = stream->read<uint32_t>();
+}
+
+void MOUL::Message::write(DS::Stream* stream)
+{
+    m_sender.write(stream);
+    stream->write<uint32_t>(m_receivers.size());
+    for (size_t i=0; i<m_receivers.size(); ++i)
+        m_receivers[i].write(stream);
+    stream->write<double>(m_timestamp);
+    stream->write<uint32_t>(m_bcastFlags);
+}

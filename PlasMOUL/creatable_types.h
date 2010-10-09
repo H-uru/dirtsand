@@ -15,4 +15,4 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-CREATABLE_TYPE(0x0253, LoadCloneMsg)
+CREATABLE_TYPE(0x03B4, NetMsgPlayerPage)

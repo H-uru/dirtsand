@@ -15,20 +15,33 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "factory.h"
+#ifndef _DS_UUID_H
+#define _DS_UUID_H
 
-#include "NetMessages/PlayerPage.h"
+#include "streams.h"
 
-MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
+#define SET_DATA4(b0, b1, b2, b3, b4, b5, b6, b7) \
+    m_data4[0] = b0; m_data4[1] = b1; m_data4[2] = b2; m_data4[3] = b3; \
+    m_data4[4] = b4; m_data4[5] = b5; m_data4[6] = b6; m_data4[7] = b7
+
+namespace DS
 {
-    switch (type) {
-/* THAR BE MAJICK HERE */
-#define CREATABLE_TYPE(id, cre) \
-    case id: return new cre(id);
-#include "creatable_types.h"
-#undef CREATABLE_TYPE
-    case 0x8000: return static_cast<Creatable*>(0);
-    default:
-        throw FactoryException();
-    }
+    class Uuid
+    {
+    public:
+        Uuid() : m_data1(0), m_data2(0), m_data3(0)
+        {
+            SET_DATA4(0, 0, 0, 0, 0, 0, 0, 0);
+        }
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+
+    private:
+        uint32_t m_data1;
+        uint16_t m_data2, m_data3;
+        uint8_t m_data4[8];
+    };
 }
+
+#endif
