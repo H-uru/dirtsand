@@ -15,29 +15,50 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_CONFIG_H
-#define _DS_CONFIG_H
+#ifndef _DS_SOCKIO_H
+#define _DS_SOCKIO_H
 
-#include <cstdlib>
+#include "strings.h"
 
-typedef unsigned char       uint8_t;
-typedef signed char         sint8_t;
-typedef unsigned short      uint16_t;
-typedef signed short        sint16_t;
-typedef unsigned int        uint32_t;
-typedef signed int          sint32_t;
-typedef unsigned long long  uint64_t;
-typedef signed long long    sint64_t;
-typedef unsigned char       chr8_t;
-typedef unsigned short      chr16_t;
-
-typedef union
+namespace DS
 {
-    uint32_t uint;
-    sint32_t sint;
-    chr8_t*  cstring;
-    chr16_t* wstring;
-    void*    data;
-} msgparm_t;
+    typedef void* SocketHandle;
+
+    class Blob
+    {
+    public:
+        Blob(const uint8_t* buffer, size_t size)
+            : m_buffer(buffer), m_size(size), m_refs(1) { }
+
+        const uint8_t* buffer() const { return m_buffer; }
+        size_t size() const { return m_size; }
+
+        void ref() { ++m_refs; }
+        void unref()
+        {
+            if (--m_refs == 0)
+                delete this;
+        }
+
+    private:
+        const uint8_t* m_buffer;
+        size_t m_size;
+        int m_refs;
+
+        ~Blob() { delete[] m_buffer; }
+    };
+
+    SocketHandle BindSocket(const char* address, const char* port);
+    void ListenSock(SocketHandle sock, int backlog = 10);
+    SocketHandle AcceptSock(SocketHandle sock);
+    void CloseSock(SocketHandle sock);
+    void FreeSock(SocketHandle sock);
+
+    void SendBuffer(SocketHandle sock, const uint8_t* buffer, size_t size);
+    Blob* RecvBuffer(SocketHandle sock);
+
+    inline void SendBuffer(SocketHandle sock, const Blob* blob)
+    { SendBuffer(sock, blob->buffer(), blob->size()); }
+}
 
 #endif

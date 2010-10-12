@@ -26,12 +26,14 @@ DS::String DS::Stream::readString(size_t length, DS::StringType format)
     String result;
     if (format == e_StringUTF16) {
         chr16_t* buffer = new chr16_t[length];
-        readBytes(buffer, length * sizeof(chr16_t));
+        ssize_t bytes = readBytes(buffer, length * sizeof(chr16_t));
+        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(chr16_t)));
         result = String::FromUtf16(buffer, length);
         delete[] buffer;
     } else {
         chr8_t* buffer = new chr8_t[length];
-        readBytes(buffer, length * sizeof(chr8_t));
+        ssize_t bytes = readBytes(buffer, length * sizeof(chr8_t));
+        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(chr8_t)));
         result = (format == e_StringUTF8) ? String::FromUtf8(buffer, length)
                                           : String::FromRaw(buffer, length);
         delete[] buffer;
@@ -49,7 +51,8 @@ DS::String DS::Stream::readSafeString(DS::StringType format)
     String result;
     if (format == e_StringUTF16) {
         chr16_t* buffer = new chr16_t[length];
-        readBytes(buffer, length * sizeof(chr16_t));
+        ssize_t bytes = readBytes(buffer, length * sizeof(chr16_t));
+        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(chr16_t)));
         if (length && (buffer[0] & 0x8000)) {
             for (uint16_t i=0; i<length; ++i)
                 buffer[i] = ~buffer[i];
@@ -58,7 +61,8 @@ DS::String DS::Stream::readSafeString(DS::StringType format)
         delete[] buffer;
     } else {
         chr8_t* buffer = new chr8_t[length];
-        readBytes(buffer, length * sizeof(chr8_t));
+        ssize_t bytes = readBytes(buffer, length * sizeof(chr8_t));
+        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(chr8_t)));
         if (length && (buffer[0] & 0x80)) {
             for (uint16_t i=0; i<length; ++i)
                 buffer[i] = ~buffer[i];
@@ -110,8 +114,7 @@ void DS::Stream::writeSafeString(const String& value, DS::StringType format)
 
 void DS::FileStream::open(const char* filename, const char* mode)
 {
-    if (m_file)
-        fclose(m_file);
+    close();
     m_file = fopen(filename, mode);
     if (!m_file)
         throw FileIOException(strerror(errno));

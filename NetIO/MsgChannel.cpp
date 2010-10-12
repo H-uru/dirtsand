@@ -15,29 +15,46 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_CONFIG_H
-#define _DS_CONFIG_H
+#include "MsgChannel.h"
+#include "errors.h"
 
-#include <cstdlib>
-
-typedef unsigned char       uint8_t;
-typedef signed char         sint8_t;
-typedef unsigned short      uint16_t;
-typedef signed short        sint16_t;
-typedef unsigned int        uint32_t;
-typedef signed int          sint32_t;
-typedef unsigned long long  uint64_t;
-typedef signed long long    sint64_t;
-typedef unsigned char       chr8_t;
-typedef unsigned short      chr16_t;
-
-typedef union
+DS::MsgChannel::MsgChannel()
 {
-    uint32_t uint;
-    sint32_t sint;
-    chr8_t*  cstring;
-    chr16_t* wstring;
-    void*    data;
-} msgparm_t;
+    int result;
 
-#endif
+    result = pthread_mutex_init(&m_queueMutex, 0);
+    DS_PASSERT(result == 0);
+    result = sem_init(&m_semaphore, 0, 0);
+    DS_PASSERT(result == 0);
+}
+
+DS::MsgChannel::~MsgChannel()
+{
+    int result;
+
+    result = sem_destroy(&m_semaphore);
+    DS_PASSERT(result == 0);
+    result = pthread_mutex_destroy(&m_queueMutex);
+    DS_PASSERT(result == 0);
+}
+
+void DS::MsgChannel::putMessage(int type, void* payload)
+{
+    pthread_mutex_lock(&m_queueMutex);
+    FifoMessage* msg = new FifoMessage;
+    msg->m_messageType = type;
+    msg->m_payload = payload;
+    m_queue.push(msg);
+    pthread_mutex_unlock(&m_queueMutex);
+    sem_post(&m_semaphore);
+}
+
+DS::FifoMessage* DS::MsgChannel::getMessage()
+{
+    sem_wait(&m_semaphore);
+    pthread_mutex_lock(&m_queueMutex);
+    FifoMessage* msg = m_queue.front();
+    m_queue.pop();
+    pthread_mutex_unlock(&m_queueMutex);
+    return msg;
+}

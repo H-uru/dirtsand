@@ -90,6 +90,7 @@ namespace DS
         {
             if (m_file)
                 fclose(m_file);
+            m_file = 0;
         }
 
         virtual ssize_t readBytes(void* buffer, size_t count)

@@ -23,6 +23,8 @@ set(PlasMOUL_SOURCES
 set(dirtsand_SOURCES
     Types/UnifiedTime.cpp
     Types/Uuid.cpp
+    NetIO/MsgChannel.cpp
+    NetIO/SockIO.cpp
     strings.cpp
     streams.cpp
     dstest.cpp

@@ -15,29 +15,35 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_CONFIG_H
-#define _DS_CONFIG_H
+#ifndef _DS_MSGCHANNEL_H
+#define _DS_MSGCHANNEL_H
 
-#include <cstdlib>
+#include <semaphore.h>
+#include <pthread.h>
+#include <queue>
 
-typedef unsigned char       uint8_t;
-typedef signed char         sint8_t;
-typedef unsigned short      uint16_t;
-typedef signed short        sint16_t;
-typedef unsigned int        uint32_t;
-typedef signed int          sint32_t;
-typedef unsigned long long  uint64_t;
-typedef signed long long    sint64_t;
-typedef unsigned char       chr8_t;
-typedef unsigned short      chr16_t;
-
-typedef union
+namespace DS
 {
-    uint32_t uint;
-    sint32_t sint;
-    chr8_t*  cstring;
-    chr16_t* wstring;
-    void*    data;
-} msgparm_t;
+    struct FifoMessage
+    {
+        int m_messageType;
+        void* m_payload;
+    };
+
+    class MsgChannel
+    {
+    public:
+        MsgChannel();
+        ~MsgChannel();
+
+        void putMessage(int type, void* payload = 0);
+        FifoMessage* getMessage();
+
+    private:
+        sem_t m_semaphore;
+        pthread_mutex_t m_queueMutex;
+        std::queue<FifoMessage*> m_queue;
+    };
+}
 
 #endif

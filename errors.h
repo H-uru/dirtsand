@@ -27,7 +27,7 @@ namespace DS
     {
     public:
         AssertException(const char* cond, const char* file, long line)
-            : m_cond(cond) { }
+            : m_cond(cond), m_file(file), m_line(line) { }
         virtual ~AssertException() throw() { }
 
         virtual const char* what() const throw()
@@ -36,7 +36,7 @@ namespace DS
     public:
         const char* m_cond;
         const char* m_file;
-        long line;
+        long m_line;
     };
 }
 
