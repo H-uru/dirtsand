@@ -16,7 +16,10 @@
  ******************************************************************************/
 
 #include "NetIO/Lobby.h"
+#include "strings.h"
+#include "errors.h"
 #include <cstdio>
+#include <ctype.h>
 
 int main(int argc, char* argv[])
 {
@@ -24,7 +27,56 @@ int main(int argc, char* argv[])
 
     char cmdbuf[4096];
     while (fgets(cmdbuf, 4096, stdin)) {
-        //
+        // Strip whitespace and comments
+        char* cmdp = cmdbuf;
+        while (isspace(*cmdp))
+            ++cmdp;
+        char* scanp = cmdp;
+        while (*scanp) {
+            if (*scanp == '#')
+                *scanp = 0;
+            else
+                ++scanp;
+        }
+        scanp = cmdp + strlen(cmdp);
+        while (scanp > cmdp && isspace(*(scanp-1)))
+            --scanp;
+        *scanp = 0;
+
+        DS::String cmd = cmdp;
+        if (cmd.isEmpty()) {
+            /* Blank line */
+            continue;
+        }
+
+        std::vector<DS::String> args = cmd.split();
+        DS_DASSERT(args.size() > 0);
+        if (args[0] == "quit") {
+            break;
+        } else if (args[0] == "restart") {
+            if (args.size() < 2) {
+                fprintf(stderr, "Error: No services specified\n");
+                continue;
+            }
+            for (std::vector<DS::String>::iterator svc = args.begin() + 1;
+                 svc != args.end(); ++svc) {
+                if (*svc == "lobby") {
+                    DS::StopLobby();
+                    DS::StartLobby();
+                } else {
+                    fprintf(stderr, "Error: Unrecognized service: %s\n", svc->c_str());
+                }
+            }
+        } else if (args[0] == "help") {
+            printf("DirtSand v1.0 Console supported commands:\n"
+                   "    help\n"
+                   "    quit\n"
+                   "    restart <auth|gate|lobby>\n"
+                  );
+        } else {
+            char* first = strtok(cmdp, " ");
+            fprintf(stderr, "Error: Unrecognized command: %s\n", first);
+        }
     }
 
     DS::StopLobby();

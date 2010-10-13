@@ -37,6 +37,12 @@ namespace DS
 
         Uuid(const char* struuid);
 
+        bool operator==(const Uuid& other)
+        { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) == 0; }
+
+        bool operator!=(const Uuid& other)
+        { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) != 0; }
+
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
 

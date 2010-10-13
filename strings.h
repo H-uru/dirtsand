@@ -136,21 +136,21 @@ namespace DS
 
         String toUpper() const;
         String toLower() const;
-        int32_t toInt() const;
-        uint32_t toUint() const;
+        int32_t toInt(int base = 0) const;
+        uint32_t toUint(int base = 0) const;
         float toFloat() const;
         double toDouble() const;
         bool toBool() const;
 
         /* Manipulation */
-        std::vector<String> split(char separator, ssize_t max = -1);
+        std::vector<String> split(char separator = 0, ssize_t max = -1);
         String left(ssize_t length);
         String right(ssize_t length);
         String mid(size_t start, ssize_t length);
 
         /* Formatting */
-        String Format(const char* fmt, ...);
-        String FormatV(const char* fmt, va_list aptr);
+        static String Format(const char* fmt, ...);
+        static String FormatV(const char* fmt, va_list aptr);
 
     private:
         StringBuffer<chr8_t> m_data;

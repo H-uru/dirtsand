@@ -17,7 +17,9 @@
 
 #include "strings.h"
 #include "errors.h"
+#include <list>
 #include <cstdio>
+#include <ctype.h>
 
 template <typename char_type>
 static size_t tstrlen(const char_type* string)
@@ -377,6 +379,32 @@ DS::String DS::String::FromUtf16(const chr16_t* string, ssize_t length)
     String result;
     result.m_data = StringBuffer<chr8_t>(buffer, buflen);
     return result;
+}
+
+std::vector<DS::String> DS::String::split(char separator, ssize_t max)
+{
+    if (isEmpty())
+        return std::vector<DS::String>();
+
+    std::list<DS::String> subs;
+    const chr8_t* cptr = m_data.data();
+    const chr8_t* scanp = cptr;
+    while (*scanp && max) {
+        if (!separator && isspace(*scanp)) {
+            subs.push_back(DS::String::FromUtf8(cptr, scanp - cptr));
+            --max;
+            while (isspace(*scanp))
+                ++scanp;
+            cptr = scanp;
+        } else if (*scanp == static_cast<chr8_t>(separator)) {
+            subs.push_back(DS::String::FromUtf8(cptr, scanp - cptr));
+            --max;
+            cptr = scanp + 1;
+        }
+        ++scanp;
+    }
+    subs.push_back(DS::String::FromUtf8(cptr));
+    return std::vector<DS::String>(subs.begin(), subs.end());
 }
 
 DS::String DS::String::Format(const char* fmt, ... )
