@@ -48,17 +48,30 @@ namespace DS
         ~Blob() { delete[] m_buffer; }
     };
 
+
     SocketHandle BindSocket(const char* address, const char* port);
     void ListenSock(SocketHandle sock, int backlog = 10);
     SocketHandle AcceptSock(SocketHandle sock);
     void CloseSock(SocketHandle sock);
     void FreeSock(SocketHandle sock);
 
-    void SendBuffer(SocketHandle sock, const uint8_t* buffer, size_t size);
-    Blob* RecvBuffer(SocketHandle sock);
+    String SockIpAddress(SocketHandle sock);
 
-    inline void SendBuffer(SocketHandle sock, const Blob* blob)
+    void SendBuffer(SocketHandle sock, const void* buffer, size_t size);
+    void RecvBuffer(SocketHandle sock, void* buffer, size_t size);
+
+    template <typename tp>
+    inline tp RecvValue(SocketHandle sock)
+    {
+        tp value;
+        RecvBuffer(sock, &value, sizeof(value));
+        return value;
+    }
+
+    inline void SendBlob(SocketHandle sock, Blob* blob)
     { SendBuffer(sock, blob->buffer(), blob->size()); }
+
+    Blob* RecvBlob(SocketHandle sock);
 }
 
 #endif

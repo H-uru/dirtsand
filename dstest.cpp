@@ -111,7 +111,7 @@ void* wk_sclient(void* sockp)
     return 0;
 }
 
-void* wk_lobby(void* sockp)
+void* dm_lobby(void* sockp)
 {
     DS::SocketHandle listenSock = reinterpret_cast<DS::SocketHandle>(sockp);
     try {
@@ -138,10 +138,6 @@ void* wk_lobby(void* sockp)
 
 int main(int argc, char* argv[])
 {
-    DS::MsgChannel chan;
-    chan.putMessage(0);
-    delete chan.getMessage();
-
     DS::SocketHandle listenSock;
     try {
         listenSock = DS::BindSocket(0, "14505");
@@ -156,7 +152,7 @@ int main(int argc, char* argv[])
     pthread_mutex_init(&s_clientMutex, 0);
     pthread_t listenThread, daemonThread;
     pthread_create(&daemonThread, 0, &dm_broadcast, 0);
-    pthread_create(&listenThread, 0, &wk_lobby, reinterpret_cast<void*>(listenSock));
+    pthread_create(&listenThread, 0, &dm_lobby, reinterpret_cast<void*>(listenSock));
 
     char cmdbuf[256];
     while (fgets(cmdbuf, 256, stdin))

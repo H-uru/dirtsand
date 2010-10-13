@@ -27,6 +27,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <cstdio>
+#include <cstring>
 
 static const int SOCK_YES = 1;
 
@@ -43,6 +44,13 @@ struct SocketHandle_Private
 
     SocketHandle_Private() : m_addrLen(sizeof(m_addrMax)) { }
 };
+
+static void* get_in_addr(SocketHandle_Private* sock)
+{
+    if (sock->m_addr.sa_family == AF_INET)
+        return &sock->m_in4addr.sin_addr;
+    return &sock->m_in6addr.sin6_addr;
+}
 
 DS::SocketHandle DS::BindSocket(const char* address, const char* port)
 {
@@ -128,14 +136,29 @@ void DS::FreeSock(DS::SocketHandle sock)
     delete reinterpret_cast<SocketHandle_Private*>(sock);
 }
 
-void DS::SendBuffer(DS::SocketHandle sock, const uint8_t* buffer, size_t size)
+DS::String DS::SockIpAddress(DS::SocketHandle sock)
+{
+    char addrbuf[256];
+    SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
+    inet_ntop(sockp->m_addr.sa_family, get_in_addr(sockp), addrbuf, 256);
+    return DS::String(addrbuf);
+}
+
+void DS::SendBuffer(DS::SocketHandle sock, const void* buffer, size_t size)
 {
     ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, size, 0);
     DS_PASSERT(static_cast<size_t>(bytes) == size);
 }
 
-DS::Blob* DS::RecvBuffer(DS::SocketHandle sock)
+void DS::RecvBuffer(DS::SocketHandle sock, void* buffer, size_t size)
+{
+    ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
+                         buffer, size, 0);
+    DS_PASSERT(static_cast<size_t>(bytes) == size);
+}
+
+DS::Blob* DS::RecvBlob(DS::SocketHandle sock)
 {
     uint8_t peekbuf[32];
     int sockfd = reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd;

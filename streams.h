@@ -18,6 +18,7 @@
 #ifndef _DS_STREAMS_H
 #define _DS_STREAMS_H
 
+#include "NetIO/SockIO.h"
 #include "strings.h"
 #include <exception>
 #include <cstdio>
@@ -43,6 +44,7 @@ namespace DS
     private:
         DS::String m_errmsg;
     };
+
 
     class Stream
     {
@@ -79,6 +81,7 @@ namespace DS
         virtual void flush() = 0;
     };
 
+    /* Stream for reading/writing regular files */
     class FileStream : public Stream
     {
     public:
@@ -109,6 +112,7 @@ namespace DS
         FILE* m_file;
     };
 
+    /* Read/Write RAM stream */
     class BufferStream : public Stream
     {
     public:
@@ -129,6 +133,27 @@ namespace DS
         uint8_t* m_buffer;
         size_t m_position;
         size_t m_size, m_alloc;
+    };
+
+    /* Read-only ref-counted RAM stream */
+    class BlobStream : public Stream
+    {
+    public:
+        BlobStream(Blob* blob) : m_blob(blob) { m_blob->ref(); }
+        virtual ~BlobStream() { m_blob->unref(); }
+
+        virtual ssize_t readBytes(void* buffer, size_t count);
+        virtual ssize_t writeBytes(const void* buffer, size_t count);
+
+        virtual uint32_t tell() { return static_cast<uint32_t>(m_position); }
+        virtual void seek(sint32_t offset, int whence);
+        virtual uint32_t size() { return static_cast<uint32_t>(m_blob->size()); }
+        virtual bool atEof() { return tell() >= size(); }
+        virtual void flush() { }
+
+    private:
+        Blob* m_blob;
+        size_t m_position;
     };
 }
 

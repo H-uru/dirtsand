@@ -25,9 +25,10 @@ set(dirtsand_SOURCES
     Types/Uuid.cpp
     NetIO/MsgChannel.cpp
     NetIO/SockIO.cpp
+    NetIO/Lobby.cpp
     strings.cpp
     streams.cpp
-    dstest.cpp
+    dsmain.cpp
 )
 
 add_executable(dirtsand ${PlasMOUL_SOURCES} ${dirtsand_SOURCES})
