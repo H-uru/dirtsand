@@ -50,7 +50,7 @@ static DS::SocketHandle s_listenSock;
 
 void* dm_lobby(void*)
 {
-    fprintf(stderr, "Lobby running on port 14617\n");
+    printf("Lobby running on port 14617\n");
     try {
         for ( ;; ) {
             DS::SocketHandle client = DS::AcceptSock(s_listenSock);
@@ -83,21 +83,20 @@ void* dm_lobby(void*)
                         DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
             } else if (header.m_connType == e_ConnCliToCsr) {
-                fprintf(stderr, "[%s] CSR client?  Get that motha outta here!\n",
-                        DS::SockIpAddress(client).c_str());
+                printf("[Lobby] %s - CSR client?  Get that mutha outta here!\n",
+                       DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
             } else {
-                fprintf(stderr, "[%s] Unknown connection type!  Abandon ship!\n",
-                        DS::SockIpAddress(client).c_str());
+                printf("[Lobby] %s - Unknown connection type!  Abandon ship!\n",
+                       DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
             }
         }
     } catch (DS::AssertException ex) {
-        fprintf(stderr, "Assertion failed at %s:%ld\n    %s\n",
+        fprintf(stderr, "[Lobby] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
     }
 
-    // Only free this when we're completely and irreversably done with it
     DS::FreeSock(s_listenSock);
     return 0;
 }

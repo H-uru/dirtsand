@@ -15,35 +15,15 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_SOCKIO_H
-#define _DS_SOCKIO_H
+#ifndef _DS_ENCODINGS_H
+#define _DS_ENCODINGS_H
 
 #include "streams.h"
 
 namespace DS
 {
-    typedef void* SocketHandle;
-
-    SocketHandle BindSocket(const char* address, const char* port);
-    void ListenSock(SocketHandle sock, int backlog = 10);
-    SocketHandle AcceptSock(SocketHandle sock);
-    void CloseSock(SocketHandle sock);
-    void FreeSock(SocketHandle sock);
-
-    String SockIpAddress(SocketHandle sock);
-
-    void SendBuffer(SocketHandle sock, const void* buffer, size_t size);
-    void RecvBuffer(SocketHandle sock, void* buffer, size_t size);
-
-    template <typename tp>
-    inline tp RecvValue(SocketHandle sock)
-    {
-        tp value;
-        RecvBuffer(sock, &value, sizeof(value));
-        return value;
-    }
-
-    Blob* RecvBlob(SocketHandle sock);
+    String Base64Encode(const uint8_t* data, size_t length);
+    Blob* Base64Decode(const String& value);
 }
 
 #endif

@@ -15,35 +15,45 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_SOCKIO_H
-#define _DS_SOCKIO_H
+#ifndef _DS_SETTINGS_H
+#define _DS_SETTINGS_H
 
-#include "streams.h"
+#include "strings.h"
+
+#define CRYPT_BASE_AUTH (41)
+#define CRYPT_BASE_GAME (73)
+#define CRYPT_BASE_GATE (4)
 
 namespace DS
 {
-    typedef void* SocketHandle;
-
-    SocketHandle BindSocket(const char* address, const char* port);
-    void ListenSock(SocketHandle sock, int backlog = 10);
-    SocketHandle AcceptSock(SocketHandle sock);
-    void CloseSock(SocketHandle sock);
-    void FreeSock(SocketHandle sock);
-
-    String SockIpAddress(SocketHandle sock);
-
-    void SendBuffer(SocketHandle sock, const void* buffer, size_t size);
-    void RecvBuffer(SocketHandle sock, void* buffer, size_t size);
-
-    template <typename tp>
-    inline tp RecvValue(SocketHandle sock)
+    enum KeyType
     {
-        tp value;
-        RecvBuffer(sock, &value, sizeof(value));
-        return value;
-    }
+        e_KeyGate_N, e_KeyGate_K, e_KeyAuth_N, e_KeyAuth_K, e_KeyGame_N,
+        e_KeyGame_K, e_KeyMaxTypes
+    };
 
-    Blob* RecvBlob(SocketHandle sock);
+    class Settings
+    {
+    public:
+        static const uint8_t* CryptKey(KeyType key);
+        static const uint32_t* WdysKey();
+
+        // Optimized for throwing onto the network
+        static DS::StringBuffer<chr16_t> GameServerAddress();
+        static DS::StringBuffer<chr16_t> FileServerAddress();
+
+        static const char* DbHostname();
+        static const char* DbUsername();
+        static const char* DbPassword();
+        static const char* DbDbaseName();
+
+        static bool LoadFrom(const char* filename);
+
+    private:
+        Settings() { }
+        Settings(const Settings& settings) { }
+        ~Settings() { }
+    };
 }
 
 #endif

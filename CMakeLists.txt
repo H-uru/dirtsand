@@ -8,10 +8,12 @@ endif()
 set(CMAKE_C_FLAGS_DEBUG "-DDEBUG ${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(Threads REQUIRED)
+find_package(Postgres REQUIRED)
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}"
-                    "${CMAKE_CURRENT_SOURCE_DIR}/PlasMOUL")
+include_directories("${CMAKE_SOURCE_DIR}"
+                    "${CMAKE_SOURCE_DIR}/PlasMOUL")
 
 set(PlasMOUL_SOURCES
     PlasMOUL/Key.cpp
@@ -28,11 +30,13 @@ set(dirtsand_SOURCES
     NetIO/Lobby.cpp
     strings.cpp
     streams.cpp
+    settings.cpp
+    encodings.cpp
     dsmain.cpp
 )
 
 add_executable(dirtsand ${PlasMOUL_SOURCES} ${dirtsand_SOURCES})
-target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT} ${POSTGRES_LIBRARY})
 set_target_properties(dirtsand PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin")
 

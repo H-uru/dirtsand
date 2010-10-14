@@ -18,7 +18,6 @@
 #ifndef _DS_STREAMS_H
 #define _DS_STREAMS_H
 
-#include "NetIO/SockIO.h"
 #include "strings.h"
 #include <exception>
 #include <cstdio>
@@ -136,6 +135,31 @@ namespace DS
     };
 
     /* Read-only ref-counted RAM stream */
+    class Blob
+    {
+    public:
+        Blob(const uint8_t* buffer, size_t size)
+            : m_buffer(buffer), m_size(size), m_refs(1) { }
+
+        const uint8_t* buffer() const { return m_buffer; }
+        size_t size() const { return m_size; }
+
+        void ref() { ++m_refs; }
+        void unref()
+        {
+            if (--m_refs == 0)
+                delete this;
+        }
+
+    private:
+        const uint8_t* m_buffer;
+        size_t m_size;
+        int m_refs;
+
+        Blob(const Blob&) { }
+        ~Blob() { delete[] m_buffer; }
+    };
+
     class BlobStream : public Stream
     {
     public:

@@ -1,0 +1,14 @@
+To generate keys for DirtSand, use the follwing process:
+
+1) Generate two 512-bit random primes (N and K) for each server
+     $ openssl rand -base64 64
+2) Copy these keys into your DirtSand config file:
+     Key.Auth.N = <key>
+     Key.Auth.K = <key>
+     ...and so on for Key.Gate and Key.Game...
+3) Run dirtsand to generate the public keys (X):
+     keygen auth
+     keygen gate
+     keygen game
+4) Copy N and X as provided by dirtsand into the client binaries
+   (See ExeChanges.txt for locations)

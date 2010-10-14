@@ -21,10 +21,53 @@
 
 DS::Uuid::Uuid(const char* struuid)
 {
+    char hexbuf[9];
     DS_DASSERT(strlen(struuid) == 36);
     DS_DASSERT(struuid[8] == '-' && struuid[13] == '-' && struuid[18] == '-'
                && struuid[23] == '-');
-    m_data1 = strtoul(struuid, 0, 16);
+
+    /* First segment */
+    memcpy(hexbuf, struuid, 8);
+    hexbuf[8] = 0;
+    m_data1 = strtoul(hexbuf, 0, 16);
+
+    /* Second segment */
+    memcpy(hexbuf, struuid + 9, 4);
+    hexbuf[4] = 0;
+    m_data2 = strtoul(hexbuf, 0, 16);
+
+    /* Third segment */
+    memcpy(hexbuf, struuid + 14, 4);
+    hexbuf[4] = 0;
+    m_data3 = strtoul(hexbuf, 0, 16);
+
+    /* Fourth segment */
+    memcpy(hexbuf, struuid + 19, 2);
+    hexbuf[2] = 0;
+    m_data4[0] = strtoul(hexbuf, 0, 16);
+    memcpy(hexbuf, struuid + 21, 2);
+    hexbuf[2] = 0;
+    m_data4[1] = strtoul(hexbuf, 0, 16);
+
+    /* Fifth segment */
+    memcpy(hexbuf, struuid + 24, 2);
+    hexbuf[2] = 0;
+    m_data4[2] = strtoul(hexbuf, 0, 16);
+    memcpy(hexbuf, struuid + 26, 2);
+    hexbuf[2] = 0;
+    m_data4[3] = strtoul(hexbuf, 0, 16);
+    memcpy(hexbuf, struuid + 28, 2);
+    hexbuf[2] = 0;
+    m_data4[4] = strtoul(hexbuf, 0, 16);
+    memcpy(hexbuf, struuid + 30, 2);
+    hexbuf[2] = 0;
+    m_data4[5] = strtoul(hexbuf, 0, 16);
+    memcpy(hexbuf, struuid + 32, 2);
+    hexbuf[2] = 0;
+    m_data4[6] = strtoul(hexbuf, 0, 16);
+    memcpy(hexbuf, struuid + 34, 2);
+    hexbuf[2] = 0;
+    m_data4[7] = strtoul(hexbuf, 0, 16);
 }
 
 void DS::Uuid::read(DS::Stream* stream)

@@ -393,7 +393,7 @@ std::vector<DS::String> DS::String::split(char separator, ssize_t max)
         if (!separator && isspace(*scanp)) {
             subs.push_back(DS::String::FromUtf8(cptr, scanp - cptr));
             --max;
-            while (isspace(*scanp))
+            while (*scanp && isspace(*scanp))
                 ++scanp;
             cptr = scanp;
         } else if (*scanp == static_cast<chr8_t>(separator)) {
@@ -405,6 +405,38 @@ std::vector<DS::String> DS::String::split(char separator, ssize_t max)
     }
     subs.push_back(DS::String::FromUtf8(cptr));
     return std::vector<DS::String>(subs.begin(), subs.end());
+}
+
+DS::String DS::String::strip(char comment)
+{
+    if (isNull())
+        return DS::String();
+
+    char* strbuf = new char[m_data.length()+1];
+    memcpy(strbuf, m_data.data(), m_data.length());
+    strbuf[m_data.length()] = 0;
+
+    char* startp = strbuf;
+    while (isspace(*startp))
+        ++startp;
+    char* scanp;
+    if (comment) {
+        scanp = startp;
+        while (*scanp) {
+            if (*scanp == comment)
+                *scanp = 0;
+            else
+                ++scanp;
+        }
+    }
+    scanp = startp + strlen(startp);
+    while (scanp > startp && isspace(*(scanp-1)))
+        --scanp;
+    *scanp = 0;
+
+    DS::String result(startp);
+    delete[] strbuf;
+    return result;
 }
 
 DS::String DS::String::Format(const char* fmt, ... )
@@ -432,4 +464,13 @@ DS::String DS::String::FormatV(const char* fmt, va_list aptr)
         return result;
     }
     return DS::String(buffer);
+}
+
+DS::String DS::String::Steal(const char* buffer, ssize_t length)
+{
+    DS::String stolen;
+    if (length < 0)
+        length = tstrlen(buffer);
+    stolen.m_data = StringBuffer<chr8_t>(reinterpret_cast<const chr8_t*>(buffer), length);
+    return stolen;
 }

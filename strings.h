@@ -147,10 +147,12 @@ namespace DS
         String left(ssize_t length);
         String right(ssize_t length);
         String mid(size_t start, ssize_t length);
+        String strip(char comment = 0);
 
-        /* Formatting */
+        /* Creation */
         static String Format(const char* fmt, ...);
         static String FormatV(const char* fmt, va_list aptr);
+        static String Steal(const char* buffer, ssize_t length = -1);
 
     private:
         StringBuffer<chr8_t> m_data;
