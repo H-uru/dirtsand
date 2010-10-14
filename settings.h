@@ -43,6 +43,7 @@ namespace DS
         static DS::StringBuffer<chr16_t> FileServerAddress();
 
         static const char* DbHostname();
+        static const char* DbPort();
         static const char* DbUsername();
         static const char* DbPassword();
         static const char* DbDbaseName();

@@ -65,7 +65,7 @@ DS::String DS::Base64Encode(const uint8_t* data, size_t length)
     }
 
     result[resultLen] = 0;
-    return DS::String::Steal(result, resultLen);
+    return String::Steal(result, resultLen);
 }
 
 DS::Blob* DS::Base64Decode(const DS::String& value)
@@ -113,4 +113,50 @@ DS::Blob* DS::Base64Decode(const DS::String& value)
     }
 
     return new Blob(result, resultLen);
+}
+
+
+static char hex_digits[] = "0123456789ABCDEF";
+
+static int hex_codes[] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
+DS::String DS::HexEncode(const uint8_t* data, size_t length)
+{
+    size_t hexlen = length * 2;
+    char* buffer = new char[hexlen + 1];
+    const uint8_t* inp = data;
+    for (size_t i=0; i<hexlen; i += 2) {
+        buffer[i  ] = hex_digits[(*inp >> 4) & 0x0F];
+        buffer[i+1] = hex_digits[*inp & 0x0F];
+        ++inp;
+    }
+    buffer[hexlen] = 0;
+    return String::Steal(buffer, hexlen);
+}
+
+DS::Blob* DS::HexDecode(const String& value)
+{
+    DS_PASSERT((value.length() % 2) == 0);
+    size_t length = value.length() / 2;
+    if (length == 0)
+        return new Blob(0, 0);
+
+    uint8_t* buffer = new uint8_t[length];
+    const uint8_t* inp = reinterpret_cast<const uint8_t*>(value.c_str());
+    for (size_t i=0; i<length; ++i) {
+        DS_PASSERT(inp[0] < 0x80 && hex_codes[inp[0]] >= 0);
+        DS_PASSERT(inp[1] < 0x80 && hex_codes[inp[1]] >= 0);
+        buffer[i] = (hex_codes[inp[0]] << 4) | (hex_codes[inp[1]]);
+        inp += 2;
+    }
+    return new Blob(buffer, length);
 }

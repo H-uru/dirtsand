@@ -33,7 +33,7 @@ static struct
     DS::StringBuffer<chr16_t> m_fileServ;
 
     /* Database */
-    DS::String m_dbHostname, m_dbUsername, m_dbPassword, m_dbDbase;
+    DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
 } s_settings;
 
 #define DS_LOADBLOB(outbuffer, fixedsize, input) \
@@ -43,6 +43,9 @@ static struct
         memcpy(outbuffer, data->buffer(), fixedsize); \
         data->unref(); \
     }
+
+#define BUF_TO_UINT(bufptr) \
+    ((bufptr)[0] << 24) | ((bufptr)[1] << 16) | ((bufptr)[2] << 8) | (bufptr)[3]
 
 bool DS::Settings::LoadFrom(const char* filename)
 {
@@ -80,6 +83,28 @@ bool DS::Settings::LoadFrom(const char* filename)
                 DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_N], 64, params[1]);
             } else if (params[0] == "Key.Gate.K") {
                 DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_K], 64, params[1]);
+            } else if (params[0] == "Key.WDYS") {
+                Blob* data = HexDecode(params[1]);
+                DS_PASSERT(data->size() == 16);
+                s_settings.m_wdysKey[0] = BUF_TO_UINT(data->buffer()     );
+                s_settings.m_wdysKey[1] = BUF_TO_UINT(data->buffer() +  4);
+                s_settings.m_wdysKey[2] = BUF_TO_UINT(data->buffer() +  8);
+                s_settings.m_wdysKey[3] = BUF_TO_UINT(data->buffer() + 12);
+                data->unref();
+            } else if (params[0] == "File.Host") {
+                s_settings.m_fileServ = params[1].toUtf16();
+            } else if (params[0] == "Game.Host") {
+                s_settings.m_gameServ = params[1].toUtf16();
+            } else if (params[0] == "Db.Host") {
+                s_settings.m_dbHostname = params[1];
+            } else if (params[0] == "Db.Port") {
+                s_settings.m_dbPort = params[1];
+            } else if (params[0] == "Db.Username") {
+                s_settings.m_dbUsername = params[1];
+            } else if (params[0] == "Db.Password") {
+                s_settings.m_dbPassword = params[1];
+            } else if (params[0] == "Db.Database") {
+                s_settings.m_dbDbase = params[1];
             } else {
                 fprintf(stderr, "Warning: Unrecognized config parameter: %s\n", params[0].c_str());
             }
@@ -117,6 +142,11 @@ DS::StringBuffer<chr16_t> DS::Settings::FileServerAddress()
 const char* DS::Settings::DbHostname()
 {
     return s_settings.m_dbHostname.c_str();
+}
+
+const char* DS::Settings::DbPort()
+{
+    return s_settings.m_dbPort.c_str();
 }
 
 const char* DS::Settings::DbUsername()
