@@ -11,9 +11,12 @@ set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(Threads REQUIRED)
 find_package(Postgres REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}"
-                    "${CMAKE_SOURCE_DIR}/PlasMOUL")
+                    "${CMAKE_SOURCE_DIR}/PlasMOUL"
+                    "${POSTGRES_INCLUDE_DIR}"
+                    "${OPENSSL_INCLUDE_DIR}")
 
 set(PlasMOUL_SOURCES
     PlasMOUL/Key.cpp
@@ -27,6 +30,7 @@ set(dirtsand_SOURCES
     Types/Uuid.cpp
     NetIO/MsgChannel.cpp
     NetIO/SockIO.cpp
+    NetIO/CryptIO.cpp
     NetIO/Lobby.cpp
     strings.cpp
     streams.cpp
@@ -36,7 +40,8 @@ set(dirtsand_SOURCES
 )
 
 add_executable(dirtsand ${PlasMOUL_SOURCES} ${dirtsand_SOURCES})
-target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT} ${POSTGRES_LIBRARY})
+target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT} ${POSTGRES_LIBRARY}
+                               ${OPENSSL_CRYPTO_LIBRARIES})
 set_target_properties(dirtsand PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin")
 

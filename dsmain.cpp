@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "NetIO/Lobby.h"
+#include "NetIO/CryptIO.h"
 #include "strings.h"
 #include "errors.h"
 #include "settings.h"
@@ -51,17 +52,40 @@ int main(int argc, char* argv[])
                     DS::StopLobby();
                     DS::StartLobby();
                 } else {
-                    fprintf(stderr, "Error: Unrecognized service: %s\n", svc->c_str());
+                    fprintf(stderr, "Error: Service %s cannot be restarted\n", svc->c_str());
                 }
             }
         } else if (args[0] == "keygen") {
-            //
+            uint8_t xbuffer[64];
+            if (args.size() == 1) {
+                fprintf(stderr, "Error: No base key type specified\n");
+                continue;
+            }
+            if (args[1] == "auth") {
+                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
+                               DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
+                printf("Auth client keys:\n");
+                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N));
+            } else if (args[1] == "gate") {
+                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N),
+                               DS::Settings::CryptKey(DS::e_KeyGate_K), CRYPT_BASE_GATE);
+                printf("GateKeeper client keys:\n");
+                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N));
+            } else if (args[1] == "game") {
+                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N),
+                               DS::Settings::CryptKey(DS::e_KeyGame_K), CRYPT_BASE_GAME);
+                printf("Game client keys:\n");
+                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N));
+            } else {
+                fprintf(stderr, "Error: %s is not a valid key type\n", args[1].c_str());
+                continue;
+            }
         } else if (args[0] == "help") {
             printf("DirtSand v1.0 Console supported commands:\n"
                    "    help\n"
                    "    keygen <auth|gate|game>\n"
                    "    quit\n"
-                   "    restart <auth|gate|lobby>\n"
+                   "    restart <auth|lobby>\n"
                   );
         } else {
             fprintf(stderr, "Error: Unrecognized command: %s\n", args[0].c_str());
