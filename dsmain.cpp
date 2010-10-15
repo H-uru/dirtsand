@@ -17,6 +17,7 @@
 
 #include "NetIO/Lobby.h"
 #include "NetIO/CryptIO.h"
+#include "GateKeeper/GateServ.h"
 #include "strings.h"
 #include "errors.h"
 #include "settings.h"
@@ -31,6 +32,7 @@ int main(int argc, char* argv[])
     if (!DS::Settings::LoadFrom(argv[1]))
         return 1;
 
+    DS::GateKeeper_Init();
     DS::StartLobby();
 
     char cmdbuf[4096];
@@ -93,5 +95,6 @@ int main(int argc, char* argv[])
     }
 
     DS::StopLobby();
+    DS::GateKeeper_Shutdown();
     return 0;
 }

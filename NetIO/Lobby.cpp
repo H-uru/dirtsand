@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include "Lobby.h"
-
+#include "GateKeeper/GateServ.h"
 #include "Types/Uuid.h"
 #include "SockIO.h"
 #include "errors.h"
@@ -30,11 +30,6 @@ enum ConnType
     e_ConnCliToFile = 16,
     e_ConnCliToCsr = 20,
     e_ConnCliToGateKeeper = 22,
-};
-
-enum ConnectMsg
-{
-    e_CliToServConnect, e_ServToCliEncrypt, e_ServToCliError
 };
 
 struct ConnectionHeader
@@ -67,19 +62,17 @@ void* dm_lobby(void*)
                            sizeof(header.m_productId.m_bytes));
 
             if (header.m_connType == e_ConnCliToGateKeeper) {
-                fprintf(stderr, "[%s] Gate Keeper connection\n",
-                        DS::SockIpAddress(client).c_str());
-                DS::FreeSock(client);
+                DS::GateKeeper_Add(client);
             } else if (header.m_connType == e_ConnCliToFile) {
-                fprintf(stderr, "[%s] File server connection\n",
+                fprintf(stderr, "[%s] Unhandled file server connection\n",
                         DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
             } else if (header.m_connType == e_ConnCliToAuth) {
-                fprintf(stderr, "[%s] Auth server connection\n",
+                fprintf(stderr, "[%s] Unhandled auth server connection\n",
                         DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
             } else if (header.m_connType == e_ConnCliToGame) {
-                fprintf(stderr, "[%s] Game server connection\n",
+                fprintf(stderr, "[%s] Unhandled game server connection\n",
                         DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
             } else if (header.m_connType == e_ConnCliToCsr) {

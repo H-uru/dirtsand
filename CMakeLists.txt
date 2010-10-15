@@ -32,6 +32,7 @@ set(dirtsand_SOURCES
     NetIO/SockIO.cpp
     NetIO/CryptIO.cpp
     NetIO/Lobby.cpp
+    GateKeeper/GateServ.cpp
     strings.cpp
     streams.cpp
     settings.cpp

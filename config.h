@@ -31,13 +31,4 @@ typedef signed long long    sint64_t;
 typedef unsigned char       chr8_t;
 typedef unsigned short      chr16_t;
 
-typedef union
-{
-    uint32_t uint;
-    sint32_t sint;
-    chr8_t*  cstring;
-    chr16_t* wstring;
-    void*    data;
-} msgparm_t;
-
 #endif

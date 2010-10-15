@@ -128,6 +128,14 @@ namespace DS
         virtual bool atEof() { return m_position >= m_size; }
         virtual void flush() { }
 
+        void truncate()
+        {
+            m_size = 0;
+            m_position = 0;
+        }
+
+        const uint8_t* buffer() const { return m_buffer; }
+
     private:
         uint8_t* m_buffer;
         size_t m_position;

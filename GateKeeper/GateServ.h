@@ -15,41 +15,16 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_SOCKIO_H
-#define _DS_SOCKIO_H
+#ifndef _DS_GATESERV_H
+#define _DS_GATESERV_H
 
-#include "streams.h"
-#include <exception>
+#include "NetIO/SockIO.h"
 
 namespace DS
 {
-    typedef void* SocketHandle;
-
-    SocketHandle BindSocket(const char* address, const char* port);
-    void ListenSock(SocketHandle sock, int backlog = 10);
-    SocketHandle AcceptSock(SocketHandle sock);
-    void CloseSock(SocketHandle sock);
-    void FreeSock(SocketHandle sock);
-
-    String SockIpAddress(SocketHandle sock);
-
-    void SendBuffer(SocketHandle sock, const void* buffer, size_t size);
-    void RecvBuffer(SocketHandle sock, void* buffer, size_t size);
-
-    template <typename tp>
-    inline tp RecvValue(SocketHandle sock)
-    {
-        tp value;
-        RecvBuffer(sock, &value, sizeof(value));
-        return value;
-    }
-
-    class SockHup : public std::exception
-    {
-    public:
-        virtual const char* what() const throw()
-        { return "Socket closed"; }
-    };
+    void GateKeeper_Init();
+    void GateKeeper_Add(SocketHandle client);
+    void GateKeeper_Shutdown();
 }
 
 #endif

@@ -93,6 +93,11 @@ bool DS::Settings::LoadFrom(const char* filename)
                 data->unref();
             } else if (params[0] == "File.Host") {
                 s_settings.m_fileServ = params[1].toUtf16();
+                if (s_settings.m_fileServ.length() > 24) {
+                    fprintf(stderr, "Warning: The client has a limit of 24 chars for the File Server address...\n"
+                                    "    The configured address is %d chars long, which may cause problems!",
+                                    s_settings.m_fileServ.length());
+                }
             } else if (params[0] == "Game.Host") {
                 s_settings.m_gameServ = params[1].toUtf16();
             } else if (params[0] == "Db.Host") {

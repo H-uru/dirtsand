@@ -16,8 +16,27 @@
  ******************************************************************************/
 
 #include "CryptIO.h"
+#include <openssl/rand.h>
 #include <openssl/bn.h>
+#include <openssl/rc4.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include <cstdio>
+
+static void init_rand()
+{
+    static bool _rand_seeded = false;
+    if (!_rand_seeded) {
+        struct {
+            pid_t mypid;
+            timeval now;
+        } _random;
+        _random.mypid = getpid();
+        gettimeofday(&_random.now, 0);
+        RAND_seed(&_random, sizeof(_random));
+        _rand_seeded = true;
+    }
+}
 
 void DS::CryptCalcX(uint8_t* X, const uint8_t* N, const uint8_t* K, uint32_t base)
 {
@@ -79,4 +98,89 @@ void DS::PrintClientKeys(const uint8_t* X, const uint8_t* N)
     printf("    %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
            swapbuf[48], swapbuf[49], swapbuf[50], swapbuf[51], swapbuf[52], swapbuf[53], swapbuf[54], swapbuf[55],
            swapbuf[56], swapbuf[57], swapbuf[58], swapbuf[59], swapbuf[60], swapbuf[61], swapbuf[62], swapbuf[63]);
+}
+
+void DS::CryptEstablish(uint8_t* seed, uint8_t* key, const uint8_t* N,
+                        const uint8_t* K, uint8_t* Y)
+{
+    BIGNUM* bn_Y = BN_new();
+    BIGNUM* bn_N = BN_new();
+    BIGNUM* bn_K = BN_new();
+    BIGNUM* bn_seed = BN_new();
+    BN_CTX* ctx = BN_CTX_new();
+
+    /* Random 7-byte server seed */
+    init_rand();
+    RAND_bytes(reinterpret_cast<unsigned char*>(seed), 7);
+
+    /* client = Y ^ K % N */
+    BN_bin2bn(reinterpret_cast<const unsigned char*>(Y), 64, bn_Y);
+    BN_bin2bn(reinterpret_cast<const unsigned char*>(N), 64, bn_N);
+    BN_bin2bn(reinterpret_cast<const unsigned char*>(K), 64, bn_K);
+    BN_mod_exp(bn_seed, bn_Y, bn_K, bn_N, ctx);
+
+    /* Apply server seed for establishing crypt state with client */
+    uint8_t keybuf[64];
+    BN_bn2bin(bn_seed, reinterpret_cast<unsigned char*>(keybuf));
+    BYTE_SWAP_BUFFER(keybuf, 64);
+    for (size_t i=0; i<7; ++i)
+        key[i] = keybuf[i] ^ seed[i];
+
+    BN_free(bn_Y);
+    BN_free(bn_N);
+    BN_free(bn_K);
+    BN_free(bn_seed);
+    BN_CTX_free(ctx);
+}
+
+
+struct CryptState_Private
+{
+    RC4_KEY m_writeKey;
+    RC4_KEY m_readKey;
+};
+
+DS::CryptState DS::CryptStateInit(const uint8_t* key, size_t size)
+{
+    CryptState_Private* state = new CryptState_Private;
+    RC4_set_key(&state->m_readKey, size, key);
+    RC4_set_key(&state->m_writeKey, size, key);
+    return reinterpret_cast<CryptState>(state);
+}
+
+void DS::CryptStateFree(DS::CryptState state)
+{
+    delete reinterpret_cast<CryptState_Private*>(state);
+}
+
+void DS::CryptSendBuffer(DS::SocketHandle sock, DS::CryptState crypt,
+                         const void* buffer, size_t size)
+{
+    CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);
+    if (size > 4096) {
+        unsigned char* cryptbuf = new unsigned char[size];
+        RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), cryptbuf);
+        DS::SendBuffer(sock, cryptbuf, size);
+        delete[] cryptbuf;
+    } else {
+        unsigned char stack[4096];
+        RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), stack);
+        DS::SendBuffer(sock, stack, size);
+    }
+}
+
+void DS::CryptRecvBuffer(DS::SocketHandle sock, DS::CryptState crypt,
+                         void* buffer, size_t size)
+{
+    CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);
+    if (size > 4096) {
+        unsigned char* cryptbuf = new unsigned char[size];
+        DS::RecvBuffer(sock, cryptbuf, size);
+        RC4(&statep->m_readKey, size, cryptbuf, reinterpret_cast<unsigned char*>(buffer));
+        delete[] cryptbuf;
+    } else {
+        unsigned char stack[4096];
+        DS::RecvBuffer(sock, stack, size);
+        RC4(&statep->m_readKey, size, stack, reinterpret_cast<unsigned char*>(buffer));
+    }
 }
