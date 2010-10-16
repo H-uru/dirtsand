@@ -161,7 +161,9 @@ ssize_t DS::BufferStream::writeBytes(const void* buffer, size_t count)
 {
     if (m_position + count > m_alloc) {
         // Resize stream
-        size_t bigger = m_alloc ? m_alloc * 2 : 4096;
+        size_t bigger = m_alloc ? m_alloc : 4096;
+        while (m_position + count > bigger)
+            bigger *= 2;
         uint8_t* newbuffer = new uint8_t[bigger];
         memcpy(newbuffer, m_buffer, m_size);
         delete[] m_buffer;
