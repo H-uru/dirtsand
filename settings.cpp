@@ -32,6 +32,9 @@ static struct
     DS::StringBuffer<chr16_t> m_gameServ;
     DS::StringBuffer<chr16_t> m_fileServ;
 
+    /* Data locations */
+    DS::String m_fileRoot, m_authRoot;
+
     /* Database */
     DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
 } s_settings;
@@ -100,6 +103,14 @@ bool DS::Settings::LoadFrom(const char* filename)
                 }
             } else if (params[0] == "Game.Host") {
                 s_settings.m_gameServ = params[1].toUtf16();
+            } else if (params[0] == "File.Root") {
+                s_settings.m_fileRoot = params[1];
+                if (s_settings.m_fileRoot.right(1) != "/")
+                    s_settings.m_fileRoot += "/";
+            } else if (params[0] == "Auth.Root") {
+                s_settings.m_authRoot = params[1];
+                if (s_settings.m_authRoot.right(1) != "/")
+                    s_settings.m_authRoot += "/";
             } else if (params[0] == "Db.Host") {
                 s_settings.m_dbHostname = params[1];
             } else if (params[0] == "Db.Port") {
@@ -111,7 +122,8 @@ bool DS::Settings::LoadFrom(const char* filename)
             } else if (params[0] == "Db.Database") {
                 s_settings.m_dbDbase = params[1];
             } else {
-                fprintf(stderr, "Warning: Unrecognized config parameter: %s\n", params[0].c_str());
+                fprintf(stderr, "Warning: Unknown setting '%s' ignored\n",
+                        params[0].c_str());
             }
         }
     } catch (DS::AssertException ex) {
@@ -142,6 +154,16 @@ DS::StringBuffer<chr16_t> DS::Settings::GameServerAddress()
 DS::StringBuffer<chr16_t> DS::Settings::FileServerAddress()
 {
     return s_settings.m_fileServ;
+}
+
+DS::String DS::Settings::FileRoot()
+{
+    return s_settings.m_fileRoot;
+}
+
+DS::String DS::Settings::AuthRoot()
+{
+    return s_settings.m_authRoot;
 }
 
 const char* DS::Settings::DbHostname()

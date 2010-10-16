@@ -33,6 +33,8 @@ set(dirtsand_SOURCES
     NetIO/CryptIO.cpp
     NetIO/Lobby.cpp
     GateKeeper/GateServ.cpp
+    FileServ/FileManifest.cpp
+    FileServ/FileServer.cpp
     strings.cpp
     streams.cpp
     settings.cpp

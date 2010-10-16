@@ -280,7 +280,7 @@ DS::String& DS::String::operator+=(const String& other)
     return *this;
 }
 
-int DS::String::compare(const char* strconst, CaseSensitivity cs)
+int DS::String::compare(const char* strconst, CaseSensitivity cs) const
 {
     if (isEmpty())
         return (!strconst || *strconst == 0) ? 0 : -1;
@@ -292,7 +292,7 @@ int DS::String::compare(const char* strconst, CaseSensitivity cs)
         return strcasecmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string), strconst);
 }
 
-int DS::String::compare(const String& other, CaseSensitivity cs)
+int DS::String::compare(const String& other, CaseSensitivity cs) const
 {
     if (isEmpty())
         return other.isEmpty() ? 0 : -1;
@@ -381,6 +381,43 @@ DS::String DS::String::FromUtf16(const chr16_t* string, ssize_t length)
     return result;
 }
 
+sint32_t DS::String::toInt(int base) const
+{
+    if (isEmpty())
+        return 0;
+    return static_cast<sint32_t>(strtol(c_str(), 0, base));
+}
+
+uint32_t DS::String::toUint(int base) const
+{
+    if (isEmpty())
+        return 0;
+    return static_cast<uint32_t>(strtoul(c_str(), 0, base));
+}
+
+float DS::String::toFloat() const
+{
+    if (isEmpty())
+        return 0;
+    return strtof(c_str(), 0);
+}
+
+double DS::String::toDouble() const
+{
+    if (isEmpty())
+        return 0;
+    return strtod(c_str(), 0);
+}
+
+bool DS::String::toBool() const
+{
+    if (isEmpty())
+        return false;
+    if (compare("true", e_CaseInsensitive) == 0)
+        return true;
+    return toInt() != 0;
+}
+
 std::vector<DS::String> DS::String::split(char separator, ssize_t max)
 {
     if (isEmpty())
@@ -405,6 +442,59 @@ std::vector<DS::String> DS::String::split(char separator, ssize_t max)
     }
     subs.push_back(DS::String::FromUtf8(cptr));
     return std::vector<DS::String>(subs.begin(), subs.end());
+}
+
+DS::String DS::String::left(ssize_t count)
+{
+    if (count < 0) {
+        count += length();
+        if (count < 0)
+            return String();
+    }
+    if (static_cast<size_t>(count) >= length())
+        return *this;
+
+    chr8_t* trimbuf = new chr8_t[count+1];
+    memcpy(trimbuf, m_data.data(), count);
+    trimbuf[count] = 0;
+    String result;
+    result.m_data = StringBuffer<chr8_t>(trimbuf, count);
+    return result;
+}
+
+DS::String DS::String::right(ssize_t count)
+{
+    if (count < 0) {
+        count += length();
+        if (count < 0)
+            return String();
+    }
+    if (static_cast<size_t>(count) >= length())
+        return *this;
+
+    chr8_t* trimbuf = new chr8_t[count+1];
+    memcpy(trimbuf, m_data.data() + m_data.length() - count, count);
+    trimbuf[count] = 0;
+    String result;
+    result.m_data = StringBuffer<chr8_t>(trimbuf, count);
+    return result;
+}
+
+DS::String DS::String::mid(size_t start, ssize_t count)
+{
+    if (count < 0)
+        count = length() - start;
+    if (static_cast<size_t>(count) >= length())
+        return *this;
+    if (start >= length())
+        return String();
+
+    chr8_t* trimbuf = new chr8_t[count+1];
+    memcpy(trimbuf, m_data.data() + start, count);
+    trimbuf[count] = 0;
+    String result;
+    result.m_data = StringBuffer<chr8_t>(trimbuf, count);
+    return result;
 }
 
 DS::String DS::String::strip(char comment)
@@ -439,6 +529,20 @@ DS::String DS::String::strip(char comment)
     return result;
 }
 
+ssize_t DS::String::find(const char* substr, ssize_t start)
+{
+    DS_DASSERT(substr);
+    DS_DASSERT(start >= 0);
+    size_t sublen = strlen(substr);
+
+    while (start + sublen <= length()) {
+        if (strncmp(reinterpret_cast<const char*>(m_data.data()) + start, substr, sublen) == 0)
+            return start;
+        ++start;
+    }
+    return -1;
+}
+
 DS::String DS::String::Format(const char* fmt, ... )
 {
     va_list aptr;
@@ -459,9 +563,7 @@ DS::String DS::String::FormatV(const char* fmt, va_list aptr)
         va_copy(aptr, aptr_save);
         char* bigbuf = new char[chars+1];
         vsnprintf(bigbuf, chars+1, fmt, aptr);
-        DS::String result(bigbuf);
-        delete[] bigbuf;
-        return result;
+        return Steal(bigbuf);
     }
     return DS::String(buffer);
 }

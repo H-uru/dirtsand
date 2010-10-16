@@ -109,17 +109,17 @@ namespace DS
             return *this;
         }
 
-        bool operator==(const char* strconst) { return compare(strconst) == 0; }
-        bool operator==(const String& other) { return compare(other) == 0; }
-        bool operator!=(const char* strconst) { return !operator==(strconst); }
-        bool operator!=(const String& other) { return !operator==(other); }
+        bool operator==(const char* strconst) const { return compare(strconst) == 0; }
+        bool operator==(const String& other) const { return compare(other) == 0; }
+        bool operator!=(const char* strconst) const { return !operator==(strconst); }
+        bool operator!=(const String& other) const { return !operator==(other); }
         String& operator+=(const char* strconst);
         String& operator+=(const String& other);
-        String operator+(const char* strconst) { return String(*this) += strconst; }
-        String operator+(const String& other) { return String(*this) += other; }
+        String operator+(const char* strconst) const { return String(*this) += strconst; }
+        String operator+(const String& other) const { return String(*this) += other; }
 
-        int compare(const char* strconst, CaseSensitivity cs = e_CaseSensitive);
-        int compare(const String& other, CaseSensitivity cs = e_CaseSensitive);
+        int compare(const char* strconst, CaseSensitivity cs = e_CaseSensitive) const;
+        int compare(const String& other, CaseSensitivity cs = e_CaseSensitive) const;
 
         size_t length() const { return m_data.length(); }
         const char* c_str() const { return reinterpret_cast<const char*>(m_data.data()); }
@@ -136,7 +136,7 @@ namespace DS
 
         String toUpper() const;
         String toLower() const;
-        int32_t toInt(int base = 0) const;
+        sint32_t toInt(int base = 0) const;
         uint32_t toUint(int base = 0) const;
         float toFloat() const;
         double toDouble() const;
@@ -146,8 +146,10 @@ namespace DS
         std::vector<String> split(char separator = 0, ssize_t max = -1);
         String left(ssize_t length);
         String right(ssize_t length);
-        String mid(size_t start, ssize_t length);
+        String mid(size_t start, ssize_t length = -1);
         String strip(char comment = 0);
+
+        ssize_t find(const char* substr, ssize_t start = 0);
 
         /* Creation */
         static String Format(const char* fmt, ...);

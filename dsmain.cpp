@@ -18,9 +18,11 @@
 #include "NetIO/Lobby.h"
 #include "NetIO/CryptIO.h"
 #include "GateKeeper/GateServ.h"
+#include "FileServ/FileServer.h"
 #include "strings.h"
 #include "errors.h"
 #include "settings.h"
+#include <signal.h>
 #include <cstdio>
 
 int main(int argc, char* argv[])
@@ -32,6 +34,10 @@ int main(int argc, char* argv[])
     if (!DS::Settings::LoadFrom(argv[1]))
         return 1;
 
+    // Ignore sigpipe and force send() to return EPIPE
+    signal(SIGPIPE, SIG_IGN);
+
+    DS::FileServer_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
 
@@ -96,5 +102,6 @@ int main(int argc, char* argv[])
 
     DS::StopLobby();
     DS::GateKeeper_Shutdown();
+    DS::FileServer_Shutdown();
     return 0;
 }

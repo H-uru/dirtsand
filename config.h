@@ -31,4 +31,30 @@ typedef signed long long    sint64_t;
 typedef unsigned char       chr8_t;
 typedef unsigned short      chr16_t;
 
+namespace DS
+{
+    enum NetResultCode
+    {
+        e_NetPending = -1,
+        e_NetSuccess = 0, e_NetInternalError, e_NetTimeout, e_NetBadServerData,
+        e_NetAgeNotFound, e_NetConnectFailed, e_NetDisconnected,
+        e_NetFileNotFound, e_NetOldBuildId, e_NetRemoteShutdown,
+        e_NetTimeoutOdbc, e_NetAccountAlreadyExists, e_NetPlayerAlreadyExists,
+        e_NetAccountNotFound, e_NetPlayerNotFound, e_NetInvalidParameter,
+        e_NetNameLookupFailed, e_NetLoggedInElsewhere, e_NetVaultNodeNotFound,
+        e_NetMaxPlayersOnAcct, e_NetAuthenticationFailed,
+        e_NetStateObjectNotFound, e_NetLoginDenied, e_NetCircularReference,
+        e_NetAccountNotActivated, e_NetKeyAlreadyUsed, e_NetKeyNotFound,
+        e_NetActivationCodeNotFound, e_NetPlayerNameInvalid,
+        e_NetNotSupported, e_NetServiceForbidden, e_NetAuthTokenTooOld,
+        e_NetMustUseGameTapClient, e_NetTooManyFailedLogins,
+        e_NetGameTapConnectionFailed, e_NetGTTooManyAuthOptions,
+        e_NetGTMissingParameter, e_NetGTServerError, e_NetAccountBanned,
+        e_NetKickedByCCR, e_NetScoreWrongType, e_NetScoreNotEnoughPoints,
+        e_NetScoreAlreadyExists, e_NetScoreNoDataFound,
+        e_NetInviteNoMatchingPlayer, e_NetInviteTooManyHoods, e_NetNeedToPay,
+        e_NetServerBusy
+    };
+}
+
 #endif

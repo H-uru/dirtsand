@@ -15,48 +15,36 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_SETTINGS_H
-#define _DS_SETTINGS_H
+#ifndef _DS_FILEMANIFEST_H
+#define _DS_FILEMANIFEST_H
 
-#include "strings.h"
-
-#define CRYPT_BASE_AUTH (41)
-#define CRYPT_BASE_GAME (73)
-#define CRYPT_BASE_GATE (4)
-
-#define CLIENT_BUILD_ID   (893)
-#define CLIENT_BUILD_TYPE (50)
-#define CLIENT_BRANCH_ID  (1)
-#define CLIENT_PRODUCT_ID "ea489821-6c35-4bd0-9dae-bb17c585e680"
+#include "streams.h"
+#include <list>
 
 namespace DS
 {
-    enum KeyType
+    struct FileInfo
     {
-        e_KeyGate_N, e_KeyGate_K, e_KeyAuth_N, e_KeyAuth_K, e_KeyGame_N,
-        e_KeyGame_K, e_KeyMaxTypes
+        String m_filename, m_downloadName;
+        chr16_t m_fileHash[32], m_downloadHash[32];
+        uint32_t m_fileSize, m_downloadSize;
+        uint32_t m_flags;
     };
 
-    namespace Settings
+    class FileManifest
     {
-        const uint8_t* CryptKey(KeyType key);
-        const uint32_t* WdysKey();
+    public:
+        FileManifest() { }
+        ~FileManifest();
 
-        // Optimized for throwing onto the network
-        DS::StringBuffer<chr16_t> GameServerAddress();
-        DS::StringBuffer<chr16_t> FileServerAddress();
+        NetResultCode loadManifest(const char* filename);
+        uint32_t encodeToStream(DS::Stream* stream);
 
-        DS::String FileRoot();
-        DS::String AuthRoot();
+        size_t fileCount() const { return m_files.size(); }
 
-        const char* DbHostname();
-        const char* DbPort();
-        const char* DbUsername();
-        const char* DbPassword();
-        const char* DbDbaseName();
-
-        bool LoadFrom(const char* filename);
-    }
+    private:
+        std::list<FileInfo*> m_files;
+    };
 }
 
 #endif

@@ -32,8 +32,8 @@ struct GateKeeper_Private
     DS::BufferStream m_buffer;
 };
 
-std::list<GateKeeper_Private*> s_clients;
-pthread_mutex_t s_clientMutex;
+static std::list<GateKeeper_Private*> s_clients;
+static pthread_mutex_t s_clientMutex;
 
 enum GateKeeper_MsgIds
 {
@@ -49,7 +49,8 @@ enum GateKeeper_MsgIds
     client.m_buffer.write<uint16_t>(msgId)
 
 #define SEND_REPLY() \
-    DS::CryptSendBuffer(client.m_sock, client.m_crypt, client.m_buffer.buffer(), client.m_buffer.size())
+    DS::CryptSendBuffer(client.m_sock, client.m_crypt, \
+                        client.m_buffer.buffer(), client.m_buffer.size())
 
 void gate_init(GateKeeper_Private& client)
 {

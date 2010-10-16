@@ -17,6 +17,7 @@
 
 #include "Lobby.h"
 #include "GateKeeper/GateServ.h"
+#include "FileServ/FileServer.h"
 #include "Types/Uuid.h"
 #include "SockIO.h"
 #include "errors.h"
@@ -64,9 +65,7 @@ void* dm_lobby(void*)
             if (header.m_connType == e_ConnCliToGateKeeper) {
                 DS::GateKeeper_Add(client);
             } else if (header.m_connType == e_ConnCliToFile) {
-                fprintf(stderr, "[%s] Unhandled file server connection\n",
-                        DS::SockIpAddress(client).c_str());
-                DS::FreeSock(client);
+                DS::FileServer_Add(client);
             } else if (header.m_connType == e_ConnCliToAuth) {
                 fprintf(stderr, "[%s] Unhandled auth server connection\n",
                         DS::SockIpAddress(client).c_str());

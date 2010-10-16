@@ -148,6 +148,8 @@ void DS::SendBuffer(DS::SocketHandle sock, const void* buffer, size_t size)
 {
     ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, size, 0);
+    if (bytes < 0 && errno == EPIPE)
+        throw DS::SockHup();
     DS_PASSERT(static_cast<size_t>(bytes) == size);
 }
 
