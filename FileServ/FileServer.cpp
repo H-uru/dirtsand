@@ -24,8 +24,6 @@
 #include <list>
 #include <map>
 
-#define CHUNK_SIZE (0x8000)
-
 struct FileServer_Private
 {
     DS::SocketHandle m_sock;
@@ -169,41 +167,6 @@ void cb_manifestAck(FileServer_Private& client)
     DS::RecvValue<uint32_t>(client.m_sock);     // Reader ID
 }
 
-void cb_downloadNext(FileServer_Private& client)
-{
-    START_REPLY(e_FileToCli_FileDownloadReply);
-
-    // Trans ID
-    client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
-
-    uint32_t readerId = DS::RecvValue<uint32_t>(client.m_sock);
-    std::map<uint32_t, DS::Stream*>::iterator fi = client.m_downloads.find(readerId);
-    if (fi == client.m_downloads.end()) {
-        // The last chunk was already sent, we don't care anymore
-        return;
-    }
-
-    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
-    client.m_buffer.write<uint32_t>(fi->first);
-    client.m_buffer.write<uint32_t>(fi->second->size());
-
-    uint8_t data[CHUNK_SIZE];
-    size_t bytesLeft = fi->second->size() - fi->second->tell();
-    if (bytesLeft > CHUNK_SIZE) {
-        client.m_buffer.write<uint32_t>(CHUNK_SIZE);
-        fi->second->readBytes(data, CHUNK_SIZE);
-        client.m_buffer.writeBytes(data, CHUNK_SIZE);
-    } else {
-        client.m_buffer.write<uint32_t>(bytesLeft);
-        fi->second->readBytes(data, bytesLeft);
-        client.m_buffer.writeBytes(data, bytesLeft);
-        delete fi->second;
-        client.m_downloads.erase(fi);
-    }
-
-    SEND_REPLY();
-}
-
 void cb_downloadStart(FileServer_Private& client)
 {
     START_REPLY(e_FileToCli_FileDownloadReply);
@@ -267,6 +230,41 @@ void cb_downloadStart(FileServer_Private& client)
         stream->readBytes(data, stream->size());
         client.m_buffer.writeBytes(data, stream->size());
         delete stream;
+    }
+
+    SEND_REPLY();
+}
+
+void cb_downloadNext(FileServer_Private& client)
+{
+    START_REPLY(e_FileToCli_FileDownloadReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
+
+    uint32_t readerId = DS::RecvValue<uint32_t>(client.m_sock);
+    std::map<uint32_t, DS::Stream*>::iterator fi = client.m_downloads.find(readerId);
+    if (fi == client.m_downloads.end()) {
+        // The last chunk was already sent, we don't care anymore
+        return;
+    }
+
+    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
+    client.m_buffer.write<uint32_t>(fi->first);
+    client.m_buffer.write<uint32_t>(fi->second->size());
+
+    uint8_t data[CHUNK_SIZE];
+    size_t bytesLeft = fi->second->size() - fi->second->tell();
+    if (bytesLeft > CHUNK_SIZE) {
+        client.m_buffer.write<uint32_t>(CHUNK_SIZE);
+        fi->second->readBytes(data, CHUNK_SIZE);
+        client.m_buffer.writeBytes(data, CHUNK_SIZE);
+    } else {
+        client.m_buffer.write<uint32_t>(bytesLeft);
+        fi->second->readBytes(data, bytesLeft);
+        client.m_buffer.writeBytes(data, bytesLeft);
+        delete fi->second;
+        client.m_downloads.erase(fi);
     }
 
     SEND_REPLY();

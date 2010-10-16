@@ -47,6 +47,9 @@ namespace DS
     class SockHup : public std::exception
     {
     public:
+        SockHup() throw() { }
+        virtual ~SockHup() throw() { }
+
         virtual const char* what() const throw()
         { return "Socket closed"; }
     };
