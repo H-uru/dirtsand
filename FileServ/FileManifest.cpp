@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "FileManifest.h"
+#include "errors.h"
 #include <cstdio>
 
 DS::FileManifest::~FileManifest()
@@ -100,5 +101,6 @@ uint32_t DS::FileManifest::encodeToStream(DS::Stream* stream)
     }
     stream->write<uint16_t>(0);
 
-    return stream->tell() - start;
+    DS_DASSERT((stream->tell() - start) % sizeof(chr16_t) == 0);
+    return (stream->tell() - start) / sizeof(chr16_t);
 }

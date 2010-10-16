@@ -174,7 +174,7 @@ void* wk_gateKeeper(void* sockp)
                 fprintf(stderr, "[GateKeeper] Got invalid message ID %d from %s\n",
                         msgId, DS::SockIpAddress(client.m_sock).c_str());
                 DS::CloseSock(client.m_sock);
-                break;
+                throw DS::SockHup();
             }
         }
     } catch (DS::AssertException ex) {

@@ -136,7 +136,6 @@ void cb_manifest(FileServer_Private& client)
         client.m_buffer.write<uint32_t>(0);     // File count
         client.m_buffer.write<uint32_t>(0);     // Data packet size
     } else {
-        fprintf(stderr, "[File] Sending manifest for %s\n", mfsname.c_str());
         client.m_buffer.write<uint32_t>(++client.m_readerId);
         client.m_buffer.write<uint32_t>(manifest.fileCount());
         uint32_t sizeLocation = client.m_buffer.tell();
@@ -147,6 +146,13 @@ void cb_manifest(FileServer_Private& client)
     }
 
     SEND_REPLY();
+}
+
+void cb_manifestAck(FileServer_Private& client)
+{
+    /* This is TCP, nobody cares about this ack... */
+    DS::RecvValue<uint32_t>(client.m_sock);     // Trans ID
+    DS::RecvValue<uint32_t>(client.m_sock);     // Reader ID
 }
 
 void* wk_fileServ(void* sockp)
@@ -175,11 +181,11 @@ void* wk_fileServ(void* sockp)
             case e_CliToFile_ManifestRequest:
                 cb_manifest(client);
                 break;
+            case e_CliToFile_ManifestEntryAck:
+                cb_manifestAck(client);
+                break;
             //case e_CliToFile_DownloadRequest:
             //    cb_downloadStart(client);
-            //    break;
-            //case e_CliToFile_ManifestEntryAck:
-            //    cb_manifestAck(client);
             //    break;
             //case e_CliToFile_DownloadChunkAck:
             //    cb_downloadNext(client);
@@ -189,7 +195,7 @@ void* wk_fileServ(void* sockp)
                 fprintf(stderr, "[File] Got invalid message ID %d from %s\n",
                         msgId, DS::SockIpAddress(client.m_sock).c_str());
                 DS::CloseSock(client.m_sock);
-                break;
+                throw DS::SockHup();
             }
         }
     } catch (DS::AssertException ex) {
