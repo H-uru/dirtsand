@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
                 printf("Key.Game.N = %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
                 printf("Key.Game.K = %s\n", DS::Base64Encode(kbuffer[1], 64).c_str());
                 printf("Key.Gate.N = %s\n", DS::Base64Encode(nbuffer[2], 64).c_str());
-                printf("Key.Auth.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
+                printf("Key.Gate.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
 
                 printf("Auth client keys:\n");
                 DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
