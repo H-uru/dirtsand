@@ -64,6 +64,21 @@ namespace DS
         CryptRecvBuffer(sock, crypt, &value, sizeof(value));
         return value;
     }
+
+    inline DS::String CryptRecvString(const SocketHandle sock, CryptState crypt)
+    {
+        uint16_t length = CryptRecvValue<uint16_t>(sock, crypt);
+        chr16_t* buffer = new chr16_t[length];
+        try {
+            CryptRecvBuffer(sock, crypt, buffer, length * sizeof(chr16_t));
+        } catch (...) {
+            delete[] buffer;
+            throw;
+        }
+        String result = String::FromUtf16(buffer, length);
+        delete[] buffer;
+        return result;
+    }
 }
 
 #endif

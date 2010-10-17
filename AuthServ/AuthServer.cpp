@@ -21,6 +21,8 @@
 #include "errors.h"
 #include <openssl/rand.h>
 
+extern bool s_commdebug;
+
 std::list<AuthServer_Private*> s_authClients;
 pthread_mutex_t s_authClientMutex;
 
@@ -167,6 +169,25 @@ void cb_register(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_login(AuthServer_Private& client)
+{
+    Auth_LoginInfo* msg = new Auth_LoginInfo();
+    msg->m_client = &client;
+
+    try {
+        msg->m_transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+        msg->m_clientChallenge = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+        msg->m_acctName = DS::CryptRecvString(client.m_sock, client.m_crypt);
+        DS::CryptRecvBuffer(client.m_sock, client.m_crypt, msg->m_passHash, 20);
+        msg->m_token = DS::CryptRecvString(client.m_sock, client.m_crypt);
+        msg->m_os = DS::CryptRecvString(client.m_sock, client.m_crypt);
+        AuthDaemon_SendMessage(e_AuthClientLogin, reinterpret_cast<void*>(msg));
+    } catch (...) {
+        delete msg;
+        throw;
+    }
+}
+
 void* wk_authWorker(void* sockp)
 {
     AuthServer_Private client;
@@ -188,6 +209,9 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_ClientRegisterRequest:
                 cb_register(client);
+                break;
+            case e_CliToAuth_AcctLoginRequest:
+                cb_login(client);
                 break;
             default:
                 /* Invalid message */
@@ -229,6 +253,11 @@ void DS::AuthServer_Init()
 
 void DS::AuthServer_Add(DS::SocketHandle client)
 {
+#ifdef DEBUG
+    if (s_commdebug)
+        printf("Connecting AUTH on %s\n", DS::SockIpAddress(client).c_str());
+#endif
+
     pthread_t threadh;
     pthread_create(&threadh, 0, &wk_authWorker, reinterpret_cast<void*>(client));
     pthread_detach(threadh);

@@ -20,8 +20,14 @@
 #include <openssl/bn.h>
 #include <openssl/rc4.h>
 #include <sys/time.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <cstdio>
+
+#ifdef DEBUG
+bool s_commdebug = false;
+pthread_mutex_t s_commdebug_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 static void init_rand()
 {
@@ -178,6 +184,22 @@ void DS::CryptStateFree(DS::CryptState state)
 void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
                          const void* buffer, size_t size)
 {
+#ifdef DEBUG
+    if (s_commdebug) {
+        pthread_mutex_lock(&s_commdebug_mutex);
+        printf("SEND TO %s", DS::SockIpAddress(sock).c_str());
+        for (size_t i=0; i<size; ++i) {
+            if ((i % 16) == 0)
+                printf("\n    ");
+            else if ((i % 16) == 8)
+                printf("   ");
+            printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
+        }
+        printf("\n");
+        pthread_mutex_unlock(&s_commdebug_mutex);
+    }
+#endif
+
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);
     if (size > 4096) {
         unsigned char* cryptbuf = new unsigned char[size];
@@ -205,4 +227,20 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         DS::RecvBuffer(sock, stack, size);
         RC4(&statep->m_readKey, size, stack, reinterpret_cast<unsigned char*>(buffer));
     }
+
+#ifdef DEBUG
+    if (s_commdebug) {
+        pthread_mutex_lock(&s_commdebug_mutex);
+        printf("RECV FROM %s", DS::SockIpAddress(sock).c_str());
+        for (size_t i=0; i<size; ++i) {
+            if ((i % 16) == 0)
+                printf("\n    ");
+            else if ((i % 16) == 8)
+                printf("   ");
+            printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
+        }
+        printf("\n");
+        pthread_mutex_unlock(&s_commdebug_mutex);
+    }
+#endif
 }

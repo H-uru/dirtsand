@@ -52,6 +52,13 @@ static void* get_in_addr(SocketHandle_Private* sock)
     return &sock->m_in6addr.sin6_addr;
 }
 
+static uint16_t get_in_port(SocketHandle_Private* sock)
+{
+    if (sock->m_addr.sa_family == AF_INET)
+        return ntohs(sock->m_in4addr.sin_port);
+    return ntohs(sock->m_in6addr.sin6_port);
+}
+
 DS::SocketHandle DS::BindSocket(const char* address, const char* port)
 {
     int result;
@@ -141,11 +148,14 @@ DS::String DS::SockIpAddress(const DS::SocketHandle sock)
     char addrbuf[256];
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
     inet_ntop(sockp->m_addr.sa_family, get_in_addr(sockp), addrbuf, 256);
-    return DS::String(addrbuf);
+    return String::Format("%s/%u", addrbuf, get_in_port(sockp));
 }
 
 void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size)
 {
+    if (size == 0)
+        return;
+
     ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, size, 0);
     if (bytes < 0 && errno == EPIPE)
@@ -155,6 +165,9 @@ void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size
 
 void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
 {
+    if (size == 0)
+        return;
+
     ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, size, 0);
     if (bytes < 0 && errno == ECONNRESET)

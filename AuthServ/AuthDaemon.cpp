@@ -17,8 +17,10 @@
 
 #include "AuthServer_Private.h"
 #include "NetIO/MsgChannel.h"
+#include "encodings.h"
 #include "settings.h"
 #include "errors.h"
+#include <postgres.h>
 #include <unistd.h>
 
 pthread_t s_authDaemonThread;
@@ -52,15 +54,27 @@ void dm_auth_shutdown()
     pthread_mutex_destroy(&s_authClientMutex);
 }
 
+void dm_auth_login(Auth_LoginInfo* info)
+{
+    printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
+           info->m_acctName.c_str(), DS::HexEncode(info->m_passHash, 20).c_str(),
+           info->m_token.c_str(), info->m_os.c_str());
+    DS::CloseSock(info->m_client->m_sock);
+}
+
 void* dm_authDaemon(void*)
 {
     for ( ;; ) {
         try {
             DS::FifoMessage msg = s_authChannel.getMessage();
             switch (msg.m_messageType) {
-            case DS::e_AuthShutdown:
+            case e_AuthShutdown:
                 dm_auth_shutdown();
                 return 0;
+            case e_AuthClientLogin:
+                dm_auth_login(reinterpret_cast<Auth_LoginInfo*>(msg.m_payload));
+                delete reinterpret_cast<Auth_LoginInfo*>(msg.m_payload);
+                break;
             default:
                 /* Invalid message...  This shouldn't happen */
                 DS_DASSERT(0);
@@ -75,7 +89,7 @@ void* dm_authDaemon(void*)
     return 0;
 }
 
-void DS::AuthDaemon_SendMessage(int msg, void* data)
+void AuthDaemon_SendMessage(int msg, void* data)
 {
     s_authChannel.putMessage(msg, data);
 }

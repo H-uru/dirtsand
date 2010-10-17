@@ -27,6 +27,10 @@
 #include <signal.h>
 #include <cstdio>
 
+#ifdef DEBUG
+extern bool s_commdebug;
+#endif
+
 int main(int argc, char* argv[])
 {
     if (argc == 1) {
@@ -118,8 +122,22 @@ int main(int argc, char* argv[])
                 fprintf(stderr, "Error: %s is not a valid key type\n", args[1].c_str());
                 continue;
             }
+        } else if (args[0] == "commdebug") {
+#ifdef DEBUG
+            if (args.size() != 2)
+                fprintf(stderr, "Error: Must specify on or off\n");
+            else if (args[1] == "on")
+                s_commdebug = true;
+            else if (args[1] == "off")
+                s_commdebug = false;
+            else
+                fprintf(stderr, "Error: must specify on or off\n");
+#else
+            fprintf(stderr, "Error: COMM debugging is only enabled in debug builds\n");
+#endif
         } else if (args[0] == "help") {
             printf("DirtSand v1.0 Console supported commands:\n"
+                   "    commdebug <on|off>\n"
                    "    help\n"
                    "    keygen [auth|game|gate]\n"
                    "    quit\n"

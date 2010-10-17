@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <list>
 
+extern bool s_commdebug;
+
 struct GateKeeper_Private
 {
     DS::SocketHandle m_sock;
@@ -206,6 +208,11 @@ void DS::GateKeeper_Init()
 
 void DS::GateKeeper_Add(DS::SocketHandle client)
 {
+#ifdef DEBUG
+    if (s_commdebug)
+        printf("Connecting GATE on %s\n", DS::SockIpAddress(client).c_str());
+#endif
+
     pthread_t threadh;
     pthread_create(&threadh, 0, &wk_gateKeeper, reinterpret_cast<void*>(client));
     pthread_detach(threadh);

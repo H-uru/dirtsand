@@ -41,6 +41,20 @@ void dm_auth_init();
 
 enum AuthDaemonMessages
 {
-    e_AuthShutdown,
+    e_AuthShutdown, e_AuthClientLogin,
 };
 void AuthDaemon_SendMessage(int msg, void* data = 0);
+
+struct Auth_ClientMessage
+{
+    AuthServer_Private* m_client;
+    uint32_t m_transId;
+};
+
+struct Auth_LoginInfo : public Auth_ClientMessage
+{
+    uint32_t m_clientChallenge;
+    DS::String m_acctName;
+    uint8_t m_passHash[20];
+    DS::String m_token, m_os;
+};
