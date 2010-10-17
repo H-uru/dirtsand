@@ -136,7 +136,7 @@ namespace DS
 
         String toUpper() const;
         String toLower() const;
-        sint32_t toInt(int base = 0) const;
+        int32_t toInt(int base = 0) const;
         uint32_t toUint(int base = 0) const;
         float toFloat() const;
         double toDouble() const;

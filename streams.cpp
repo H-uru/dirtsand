@@ -177,7 +177,7 @@ ssize_t DS::BufferStream::writeBytes(const void* buffer, size_t count)
     return count;
 }
 
-void DS::BufferStream::seek(sint32_t offset, int whence)
+void DS::BufferStream::seek(int32_t offset, int whence)
 {
     if (whence == SEEK_SET)
         m_position = offset;
@@ -186,7 +186,7 @@ void DS::BufferStream::seek(sint32_t offset, int whence)
     else if (whence == SEEK_END)
         m_position = m_size - offset;
 
-    DS_PASSERT(static_cast<sint32_t>(m_position) >= 0 && m_position <= m_size);
+    DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_size);
 }
 
 
@@ -204,7 +204,7 @@ ssize_t DS::BlobStream::writeBytes(const void* buffer, size_t count)
     throw FileIOException("Cannot write to read-only stream");
 }
 
-void DS::BlobStream::seek(sint32_t offset, int whence)
+void DS::BlobStream::seek(int32_t offset, int whence)
 {
     if (whence == SEEK_SET)
         m_position = offset;
@@ -213,5 +213,5 @@ void DS::BlobStream::seek(sint32_t offset, int whence)
     else if (whence == SEEK_END)
         m_position = m_blob->size() - offset;
 
-    DS_PASSERT(static_cast<sint32_t>(m_position) >= 0 && m_position <= m_blob->size());
+    DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_blob->size());
 }
