@@ -29,6 +29,8 @@
 #define CLIENT_BRANCH_ID  (1)
 #define CLIENT_PRODUCT_ID "ea489821-6c35-4bd0-9dae-bb17c585e680"
 
+#define CHUNK_SIZE (0x8000)
+
 namespace DS
 {
     enum KeyType

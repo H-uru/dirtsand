@@ -41,19 +41,19 @@ DS::MsgChannel::~MsgChannel()
 void DS::MsgChannel::putMessage(int type, void* payload)
 {
     pthread_mutex_lock(&m_queueMutex);
-    FifoMessage* msg = new FifoMessage;
-    msg->m_messageType = type;
-    msg->m_payload = payload;
+    FifoMessage msg;
+    msg.m_messageType = type;
+    msg.m_payload = payload;
     m_queue.push(msg);
     pthread_mutex_unlock(&m_queueMutex);
     sem_post(&m_semaphore);
 }
 
-DS::FifoMessage* DS::MsgChannel::getMessage()
+DS::FifoMessage DS::MsgChannel::getMessage()
 {
     sem_wait(&m_semaphore);
     pthread_mutex_lock(&m_queueMutex);
-    FifoMessage* msg = m_queue.front();
+    FifoMessage msg = m_queue.front();
     m_queue.pop();
     pthread_mutex_unlock(&m_queueMutex);
     return msg;

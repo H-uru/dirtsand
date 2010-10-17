@@ -26,18 +26,18 @@ namespace DS
     typedef void* SocketHandle;
 
     SocketHandle BindSocket(const char* address, const char* port);
-    void ListenSock(SocketHandle sock, int backlog = 10);
-    SocketHandle AcceptSock(SocketHandle sock);
+    void ListenSock(const SocketHandle sock, int backlog = 10);
+    SocketHandle AcceptSock(const SocketHandle sock);
     void CloseSock(SocketHandle sock);
     void FreeSock(SocketHandle sock);
 
-    String SockIpAddress(SocketHandle sock);
+    String SockIpAddress(const SocketHandle sock);
 
-    void SendBuffer(SocketHandle sock, const void* buffer, size_t size);
-    void RecvBuffer(SocketHandle sock, void* buffer, size_t size);
+    void SendBuffer(const SocketHandle sock, const void* buffer, size_t size);
+    void RecvBuffer(const SocketHandle sock, void* buffer, size_t size);
 
     template <typename tp>
-    inline tp RecvValue(SocketHandle sock)
+    inline tp RecvValue(const SocketHandle sock)
     {
         tp value;
         RecvBuffer(sock, &value, sizeof(value));

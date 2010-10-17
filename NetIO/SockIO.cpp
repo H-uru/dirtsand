@@ -99,14 +99,14 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
     return reinterpret_cast<SocketHandle>(sockinfo);
 }
 
-void DS::ListenSock(DS::SocketHandle sock, int backlog)
+void DS::ListenSock(const DS::SocketHandle sock, int backlog)
 {
     DS_DASSERT(sock);
     int result = listen(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, backlog);
     DS_PASSERT(result == 0);
 }
 
-DS::SocketHandle DS::AcceptSock(DS::SocketHandle sock)
+DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
 {
     DS_DASSERT(sock);
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
@@ -136,7 +136,7 @@ void DS::FreeSock(DS::SocketHandle sock)
     delete reinterpret_cast<SocketHandle_Private*>(sock);
 }
 
-DS::String DS::SockIpAddress(DS::SocketHandle sock)
+DS::String DS::SockIpAddress(const DS::SocketHandle sock)
 {
     char addrbuf[256];
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
@@ -144,7 +144,7 @@ DS::String DS::SockIpAddress(DS::SocketHandle sock)
     return DS::String(addrbuf);
 }
 
-void DS::SendBuffer(DS::SocketHandle sock, const void* buffer, size_t size)
+void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size)
 {
     ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, size, 0);
@@ -153,7 +153,7 @@ void DS::SendBuffer(DS::SocketHandle sock, const void* buffer, size_t size)
     DS_PASSERT(static_cast<size_t>(bytes) == size);
 }
 
-void DS::RecvBuffer(DS::SocketHandle sock, void* buffer, size_t size)
+void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
 {
     ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, size, 0);

@@ -26,7 +26,7 @@ namespace DS
     class AssertException : public std::exception
     {
     public:
-        AssertException(const char* cond, const char* file, long line)
+        AssertException(const char* cond, const char* file, long line) throw()
             : m_cond(cond), m_file(file), m_line(line) { }
         virtual ~AssertException() throw() { }
 

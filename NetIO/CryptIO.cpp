@@ -38,6 +38,28 @@ static void init_rand()
     }
 }
 
+void DS::GenPrimeKeys(uint8_t* K, uint8_t* N)
+{
+    BIGNUM* bn_key = BN_new();
+    init_rand();
+
+    while (BN_num_bytes(bn_key) != 64) {
+        BN_generate_prime(bn_key, 512, 1, 0, 0, 0, 0);
+        printf(".");
+        fflush(stdout);
+    }
+    BN_bn2bin(bn_key, reinterpret_cast<unsigned char*>(K));
+    BN_set_word(bn_key, 0);
+    while (BN_num_bytes(bn_key) != 64) {
+        BN_generate_prime(bn_key, 512, 1, 0, 0, 0, 0);
+        printf(".");
+        fflush(stdout);
+    }
+    BN_bn2bin(bn_key, reinterpret_cast<unsigned char*>(N));
+
+    BN_free(bn_key);
+}
+
 void DS::CryptCalcX(uint8_t* X, const uint8_t* N, const uint8_t* K, uint32_t base)
 {
     BIGNUM* bn_X = BN_new();
@@ -153,7 +175,7 @@ void DS::CryptStateFree(DS::CryptState state)
     delete reinterpret_cast<CryptState_Private*>(state);
 }
 
-void DS::CryptSendBuffer(DS::SocketHandle sock, DS::CryptState crypt,
+void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
                          const void* buffer, size_t size)
 {
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);
@@ -169,7 +191,7 @@ void DS::CryptSendBuffer(DS::SocketHandle sock, DS::CryptState crypt,
     }
 }
 
-void DS::CryptRecvBuffer(DS::SocketHandle sock, DS::CryptState crypt,
+void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
                          void* buffer, size_t size)
 {
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);

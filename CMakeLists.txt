@@ -35,6 +35,8 @@ set(dirtsand_SOURCES
     GateKeeper/GateServ.cpp
     FileServ/FileManifest.cpp
     FileServ/FileServer.cpp
+    AuthServ/AuthServer.cpp
+    AuthServ/AuthDaemon.cpp
     strings.cpp
     streams.cpp
     settings.cpp
@@ -42,7 +44,7 @@ set(dirtsand_SOURCES
     dsmain.cpp
 )
 
-add_executable(dirtsand ${PlasMOUL_SOURCES} ${dirtsand_SOURCES})
+add_executable(dirtsand ${dirtsand_SOURCES} ${PlasMOUL_SOURCES})
 target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT} ${POSTGRES_LIBRARY}
                                ${OPENSSL_CRYPTO_LIBRARIES})
 set_target_properties(dirtsand PROPERTIES

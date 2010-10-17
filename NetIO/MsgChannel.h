@@ -37,12 +37,12 @@ namespace DS
         ~MsgChannel();
 
         void putMessage(int type, void* payload = 0);
-        FifoMessage* getMessage();
+        FifoMessage getMessage();
 
     private:
         sem_t m_semaphore;
         pthread_mutex_t m_queueMutex;
-        std::queue<FifoMessage*> m_queue;
+        std::queue<FifoMessage> m_queue;
     };
 }
 

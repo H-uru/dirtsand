@@ -40,6 +40,7 @@ namespace DS
         e_CliToServConnect, e_ServToCliEncrypt, e_ServToCliError
     };
 
+    void GenPrimeKeys(uint8_t* N, uint8_t* K);
     void CryptCalcX(uint8_t* X, const uint8_t* N, const uint8_t* K, uint32_t base);
     void PrintClientKeys(const uint8_t* X, const uint8_t* N);
 
@@ -51,11 +52,13 @@ namespace DS
     CryptState CryptStateInit(const uint8_t* key, size_t size);
     void CryptStateFree(CryptState state);
 
-    void CryptSendBuffer(SocketHandle sock, CryptState crypt, const void* buffer, size_t size);
-    void CryptRecvBuffer(SocketHandle sock, CryptState crypt, void* buffer, size_t size);
+    void CryptSendBuffer(const SocketHandle sock, CryptState crypt,
+                         const void* buffer, size_t size);
+    void CryptRecvBuffer(const SocketHandle sock, CryptState crypt,
+                         void* buffer, size_t size);
 
     template <typename tp>
-    inline tp CryptRecvValue(SocketHandle sock, CryptState crypt)
+    inline tp CryptRecvValue(const SocketHandle sock, CryptState crypt)
     {
         tp value;
         CryptRecvBuffer(sock, crypt, &value, sizeof(value));

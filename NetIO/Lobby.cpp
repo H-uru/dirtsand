@@ -18,6 +18,7 @@
 #include "Lobby.h"
 #include "GateKeeper/GateServ.h"
 #include "FileServ/FileServer.h"
+#include "AuthServ/AuthServer.h"
 #include "Types/Uuid.h"
 #include "SockIO.h"
 #include "errors.h"
@@ -62,26 +63,31 @@ void* dm_lobby(void*)
             DS::RecvBuffer(client, header.m_productId.m_bytes,
                            sizeof(header.m_productId.m_bytes));
 
-            if (header.m_connType == e_ConnCliToGateKeeper) {
+            switch (header.m_connType) {
+            case e_ConnCliToGateKeeper:
                 DS::GateKeeper_Add(client);
-            } else if (header.m_connType == e_ConnCliToFile) {
+                break;
+            case e_ConnCliToFile:
                 DS::FileServer_Add(client);
-            } else if (header.m_connType == e_ConnCliToAuth) {
-                fprintf(stderr, "[%s] Unhandled auth server connection\n",
-                        DS::SockIpAddress(client).c_str());
-                DS::FreeSock(client);
-            } else if (header.m_connType == e_ConnCliToGame) {
+                break;
+            case e_ConnCliToAuth:
+                DS::AuthServer_Add(client);
+                break;
+            case e_ConnCliToGame:
                 fprintf(stderr, "[%s] Unhandled game server connection\n",
                         DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
-            } else if (header.m_connType == e_ConnCliToCsr) {
+                break;
+            case e_ConnCliToCsr:
                 printf("[Lobby] %s - CSR client?  Get that mutha outta here!\n",
                        DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
-            } else {
+                break;
+            default:
                 printf("[Lobby] %s - Unknown connection type!  Abandon ship!\n",
                        DS::SockIpAddress(client).c_str());
                 DS::FreeSock(client);
+                break;
             }
         }
     } catch (DS::AssertException ex) {

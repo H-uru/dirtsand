@@ -27,6 +27,9 @@ namespace DS
     class EofException : public std::exception
     {
     public:
+        EofException() throw() { }
+        virtual ~EofException() throw() { }
+
         virtual const char* what() const throw()
         { return "[EofException] Unexpected end of stream"; }
     };
@@ -34,7 +37,7 @@ namespace DS
     class FileIOException : public std::exception
     {
     public:
-        FileIOException(const char* msg) : m_errmsg(msg) { }
+        FileIOException(const char* msg) throw() : m_errmsg(msg) { }
         virtual ~FileIOException() throw() { }
 
         virtual const char* what() const throw()

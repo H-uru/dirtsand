@@ -19,9 +19,11 @@
 #include "NetIO/CryptIO.h"
 #include "GateKeeper/GateServ.h"
 #include "FileServ/FileServer.h"
+#include "AuthServ/AuthServer.h"
 #include "strings.h"
 #include "errors.h"
 #include "settings.h"
+#include "encodings.h"
 #include <signal.h>
 #include <cstdio>
 
@@ -38,6 +40,7 @@ int main(int argc, char* argv[])
     signal(SIGPIPE, SIG_IGN);
 
     DS::FileServer_Init();
+    DS::AuthServer_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
 
@@ -66,24 +69,50 @@ int main(int argc, char* argv[])
         } else if (args[0] == "keygen") {
             uint8_t xbuffer[64];
             if (args.size() == 1) {
-                fprintf(stderr, "Error: No base key type specified\n");
-                continue;
-            }
-            if (args[1] == "auth") {
+                uint8_t nbuffer[3][64], kbuffer[3][64];
+                printf("Generating new server keys...  This may take a while...\n");
+                for (size_t i=0; i<3; ++i)
+                    DS::GenPrimeKeys(nbuffer[i], kbuffer[i]);
+
+                printf("\n--------------------\n");
+                printf("Server keys:\n");
+                printf("Key.Auth.N = %s\n", DS::Base64Encode(nbuffer[0], 64).c_str());
+                printf("Key.Auth.K = %s\n", DS::Base64Encode(kbuffer[0], 64).c_str());
+                printf("Key.Game.N = %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
+                printf("Key.Game.K = %s\n", DS::Base64Encode(kbuffer[1], 64).c_str());
+                printf("Key.Gate.N = %s\n", DS::Base64Encode(nbuffer[2], 64).c_str());
+                printf("Key.Auth.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
+
+                printf("Auth client keys:\n");
+                DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
+                DS::PrintClientKeys(xbuffer, nbuffer[1]);
+
+                printf("Game client keys:\n");
+                DS::CryptCalcX(xbuffer, nbuffer[1], kbuffer[1], CRYPT_BASE_GAME);
+                DS::PrintClientKeys(xbuffer, nbuffer[1]);
+
+                printf("GateKeeper client keys:\n");
+                DS::CryptCalcX(xbuffer, nbuffer[2], kbuffer[2], CRYPT_BASE_GATE);
+                DS::PrintClientKeys(xbuffer, nbuffer[2]);
+                printf("--------------------\n");
+            } else if (args[1] == "auth") {
+                uint8_t xbuffer[64];
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
                                DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
                 printf("Auth client keys:\n");
                 DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N));
-            } else if (args[1] == "gate") {
-                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N),
-                               DS::Settings::CryptKey(DS::e_KeyGate_K), CRYPT_BASE_GATE);
-                printf("GateKeeper client keys:\n");
-                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N));
             } else if (args[1] == "game") {
+                uint8_t xbuffer[64];
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N),
                                DS::Settings::CryptKey(DS::e_KeyGame_K), CRYPT_BASE_GAME);
                 printf("Game client keys:\n");
                 DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N));
+            } else if (args[1] == "gate") {
+                uint8_t xbuffer[64];
+                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N),
+                               DS::Settings::CryptKey(DS::e_KeyGate_K), CRYPT_BASE_GATE);
+                printf("GateKeeper client keys:\n");
+                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N));
             } else {
                 fprintf(stderr, "Error: %s is not a valid key type\n", args[1].c_str());
                 continue;
@@ -91,7 +120,7 @@ int main(int argc, char* argv[])
         } else if (args[0] == "help") {
             printf("DirtSand v1.0 Console supported commands:\n"
                    "    help\n"
-                   "    keygen <auth|gate|game>\n"
+                   "    keygen [auth|game|gate]\n"
                    "    quit\n"
                    "    restart <auth|lobby>\n"
                   );
@@ -102,6 +131,7 @@ int main(int argc, char* argv[])
 
     DS::StopLobby();
     DS::GateKeeper_Shutdown();
+    DS::AuthServer_Shutdown();
     DS::FileServer_Shutdown();
     return 0;
 }
