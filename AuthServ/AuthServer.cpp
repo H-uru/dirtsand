@@ -192,6 +192,21 @@ void cb_login(AuthServer_Private& client)
         return;
     }
 
+    for (std::list<AuthServer_PlayerInfo>::iterator player_iter = msg.m_players.begin();
+         player_iter != msg.m_players.end(); ++player_iter) {
+        START_REPLY(e_AuthToCli_AcctLoginReply);
+        client.m_buffer.write<uint32_t>(msg.m_transId);
+        client.m_buffer.write<uint32_t>(player_iter->m_playerId);
+        DS::StringBuffer<chr16_t> wstrbuf = player_iter->m_playerName.toUtf16();
+        client.m_buffer.write<uint16_t>(wstrbuf.length());
+        client.m_buffer.writeBytes(wstrbuf.data(), wstrbuf.length() * sizeof(chr16_t));
+        wstrbuf = player_iter->m_avatarModel.toUtf16();
+        client.m_buffer.write<uint16_t>(wstrbuf.length());
+        client.m_buffer.writeBytes(wstrbuf.data(), wstrbuf.length() * sizeof(chr16_t));
+        client.m_buffer.write<uint32_t>(player_iter->m_explorer);
+        SEND_REPLY();
+    }
+
     /* The final reply */
     START_REPLY(e_AuthToCli_AcctLoginReply);
     client.m_buffer.write<uint32_t>(msg.m_transId);

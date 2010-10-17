@@ -19,18 +19,26 @@
 #include "encodings.h"
 #include "settings.h"
 #include "errors.h"
-#include <postgres.h>
+#include <libpq-fe.h>
 #include <unistd.h>
 
 pthread_t s_authDaemonThread;
 DS::MsgChannel s_authChannel;
+
+PGconn* s_postgres;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result);
 
 void dm_auth_init()
 {
-    //TODO: Ensure vault is ready for use
+    s_postgres = PQconnectdb(DS::String::Format(
+                    "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
+                    DS::Settings::DbHostname(), DS::Settings::DbPort(),
+                    DS::Settings::DbUsername(), DS::Settings::DbPassword(),
+                    DS::Settings::DbDbaseName()).c_str());
+
+    //TODO: Ensure vault is initialized
 }
 
 void dm_auth_shutdown()
@@ -54,6 +62,7 @@ void dm_auth_shutdown()
         fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!");
 
     pthread_mutex_destroy(&s_authClientMutex);
+    PQfinish(s_postgres);
 }
 
 void dm_auth_login(Auth_LoginInfo* info)
