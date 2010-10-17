@@ -58,6 +58,7 @@ namespace DS
         const char* DbDbaseName();
 
         bool LoadFrom(const char* filename);
+        void UseDefaults();
     }
 }
 

@@ -30,11 +30,11 @@
 int main(int argc, char* argv[])
 {
     if (argc == 1) {
-        fprintf(stderr, "Error: No config file specified\n");
+        fprintf(stderr, "Warning: No config file specified. Using defaults...\n");
+        DS::Settings::UseDefaults();
+    } else if (!DS::Settings::LoadFrom(argv[1])) {
         return 1;
     }
-    if (!DS::Settings::LoadFrom(argv[1]))
-        return 1;
 
     // Ignore sigpipe and force send() to return EPIPE
     signal(SIGPIPE, SIG_IGN);

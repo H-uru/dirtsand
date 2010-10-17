@@ -52,6 +52,8 @@ static struct
 
 bool DS::Settings::LoadFrom(const char* filename)
 {
+    UseDefaults();
+
     FILE* cfgfile = fopen(filename, "r");
     if (!cfgfile) {
         fprintf(stderr, "Cannot open %s for reading\n", filename);
@@ -133,6 +135,24 @@ bool DS::Settings::LoadFrom(const char* filename)
     }
     fclose(cfgfile);
     return true;
+}
+
+void DS::Settings::UseDefaults()
+{
+    memset(s_settings.m_cryptKeys, 0, sizeof(s_settings.m_cryptKeys));
+    memset(s_settings.m_wdysKey, 0, sizeof(s_settings.m_wdysKey));
+
+    s_settings.m_gameServ = String("localhost").toUtf16();
+    s_settings.m_fileServ = String("localhost").toUtf16();
+
+    s_settings.m_fileRoot = "./";
+    s_settings.m_authRoot = "./";
+
+    s_settings.m_dbHostname = "localhost";
+    s_settings.m_dbPort = "5432";
+    s_settings.m_dbUsername = "dirtsand";
+    s_settings.m_dbPassword = "";
+    s_settings.m_dbDbase = "dirtsand";
 }
 
 const uint8_t* DS::Settings::CryptKey(DS::KeyType key)
