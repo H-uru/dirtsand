@@ -83,14 +83,12 @@ enum AuthServer_MsgIds
 };
 
 #define START_REPLY(msgId) \
-    client.m_wkBuffer.truncate(); \
-    client.m_wkBuffer.write<uint16_t>(msgId)
+    client.m_buffer.truncate(); \
+    client.m_buffer.write<uint16_t>(msgId)
 
 #define SEND_REPLY() \
-    pthread_mutex_lock(&client.m_mutex); \
     DS::CryptSendBuffer(client.m_sock, client.m_crypt, \
-                        client.m_wkBuffer.buffer(), client.m_wkBuffer.size()); \
-    pthread_mutex_unlock(&client.m_mutex)
+                        client.m_buffer.buffer(), client.m_buffer.size())
 
 void auth_init(AuthServer_Private& client)
 {
@@ -115,11 +113,11 @@ void auth_init(AuthServer_Private& client)
     DS::CryptEstablish(serverSeed, sharedKey, DS::Settings::CryptKey(DS::e_KeyAuth_N),
                        DS::Settings::CryptKey(DS::e_KeyAuth_K), Y);
 
-    client.m_wkBuffer.truncate();
-    client.m_wkBuffer.write<uint8_t>(DS::e_ServToCliEncrypt);
-    client.m_wkBuffer.write<uint8_t>(9);
-    client.m_wkBuffer.writeBytes(serverSeed, 7);
-    DS::SendBuffer(client.m_sock, client.m_wkBuffer.buffer(), client.m_wkBuffer.size());
+    client.m_buffer.truncate();
+    client.m_buffer.write<uint8_t>(DS::e_ServToCliEncrypt);
+    client.m_buffer.write<uint8_t>(9);
+    client.m_buffer.writeBytes(serverSeed, 7);
+    DS::SendBuffer(client.m_sock, client.m_buffer.buffer(), client.m_buffer.size());
 
     client.m_crypt = DS::CryptStateInit(sharedKey, 7);
 }
@@ -129,18 +127,18 @@ void cb_ping(AuthServer_Private& client)
     START_REPLY(e_AuthToCli_PingReply);
 
     // Ping time
-    client.m_wkBuffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
     // Trans ID
-    client.m_wkBuffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
     // Payload
     uint32_t payloadSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    client.m_wkBuffer.write<uint32_t>(payloadSize);
+    client.m_buffer.write<uint32_t>(payloadSize);
     if (payloadSize) {
         uint8_t* payload = new uint8_t[payloadSize];
         DS::CryptRecvBuffer(client.m_sock, client.m_crypt, payload, payloadSize);
-        client.m_wkBuffer.writeBytes(payload, payloadSize);
+        client.m_buffer.writeBytes(payload, payloadSize);
         delete[] payload;
     }
 
@@ -161,31 +159,48 @@ void cb_register(AuthServer_Private& client)
     }
 
     // Client challenge
-    pthread_mutex_lock(&client.m_mutex);
     RAND_bytes(reinterpret_cast<unsigned char*>(&client.m_challenge), sizeof(client.m_challenge));
-    client.m_wkBuffer.write<uint32_t>(client.m_challenge);
-    pthread_mutex_unlock(&client.m_mutex);
+    client.m_buffer.write<uint32_t>(client.m_challenge);
 
     SEND_REPLY();
 }
 
 void cb_login(AuthServer_Private& client)
 {
-    Auth_LoginInfo* msg = new Auth_LoginInfo();
-    msg->m_client = &client;
+    Auth_LoginInfo msg;
+    msg.m_client = &client;
+    msg.m_transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_clientChallenge = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_acctName = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, msg.m_passHash, 20);
+    msg.m_token = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_os = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthClientLogin, reinterpret_cast<void*>(&msg));
 
-    try {
-        msg->m_transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-        msg->m_clientChallenge = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-        msg->m_acctName = DS::CryptRecvString(client.m_sock, client.m_crypt);
-        DS::CryptRecvBuffer(client.m_sock, client.m_crypt, msg->m_passHash, 20);
-        msg->m_token = DS::CryptRecvString(client.m_sock, client.m_crypt);
-        msg->m_os = DS::CryptRecvString(client.m_sock, client.m_crypt);
-        AuthDaemon_SendMessage(e_AuthClientLogin, reinterpret_cast<void*>(msg));
-    } catch (...) {
-        delete msg;
-        throw;
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        static uint32_t zerokey[4] = { 0, 0, 0, 0 };
+
+        START_REPLY(e_AuthToCli_AcctLoginReply);
+        client.m_buffer.write<uint32_t>(msg.m_transId);
+        client.m_buffer.write<uint32_t>(reply.m_messageType);
+        client.m_buffer.writeBytes(msg.m_acctUuid.m_bytes, sizeof(msg.m_acctUuid.m_bytes));
+        client.m_buffer.write<uint32_t>(0);
+        client.m_buffer.write<uint32_t>(0);
+        client.m_buffer.writeBytes(zerokey, sizeof(zerokey));
+        SEND_REPLY();
+        return;
     }
+
+    /* The final reply */
+    START_REPLY(e_AuthToCli_AcctLoginReply);
+    client.m_buffer.write<uint32_t>(msg.m_transId);
+    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
+    client.m_buffer.writeBytes(msg.m_acctUuid.m_bytes, sizeof(msg.m_acctUuid.m_bytes));
+    client.m_buffer.write<uint32_t>(msg.m_acctFlags);
+    client.m_buffer.write<uint32_t>(msg.m_billingType);
+    client.m_buffer.writeBytes(DS::Settings::WdysKey(), 4 * sizeof(uint32_t));
+    SEND_REPLY();
 }
 
 void* wk_authWorker(void* sockp)
@@ -198,8 +213,8 @@ void* wk_authWorker(void* sockp)
     pthread_mutex_unlock(&s_authClientMutex);
 
     try {
-        pthread_mutex_init(&client.m_mutex, 0);
         auth_init(client);
+        client.m_player.m_playerId = 0;
 
         for ( ;; ) {
             uint16_t msgId = DS::CryptRecvValue<uint16_t>(client.m_sock, client.m_crypt);
@@ -240,7 +255,6 @@ void* wk_authWorker(void* sockp)
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
-    pthread_mutex_destroy(&client.m_mutex);
     return 0;
 }
 
@@ -265,6 +279,6 @@ void DS::AuthServer_Add(DS::SocketHandle client)
 
 void DS::AuthServer_Shutdown()
 {
-    AuthDaemon_SendMessage(e_AuthShutdown);
+    s_authChannel.putMessage(e_AuthShutdown);
     pthread_join(s_authDaemonThread, 0);
 }

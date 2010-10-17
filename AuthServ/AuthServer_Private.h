@@ -17,24 +17,35 @@
 
 #include "AuthServer.h"
 #include "NetIO/CryptIO.h"
+#include "NetIO/MsgChannel.h"
+#include "Types/Uuid.h"
 #include "streams.h"
 #include <pthread.h>
 #include <list>
 
+struct AuthServer_PlayerInfo
+{
+    uint32_t m_playerId;
+    DS::String m_playerName;
+    DS::String m_avatarModel;
+    uint32_t m_explorer;
+};
+
 struct AuthServer_Private
 {
-    pthread_mutex_t m_mutex;
-
     DS::SocketHandle m_sock;
     DS::CryptState m_crypt;
-    DS::BufferStream m_wkBuffer, m_dmBuffer;
+    DS::BufferStream m_buffer;
+    DS::MsgChannel m_channel;
 
     uint32_t m_challenge;
+    AuthServer_PlayerInfo m_player;
 };
 
 extern std::list<AuthServer_Private*> s_authClients;
 extern pthread_mutex_t s_authClientMutex;
 extern pthread_t s_authDaemonThread;
+extern DS::MsgChannel s_authChannel;
 
 void* dm_authDaemon(void*);
 void dm_auth_init();
@@ -57,4 +68,8 @@ struct Auth_LoginInfo : public Auth_ClientMessage
     DS::String m_acctName;
     uint8_t m_passHash[20];
     DS::String m_token, m_os;
+
+    DS::Uuid m_acctUuid;
+    uint32_t m_acctFlags, m_billingType;
+    std::list<AuthServer_PlayerInfo> m_players;
 };

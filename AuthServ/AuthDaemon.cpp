@@ -16,7 +16,6 @@
  ******************************************************************************/
 
 #include "AuthServer_Private.h"
-#include "NetIO/MsgChannel.h"
 #include "encodings.h"
 #include "settings.h"
 #include "errors.h"
@@ -26,9 +25,12 @@
 pthread_t s_authDaemonThread;
 DS::MsgChannel s_authChannel;
 
+#define SEND_REPLY(msg, result) \
+    msg->m_client->m_channel.putMessage(result);
+
 void dm_auth_init()
 {
-    //
+    //TODO: Ensure vault is ready for use
 }
 
 void dm_auth_shutdown()
@@ -59,7 +61,7 @@ void dm_auth_login(Auth_LoginInfo* info)
     printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
            info->m_acctName.c_str(), DS::HexEncode(info->m_passHash, 20).c_str(),
            info->m_token.c_str(), info->m_os.c_str());
-    DS::CloseSock(info->m_client->m_sock);
+    SEND_REPLY(info, DS::e_NetAccountNotFound);
 }
 
 void* dm_authDaemon(void*)
@@ -73,7 +75,6 @@ void* dm_authDaemon(void*)
                 return 0;
             case e_AuthClientLogin:
                 dm_auth_login(reinterpret_cast<Auth_LoginInfo*>(msg.m_payload));
-                delete reinterpret_cast<Auth_LoginInfo*>(msg.m_payload);
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
@@ -87,9 +88,4 @@ void* dm_authDaemon(void*)
 
     dm_auth_shutdown();
     return 0;
-}
-
-void AuthDaemon_SendMessage(int msg, void* data)
-{
-    s_authChannel.putMessage(msg, data);
 }
