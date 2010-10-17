@@ -70,7 +70,8 @@ int main(int argc, char* argv[])
             uint8_t xbuffer[64];
             if (args.size() == 1) {
                 uint8_t nbuffer[3][64], kbuffer[3][64];
-                printf("Generating new server keys...  This may take a while...\n");
+                printf("Generating new server keys...  This may take a while.");
+                fflush(stdout);
                 for (size_t i=0; i<3; ++i)
                     DS::GenPrimeKeys(nbuffer[i], kbuffer[i]);
 

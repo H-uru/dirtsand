@@ -38,3 +38,9 @@ extern pthread_t s_authDaemonThread;
 
 void* dm_authDaemon(void*);
 void dm_auth_init();
+
+enum AuthDaemonMessages
+{
+    e_AuthShutdown,
+};
+void AuthDaemon_SendMessage(int msg, void* data = 0);

@@ -149,6 +149,15 @@ void cb_register(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_ClientRegisterReply);
 
+    // Build ID
+    uint32_t buildId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    if (buildId && buildId != CLIENT_BUILD_ID) {
+        fprintf(stderr, "[Auth] Wrong Build ID from %s: %d\n",
+                DS::SockIpAddress(client.m_sock).c_str(), buildId);
+        DS::CloseSock(client.m_sock);
+        return;
+    }
+
     // Client challenge
     pthread_mutex_lock(&client.m_mutex);
     RAND_bytes(reinterpret_cast<unsigned char*>(&client.m_challenge), sizeof(client.m_challenge));
@@ -168,6 +177,7 @@ void* wk_authWorker(void* sockp)
     pthread_mutex_unlock(&s_authClientMutex);
 
     try {
+        pthread_mutex_init(&client.m_mutex, 0);
         auth_init(client);
 
         for ( ;; ) {
@@ -206,6 +216,7 @@ void* wk_authWorker(void* sockp)
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
+    pthread_mutex_destroy(&client.m_mutex);
     return 0;
 }
 

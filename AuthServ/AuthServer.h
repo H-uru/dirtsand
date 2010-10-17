@@ -25,12 +25,6 @@ namespace DS
     void AuthServer_Init();
     void AuthServer_Add(SocketHandle client);
     void AuthServer_Shutdown();
-
-    enum AuthDaemonMessages
-    {
-        e_AuthShutdown,
-    };
-    void AuthDaemon_SendMessage(int msg, void* data = 0);
 }
 
 #endif
