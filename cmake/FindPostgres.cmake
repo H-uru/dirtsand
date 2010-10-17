@@ -1,6 +1,8 @@
 find_path(POSTGRES_INCLUDE_DIR postgres.h
           /usr/include/postgresql
+          /usr/include/postgresql/server
           /usr/local/include/postgresql
+          /usr/local/include/postgresql/server
 )
 
 find_library(POSTGRES_LIBRARY
