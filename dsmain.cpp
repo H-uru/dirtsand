@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
                 printf("Auth client keys:\n");
                 DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
-                DS::PrintClientKeys(xbuffer, nbuffer[1]);
+                DS::PrintClientKeys(xbuffer, nbuffer[0]);
 
                 printf("Game client keys:\n");
                 DS::CryptCalcX(xbuffer, nbuffer[1], kbuffer[1], CRYPT_BASE_GAME);
