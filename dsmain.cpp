@@ -24,12 +24,54 @@
 #include "errors.h"
 #include "settings.h"
 #include "encodings.h"
+#include <readline.h>
+#include <history.h>
 #include <signal.h>
 #include <cstdio>
 
 #ifdef DEBUG
 extern bool s_commdebug;
 #endif
+
+char** dup_strlist(const char* text, const char** strlist, size_t count)
+{
+    char** dupe;
+    if (count == 1) {
+        dupe = reinterpret_cast<char**>(malloc(sizeof(char*) * 2));
+        dupe[0] = strdup(strlist[0]);
+        dupe[1] = 0;
+    } else {
+        dupe = reinterpret_cast<char**>(malloc(sizeof(char*) * (count + 2)));
+        dupe[0] = strdup(text);
+        for (size_t i=0; i<count; ++i)
+            dupe[i+1] = strdup(strlist[i]);
+        dupe[count+1] = 0;
+    }
+    return dupe;
+}
+
+char** console_completer(const char* text, int start, int end)
+{
+    static const char* completions[] = {
+        /* Commands */
+        "commdebug", "help", "keygen", "quit", "restart",
+        /* Services */
+        "auth", "game", "gate", "lobby",
+    };
+
+    rl_attempted_completion_over = true;
+    if (strlen(text) == 0)
+        return dup_strlist(text, completions, sizeof(completions) / sizeof(completions[0]));
+
+    std::vector<const char*> matches;
+    for (size_t i=0; i<sizeof(completions) / sizeof(completions[0]); ++i) {
+        if (strncmp(text, completions[i], strlen(text)) == 0)
+            matches.push_back(completions[i]);
+    }
+    if (matches.size() == 0)
+        return 0;
+    return dup_strlist(text, matches.data(), matches.size());
+}
 
 int main(int argc, char* argv[])
 {
@@ -48,11 +90,20 @@ int main(int argc, char* argv[])
     DS::GateKeeper_Init();
     DS::StartLobby();
 
-    char cmdbuf[4096];
-    while (fgets(cmdbuf, 4096, stdin)) {
+    char* cmdbuf = 0;
+    rl_attempted_completion_function = &console_completer;
+    for ( ;; ) {
+        cmdbuf = readline("");
+        if (!cmdbuf)
+            break;
+
         std::vector<DS::String> args = DS::String(cmdbuf).strip('#').split();
-        if (args.size() == 0)
+        if (args.size() == 0) {
+            free(cmdbuf);
             continue;
+        }
+        add_history(cmdbuf);
+        free(cmdbuf);
 
         if (args[0] == "quit") {
             break;
