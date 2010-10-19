@@ -162,6 +162,29 @@ void dm_auth_login(Auth_LoginInfo* info)
            DS::SockIpAddress(info->m_client->m_sock).c_str(),
            info->m_acctName.c_str(), info->m_acctUuid.toString().c_str());
     PQclear(result);
+
+    // Get list of players
+    parm.m_values[0] = info->m_acctUuid.toString().c_str();
+    result = PQexecParams(s_postgres,
+            "SELECT \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\""
+            "    FROM auth.\"Players\""
+            "    WHERE \"AcctUuid\"=$1",
+            1, 0, parm.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(info, DS::e_NetInternalError);
+        return;
+    }
+    info->m_players.resize(PQntuples(result));
+    for (size_t i = 0; i < info->m_players.size(); ++i) {
+        info->m_players[i].m_playerId = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        info->m_players[i].m_playerName = PQgetvalue(result, i, 1);
+        info->m_players[i].m_avatarModel = PQgetvalue(result, i, 2);
+        info->m_players[i].m_explorer = strtoul(PQgetvalue(result, i, 3), 0, 10);
+    }
+
     SEND_REPLY(info, DS::e_NetSuccess);
 }
 

@@ -22,6 +22,7 @@
 #include "Types/ShaHash.h"
 #include "streams.h"
 #include <pthread.h>
+#include <vector>
 #include <list>
 
 struct AuthServer_PlayerInfo
@@ -72,5 +73,5 @@ struct Auth_LoginInfo : public Auth_ClientMessage
 
     DS::Uuid m_acctUuid;
     uint32_t m_acctFlags, m_billingType;
-    std::list<AuthServer_PlayerInfo> m_players;
+    std::vector<AuthServer_PlayerInfo> m_players;
 };

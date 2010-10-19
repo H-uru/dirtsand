@@ -195,7 +195,7 @@ void cb_login(AuthServer_Private& client)
         return;
     }
 
-    for (std::list<AuthServer_PlayerInfo>::iterator player_iter = msg.m_players.begin();
+    for (std::vector<AuthServer_PlayerInfo>::iterator player_iter = msg.m_players.begin();
          player_iter != msg.m_players.end(); ++player_iter) {
         START_REPLY(e_AuthToCli_AcctLoginReply);
         client.m_buffer.write<uint32_t>(msg.m_transId);
