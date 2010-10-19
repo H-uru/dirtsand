@@ -25,7 +25,7 @@ MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
 /* THAR BE MAJICK HERE */
 #define CREATABLE_TYPE(id, cre) \
     case id: return new cre(id);
-#include "creatable_types.h"
+#include "creatable_types.inl"
 #undef CREATABLE_TYPE
     case 0x8000: return static_cast<Creatable*>(0);
     default:

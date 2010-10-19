@@ -32,7 +32,7 @@ namespace MOUL
     /* THAR BE MAJICK HERE */
     #define CREATABLE_TYPE(id, cre) \
         ID_##cre = id,
-    #include "creatable_types.h"
+    #include "creatable_types.inl"
     #undef CREATABLE_TYPE
     };
 
