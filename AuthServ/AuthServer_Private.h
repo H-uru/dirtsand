@@ -19,6 +19,7 @@
 #include "NetIO/CryptIO.h"
 #include "NetIO/MsgChannel.h"
 #include "Types/Uuid.h"
+#include "Types/ShaHash.h"
 #include "streams.h"
 #include <pthread.h>
 #include <list>
@@ -38,7 +39,7 @@ struct AuthServer_Private
     DS::BufferStream m_buffer;
     DS::MsgChannel m_channel;
 
-    uint32_t m_challenge;
+    uint32_t m_serverChallenge;
     AuthServer_PlayerInfo m_player;
 };
 
@@ -66,7 +67,7 @@ struct Auth_LoginInfo : public Auth_ClientMessage
 {
     uint32_t m_clientChallenge;
     DS::String m_acctName;
-    uint8_t m_passHash[20];
+    DS::ShaHash m_passHash;
     DS::String m_token, m_os;
 
     DS::Uuid m_acctUuid;

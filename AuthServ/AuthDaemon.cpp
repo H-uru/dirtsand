@@ -41,7 +41,7 @@ PGconn* s_postgres;
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
 
-void check_postgres()
+static void check_postgres()
 {
     if (PQstatus(s_postgres) == CONNECTION_BAD)
         PQreset(s_postgres);
@@ -95,7 +95,7 @@ void dm_auth_login(Auth_LoginInfo* info)
 
 #ifdef DEBUG
     printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
-           info->m_acctName.c_str(), DS::HexEncode(info->m_passHash, 20).c_str(),
+           info->m_acctName.c_str(), info->m_passHash.toString().c_str(),
            info->m_token.c_str(), info->m_os.c_str());
 #endif
 
@@ -130,14 +130,29 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
 #endif
 
-    const char* passhash = PQgetvalue(result, 0, 0);
-    if (DS::ShaToHex(info->m_passHash).compare(passhash, DS::e_CaseInsensitive) != 0) {
-        printf("[Auth] %s: Failed login to account %s\n",
-               DS::SockIpAddress(info->m_client->m_sock).c_str(),
-               info->m_acctName.c_str());
-        PQclear(result);
-        SEND_REPLY(info, DS::e_NetAuthenticationFailed);
-        return;
+    DS::ShaHash passhash = PQgetvalue(result, 0, 0);
+    if (info->m_acctName.find("@") != -1 && info->m_acctName.find("@gametap") == -1) {
+        DS::ShaHash challengeHash = DS::BuggyHashLogin(passhash,
+                info->m_client->m_serverChallenge, info->m_clientChallenge);
+        if (challengeHash != info->m_passHash) {
+            printf("[Auth] %s: Failed login to account %s\n",
+                   DS::SockIpAddress(info->m_client->m_sock).c_str(),
+                   info->m_acctName.c_str());
+            PQclear(result);
+            SEND_REPLY(info, DS::e_NetAuthenticationFailed);
+            return;
+        }
+    } else {
+        // In this case, the Sha1 hash is Big Endian...  Yeah, really...
+        info->m_passHash.swapBytes();
+        if (passhash != info->m_passHash) {
+            printf("[Auth] %s: Failed login to account %s\n",
+                   DS::SockIpAddress(info->m_client->m_sock).c_str(),
+                   info->m_acctName.c_str());
+            PQclear(result);
+            SEND_REPLY(info, DS::e_NetAuthenticationFailed);
+            return;
+        }
     }
 
     info->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));

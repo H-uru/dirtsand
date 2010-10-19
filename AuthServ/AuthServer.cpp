@@ -160,8 +160,9 @@ void cb_register(AuthServer_Private& client)
     }
 
     // Client challenge
-    RAND_bytes(reinterpret_cast<unsigned char*>(&client.m_challenge), sizeof(client.m_challenge));
-    client.m_buffer.write<uint32_t>(client.m_challenge);
+    RAND_bytes(reinterpret_cast<unsigned char*>(&client.m_serverChallenge),
+               sizeof(client.m_serverChallenge));
+    client.m_buffer.write<uint32_t>(client.m_serverChallenge);
 
     SEND_REPLY();
 }
@@ -173,7 +174,8 @@ void cb_login(AuthServer_Private& client)
     msg.m_transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     msg.m_clientChallenge = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     msg.m_acctName = DS::CryptRecvString(client.m_sock, client.m_crypt);
-    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, msg.m_passHash, 20);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt,
+                        msg.m_passHash.m_data, sizeof(DS::ShaHash));
     msg.m_token = DS::CryptRecvString(client.m_sock, client.m_crypt);
     msg.m_os = DS::CryptRecvString(client.m_sock, client.m_crypt);
     s_authChannel.putMessage(e_AuthClientLogin, reinterpret_cast<void*>(&msg));

@@ -27,9 +27,6 @@ namespace DS
 
     String HexEncode(const uint8_t* data, size_t length);
     Blob* HexDecode(const String& value);
-
-    String ShaToHex(const uint8_t* hash);
-    void HexToSha(uint8_t* hash, const String& hex);
 }
 
 #endif

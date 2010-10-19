@@ -18,6 +18,7 @@
 #ifndef _DS_CRYPTIO_H
 #define _DS_CRYPTIO_H
 
+#include "Types/ShaHash.h"
 #include "SockIO.h"
 #include <algorithm>
 
@@ -79,6 +80,10 @@ namespace DS
         delete[] buffer;
         return result;
     }
+
+    ShaHash BuggyHashPassword(const String& username, const String& password);
+    ShaHash BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChallenge,
+                           uint32_t clientChallenge);
 }
 
 #endif

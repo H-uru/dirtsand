@@ -160,30 +160,3 @@ DS::Blob* DS::HexDecode(const String& value)
     }
     return new Blob(buffer, length);
 }
-
-DS::String DS::ShaToHex(const uint8_t* hash)
-{
-    uint32_t hashbuf[5];
-    memcpy(hashbuf, hash, 20);
-    for (size_t i=0; i<5; ++i) {
-        /* Damn Cyan and their endianness issues */
-        hashbuf[i] = ((hashbuf[i] & 0xFF000000) >> 24) | ((hashbuf[i] & 0x000000FF) << 24)
-                   | ((hashbuf[i] & 0x00FF0000) >>  8) | ((hashbuf[i] & 0x0000FF00) <<  8);
-    }
-    return HexEncode(reinterpret_cast<const uint8_t*>(hashbuf), 20);
-}
-
-void DS::HexToSha(uint8_t* hash, const String& hex)
-{
-    DS_DASSERT(hex.length() == 40);
-
-    uint32_t hashbuf[5];
-    Blob* blob = HexDecode(hex);
-    memcpy(hashbuf, blob->buffer(), 20);
-    for (size_t i=0; i<5; ++i) {
-        /* Damn Cyan and their endianness issues */
-        hashbuf[i] = ((hashbuf[i] & 0xFF000000) >> 24) | ((hashbuf[i] & 0x000000FF) << 24)
-                   | ((hashbuf[i] & 0x00FF0000) >>  8) | ((hashbuf[i] & 0x0000FF00) <<  8);
-    }
-    blob->unref();
-}

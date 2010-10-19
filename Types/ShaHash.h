@@ -15,48 +15,40 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_UUID_H
-#define _DS_UUID_H
+#ifndef _DS_SHAHASH_H
+#define _DS_SHAHASH_H
 
 #include "streams.h"
 
 namespace DS
 {
-    class Uuid
+    class ShaHash
     {
     public:
-        Uuid() : m_data1(0), m_data2(0), m_data3(0)
-        { memset(m_data4, 0, sizeof(m_data4)); }
+        ShaHash() { memset(m_data, 0, sizeof(m_data)); }
 
-        Uuid(uint32_t data1, uint16_t data2, uint16_t data3, const uint8_t* data4)
-            : m_data1(data1), m_data2(data2), m_data3(data3)
-        { memcpy(m_data4, data4, sizeof(m_data4)); }
+        ShaHash(const uint8_t* bytes)
+        { memcpy(m_data, bytes, sizeof(m_data)); }
 
-        Uuid(const uint8_t* bytes)
-        { memcpy(m_bytes, bytes, sizeof(m_bytes)); }
+        ShaHash(const char* struuid);
 
-        Uuid(const char* struuid);
+        bool operator==(const ShaHash& other) const
+        { return memcmp(m_data, other.m_data, sizeof(m_data)) == 0; }
 
-        bool operator==(const Uuid& other) const
-        { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) == 0; }
-
-        bool operator!=(const Uuid& other) const
-        { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) != 0; }
+        bool operator!=(const ShaHash& other) const
+        { return memcmp(m_data, other.m_data, sizeof(m_data)) != 0; }
 
         void read(Stream* stream);
         void write(Stream* stream);
+        void swapBytes();
 
         String toString() const;
 
+        static ShaHash Sha0(const void* data, size_t size);
+        static ShaHash Sha1(const void* data, size_t size);
+
     public:
-        union {
-            struct {
-                uint32_t m_data1;
-                uint16_t m_data2, m_data3;
-                uint8_t m_data4[8];
-            };
-            uint8_t m_bytes[16];
-        };
+        uint32_t m_data[5];
     };
 }
 
