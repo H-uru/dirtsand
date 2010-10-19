@@ -48,7 +48,7 @@ extern pthread_t s_authDaemonThread;
 extern DS::MsgChannel s_authChannel;
 
 void* dm_authDaemon(void*);
-void dm_auth_init();
+bool dm_auth_init();
 
 enum AuthDaemonMessages
 {

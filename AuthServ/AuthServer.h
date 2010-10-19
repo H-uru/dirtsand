@@ -19,12 +19,23 @@
 #define _DS_AUTHSERVER_H
 
 #include "NetIO/SockIO.h"
+#include <exception>
 
 namespace DS
 {
     void AuthServer_Init();
     void AuthServer_Add(SocketHandle client);
     void AuthServer_Shutdown();
+
+    class DbException : public std::exception
+    {
+    public:
+        DbException() throw() { }
+        virtual ~DbException() throw() { }
+
+        virtual const char* what() const throw()
+        { return "[DbException] Postgres error"; }
+    };
 }
 
 #endif

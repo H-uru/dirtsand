@@ -22,23 +22,47 @@
 #include <libpq-fe.h>
 #include <unistd.h>
 
+/* Here's something you can't do with generics */
+template <size_t count>
+struct PostgresParams
+{
+    // Oid field not included here...  They're annoying, and the non-standard
+    // ones can change from one server to the next...  :(
+    const char* m_values[count];
+    int m_lengths[count];
+    int m_formats[count];
+};
+
 pthread_t s_authDaemonThread;
 DS::MsgChannel s_authChannel;
 
 PGconn* s_postgres;
 
 #define SEND_REPLY(msg, result) \
-    msg->m_client->m_channel.putMessage(result);
+    msg->m_client->m_channel.putMessage(result)
 
-void dm_auth_init()
+void check_postgres()
+{
+    if (PQstatus(s_postgres) == CONNECTION_BAD)
+        PQreset(s_postgres);
+    DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
+}
+
+bool dm_auth_init()
 {
     s_postgres = PQconnectdb(DS::String::Format(
                     "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
                     DS::Settings::DbHostname(), DS::Settings::DbPort(),
                     DS::Settings::DbUsername(), DS::Settings::DbPassword(),
                     DS::Settings::DbDbaseName()).c_str());
+    if (PQstatus(s_postgres) != CONNECTION_OK) {
+        fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(s_postgres));
+        PQfinish(s_postgres);
+        return false;
+    }
 
     //TODO: Ensure vault is initialized
+    return true;
 }
 
 void dm_auth_shutdown()
@@ -67,16 +91,69 @@ void dm_auth_shutdown()
 
 void dm_auth_login(Auth_LoginInfo* info)
 {
+    check_postgres();
+
+#ifdef DEBUG
     printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
            info->m_acctName.c_str(), DS::HexEncode(info->m_passHash, 20).c_str(),
            info->m_token.c_str(), info->m_os.c_str());
-    SEND_REPLY(info, DS::e_NetAccountNotFound);
+#endif
+
+    PostgresParams<1> parm;
+    parm.m_values[0] = info->m_acctName.c_str();
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT \"PassHash\", \"AcctUuid\", \"AcctFlags\", \"BillingType\""
+            "    FROM auth.\"Accounts\""
+            "    WHERE LOWER(\"Login\")=LOWER($1)",
+            1, 0, parm.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(info, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) == 0) {
+        printf("[Auth] %s: Account %s does not exist\n",
+               DS::SockIpAddress(info->m_client->m_sock).c_str(),
+               info->m_acctName.c_str());
+        PQclear(result);
+        // This should be NetAccountNotFound, but that's technically a
+        // security flaw...
+        SEND_REPLY(info, DS::e_NetAuthenticationFailed);
+        return;
+    }
+#ifdef DEBUG
+    if (PQntuples(result) != 1) {
+        PQclear(result);
+        DS_PASSERT(0);
+    }
+#endif
+
+    const char* passhash = PQgetvalue(result, 0, 0);
+    if (DS::ShaToHex(info->m_passHash).compare(passhash, DS::e_CaseInsensitive) != 0) {
+        printf("[Auth] %s: Failed login to account %s\n",
+               DS::SockIpAddress(info->m_client->m_sock).c_str(),
+               info->m_acctName.c_str());
+        PQclear(result);
+        SEND_REPLY(info, DS::e_NetAuthenticationFailed);
+        return;
+    }
+
+    info->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));
+    info->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+    info->m_billingType = strtoul(PQgetvalue(result, 0, 3), 0, 10);
+    printf("[Auth] %s logged in as %s (%s)\n",
+           DS::SockIpAddress(info->m_client->m_sock).c_str(),
+           info->m_acctName.c_str(), info->m_acctUuid.toString().c_str());
+    PQclear(result);
+    SEND_REPLY(info, DS::e_NetSuccess);
 }
 
 void* dm_authDaemon(void*)
 {
-    for ( ;; ) {
-        try {
+    try {
+        for ( ;; ) {
             DS::FifoMessage msg = s_authChannel.getMessage();
             switch (msg.m_messageType) {
             case e_AuthShutdown:
@@ -90,9 +167,10 @@ void* dm_authDaemon(void*)
                 DS_DASSERT(0);
                 break;
             }
-        } catch (DS::SockHup) {
-            // Client wasn't paying attention anyway...
         }
+    } catch (DS::AssertException ex) {
+        fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
+                ex.m_file, ex.m_line, ex.m_cond);
     }
 
     dm_auth_shutdown();

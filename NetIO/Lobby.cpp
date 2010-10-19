@@ -22,6 +22,7 @@
 #include "Types/Uuid.h"
 #include "SockIO.h"
 #include "errors.h"
+#include "settings.h"
 #include <pthread.h>
 #include <cstdio>
 
@@ -71,7 +72,13 @@ void* dm_lobby(void*)
                 DS::FileServer_Add(client);
                 break;
             case e_ConnCliToAuth:
-                DS::AuthServer_Add(client);
+                if (s_authServerRunning) {
+                    DS::AuthServer_Add(client);
+                } else {
+                    fprintf(stderr, "[%s] Unhandled auth server connection\n",
+                            DS::SockIpAddress(client).c_str());
+                    DS::FreeSock(client);
+                }
                 break;
             case e_ConnCliToGame:
                 fprintf(stderr, "[%s] Unhandled game server connection\n",

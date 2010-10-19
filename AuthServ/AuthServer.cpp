@@ -22,6 +22,7 @@
 #include <openssl/rand.h>
 
 extern bool s_commdebug;
+bool s_authServerRunning = false;
 
 std::list<AuthServer_Private*> s_authClients;
 pthread_mutex_t s_authClientMutex;
@@ -275,9 +276,13 @@ void* wk_authWorker(void* sockp)
 
 void DS::AuthServer_Init()
 {
-    dm_auth_init();
-    pthread_mutex_init(&s_authClientMutex, 0);
-    pthread_create(&s_authDaemonThread, 0, &dm_authDaemon, 0);
+    s_authServerRunning = dm_auth_init();
+    if (s_authServerRunning) {
+        pthread_mutex_init(&s_authClientMutex, 0);
+        pthread_create(&s_authDaemonThread, 0, &dm_authDaemon, 0);
+    } else {
+        fprintf(stderr, "Warning: Auth server not running!\n");
+    }
 }
 
 void DS::AuthServer_Add(DS::SocketHandle client)
@@ -294,6 +299,8 @@ void DS::AuthServer_Add(DS::SocketHandle client)
 
 void DS::AuthServer_Shutdown()
 {
-    s_authChannel.putMessage(e_AuthShutdown);
-    pthread_join(s_authDaemonThread, 0);
+    if (s_authServerRunning) {
+        s_authChannel.putMessage(e_AuthShutdown);
+        pthread_join(s_authDaemonThread, 0);
+    }
 }

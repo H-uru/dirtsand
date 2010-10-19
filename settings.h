@@ -62,4 +62,6 @@ namespace DS
     }
 }
 
+extern bool s_authServerRunning;
+
 #endif

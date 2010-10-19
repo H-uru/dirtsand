@@ -117,6 +117,10 @@ int main(int argc, char* argv[])
                 if (*svc == "lobby") {
                     DS::StopLobby();
                     DS::StartLobby();
+                } else if (*svc == "auth") {
+                    DS::AuthServer_Shutdown();
+                    DS::AuthServer_Init();
+                    printf("Auth server restarted\n");
                 } else {
                     fprintf(stderr, "Error: Service %s cannot be restarted\n", svc->c_str());
                 }
@@ -175,8 +179,8 @@ int main(int argc, char* argv[])
             }
         } else if (args[0] == "commdebug") {
 #ifdef DEBUG
-            if (args.size() != 2)
-                fprintf(stderr, "Error: Must specify on or off\n");
+            if (args.size() == 1)
+                printf("Comm debugging is currently %s\n", s_commdebug ? "on" : "off");
             else if (args[1] == "on")
                 s_commdebug = true;
             else if (args[1] == "off")
