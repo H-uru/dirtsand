@@ -29,8 +29,9 @@ static struct
 
     /* Servers */
     // TODO: Allow multiple servers for load balancing
-    DS::StringBuffer<chr16_t> m_gameServ;
     DS::StringBuffer<chr16_t> m_fileServ;
+    DS::StringBuffer<chr16_t> m_authServ;
+    DS::StringBuffer<chr16_t> m_gameServ;
 
     /* Data locations */
     DS::String m_fileRoot, m_authRoot;
@@ -103,6 +104,8 @@ bool DS::Settings::LoadFrom(const char* filename)
                                     "    The configured address is %d chars long, which may cause problems!",
                                     s_settings.m_fileServ.length());
                 }
+            } else if (params[0] == "Auth.Host") {
+                s_settings.m_authServ = params[1].toUtf16();
             } else if (params[0] == "Game.Host") {
                 s_settings.m_gameServ = params[1].toUtf16();
             } else if (params[0] == "File.Root") {
@@ -166,14 +169,19 @@ const uint32_t* DS::Settings::WdysKey()
     return s_settings.m_wdysKey;
 }
 
-DS::StringBuffer<chr16_t> DS::Settings::GameServerAddress()
-{
-    return s_settings.m_gameServ;
-}
-
 DS::StringBuffer<chr16_t> DS::Settings::FileServerAddress()
 {
     return s_settings.m_fileServ;
+}
+
+DS::StringBuffer<chr16_t> DS::Settings::AuthServerAddress()
+{
+    return s_settings.m_authServ;
+}
+
+DS::StringBuffer<chr16_t> DS::Settings::GameServerAddress()
+{
+    return s_settings.m_gameServ;
 }
 
 DS::String DS::Settings::FileRoot()

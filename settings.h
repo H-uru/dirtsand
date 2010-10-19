@@ -45,8 +45,9 @@ namespace DS
         const uint32_t* WdysKey();
 
         // Optimized for throwing onto the network
-        DS::StringBuffer<chr16_t> GameServerAddress();
         DS::StringBuffer<chr16_t> FileServerAddress();
+        DS::StringBuffer<chr16_t> AuthServerAddress();
+        DS::StringBuffer<chr16_t> GameServerAddress();
 
         DS::String FileRoot();
         DS::String AuthRoot();

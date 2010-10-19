@@ -129,10 +129,6 @@ void cb_fileServIpAddress(GateKeeper_Private& client)
 
 void cb_authServIpAddress(GateKeeper_Private& client)
 {
-    /* Currently not supported by the client */
-    DS_PASSERT(0);
-
-#if 0
     START_REPLY(e_GateKeeperToCli_AuthServIpAddressReply);
 
     // Trans ID
@@ -144,7 +140,6 @@ void cb_authServIpAddress(GateKeeper_Private& client)
     client.m_buffer.writeBytes(address.data(), address.length() * sizeof(chr16_t));
 
     SEND_REPLY();
-#endif
 }
 
 void* wk_gateKeeper(void* sockp)
