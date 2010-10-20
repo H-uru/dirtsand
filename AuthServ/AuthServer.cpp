@@ -172,7 +172,7 @@ void cb_login(AuthServer_Private& client)
 {
     Auth_LoginInfo msg;
     msg.m_client = &client;
-    msg.m_transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     msg.m_clientChallenge = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     msg.m_acctName = DS::CryptRecvString(client.m_sock, client.m_crypt);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt,
@@ -186,9 +186,9 @@ void cb_login(AuthServer_Private& client)
         static uint32_t zerokey[4] = { 0, 0, 0, 0 };
 
         START_REPLY(e_AuthToCli_AcctLoginReply);
-        client.m_buffer.write<uint32_t>(msg.m_transId);
+        client.m_buffer.write<uint32_t>(transId);
         client.m_buffer.write<uint32_t>(reply.m_messageType);
-        client.m_buffer.writeBytes(msg.m_acctUuid.m_bytes, sizeof(msg.m_acctUuid.m_bytes));
+        client.m_buffer.writeBytes(client.m_acctUuid.m_bytes, sizeof(client.m_acctUuid.m_bytes));
         client.m_buffer.write<uint32_t>(0);
         client.m_buffer.write<uint32_t>(0);
         client.m_buffer.writeBytes(zerokey, sizeof(zerokey));
@@ -199,7 +199,7 @@ void cb_login(AuthServer_Private& client)
     for (std::vector<AuthServer_PlayerInfo>::iterator player_iter = msg.m_players.begin();
          player_iter != msg.m_players.end(); ++player_iter) {
         START_REPLY(e_AuthToCli_AcctLoginReply);
-        client.m_buffer.write<uint32_t>(msg.m_transId);
+        client.m_buffer.write<uint32_t>(transId);
         client.m_buffer.write<uint32_t>(player_iter->m_playerId);
         DS::StringBuffer<chr16_t> wstrbuf = player_iter->m_playerName.toUtf16();
         client.m_buffer.write<uint16_t>(wstrbuf.length());
@@ -213,12 +213,33 @@ void cb_login(AuthServer_Private& client)
 
     /* The final reply */
     START_REPLY(e_AuthToCli_AcctLoginReply);
-    client.m_buffer.write<uint32_t>(msg.m_transId);
+    client.m_buffer.write<uint32_t>(transId);
     client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
-    client.m_buffer.writeBytes(msg.m_acctUuid.m_bytes, sizeof(msg.m_acctUuid.m_bytes));
+    client.m_buffer.writeBytes(client.m_acctUuid.m_bytes, sizeof(client.m_acctUuid.m_bytes));
     client.m_buffer.write<uint32_t>(msg.m_acctFlags);
     client.m_buffer.write<uint32_t>(msg.m_billingType);
     client.m_buffer.writeBytes(DS::Settings::DroidKey(), 4 * sizeof(uint32_t));
+    SEND_REPLY();
+}
+
+void cb_setPlayer(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_AcctSetPlayerReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    // Player ID
+    client.m_player.m_playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    if (client.m_player.m_playerId == 0) {
+        // No player -- always successful
+        client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
+    } else {
+        s_authChannel.putMessage(e_AuthSetPlayer, reinterpret_cast<void*>(&client));
+        DS::FifoMessage reply = client.m_channel.getMessage();
+        client.m_buffer.write<uint32_t>(reply.m_messageType);
+    }
+
     SEND_REPLY();
 }
 
@@ -383,6 +404,9 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_AcctLoginRequest:
                 cb_login(client);
+                break;
+            case e_CliToAuth_AcctSetPlayerRequest:
+                cb_setPlayer(client);
                 break;
             case e_CliToAuth_FileListRequest:
                 cb_fileList(client);

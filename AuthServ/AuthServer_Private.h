@@ -42,6 +42,7 @@ struct AuthServer_Private
     DS::MsgChannel m_channel;
 
     uint32_t m_serverChallenge;
+    DS::Uuid m_acctUuid;
     AuthServer_PlayerInfo m_player;
     std::map<uint32_t, DS::Stream*> m_downloads;
 
@@ -65,14 +66,13 @@ bool dm_auth_init();
 
 enum AuthDaemonMessages
 {
-    e_AuthShutdown, e_AuthClientLogin,
+    e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer,
 };
 void AuthDaemon_SendMessage(int msg, void* data = 0);
 
 struct Auth_ClientMessage
 {
     AuthServer_Private* m_client;
-    uint32_t m_transId;
 };
 
 struct Auth_LoginInfo : public Auth_ClientMessage
@@ -82,7 +82,6 @@ struct Auth_LoginInfo : public Auth_ClientMessage
     DS::ShaHash m_passHash;
     DS::String m_token, m_os;
 
-    DS::Uuid m_acctUuid;
     uint32_t m_acctFlags, m_billingType;
     std::vector<AuthServer_PlayerInfo> m_players;
 };

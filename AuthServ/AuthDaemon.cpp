@@ -99,6 +99,9 @@ void dm_auth_login(Auth_LoginInfo* info)
            info->m_token.c_str(), info->m_os.c_str());
 #endif
 
+    // Reset UUID in case authentication fails
+    info->m_client->m_acctUuid = DS::Uuid();
+
     PostgresParams<1> parm;
     parm.m_values[0] = info->m_acctName.c_str();
     PGresult* result = PQexecParams(s_postgres,
@@ -155,16 +158,16 @@ void dm_auth_login(Auth_LoginInfo* info)
         }
     }
 
-    info->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));
+    info->m_client->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));
     info->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), 0, 10);
     info->m_billingType = strtoul(PQgetvalue(result, 0, 3), 0, 10);
-    printf("[Auth] %s logged in as %s (%s)\n",
+    printf("[Auth] %s logged in as %s {%s}\n",
            DS::SockIpAddress(info->m_client->m_sock).c_str(),
-           info->m_acctName.c_str(), info->m_acctUuid.toString().c_str());
+           info->m_acctName.c_str(), info->m_client->m_acctUuid.toString().c_str());
     PQclear(result);
 
     // Get list of players
-    DS::String uuidString = info->m_acctUuid.toString();
+    DS::String uuidString = info->m_client->m_acctUuid.toString();
     parm.m_values[0] = uuidString.c_str();
     result = PQexecParams(s_postgres,
             "SELECT \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\""
@@ -190,6 +193,58 @@ void dm_auth_login(Auth_LoginInfo* info)
     SEND_REPLY(info, DS::e_NetSuccess);
 }
 
+void dm_auth_setPlayer(Auth_ClientMessage* msg)
+{
+    check_postgres();
+
+    DS::String uuidString = msg->m_client->m_acctUuid.toString();
+    DS::String playerIdxString = DS::String::Format("%u", msg->m_client->m_player.m_playerId);
+    PostgresParams<2> parms;
+    parms.m_values[0] = uuidString.c_str();
+    parms.m_values[1] = playerIdxString.c_str();
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT \"PlayerName\", \"AvatarShape\", \"Explorer\""
+            "    FROM auth.\"Players\""
+            "    WHERE \"AcctUuid\"=$1 AND \"PlayerIdx\"=$2",
+            2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        msg->m_client->m_player.m_playerId = 0;
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) == 0) {
+        printf("[Auth] {%s} requested invalid player ID (%u)\n",
+               msg->m_client->m_acctUuid.toString().c_str(),
+               msg->m_client->m_player.m_playerId);
+        PQclear(result);
+        msg->m_client->m_player.m_playerId = 0;
+        SEND_REPLY(msg, DS::e_NetPlayerNotFound);
+        return;
+    }
+
+#ifdef DEBUG
+    if (PQntuples(result) != 1) {
+        PQclear(result);
+        msg->m_client->m_player.m_playerId = 0;
+        DS_PASSERT(0);
+    }
+#endif
+
+    msg->m_client->m_player.m_playerName = PQgetvalue(result, 0, 0);
+    msg->m_client->m_player.m_avatarModel = PQgetvalue(result, 0, 1);
+    msg->m_client->m_player.m_explorer = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+    PQclear(result);
+
+    printf("[Auth] {%s} signed in as %s (%u)\n",
+           msg->m_client->m_acctUuid.toString().c_str(),
+           msg->m_client->m_player.m_playerName.c_str(),
+           msg->m_client->m_player.m_playerId);
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void* dm_authDaemon(void*)
 {
     try {
@@ -201,6 +256,9 @@ void* dm_authDaemon(void*)
                 return 0;
             case e_AuthClientLogin:
                 dm_auth_login(reinterpret_cast<Auth_LoginInfo*>(msg.m_payload));
+                break;
+            case e_AuthSetPlayer:
+                dm_auth_setPlayer(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
