@@ -25,7 +25,7 @@ static struct
 {
     /* Encryption */
     uint8_t m_cryptKeys[DS::e_KeyMaxTypes][64];
-    uint32_t m_wdysKey[4];
+    uint32_t m_droidKey[4];
 
     /* Servers */
     // TODO: Allow multiple servers for load balancing
@@ -89,13 +89,13 @@ bool DS::Settings::LoadFrom(const char* filename)
                 DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_N], 64, params[1]);
             } else if (params[0] == "Key.Gate.K") {
                 DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_K], 64, params[1]);
-            } else if (params[0] == "Key.WDYS") {
+            } else if (params[0] == "Key.Droid") {
                 Blob* data = HexDecode(params[1]);
                 DS_PASSERT(data->size() == 16);
-                s_settings.m_wdysKey[0] = BUF_TO_UINT(data->buffer()     );
-                s_settings.m_wdysKey[1] = BUF_TO_UINT(data->buffer() +  4);
-                s_settings.m_wdysKey[2] = BUF_TO_UINT(data->buffer() +  8);
-                s_settings.m_wdysKey[3] = BUF_TO_UINT(data->buffer() + 12);
+                s_settings.m_droidKey[0] = BUF_TO_UINT(data->buffer()     );
+                s_settings.m_droidKey[1] = BUF_TO_UINT(data->buffer() +  4);
+                s_settings.m_droidKey[2] = BUF_TO_UINT(data->buffer() +  8);
+                s_settings.m_droidKey[3] = BUF_TO_UINT(data->buffer() + 12);
                 data->unref();
             } else if (params[0] == "File.Host") {
                 s_settings.m_fileServ = params[1].toUtf16();
@@ -143,7 +143,7 @@ bool DS::Settings::LoadFrom(const char* filename)
 void DS::Settings::UseDefaults()
 {
     memset(s_settings.m_cryptKeys, 0, sizeof(s_settings.m_cryptKeys));
-    memset(s_settings.m_wdysKey, 0, sizeof(s_settings.m_wdysKey));
+    memset(s_settings.m_droidKey, 0, sizeof(s_settings.m_droidKey));
 
     s_settings.m_gameServ = String("localhost").toUtf16();
     s_settings.m_fileServ = String("localhost").toUtf16();
@@ -164,9 +164,9 @@ const uint8_t* DS::Settings::CryptKey(DS::KeyType key)
     return s_settings.m_cryptKeys[key];
 }
 
-const uint32_t* DS::Settings::WdysKey()
+const uint32_t* DS::Settings::DroidKey()
 {
-    return s_settings.m_wdysKey;
+    return s_settings.m_droidKey;
 }
 
 DS::StringBuffer<chr16_t> DS::Settings::FileServerAddress()

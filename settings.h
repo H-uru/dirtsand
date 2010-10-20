@@ -42,7 +42,7 @@ namespace DS
     namespace Settings
     {
         const uint8_t* CryptKey(KeyType key);
-        const uint32_t* WdysKey();
+        const uint32_t* DroidKey();
 
         // Optimized for throwing onto the network
         DS::StringBuffer<chr16_t> FileServerAddress();
