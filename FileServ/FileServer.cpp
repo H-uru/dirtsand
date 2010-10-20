@@ -190,7 +190,7 @@ void cb_downloadStart(FileServer_Private& client)
     }
 
     // Ensure filename is jailed to our data path
-    if (filename.find("..") != -1 || filename.find("\\") != -1) {
+    if (filename.find("..") != -1) {
         client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
         client.m_buffer.write<uint32_t>(0);     // Reader ID
         client.m_buffer.write<uint32_t>(0);     // File size
@@ -198,6 +198,7 @@ void cb_downloadStart(FileServer_Private& client)
         SEND_REPLY();
         return;
     }
+    filename.replace("\\", "/");
 
     filename = DS::Settings::FileRoot() + filename;
     DS::FileStream* stream = new DS::FileStream();

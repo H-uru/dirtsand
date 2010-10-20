@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "AuthServer_Private.h"
+#include "AuthManifest.h"
 #include "Types/Uuid.h"
 #include "settings.h"
 #include "errors.h"
@@ -221,6 +222,143 @@ void cb_login(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_fileList(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_FileListReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    DS::String directory = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    DS::String fileext = DS::CryptRecvString(client.m_sock, client.m_crypt);
+
+    // Manifest may not have any path characters
+    if (directory.find(".") != -1 || directory.find("/") != -1
+        || directory.find("\\") != -1 || directory.find(":") != -1
+        || fileext.find(".") != -1 || fileext.find("/") != -1
+        || fileext.find("\\") != -1 || fileext.find(":") != -1) {
+        fprintf(stderr, "[Auth] Invalid manifest request from %s: %s\\%s\n",
+                DS::SockIpAddress(client.m_sock).c_str(), directory.c_str(),
+                fileext.c_str());
+        client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
+        client.m_buffer.write<uint32_t>(0);     // Data packet size
+        SEND_REPLY();
+        return;
+    }
+    DS::String mfsname = DS::String::Format("%s%s_%s.list", DS::Settings::AuthRoot().c_str(),
+                                            directory.c_str(), fileext.c_str());
+    DS::AuthManifest mfs;
+    DS::NetResultCode result = mfs.loadManifest(mfsname.c_str());
+    client.m_buffer.write<uint32_t>(result);
+
+    if (result != DS::e_NetSuccess) {
+        fprintf(stderr, "[Auth] %s requested invalid manifest %s\n",
+                DS::SockIpAddress(client.m_sock).c_str(), mfsname.c_str());
+        client.m_buffer.write<uint32_t>(0);     // Data packet size
+    } else {
+        uint32_t sizeLocation = client.m_buffer.tell();
+        client.m_buffer.write<uint32_t>(0);
+        uint32_t dataSize = mfs.encodeToStream(&client.m_buffer);
+        client.m_buffer.seek(sizeLocation, SEEK_SET);
+        client.m_buffer.write<uint32_t>(dataSize);
+    }
+
+    SEND_REPLY();
+}
+
+void cb_downloadStart(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_FileDownloadChunk);
+
+    // Trans ID
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+
+    // Download filename
+    DS::String filename = DS::CryptRecvString(client.m_sock, client.m_crypt);
+
+    // Ensure filename is jailed to our data path
+    if (filename.find("..") != -1) {
+        client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
+        client.m_buffer.write<uint32_t>(0);     // File size
+        client.m_buffer.write<uint32_t>(0);     // Chunk offset
+        client.m_buffer.write<uint32_t>(0);     // Data packet size
+        SEND_REPLY();
+        return;
+    }
+    filename.replace("\\", "/");
+
+    filename = DS::Settings::AuthRoot() + filename;
+    DS::FileStream* stream = new DS::FileStream();
+    try {
+        stream->open(filename.c_str(), "rb");
+    } catch (DS::FileIOException ex) {
+        fprintf(stderr, "[Auth] Could not open file %s: %s\n[Auth] Requested by %s\n",
+                filename.c_str(), ex.what(), DS::SockIpAddress(client.m_sock).c_str());
+        client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
+        client.m_buffer.write<uint32_t>(0);     // File size
+        client.m_buffer.write<uint32_t>(0);     // Chunk offset
+        client.m_buffer.write<uint32_t>(0);     // Data packet size
+        SEND_REPLY();
+        delete stream;
+        return;
+    }
+
+    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
+    client.m_buffer.write<uint32_t>(stream->size());
+    client.m_buffer.write<uint32_t>(stream->tell());
+
+    uint8_t data[CHUNK_SIZE];
+    if (stream->size() > CHUNK_SIZE) {
+        client.m_buffer.write<uint32_t>(CHUNK_SIZE);
+        stream->readBytes(data, CHUNK_SIZE);
+        client.m_buffer.writeBytes(data, CHUNK_SIZE);
+        client.m_downloads[transId] = stream;
+    } else {
+        client.m_buffer.write<uint32_t>(stream->size());
+        stream->readBytes(data, stream->size());
+        client.m_buffer.writeBytes(data, stream->size());
+        delete stream;
+    }
+
+    SEND_REPLY();
+}
+
+void cb_downloadNext(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_FileDownloadChunk);
+
+    // Trans ID
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+
+    std::map<uint32_t, DS::Stream*>::iterator fi = client.m_downloads.find(transId);
+    if (fi == client.m_downloads.end()) {
+        // The last chunk was already sent, we don't care anymore
+        return;
+    }
+
+    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
+    client.m_buffer.write<uint32_t>(fi->second->size());
+    client.m_buffer.write<uint32_t>(fi->second->tell());
+
+    uint8_t data[CHUNK_SIZE];
+    size_t bytesLeft = fi->second->size() - fi->second->tell();
+    if (bytesLeft > CHUNK_SIZE) {
+        client.m_buffer.write<uint32_t>(CHUNK_SIZE);
+        fi->second->readBytes(data, CHUNK_SIZE);
+        client.m_buffer.writeBytes(data, CHUNK_SIZE);
+    } else {
+        client.m_buffer.write<uint32_t>(bytesLeft);
+        fi->second->readBytes(data, bytesLeft);
+        client.m_buffer.writeBytes(data, bytesLeft);
+        delete fi->second;
+        client.m_downloads.erase(fi);
+    }
+
+    SEND_REPLY();
+}
+
 void* wk_authWorker(void* sockp)
 {
     AuthServer_Private client;
@@ -245,6 +383,15 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_AcctLoginRequest:
                 cb_login(client);
+                break;
+            case e_CliToAuth_FileListRequest:
+                cb_fileList(client);
+                break;
+            case e_CliToAuth_FileDownloadRequest:
+                cb_downloadStart(client);
+                break;
+            case e_CliToAuth_FileDownloadChunkAck:
+                cb_downloadNext(client);
                 break;
             default:
                 /* Invalid message */

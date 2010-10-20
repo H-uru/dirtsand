@@ -543,6 +543,21 @@ ssize_t DS::String::find(const char* substr, ssize_t start)
     return -1;
 }
 
+void DS::String::replace(const char* from, const char* to)
+{
+    ssize_t start = 0;
+    size_t skiplen = strlen(from);
+    String result;
+    for ( ;; ) {
+        ssize_t next = find(from, start);
+        if (next == -1)
+            break;
+        result += mid(start, next - start) + to;
+        start = next + skiplen;
+    }
+    operator=(result + mid(start));
+}
+
 DS::String DS::String::Format(const char* fmt, ... )
 {
     va_list aptr;

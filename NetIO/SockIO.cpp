@@ -153,28 +153,32 @@ DS::String DS::SockIpAddress(const DS::SocketHandle sock)
 
 void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size)
 {
-    if (size == 0)
-        return;
+    while (size > 0) {
+        ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
+                            buffer, size, 0);
+        if (bytes < 0 && errno == EPIPE)
+            throw DS::SockHup();
+        DS_PASSERT(bytes > 0);
 
-    ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
-                         buffer, size, 0);
-    if (bytes < 0 && errno == EPIPE)
-        throw DS::SockHup();
-    DS_PASSERT(static_cast<size_t>(bytes) == size);
+        size -= bytes;
+        buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
+    }
 }
 
 void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
 {
-    if (size == 0)
-        return;
+    while (size > 0) {
+        ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
+                             buffer, size, 0);
+        if (bytes < 0 && errno == ECONNRESET)
+            throw DS::SockHup();
+        else if (bytes == 0)
+            throw DS::SockHup();
+        DS_PASSERT(bytes > 0);
 
-    ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
-                         buffer, size, 0);
-    if (bytes < 0 && errno == ECONNRESET)
-        throw DS::SockHup();
-    else if (bytes == 0)
-        throw DS::SockHup();
-    DS_PASSERT(static_cast<size_t>(bytes) == size);
+        size -= bytes;
+        buffer = reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(buffer) + bytes);
+    }
 }
 
 /*

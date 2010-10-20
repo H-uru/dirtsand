@@ -150,6 +150,7 @@ namespace DS
         String strip(char comment = 0);
 
         ssize_t find(const char* substr, ssize_t start = 0);
+        void replace(const char* from, const char* to);
 
         /* Creation */
         static String Format(const char* fmt, ...);

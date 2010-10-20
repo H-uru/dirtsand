@@ -38,6 +38,7 @@ set(dirtsand_SOURCES
     GateKeeper/GateServ.cpp
     FileServ/FileManifest.cpp
     FileServ/FileServer.cpp
+    AuthServ/AuthManifest.cpp
     AuthServ/AuthServer.cpp
     AuthServ/AuthDaemon.cpp
     strings.cpp

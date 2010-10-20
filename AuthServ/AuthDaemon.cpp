@@ -26,7 +26,7 @@
 template <size_t count>
 struct PostgresParams
 {
-    // Oid field not included here...  They're annoying, and the non-standard
+    // Oid field not included here...  They're annoying, and the non-builtin
     // ones can change from one server to the next...  :(
     const char* m_values[count];
     int m_lengths[count];
@@ -164,7 +164,8 @@ void dm_auth_login(Auth_LoginInfo* info)
     PQclear(result);
 
     // Get list of players
-    parm.m_values[0] = info->m_acctUuid.toString().c_str();
+    DS::String uuidString = info->m_acctUuid.toString();
+    parm.m_values[0] = uuidString.c_str();
     result = PQexecParams(s_postgres,
             "SELECT \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\""
             "    FROM auth.\"Players\""
@@ -184,6 +185,7 @@ void dm_auth_login(Auth_LoginInfo* info)
         info->m_players[i].m_avatarModel = PQgetvalue(result, i, 2);
         info->m_players[i].m_explorer = strtoul(PQgetvalue(result, i, 3), 0, 10);
     }
+    PQclear(result);
 
     SEND_REPLY(info, DS::e_NetSuccess);
 }

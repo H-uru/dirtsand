@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <vector>
 #include <list>
+#include <map>
 
 struct AuthServer_PlayerInfo
 {
@@ -42,6 +43,16 @@ struct AuthServer_Private
 
     uint32_t m_serverChallenge;
     AuthServer_PlayerInfo m_player;
+    std::map<uint32_t, DS::Stream*> m_downloads;
+
+    ~AuthServer_Private()
+    {
+        while (!m_downloads.empty()) {
+            std::map<uint32_t, DS::Stream*>::iterator item = m_downloads.begin();
+            delete item->second;
+            m_downloads.erase(item);
+        }
+    }
 };
 
 extern std::list<AuthServer_Private*> s_authClients;
