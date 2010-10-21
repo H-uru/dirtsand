@@ -33,6 +33,9 @@ static struct
     DS::StringBuffer<chr16_t> m_authServ;
     DS::StringBuffer<chr16_t> m_gameServ;
 
+    /* Host configuration */
+    DS::String m_lobbyAddr, m_lobbyPort;
+
     /* Data locations */
     DS::String m_fileRoot, m_authRoot;
 
@@ -108,6 +111,10 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_authServ = params[1].toUtf16();
             } else if (params[0] == "Game.Host") {
                 s_settings.m_gameServ = params[1].toUtf16();
+            } else if (params[0] == "Lobby.Addr") {
+                s_settings.m_lobbyAddr = params[1];
+            } else if (params[0] == "Lobby.Port") {
+                s_settings.m_lobbyPort = params[1];
             } else if (params[0] == "File.Root") {
                 s_settings.m_fileRoot = params[1];
                 if (s_settings.m_fileRoot.right(1) != "/")
@@ -145,8 +152,10 @@ void DS::Settings::UseDefaults()
     memset(s_settings.m_cryptKeys, 0, sizeof(s_settings.m_cryptKeys));
     memset(s_settings.m_droidKey, 0, sizeof(s_settings.m_droidKey));
 
-    s_settings.m_gameServ = String("localhost").toUtf16();
+    s_settings.m_authServ = String("localhost").toUtf16();
     s_settings.m_fileServ = String("localhost").toUtf16();
+    s_settings.m_gameServ = String("localhost").toUtf16();
+    s_settings.m_lobbyPort = "14617";
 
     s_settings.m_fileRoot = "./";
     s_settings.m_authRoot = "./";
@@ -182,6 +191,16 @@ DS::StringBuffer<chr16_t> DS::Settings::AuthServerAddress()
 DS::StringBuffer<chr16_t> DS::Settings::GameServerAddress()
 {
     return s_settings.m_gameServ;
+}
+
+const char* DS::Settings::LobbyAddress()
+{
+    return s_settings.m_lobbyAddr.isEmpty() ? 0 : s_settings.m_lobbyAddr.c_str();
+}
+
+const char* DS::Settings::LobbyPort()
+{
+    return s_settings.m_lobbyPort.c_str();
 }
 
 DS::String DS::Settings::FileRoot()

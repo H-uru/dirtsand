@@ -48,7 +48,7 @@ static DS::SocketHandle s_listenSock;
 
 void* dm_lobby(void*)
 {
-    printf("Lobby running on port 14617\n");
+    printf("[Lobby] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
     try {
         for ( ;; ) {
             DS::SocketHandle client = DS::AcceptSock(s_listenSock);
@@ -108,7 +108,8 @@ void* dm_lobby(void*)
 
 void DS::StartLobby()
 {
-    s_listenSock = DS::BindSocket(0, "14617");
+    s_listenSock = DS::BindSocket(DS::Settings::LobbyAddress(),
+                                  DS::Settings::LobbyPort());
     DS::ListenSock(s_listenSock);
     pthread_create(&s_lobbyThread, 0, &dm_lobby, 0);
 }

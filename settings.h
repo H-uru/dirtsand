@@ -49,6 +49,9 @@ namespace DS
         DS::StringBuffer<chr16_t> AuthServerAddress();
         DS::StringBuffer<chr16_t> GameServerAddress();
 
+        const char* LobbyAddress();
+        const char* LobbyPort();
+
         DS::String FileRoot();
         DS::String AuthRoot();
 
