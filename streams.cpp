@@ -192,9 +192,9 @@ void DS::BufferStream::seek(int32_t offset, int whence)
 
 ssize_t DS::BlobStream::readBytes(void* buffer, size_t count)
 {
-    if (m_position + count > m_blob->size())
-        count = m_blob->size() - m_position;
-    memcpy(buffer, m_blob->buffer() + m_position, count);
+    if (m_position + count > m_blob.size())
+        count = m_blob.size() - m_position;
+    memcpy(buffer, m_blob.buffer() + m_position, count);
     m_position += count;
     return count;
 }
@@ -211,7 +211,7 @@ void DS::BlobStream::seek(int32_t offset, int whence)
     else if (whence == SEEK_CUR)
         m_position += offset;
     else if (whence == SEEK_END)
-        m_position = m_blob->size() - offset;
+        m_position = m_blob.size() - offset;
 
-    DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_blob->size());
+    DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_blob.size());
 }

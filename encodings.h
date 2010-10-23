@@ -23,10 +23,10 @@
 namespace DS
 {
     String Base64Encode(const uint8_t* data, size_t length);
-    Blob* Base64Decode(const String& value);
+    Blob Base64Decode(const String& value);
 
     String HexEncode(const uint8_t* data, size_t length);
-    Blob* HexDecode(const String& value);
+    Blob HexDecode(const String& value);
 }
 
 #endif

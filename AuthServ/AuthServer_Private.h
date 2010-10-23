@@ -21,6 +21,7 @@
 #include "Types/Uuid.h"
 #include "Types/ShaHash.h"
 #include "streams.h"
+#include <libpq-fe.h>
 #include <pthread.h>
 #include <vector>
 #include <list>
@@ -85,3 +86,29 @@ struct Auth_LoginInfo : public Auth_ClientMessage
     uint32_t m_acctFlags, m_billingType;
     std::vector<AuthServer_PlayerInfo> m_players;
 };
+
+/* Vault/Postgres stuff */
+template <size_t count>
+struct PostgresParams
+{
+    // Oid field not included here...  They're annoying, and the non-builtin
+    // ones can change from one server to the next...  :(
+    const char* m_values[count];
+    int m_lengths[count];
+    int m_formats[count];
+};
+
+template <size_t count>
+struct PostgresStrings : public PostgresParams<count>
+{
+    DS::String m_strings[count];
+
+    void set(size_t idx, const DS::String& str)
+    {
+        m_strings[idx] = str;
+        this->m_values[idx] = str.c_str();
+    }
+};
+
+extern PGconn* s_postgres;
+bool init_vault();

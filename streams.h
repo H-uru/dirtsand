@@ -149,45 +149,74 @@ namespace DS
     class Blob
     {
     public:
+        Blob() : m_data(0) { }
+
         Blob(const uint8_t* buffer, size_t size)
-            : m_buffer(buffer), m_size(size), m_refs(1) { }
-
-        const uint8_t* buffer() const { return m_buffer; }
-        size_t size() const { return m_size; }
-
-        void ref() { ++m_refs; }
-        void unref()
         {
-            if (--m_refs == 0)
-                delete this;
+            m_data = new _ref(buffer, size);
         }
 
-    private:
-        const uint8_t* m_buffer;
-        size_t m_size;
-        int m_refs;
+        Blob(const Blob& other) : m_data(other.m_data)
+        {
+            if (m_data)
+                m_data->ref();
+        }
 
-        Blob(const Blob&) { }
-        ~Blob() { delete[] m_buffer; }
+        ~Blob()
+        {
+            if (m_data)
+                m_data->unref();
+        }
+
+        Blob& operator=(const Blob& other)
+        {
+            if (other.m_data)
+                other.m_data->ref();
+            if (m_data)
+                m_data->unref();
+            m_data = other.m_data;
+            return *this;
+        }
+
+        const uint8_t* buffer() const { return m_data ? m_data->m_buffer : 0; }
+        size_t size() const { return m_data ? m_data->m_size : 0; }
+
+    private:
+        struct _ref {
+            const uint8_t* m_buffer;
+            size_t m_size;
+            int m_refs;
+
+            _ref(const uint8_t* buffer, size_t size)
+                : m_buffer(buffer), m_size(size), m_refs(1) { }
+            ~_ref() { delete[] m_buffer; }
+
+            void ref() { ++m_refs; }
+            void unref()
+            {
+                if (--m_refs == 0)
+                    delete this;
+            }
+        }* m_data;
     };
 
     class BlobStream : public Stream
     {
     public:
-        BlobStream(Blob* blob) : m_blob(blob) { m_blob->ref(); }
-        virtual ~BlobStream() { m_blob->unref(); }
+        BlobStream(Blob blob) : m_blob(blob) { }
+        virtual ~BlobStream() { }
 
         virtual ssize_t readBytes(void* buffer, size_t count);
         virtual ssize_t writeBytes(const void* buffer, size_t count);
 
         virtual uint32_t tell() { return static_cast<uint32_t>(m_position); }
         virtual void seek(int32_t offset, int whence);
-        virtual uint32_t size() { return static_cast<uint32_t>(m_blob->size()); }
+        virtual uint32_t size() { return static_cast<uint32_t>(m_blob.size()); }
         virtual bool atEof() { return tell() >= size(); }
         virtual void flush() { }
 
     private:
-        Blob* m_blob;
+        Blob m_blob;
         size_t m_position;
     };
 }

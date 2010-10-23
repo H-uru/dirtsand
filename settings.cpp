@@ -45,10 +45,9 @@ static struct
 
 #define DS_LOADBLOB(outbuffer, fixedsize, input) \
     { \
-        Blob* data = Base64Decode(input); \
-        DS_PASSERT(data->size() == fixedsize); \
-        memcpy(outbuffer, data->buffer(), fixedsize); \
-        data->unref(); \
+        Blob data = Base64Decode(input); \
+        DS_PASSERT(data.size() == fixedsize); \
+        memcpy(outbuffer, data.buffer(), fixedsize); \
     }
 
 #define BUF_TO_UINT(bufptr) \
@@ -93,13 +92,12 @@ bool DS::Settings::LoadFrom(const char* filename)
             } else if (params[0] == "Key.Gate.K") {
                 DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_K], 64, params[1]);
             } else if (params[0] == "Key.Droid") {
-                Blob* data = HexDecode(params[1]);
-                DS_PASSERT(data->size() == 16);
-                s_settings.m_droidKey[0] = BUF_TO_UINT(data->buffer()     );
-                s_settings.m_droidKey[1] = BUF_TO_UINT(data->buffer() +  4);
-                s_settings.m_droidKey[2] = BUF_TO_UINT(data->buffer() +  8);
-                s_settings.m_droidKey[3] = BUF_TO_UINT(data->buffer() + 12);
-                data->unref();
+                Blob data = HexDecode(params[1]);
+                DS_PASSERT(data.size() == 16);
+                s_settings.m_droidKey[0] = BUF_TO_UINT(data.buffer()     );
+                s_settings.m_droidKey[1] = BUF_TO_UINT(data.buffer() +  4);
+                s_settings.m_droidKey[2] = BUF_TO_UINT(data.buffer() +  8);
+                s_settings.m_droidKey[3] = BUF_TO_UINT(data.buffer() + 12);
             } else if (params[0] == "File.Host") {
                 s_settings.m_fileServ = params[1].toUtf16();
                 if (s_settings.m_fileServ.length() > 24) {

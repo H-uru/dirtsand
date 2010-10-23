@@ -68,12 +68,12 @@ DS::String DS::Base64Encode(const uint8_t* data, size_t length)
     return String::Steal(result, resultLen);
 }
 
-DS::Blob* DS::Base64Decode(const DS::String& value)
+DS::Blob DS::Base64Decode(const DS::String& value)
 {
     size_t length = value.length();
     DS_PASSERT((length % 4) == 0);
     if (length == 0)
-        return new Blob(0, 0);
+        return Blob();
 
     size_t resultLen = (length * 3) / 4;
     if (value.length() > 0) {
@@ -112,7 +112,7 @@ DS::Blob* DS::Base64Decode(const DS::String& value)
         outp[2] = ((b64_codes[inp[2]] << 6) & 0xC0) | (b64_codes[inp[3]] & 0x3F);
     }
 
-    return new Blob(result, resultLen);
+    return Blob(result, resultLen);
 }
 
 
@@ -143,12 +143,12 @@ DS::String DS::HexEncode(const uint8_t* data, size_t length)
     return String::Steal(buffer, hexlen);
 }
 
-DS::Blob* DS::HexDecode(const String& value)
+DS::Blob DS::HexDecode(const String& value)
 {
     DS_PASSERT((value.length() % 2) == 0);
     size_t length = value.length() / 2;
     if (length == 0)
-        return new Blob(0, 0);
+        return Blob();
 
     uint8_t* buffer = new uint8_t[length];
     const uint8_t* inp = reinterpret_cast<const uint8_t*>(value.c_str());
@@ -158,5 +158,5 @@ DS::Blob* DS::HexDecode(const String& value)
         buffer[i] = (hex_codes[inp[0]] << 4) | (hex_codes[inp[1]]);
         inp += 2;
     }
-    return new Blob(buffer, length);
+    return Blob(buffer, length);
 }

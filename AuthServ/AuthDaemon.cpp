@@ -19,29 +19,16 @@
 #include "encodings.h"
 #include "settings.h"
 #include "errors.h"
-#include <libpq-fe.h>
 #include <unistd.h>
-
-/* Here's something you can't do with generics */
-template <size_t count>
-struct PostgresParams
-{
-    // Oid field not included here...  They're annoying, and the non-builtin
-    // ones can change from one server to the next...  :(
-    const char* m_values[count];
-    int m_lengths[count];
-    int m_formats[count];
-};
 
 pthread_t s_authDaemonThread;
 DS::MsgChannel s_authChannel;
-
 PGconn* s_postgres;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
 
-static void check_postgres()
+static inline void check_postgres()
 {
     if (PQstatus(s_postgres) == CONNECTION_BAD)
         PQreset(s_postgres);
@@ -61,7 +48,7 @@ bool dm_auth_init()
         return false;
     }
 
-    //TODO: Ensure vault is initialized
+    //init_vault();
     return true;
 }
 
@@ -102,8 +89,8 @@ void dm_auth_login(Auth_LoginInfo* info)
     // Reset UUID in case authentication fails
     info->m_client->m_acctUuid = DS::Uuid();
 
-    PostgresParams<1> parm;
-    parm.m_values[0] = info->m_acctName.c_str();
+    PostgresStrings<1> parm;
+    parm.set(0, info->m_acctName.c_str());
     PGresult* result = PQexecParams(s_postgres,
             "SELECT \"PassHash\", \"AcctUuid\", \"AcctFlags\", \"BillingType\""
             "    FROM auth.\"Accounts\""
@@ -197,11 +184,9 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
 {
     check_postgres();
 
-    DS::String uuidString = msg->m_client->m_acctUuid.toString();
-    DS::String playerIdxString = DS::String::Format("%u", msg->m_client->m_player.m_playerId);
-    PostgresParams<2> parms;
-    parms.m_values[0] = uuidString.c_str();
-    parms.m_values[1] = playerIdxString.c_str();
+    PostgresStrings<2> parms;
+    parms.set(0, msg->m_client->m_acctUuid.toString());
+    parms.set(1, DS::String::Format("%u", msg->m_client->m_player.m_playerId));
     PGresult* result = PQexecParams(s_postgres,
             "SELECT \"PlayerName\", \"AvatarShape\", \"Explorer\""
             "    FROM auth.\"Players\""
