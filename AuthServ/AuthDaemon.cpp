@@ -48,7 +48,7 @@ bool dm_auth_init()
         return false;
     }
 
-    //init_vault();
+    init_vault();
     return true;
 }
 
@@ -90,7 +90,7 @@ void dm_auth_login(Auth_LoginInfo* info)
     info->m_client->m_acctUuid = DS::Uuid();
 
     PostgresStrings<1> parm;
-    parm.set(0, info->m_acctName.c_str());
+    parm.set(0, info->m_acctName);
     PGresult* result = PQexecParams(s_postgres,
             "SELECT \"PassHash\", \"AcctUuid\", \"AcctFlags\", \"BillingType\""
             "    FROM auth.\"Accounts\""
@@ -186,7 +186,7 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
 
     PostgresStrings<2> parms;
     parms.set(0, msg->m_client->m_acctUuid.toString());
-    parms.set(1, DS::String::Format("%u", msg->m_client->m_player.m_playerId));
+    parms.set(1, msg->m_client->m_player.m_playerId);
     PGresult* result = PQexecParams(s_postgres,
             "SELECT \"PlayerName\", \"AvatarShape\", \"Explorer\""
             "    FROM auth.\"Players\""

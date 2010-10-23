@@ -108,6 +108,18 @@ struct PostgresStrings : public PostgresParams<count>
         m_strings[idx] = str;
         this->m_values[idx] = str.c_str();
     }
+
+    void set(size_t idx, uint32_t value)
+    {
+        m_strings[idx] = DS::String::Format("%u", value);
+        this->m_values[idx] = m_strings[idx].c_str();
+    }
+
+    void set(size_t idx, int value)
+    {
+        m_strings[idx] = DS::String::Format("%d", value);
+        this->m_values[idx] = m_strings[idx].c_str();
+    }
 };
 
 extern PGconn* s_postgres;
