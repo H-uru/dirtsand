@@ -103,11 +103,12 @@ namespace Vault
         m_##name = value; \
         m_fields |= e_Field##name; \
     } \
-    bool has_##name() { return (m_fields & e_Field##name) != 0; } \
+    bool has_##name() const { return (m_fields & e_Field##name) != 0; } \
     void clear_##name() { m_fields &= ~e_Field##name; }
 
     class Node
     {
+    public:
         NODE_FIELD(uint32_t,    NodeIdx         )
         NODE_FIELD(uint32_t,    CreateTime      )
         NODE_FIELD(uint32_t,    ModifyTime      )
@@ -142,6 +143,7 @@ namespace Vault
         NODE_FIELD(DS::Blob,    Blob_2          )
 
         Node() : m_fields(0) { }
+        void clear() { m_fields = 0; }
 
     private:
         uint64_t m_fields;

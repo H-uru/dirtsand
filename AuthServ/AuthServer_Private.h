@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "AuthServer.h"
+#include "VaultTypes.h"
 #include "NetIO/CryptIO.h"
 #include "NetIO/MsgChannel.h"
 #include "Types/Uuid.h"
@@ -89,18 +90,9 @@ struct Auth_LoginInfo : public Auth_ClientMessage
 
 /* Vault/Postgres stuff */
 template <size_t count>
-struct PostgresParams
+struct PostgresStrings
 {
-    // Oid field not included here...  They're annoying, and the non-builtin
-    // ones can change from one server to the next...  :(
     const char* m_values[count];
-    int m_lengths[count];
-    int m_formats[count];
-};
-
-template <size_t count>
-struct PostgresStrings : public PostgresParams<count>
-{
     DS::String m_strings[count];
 
     void set(size_t idx, const DS::String& str)
@@ -123,4 +115,12 @@ struct PostgresStrings : public PostgresParams<count>
 };
 
 extern PGconn* s_postgres;
+DS::Uuid gen_uuid();
+
 bool init_vault();
+uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
+                      DS::String userName, bool publicAge);
+uint32_t v_create_player(DS::Uuid playerId, DS::String playerName,
+                         DS::String avatarShape);
+uint32_t v_create_node(const DS::Vault::Node& node);
+bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx);
