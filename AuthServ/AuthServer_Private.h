@@ -119,7 +119,7 @@ DS::Uuid gen_uuid();
 
 bool init_vault();
 uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
-                      DS::String userName, bool publicAge);
+                      DS::String userName, int32_t seqNumber, bool publicAge);
 uint32_t v_create_player(DS::Uuid playerId, DS::String playerName,
                          DS::String avatarShape);
 uint32_t v_create_node(const DS::Vault::Node& node);

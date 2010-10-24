@@ -67,6 +67,13 @@ bool init_vault()
 
         if (!v_ref_node(s_systemNode, globalInbox, 0))
             return false;
+
+        if (v_create_age(gen_uuid(), "city", "Ae'gura", DS::String(), 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "Neighborhood02", "Kirel", DS::String(), 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "GreatTreePub", "The Watcher's Pub", DS::String(), 0, true) == 0)
+            return false;
     } else {
         DS_DASSERT(count == 1);
         s_systemNode = strtoul(PQgetvalue(result, 0, 0), 0, 10);
@@ -93,9 +100,127 @@ DS::Uuid gen_uuid()
 }
 
 uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
-                      DS::String userName, bool publicAge)
+                      DS::String userName, int32_t seqNumber, bool publicAge)
 {
-    //TODO
+    DS::Vault::Node node;
+    node.set_NodeType(DS::Vault::e_NodeAge);
+    node.set_CreatorUuid(ageId);
+    node.set_Uuid_1(ageId);
+    node.set_String64_1(filename);
+    uint32_t ageNode = v_create_node(node);
+    if (ageNode == 0)
+        return 0;
+
+    // TODO: Global SDL node
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(DS::Vault::e_ChronicleFolder);
+    uint32_t chronFolder = v_create_node(node);
+    if (chronFolder == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(DS::Vault::e_PeopleIKnowAboutFolder);
+    uint32_t knownFolder = v_create_node(node);
+    if (knownFolder == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeInfoList);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(DS::Vault::e_SubAgesFolder);
+    uint32_t subAgesFolder = v_create_node(node);
+    if (subAgesFolder == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeInfo);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(seqNumber);
+    node.set_Int32_2(publicAge ? 1 : 0);
+    node.set_Int32_3(-1);   // Language
+    node.set_Uint32_1(ageNode);
+    node.set_Uint32_2(0);   // Czar ID
+    node.set_Uint32_3(0);   // Flags
+    node.set_Uuid_1(ageId);
+    node.set_String64_2(filename);
+    node.set_String64_3(instName);
+    if (!userName.isEmpty()) {
+        node.set_String64_4(userName);
+        node.set_Text_1(userName + " " + instName);
+    }
+    uint32_t ageInfoNode = v_create_node(node);
+    if (ageInfoNode == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(DS::Vault::e_AgeDevicesFolder);
+    uint32_t devsFolder = v_create_node(node);
+    if (devsFolder == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(DS::Vault::e_CanVisitFolder);
+    uint32_t canVisitList = v_create_node(node);
+    if (canVisitList == 0)
+        return 0;
+
+    //TODO: Age SDL node
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(DS::Vault::e_AgeOwnersFolder);
+    uint32_t ageOwners = v_create_node(node);
+    if (ageOwners == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeInfoList);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(DS::Vault::e_ChildAgesFolder);
+    uint32_t childAges = v_create_node(node);
+    if (childAges == 0)
+        return 0;
+
+    if (!v_ref_node(ageNode, s_systemNode, 0))
+        return 0;
+    if (!v_ref_node(ageNode, chronFolder, 0))
+        return 0;
+    if (!v_ref_node(ageNode, knownFolder, 0))
+        return 0;
+    if (!v_ref_node(ageNode, subAgesFolder, 0))
+        return 0;
+    if (!v_ref_node(ageNode, ageInfoNode, 0))
+        return 0;
+    if (!v_ref_node(ageNode, devsFolder, 0))
+        return 0;
+    if (!v_ref_node(ageInfoNode, canVisitList, 0))
+        return 0;
+    //if (!v_ref_node(ageInfoNode, ageSdlNode, 0))
+    //    return 0;
+    if (!v_ref_node(ageInfoNode, ageOwners, 0))
+        return 0;
+    if (!v_ref_node(ageInfoNode, childAges, 0))
+        return 0;
+
+    return ageNode;
 }
 
 uint32_t v_create_player(DS::Uuid playerId, DS::String playerName,
