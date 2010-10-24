@@ -243,6 +243,41 @@ void cb_setPlayer(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_playerCreate(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_PlayerCreateReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_PlayerCreate msg;
+    msg.m_client = &client;
+    msg.m_playerName = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_avatarShape = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    DS::CryptRecvString(client.m_sock, client.m_crypt);   // Friend invite
+    s_authChannel.putMessage(e_AuthCreatePlayer, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);   // Player ID
+        client.m_buffer.write<uint32_t>(0);   // Explorer
+        client.m_buffer.write<uint16_t>(0);   // Player Name
+        client.m_buffer.write<uint16_t>(0);   // Avatar Model
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_playerNode);
+        client.m_buffer.write<uint32_t>(1);   // Explorer
+        DS::StringBuffer<chr16_t> wbuf = msg.m_playerName.toUtf16();
+        client.m_buffer.write<uint16_t>(wbuf.length());
+        client.m_buffer.writeBytes(wbuf.data(), wbuf.length() * sizeof(chr16_t));
+        wbuf = msg.m_avatarShape.toUtf16();
+        client.m_buffer.write<uint16_t>(wbuf.length());
+        client.m_buffer.writeBytes(wbuf.data(), wbuf.length() * sizeof(chr16_t));
+    }
+
+    SEND_REPLY();
+}
+
 void cb_fileList(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_FileListReply);
@@ -407,6 +442,9 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_AcctSetPlayerRequest:
                 cb_setPlayer(client);
+                break;
+            case e_CliToAuth_PlayerCreateRequest:
+                cb_playerCreate(client);
                 break;
             case e_CliToAuth_FileListRequest:
                 cb_fileList(client);

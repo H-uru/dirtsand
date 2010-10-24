@@ -220,13 +220,213 @@ uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
     if (!v_ref_node(ageInfoNode, childAges, 0))
         return 0;
 
+    // Register with the database if it's a public age
+    if (publicAge) {
+        //TODO
+    }
+
     return ageNode;
 }
 
 uint32_t v_create_player(DS::Uuid playerId, DS::String playerName,
-                         DS::String avatarShape)
+                         DS::String avatarShape, bool explorer)
 {
-    //TODO
+    DS::Vault::Node node;
+    node.set_NodeType(DS::Vault::e_NodePlayer);
+    node.set_CreatorUuid(playerId);
+    node.set_Int32_2(explorer ? 1 : 0);
+    node.set_Uuid_1(playerId);
+    node.set_String64_1(avatarShape);
+    node.set_IString64_1(playerName);
+    uint32_t playerNode = v_create_node(node);
+    if (playerNode == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodePlayerInfo);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Uint32_1(playerNode);
+    node.set_IString64_1(playerName);
+    uint32_t playerInfoNode = v_create_node(node);
+    if (playerInfoNode == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_BuddyListFolder);
+    uint32_t buddyList = v_create_node(node);
+    if (buddyList == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_IgnoreListFolder);
+    uint32_t ignoreList = v_create_node(node);
+    if (ignoreList == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_PlayerInviteFolder);
+    uint32_t invites = v_create_node(node);
+    if (invites == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeInfoList);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_AgesIOwnFolder);
+    uint32_t agesNode = v_create_node(node);
+    if (agesNode == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_AgeJournalsFolder);
+    uint32_t journals = v_create_node(node);
+    if (journals == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_ChronicleFolder);
+    uint32_t chronicles = v_create_node(node);
+    if (chronicles == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeInfoList);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_AgesICanVisitFolder);
+    uint32_t visitFolder = v_create_node(node);
+    if (visitFolder == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_AvatarOutfitFolder);
+    uint32_t outfit = v_create_node(node);
+    if (outfit == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_AvatarClosetFolder);
+    uint32_t closet = v_create_node(node);
+    if (closet == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeFolder);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_InboxFolder);
+    uint32_t inbox = v_create_node(node);
+    if (inbox == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Int32_1(DS::Vault::e_PeopleIKnowAboutFolder);
+    uint32_t peopleNode = v_create_node(node);
+    if (peopleNode == 0)
+        return 0;
+
+    DS::Blob link(reinterpret_cast<const uint8_t*>("Default:LinkInPointDefault:;"),
+                  strlen("Default:LinkInPointDefault:;"));
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeLink);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Blob_1(link);
+    uint32_t reltoLink = v_create_node(node);
+    if (reltoLink == 0)
+        return 0;
+
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeLink);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Blob_1(link);
+    uint32_t hoodLink = v_create_node(node);
+    if (hoodLink == 0)
+        return 0;
+
+    link = DS::Blob(reinterpret_cast<const uint8_t*>("Ferry Terminal:LinkInPointFerry:;"),
+                    strlen("Ferry Terminal:LinkInPointFerry:;"));
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeLink);
+    node.set_CreatorUuid(playerId);
+    node.set_CreatorIdx(playerNode);
+    node.set_Blob_1(link);
+    uint32_t cityLink = v_create_node(node);
+    if (hoodLink == 0)
+        return 0;
+
+    uint32_t reltoAge = v_create_age(gen_uuid(), "Personal", "Relto",
+                                     playerName + "'s", 0, false);
+    if (reltoAge == 0)
+        return 0;
+
+    if (!v_ref_node(playerNode, s_systemNode, 0))
+        return 0;
+    if (!v_ref_node(playerNode, playerInfoNode, 0))
+        return 0;
+    if (!v_ref_node(playerNode, buddyList, 0))
+        return 0;
+    if (!v_ref_node(playerNode, ignoreList, 0))
+        return 0;
+    if (!v_ref_node(playerNode, invites, 0))
+        return 0;
+    if (!v_ref_node(playerNode, agesNode, 0))
+        return 0;
+    if (!v_ref_node(playerNode, journals, 0))
+        return 0;
+    if (!v_ref_node(playerNode, chronicles, 0))
+        return 0;
+    if (!v_ref_node(playerNode, visitFolder, 0))
+        return 0;
+    if (!v_ref_node(playerNode, outfit, 0))
+        return 0;
+    if (!v_ref_node(playerNode, closet, 0))
+        return 0;
+    if (!v_ref_node(playerNode, inbox, 0))
+        return 0;
+    if (!v_ref_node(playerNode, peopleNode, 0))
+        return 0;
+    if (!v_ref_node(agesNode, reltoLink, 0))
+        return 0;
+    if (!v_ref_node(agesNode, hoodLink, 0))
+        return 0;
+    if (!v_ref_node(agesNode, cityLink, 0))
+        return 0;
+    if (!v_ref_node(reltoLink, reltoAge, 0))
+        return 0;
+    //if (!v_ref_node(hoodLink, ..., 0))
+    //    return 0;
+    //if (!v_ref_node(cityLink, ..., 0))
+    //    return 0;
+
+    return playerNode;
 }
 
 uint32_t v_create_node(const DS::Vault::Node& node)

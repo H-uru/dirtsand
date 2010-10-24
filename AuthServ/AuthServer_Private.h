@@ -68,7 +68,7 @@ bool dm_auth_init();
 
 enum AuthDaemonMessages
 {
-    e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer,
+    e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
 };
 void AuthDaemon_SendMessage(int msg, void* data = 0);
 
@@ -86,6 +86,14 @@ struct Auth_LoginInfo : public Auth_ClientMessage
 
     uint32_t m_acctFlags, m_billingType;
     std::vector<AuthServer_PlayerInfo> m_players;
+};
+
+struct Auth_PlayerCreate : public Auth_ClientMessage
+{
+    DS::String m_playerName;
+    DS::String m_avatarShape;
+
+    uint32_t m_playerNode;
 };
 
 /* Vault/Postgres stuff */
@@ -121,6 +129,6 @@ bool init_vault();
 uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
                       DS::String userName, int32_t seqNumber, bool publicAge);
 uint32_t v_create_player(DS::Uuid playerId, DS::String playerName,
-                         DS::String avatarShape);
+                         DS::String avatarShape, bool explorer);
 uint32_t v_create_node(const DS::Vault::Node& node);
 bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx);

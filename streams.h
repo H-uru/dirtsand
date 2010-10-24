@@ -153,7 +153,9 @@ namespace DS
 
         Blob(const uint8_t* buffer, size_t size)
         {
-            m_data = new _ref(buffer, size);
+            uint8_t* bufcopy = new uint8_t[size];
+            memcpy(bufcopy, buffer, size);
+            m_data = new _ref(bufcopy, size);
         }
 
         Blob(const Blob& other) : m_data(other.m_data)
@@ -176,6 +178,13 @@ namespace DS
                 m_data->unref();
             m_data = other.m_data;
             return *this;
+        }
+
+        static Blob Steal(const uint8_t* buffer, size_t size)
+        {
+            Blob b;
+            b.m_data = new _ref(buffer, size);
+            return b;
         }
 
         const uint8_t* buffer() const { return m_data ? m_data->m_buffer : 0; }

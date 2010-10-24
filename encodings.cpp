@@ -112,7 +112,7 @@ DS::Blob DS::Base64Decode(const DS::String& value)
         outp[2] = ((b64_codes[inp[2]] << 6) & 0xC0) | (b64_codes[inp[3]] & 0x3F);
     }
 
-    return Blob(result, resultLen);
+    return Blob::Steal(result, resultLen);
 }
 
 
@@ -158,5 +158,5 @@ DS::Blob DS::HexDecode(const String& value)
         buffer[i] = (hex_codes[inp[0]] << 4) | (hex_codes[inp[1]]);
         inp += 2;
     }
-    return Blob(buffer, length);
+    return Blob::Steal(buffer, length);
 }

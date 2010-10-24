@@ -230,6 +230,67 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_createPlayer(Auth_PlayerCreate* msg)
+{
+    if (msg->m_avatarShape != "male" && msg->m_avatarShape != "female") {
+        // Cheater!
+        msg->m_avatarShape = "male";
+    }
+
+    // Check for existing player
+    PostgresStrings<1> sparms;
+    sparms.set(0, msg->m_playerName);
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT idx FROM auth.\"Players\""
+            "    WHERE \"PlayerName\"=$1",
+            1, 0, sparms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) != 0) {
+        fprintf(stderr, "[Auth] %s: Player %s already exists!\n",
+                DS::SockIpAddress(msg->m_client->m_sock).c_str(),
+                msg->m_playerName.c_str());
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetPlayerAlreadyExists);
+        return;
+    }
+    PQclear(result);
+
+    DS::Uuid playerId = gen_uuid();
+    uint32_t playerNode = v_create_player(playerId, msg->m_playerName,
+                                          msg->m_avatarShape, true);
+    if (playerNode == 0)
+        SEND_REPLY(msg, DS::e_NetInternalError);
+
+    PostgresStrings<5> iparms;
+    iparms.set(0, playerId.toString());
+    iparms.set(1, playerNode);
+    iparms.set(2, msg->m_playerName);
+    iparms.set(3, msg->m_avatarShape);
+    iparms.set(4, 1);
+    result = PQexecParams(s_postgres,
+            "INSERT INTO auth.\"Players\""
+            "    (\"AcctUuid\", \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\")"
+            "    VALUES ($1, $2, $3, $4, $5)"
+            "    RETURNING idx",
+            5, 0, iparms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    DS_DASSERT(PQntuples(result) == 1);
+    PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void* dm_authDaemon(void*)
 {
     try {
@@ -244,6 +305,9 @@ void* dm_authDaemon(void*)
                 break;
             case e_AuthSetPlayer:
                 dm_auth_setPlayer(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload));
+                break;
+            case e_AuthCreatePlayer:
+                dm_auth_createPlayer(reinterpret_cast<Auth_PlayerCreate*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

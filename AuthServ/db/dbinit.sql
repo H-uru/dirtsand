@@ -116,8 +116,8 @@ CREATE TABLE "Nodes" (
     "String64_6" character varying(64),
     "IString64_1" character varying(64),
     "IString64_2" character varying(64),
-    "Text_1" character varying(255),
-    "Text_2" character varying(255),
+    "Text_1" character varying(1024),
+    "Text_2" character varying(1024),
     "Blob_1" bytea,
     "Blob_2" bytea
 );
@@ -130,6 +130,28 @@ CREATE SEQUENCE "Nodes_idx_seq"
 ALTER TABLE vault."Nodes_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Nodes_idx_seq" OWNED BY "Nodes".idx;
 SELECT pg_catalog.setval('"Nodes_idx_seq"', 10001, false);
+
+CREATE TABLE "PublicAges" (
+    idx integer NOT NULL,
+    "AgeUuid" uuid NOT NULL,
+    "AgeFilename" character varying(64) NOT NULL,
+    "AgeInstName" character varying(64) NOT NULL,
+    "AgeUserName" character varying(64) NOT NULL,
+    "AgeDesc" character varying(1024) NOT NULL,
+    "SeqNumber" integer NOT NULL,
+    "Language" integer NOT NULL,
+    "Population" integer NOT NULL
+);
+ALTER TABLE vault."PublicAges" OWNER TO dirtsand;
+CREATE SEQUENCE "PublicAges_idx_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+ALTER TABLE vault."PublicAges_idx_seq" OWNER TO dirtsand;
+ALTER SEQUENCE "PublicAges_idx_seq" OWNED BY "PublicAges".idx;
+SELECT pg_catalog.setval('"PublicAges_idx_seq"', 1, false);
 
 SET search_path = auth, pg_catalog;
 ALTER TABLE "Accounts" ALTER COLUMN idx SET DEFAULT nextval('"Accounts_idx_seq"'::regclass);
@@ -145,11 +167,14 @@ ALTER TABLE ONLY "Players"
 SET search_path = vault, pg_catalog;
 ALTER TABLE "NodeRefs" ALTER COLUMN idx SET DEFAULT nextval('"NodeRefs_idx_seq"'::regclass);
 ALTER TABLE "Nodes" ALTER COLUMN idx SET DEFAULT nextval('"Nodes_idx_seq"'::regclass);
+ALTER TABLE "PublicAges" ALTER COLUMN idx SET DEFAULT nextval('"PublicAges_idx_seq"'::regclass);
 
 ALTER TABLE ONLY "NodeRefs"
     ADD CONSTRAINT "NodeRefs_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "Nodes"
     ADD CONSTRAINT "Nodes_pkey" PRIMARY KEY (idx);
+ALTER TABLE ONLY "PublicAges"
+    ADD CONSTRAINT "PublicAges_pkey" PRIMARY KEY (idx);
 
 SET search_path = auth, pg_catalog;
 CREATE INDEX "Login_Index" ON "Accounts" USING hash ("Login");

@@ -193,7 +193,7 @@ DS::Blob DS::RecvBlob(DS::SocketHandle sock)
     } else {
         uint8_t* buffer = new uint8_t[bytes];
         recv(sockfd, buffer, bytes, 0);
-        return Blob(buffer, bytes);
+        return Blob::Steal(buffer, bytes);
     }
 }
 */
