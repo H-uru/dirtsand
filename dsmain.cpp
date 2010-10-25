@@ -20,6 +20,7 @@
 #include "GateKeeper/GateServ.h"
 #include "FileServ/FileServer.h"
 #include "AuthServ/AuthServer.h"
+#include "SDL/DescriptorDb.h"
 #include "strings.h"
 #include "errors.h"
 #include "settings.h"
@@ -85,6 +86,7 @@ int main(int argc, char* argv[])
     // Ignore sigpipe and force send() to return EPIPE
     signal(SIGPIPE, SIG_IGN);
 
+    SDL::DescriptorDb::LoadDescriptors(DS::Settings::SdlPath());
     DS::FileServer_Init();
     DS::AuthServer_Init();
     DS::GateKeeper_Init();

@@ -15,58 +15,60 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_SETTINGS_H
-#define _DS_SETTINGS_H
+#ifndef _SDL_PARSER_H
+#define _SDL_PARSER_H
 
 #include "strings.h"
+#include <cstdio>
+#include <list>
 
-#define CRYPT_BASE_AUTH (41)
-#define CRYPT_BASE_GAME (73)
-#define CRYPT_BASE_GATE (4)
-
-#define CLIENT_BUILD_ID   (893)
-#define CLIENT_BUILD_TYPE (50)
-#define CLIENT_BRANCH_ID  (1)
-#define CLIENT_PRODUCT_ID "ea489821-6c35-4bd0-9dae-bb17c585e680"
-
-#define CHUNK_SIZE (0x8000)
-
-namespace DS
+namespace SDL
 {
-    enum KeyType
+    enum TokenType
     {
-        e_KeyGate_N, e_KeyGate_K, e_KeyAuth_N, e_KeyAuth_K, e_KeyGame_N,
-        e_KeyGame_K, e_KeyMaxTypes
+        e_TokEof = 0, e_TokError = -1,
+
+        // Keywords
+        e_TokStatedesc = 256, e_TokVersion, e_TokVar, e_TokInt, e_TokFloat,
+        e_TokBool, e_TokString, e_TokPlKey, e_TokCreatable, e_TokDouble,
+        e_TokTime, e_TokByte, e_TokShort, e_TokAgeTimeOfDay, e_TokVector3,
+        e_TokPoint3, e_TokQuat, e_TokRgb, e_TokRgb8, e_TokRgba, e_TokRgba8,
+        e_TokDefault, e_TokDefaultOption,
+
+        // Data-attached
+        e_TokIdent, e_TokNumeric, e_TokQuoted, e_TokTypename,
     };
 
-    namespace Settings
+    struct Token
     {
-        const uint8_t* CryptKey(KeyType key);
-        const uint32_t* DroidKey();
+        TokenType m_type;
+        DS::String m_value;
+        long m_lineno;
+    };
 
-        // Optimized for throwing onto the network
-        DS::StringBuffer<chr16_t> FileServerAddress();
-        DS::StringBuffer<chr16_t> AuthServerAddress();
-        DS::StringBuffer<chr16_t> GameServerAddress();
+    class Parser
+    {
+    public:
+        Parser() : m_file(0) { }
+        ~Parser() { close(); }
 
-        const char* LobbyAddress();
-        const char* LobbyPort();
+        bool open(const char* filename);
+        void close()
+        {
+            if (m_file)
+                fclose(m_file);
+            m_file = 0;
+        }
 
-        DS::String FileRoot();
-        DS::String AuthRoot();
-        const char* SdlPath();
+        Token next();
+        void push(Token tok) { m_buffer.push_front(tok); }
 
-        const char* DbHostname();
-        const char* DbPort();
-        const char* DbUsername();
-        const char* DbPassword();
-        const char* DbDbaseName();
-
-        bool LoadFrom(const char* filename);
-        void UseDefaults();
-    }
+    private:
+        FILE* m_file;
+        DS::String m_filename;
+        long m_lineno;
+        std::list<Token> m_buffer;
+    };
 }
-
-extern bool s_authServerRunning;
 
 #endif

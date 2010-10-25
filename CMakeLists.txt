@@ -27,6 +27,11 @@ set(PlasMOUL_SOURCES
     PlasMOUL/factory.cpp
 )
 
+set(SDL_SOURCES
+    SDL/SdlParser.cpp
+    SDL/DescriptorDb.cpp
+)
+
 set(dirtsand_SOURCES
     Types/UnifiedTime.cpp
     Types/Uuid.cpp
@@ -49,7 +54,7 @@ set(dirtsand_SOURCES
     dsmain.cpp
 )
 
-add_executable(dirtsand ${dirtsand_SOURCES} ${PlasMOUL_SOURCES})
+add_executable(dirtsand ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
 target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT} ${POSTGRES_LIBRARY}
                                ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY})
 set_target_properties(dirtsand PROPERTIES
