@@ -23,13 +23,37 @@
 
 namespace SDL
 {
+    struct VarDefault
+    {
+        bool m_valid;
+
+        union
+        {
+            int32_t m_int;
+            int16_t m_short;
+            int8_t m_byte;
+            float m_float;
+            double m_double;
+            bool m_bool;
+
+            DS::Vector3 m_vector;
+            DS::Quaternion m_quat;
+            DS::ColorRgba m_color;
+            DS::ColorRgba8 m_color8;
+        };
+        DS::UnifiedTime m_time;
+        DS::String m_string;
+
+        VarDefault() : m_valid(false) { }
+    };
+
     struct VarDescriptor
     {
         VarType m_type;
         DS::String m_typeName;
         DS::String m_name;
         int m_size;
-        SDL::Value m_default;
+        VarDefault m_default;
         DS::String m_defaultOption, m_displayOption;
     };
 
@@ -44,11 +68,16 @@ namespace SDL
     {
     public:
         static bool LoadDescriptors(const char* sdlpath);
+        static StateDescriptor* FindDescriptor(DS::String name, int version);
 
     private:
         DescriptorDb() { }
         DescriptorDb(const DescriptorDb&) { }
         ~DescriptorDb() { }
+
+        typedef std::tr1::unordered_map<int, StateDescriptor> versionmap_t;
+        typedef std::tr1::unordered_map<DS::String, versionmap_t, DS::StringHash> descmap_t;
+        static descmap_t s_descriptors;
     };
 }
 

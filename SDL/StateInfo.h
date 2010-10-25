@@ -32,40 +32,83 @@ namespace SDL
         e_VarInt, e_VarFloat, e_VarBool, e_VarString, e_VarKey, e_VarCreatable,
         e_VarDouble, e_VarTime, e_VarByte, e_VarShort, e_VarAgeTimeOfDay,
         e_VarVector3, e_VarPoint3, e_VarQuaternion, e_VarRgb, e_VarRgba,
-        e_VarRgb8, e_VarRgba8, e_VarStateDesc, e_VarInvalid = -1
+        e_VarRgb8, e_VarRgba8, e_VarStateDesc,
     };
 
-    struct Value
+    struct StateDescriptor;
+    struct VarDescriptor;
+
+    class Variable
     {
-        VarType m_type;
-
-        union   // "Basic" types
+    public:
+        Variable(VarDescriptor* desc = 0) : m_data(0)
         {
-            int32_t m_int;
-            int16_t m_short;
-            int8_t m_byte;
-            float m_float;
-            double m_double;
-            bool m_bool;
+            if (desc)
+                m_data = new _ref(desc);
+        }
 
-            DS::Vector3 m_vector;
-            DS::Quaternion m_quat;
-            DS::ColorRgba m_color;
-            DS::ColorRgba8 m_color8;
+        Variable(const Variable& copy)
+            : m_data(copy.m_data)
+        {
+            if (m_data)
+                m_data->ref();
+        }
 
-            MOUL::Creatable* m_creatable;
-        };
-        DS::UnifiedTime m_time;
-        DS::String m_string;
-        MOUL::Key m_key;
+        ~Variable()
+        {
+            if (m_data)
+                m_data->unref();
+        }
 
-        Value() : m_type(e_VarInvalid) { }
-        Value(const Value& other);
+    private:
+        struct _ref
+        {
+            union
+            {
+                int32_t* m_int;
+                int16_t* m_short;
+                int8_t* m_byte;
+                float* m_float;
+                double* m_double;
+                bool* m_bool;
 
-        ~Value() { clear(); }
-        void clear();
+                DS::String* m_string;
+                DS::UnifiedTime* m_time;
+                DS::Vector3* m_vector;
+                DS::Quaternion* m_quat;
+                DS::ColorRgba* m_color;
+                DS::ColorRgba8* m_color8;
 
-        Value& operator=(const Value& other);
+                MOUL::Key* m_key;
+                MOUL::Creatable** m_creatable;
+                class State* m_child;
+            };
+            int m_refs;
+            VarDescriptor* m_desc;
+
+            _ref(VarDescriptor* desc);
+            ~_ref();
+
+            void ref() { ++m_refs; }
+            void unref()
+            {
+                if (--m_refs == 0)
+                    delete this;
+            }
+        }* m_data;
+
+    public:
+        VarDescriptor* descriptor() const { return m_data ? m_data->m_desc : 0; }
+        _ref* data() { return m_data; }
+    };
+
+    class State
+    {
+    public:
+        StateDescriptor* m_desc;
+        std::vector<Variable> m_vars;
+
+        State(StateDescriptor* desc = 0) : m_desc(desc) { }
     };
 }
 

@@ -444,7 +444,6 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         if (values[0].m_type == SDL::e_TokIdent) {
             if (values[0].m_value == "nil") {
                 // This is redundant...
-                var->m_default.m_key = MOUL::Key();
             } else {
                 fprintf(stderr, "[SDL] %s:%ld: Bad plKey initializer: %s\n",
                         parser->filename(), values[0].m_lineno,
@@ -462,6 +461,7 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         break;
     }
 
+    var->m_default.m_valid = true;
     return state;
 }
 
@@ -585,7 +585,7 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             varBuffer.m_typeName = DS::String();
             varBuffer.m_name = DS::String();
             varBuffer.m_size = 0;
-            varBuffer.m_default.clear();
+            varBuffer.m_default.m_valid = false;
             varBuffer.m_defaultOption = DS::String();
             break;
         case e_TokInt:

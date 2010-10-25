@@ -22,6 +22,7 @@
 #include <vector>
 #include <cstring>
 #include <cstdarg>
+#include <tr1/unordered_map>
 
 /* Important note:  Strings passed in as raw character constants (e.g. "blah")
  * are assumed to be in UTF-8 format, for the sake of minimal conversion
@@ -159,6 +160,14 @@ namespace DS
 
     private:
         StringBuffer<chr8_t> m_data;
+    };
+
+    struct StringHash : public std::tr1::hash<const char*>
+    {
+        size_t operator()(const String& value) const
+        {
+            return std::tr1::hash<const char*>::operator()(value.c_str());
+        }
     };
 }
 
