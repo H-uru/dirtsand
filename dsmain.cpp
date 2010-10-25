@@ -87,7 +87,6 @@ int main(int argc, char* argv[])
     signal(SIGPIPE, SIG_IGN);
 
     SDL::DescriptorDb::LoadDescriptors(DS::Settings::SdlPath());
-    return 0;
     DS::FileServer_Init();
     DS::AuthServer_Init();
     DS::GateKeeper_Init();
