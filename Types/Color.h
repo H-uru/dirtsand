@@ -15,40 +15,22 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _SDL_DESCRIPTORDB_H
-#define _SDL_DESCRIPTORDB_H
+#ifndef _DS_COLOR_H
+#define _DS_COLOR_H
 
-#include "StateInfo.h"
-#include <vector>
+#include "config.h"
 
-namespace SDL
+namespace DS
 {
-    struct VarDescriptor
+    struct ColorRgba
     {
-        VarType m_type;
-        DS::String m_typeName;
-        DS::String m_name;
-        int m_size;
-        SDL::Value m_default;
-        DS::String m_defaultOption, m_displayOption;
+        float m_R, m_G, m_B, m_A;
     };
 
-    struct StateDescriptor
+    union ColorRgba8
     {
-        DS::String m_name;
-        int m_version;
-        std::vector<VarDescriptor> m_vars;
-    };
-
-    class DescriptorDb
-    {
-    public:
-        static bool LoadDescriptors(const char* sdlpath);
-
-    private:
-        DescriptorDb() { }
-        DescriptorDb(const DescriptorDb&) { }
-        ~DescriptorDb() { }
+        struct { uint8_t m_R, m_G, m_B, m_A; };
+        uint32_t m_RGBA;
     };
 }
 

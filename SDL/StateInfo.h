@@ -15,65 +15,57 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _SDL_PARSER_H
-#define _SDL_PARSER_H
+#ifndef _SDL_STATEINFO_H
+#define _SDL_STATEINFO_H
 
-#include "DescriptorDb.h"
+#include "PlasMOUL/Key.h"
+#include "PlasMOUL/creatable.h"
+#include "Types/UnifiedTime.h"
+#include "Types/Math.h"
+#include "Types/Color.h"
 #include "strings.h"
-#include <cstdio>
-#include <list>
 
 namespace SDL
 {
-    enum TokenType
+    enum VarType
     {
-        e_TokEof = 0, e_TokError = -1,
-
-        // Keywords
-        e_TokStatedesc = 256, e_TokVersion, e_TokVar, e_TokInt, e_TokFloat,
-        e_TokBool, e_TokString, e_TokPlKey, e_TokCreatable, e_TokDouble,
-        e_TokTime, e_TokByte, e_TokShort, e_TokAgeTimeOfDay, e_TokVector3,
-        e_TokPoint3, e_TokQuat, e_TokRgb, e_TokRgb8, e_TokRgba, e_TokRgba8,
-        e_TokDefault, e_TokDefaultOption, e_TokDisplayOption,
-
-        // Data-attached
-        e_TokIdent, e_TokNumeric, e_TokQuoted, e_TokTypename,
+        e_VarInt, e_VarFloat, e_VarBool, e_VarString, e_VarKey, e_VarCreatable,
+        e_VarDouble, e_VarTime, e_VarByte, e_VarShort, e_VarAgeTimeOfDay,
+        e_VarVector3, e_VarPoint3, e_VarQuaternion, e_VarRgb, e_VarRgba,
+        e_VarRgb8, e_VarRgba8, e_VarStateDesc, e_VarInvalid = -1
     };
 
-    struct Token
+    struct Value
     {
-        TokenType m_type;
-        DS::String m_value;
-        long m_lineno;
-    };
+        VarType m_type;
 
-    class Parser
-    {
-    public:
-        Parser() : m_file(0) { }
-        ~Parser() { close(); }
-
-        bool open(const char* filename);
-        void close()
+        union   // "Basic" types
         {
-            if (m_file)
-                fclose(m_file);
-            m_file = 0;
-            m_filename = DS::String();
-        }
+            int32_t m_int;
+            int16_t m_short;
+            int8_t m_byte;
+            float m_float;
+            double m_double;
+            bool m_bool;
 
-        const char* filename() const { return m_filename.c_str(); }
+            DS::Vector3 m_vector;
+            DS::Quaternion m_quat;
+            DS::ColorRgba m_color;
+            DS::ColorRgba8 m_color8;
 
-        Token next();
-        void push(Token tok) { m_buffer.push_front(tok); }
+            MOUL::Creatable* m_creatable;
+        };
+        DS::UnifiedTime m_time;
+        DS::String m_string;
+        MOUL::Key m_key;
 
-        std::list<StateDescriptor> parse();
+        Value() : m_type(e_VarInvalid) { }
+        Value(const Value& other);
 
-    private:
-        FILE* m_file;
-        DS::String m_filename;
-        long m_lineno;
-        std::list<Token> m_buffer;
+        ~Value() { clear(); }
+        void clear();
+
+        Value& operator=(const Value& other);
     };
 }
 

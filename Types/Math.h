@@ -15,40 +15,19 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _SDL_DESCRIPTORDB_H
-#define _SDL_DESCRIPTORDB_H
+#ifndef _DS_MATH_H
+#define _DS_MATH_H
 
-#include "StateInfo.h"
-#include <vector>
-
-namespace SDL
+namespace DS
 {
-    struct VarDescriptor
+    struct Vector3
     {
-        VarType m_type;
-        DS::String m_typeName;
-        DS::String m_name;
-        int m_size;
-        SDL::Value m_default;
-        DS::String m_defaultOption, m_displayOption;
+        float m_X, m_Y, m_Z;
     };
 
-    struct StateDescriptor
+    struct Quaternion
     {
-        DS::String m_name;
-        int m_version;
-        std::vector<VarDescriptor> m_vars;
-    };
-
-    class DescriptorDb
-    {
-    public:
-        static bool LoadDescriptors(const char* sdlpath);
-
-    private:
-        DescriptorDb() { }
-        DescriptorDb(const DescriptorDb&) { }
-        ~DescriptorDb() { }
+        float m_X, m_Y, m_Z, m_W;
     };
 }
 

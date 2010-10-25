@@ -30,6 +30,7 @@ set(PlasMOUL_SOURCES
 set(SDL_SOURCES
     SDL/SdlParser.cpp
     SDL/DescriptorDb.cpp
+    SDL/StateInfo.cpp
 )
 
 set(dirtsand_SOURCES

@@ -22,15 +22,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-static const char* toknames[] = {
-    "e_TokStatedesc", "e_TokVersion", "e_TokVar", "e_TokInt", "e_TokFloat",
-    "e_TokBool", "e_TokString", "e_TokPlKey", "e_TokCreatable", "e_TokDouble",
-    "e_TokTime", "e_TokByte", "e_TokShort", "e_TokAgeTimeOfDay", "e_TokVector3",
-    "e_TokPoint3", "e_TokQuat", "e_TokRgb", "e_TokRgb8", "e_TokRgba",
-    "e_TokRgba8", "e_TokDefault", "e_TokDefaultOption",
-    "e_TokIdent", "e_TokNumeric", "e_TokQuoted", "e_TokTypename",
-};
-
 static int sel_sdl(const dirent* de)
 {
     return strcmp(strrchr(de->d_name, '.'), ".sdl") == 0;
@@ -53,21 +44,8 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
     SDL::Parser parser;
     for (int i=0; i<count; ++i) {
         DS::String filename = DS::String::Format("%s/%s", sdlpath, dirls[i]->d_name);
-        printf("%s:\n", filename.c_str());
         if (parser.open(filename.c_str())) {
-            for ( ;; ) {
-                SDL::Token tok = parser.next();
-                if (tok.m_type == SDL::e_TokEof || tok.m_type == SDL::e_TokError)
-                    break;
-                if (tok.m_type < 256)
-                    printf("  %ld: '%c'", tok.m_lineno, tok.m_type);
-                else
-                    printf("  %ld: %s", tok.m_lineno, toknames[tok.m_type - 256]);
-                if (tok.m_type == SDL::e_TokIdent || tok.m_type == SDL::e_TokNumeric
-                    || tok.m_type == SDL::e_TokQuoted || tok.m_type == SDL::e_TokTypename)
-                    printf(" [%s]", tok.m_value.c_str());
-                printf("\n");
-            }
+            parser.parse();
         }
         parser.close();
         free(dirls[i]);
