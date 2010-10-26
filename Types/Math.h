@@ -23,11 +23,25 @@ namespace DS
     struct Vector3
     {
         float m_X, m_Y, m_Z;
+
+        bool operator==(const Vector3& other) const
+        {
+            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z;
+        }
+        bool operator!=(const Vector3& other) const { return !operator==(other); }
+
     };
 
     struct Quaternion
     {
         float m_X, m_Y, m_Z, m_W;
+
+        bool operator==(const Quaternion& other) const
+        {
+            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z
+                && m_W == other.m_W;
+        }
+        bool operator!=(const Quaternion& other) const { return !operator==(other); }
     };
 }
 

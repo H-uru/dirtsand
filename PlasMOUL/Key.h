@@ -77,6 +77,8 @@ namespace MOUL
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
 
+        bool isNull() const { return m_type == 0x8000; }
+
     public:
         Location m_location;
         uint8_t m_loadMask;

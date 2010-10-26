@@ -25,6 +25,8 @@
 #include "Types/Color.h"
 #include "strings.h"
 
+#define SDL_IOVERSION (6)
+
 namespace SDL
 {
     enum VarType
@@ -41,6 +43,19 @@ namespace SDL
     class Variable
     {
     public:
+        enum Contents
+        {
+            e_HasUoid             = (1<<0),
+            e_HasNotificationInfo = (1<<1),
+            e_HasTimeStamp        = (1<<2),
+            e_SameAsDefault       = (1<<3),
+            e_HasDirtyFlag        = (1<<4),
+            e_WantTimeStamp       = (1<<5),
+
+            /* Extended (not saved) flags */
+            e_XIsDirty            = (1<<8),
+        };
+
         Variable(VarDescriptor* desc = 0) : m_data(0)
         {
             if (desc)
@@ -59,6 +74,22 @@ namespace SDL
             if (m_data)
                 m_data->unref();
         }
+
+        Variable& operator=(const Variable& copy)
+        {
+            if (copy.m_data)
+                copy.m_data->ref();
+            if (m_data)
+                m_data->unref();
+            m_data = copy.m_data;
+            return *this;
+        }
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+
+        void setDefault();
+        bool isDefault() const;
 
     private:
         struct _ref
@@ -79,15 +110,21 @@ namespace SDL
                 DS::ColorRgba* m_color;
                 DS::ColorRgba8* m_color8;
 
-                MOUL::Key* m_key;
+                MOUL::Uoid* m_key;
                 MOUL::Creatable** m_creatable;
                 class State* m_child;
             };
+            size_t m_size;
+            DS::UnifiedTime m_timestamp;
+            DS::String m_notificationHint;
+            uint16_t m_flags;
+
+        private:
             int m_refs;
             VarDescriptor* m_desc;
 
             _ref(VarDescriptor* desc);
-            ~_ref();
+            ~_ref() { clear(); }
 
             void ref() { ++m_refs; }
             void unref()
@@ -95,11 +132,19 @@ namespace SDL
                 if (--m_refs == 0)
                     delete this;
             }
+
+            void resize(size_t size);
+            void clear();
+
+            void read(DS::Stream* stream);
+            void write(DS::Stream* stream);
+
+            friend class Variable;
         }* m_data;
 
     public:
         VarDescriptor* descriptor() const { return m_data ? m_data->m_desc : 0; }
-        _ref* data() { return m_data; }
+        _ref* data() const { return m_data; }
     };
 
     class State
@@ -107,8 +152,20 @@ namespace SDL
     public:
         StateDescriptor* m_desc;
         std::vector<Variable> m_vars;
+        std::vector<Variable*> m_simpleVars, m_sdVars;
+        MOUL::Uoid m_object;
+        uint16_t m_flags;
 
-        State(StateDescriptor* desc = 0) : m_desc(desc) { }
+        State(StateDescriptor* desc = 0);
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+
+        void setDefault();
+        bool isDefault() const;
+        bool isDirty() const;
+
+        static State Create(DS::Stream* stream);
     };
 }
 

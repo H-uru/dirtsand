@@ -212,7 +212,7 @@ namespace DS
     class BlobStream : public Stream
     {
     public:
-        BlobStream(Blob blob) : m_blob(blob) { }
+        BlobStream(Blob blob) : m_blob(blob), m_position(0) { }
         virtual ~BlobStream() { }
 
         virtual ssize_t readBytes(void* buffer, size_t count);

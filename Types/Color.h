@@ -25,12 +25,26 @@ namespace DS
     struct ColorRgba
     {
         float m_R, m_G, m_B, m_A;
+
+        bool operator==(const ColorRgba& other) const
+        {
+            return m_R == other.m_R && m_G == other.m_G && m_B == other.m_B
+                && m_A == other.m_A;
+        }
+        bool operator!=(const ColorRgba& other) const { return !operator==(other); }
     };
 
     union ColorRgba8
     {
-        struct { uint8_t m_R, m_G, m_B, m_A; };
+        struct { uint8_t m_B, m_G, m_R, m_A; };
         uint32_t m_RGBA;
+
+        bool operator==(const ColorRgba8& other) const
+        {
+            return m_R == other.m_R && m_G == other.m_G && m_B == other.m_B
+                && m_A == other.m_A;
+        }
+        bool operator!=(const ColorRgba8& other) const { return !operator==(other); }
     };
 }
 

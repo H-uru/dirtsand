@@ -37,6 +37,7 @@ set(dirtsand_SOURCES
     Types/UnifiedTime.cpp
     Types/Uuid.cpp
     Types/ShaHash.cpp
+    Types/BitVector.cpp
     NetIO/MsgChannel.cpp
     NetIO/SockIO.cpp
     NetIO/CryptIO.cpp

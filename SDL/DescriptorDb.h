@@ -30,8 +30,6 @@ namespace SDL
         union
         {
             int32_t m_int;
-            int16_t m_short;
-            int8_t m_byte;
             float m_float;
             double m_double;
             bool m_bool;

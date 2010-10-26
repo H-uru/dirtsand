@@ -31,6 +31,14 @@ namespace DS
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
 
+        bool isNull() const { return m_secs == 0 && m_micros == 0; }
+
+        bool operator==(const UnifiedTime& other) const
+        {
+            return m_secs == other.m_secs && m_micros == other.m_micros;
+        }
+        bool operator!=(const UnifiedTime& other) const { return !operator==(other); }
+
     public:
         union {
             uint32_t m_secs;

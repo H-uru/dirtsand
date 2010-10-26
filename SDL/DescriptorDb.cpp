@@ -57,13 +57,13 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
                         fprintf(stderr, "[SDL] Warning: Duplicate descriptor version for %s\n",
                                 it->m_name.c_str());
                     }
-                    namei->second[it->m_version] = *it;
-                } else {
-                    s_descriptors[it->m_name][it->m_version] = *it;
                 }
-#else
-                s_descriptors[it->m_name][it->m_version] = *it;
 #endif
+                s_descriptors[it->m_name][it->m_version] = *it;
+
+                // Keep the highest version in -1
+                if (s_descriptors[it->m_name][-1].m_version < it->m_version)
+                    s_descriptors[it->m_name][-1] = *it;
             }
         }
         parser.close();
