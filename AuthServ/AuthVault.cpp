@@ -17,6 +17,7 @@
 
 #include "AuthServer_Private.h"
 #include "VaultTypes.h"
+#include "SDL/DescriptorDb.h"
 #include "encodings.h"
 #include "errors.h"
 #include <ctime>
@@ -31,6 +32,21 @@ static inline void check_postgres()
     if (PQstatus(s_postgres) == CONNECTION_BAD)
         PQreset(s_postgres);
     DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
+}
+
+static DS::Blob gen_default_sdl(const DS::String& filename)
+{
+    SDL::StateDescriptor* desc = SDL::DescriptorDb::FindDescriptor(filename, -1);
+    if (!desc) {
+        fprintf(stderr, "[Vault] Warning: Could not find SDL descriptor for %s\n",
+                filename.c_str());
+        return DS::Blob();
+    }
+
+    SDL::State state(desc);
+    DS::BufferStream stream;
+    state.write(&stream);
+    return DS::Blob(stream.buffer(), stream.size());
 }
 
 bool init_vault()
@@ -52,6 +68,8 @@ bool init_vault()
     if (count == 0) {
         PQclear(result);
 
+        fprintf(stderr, "[Vault] Initializing empty DirtSand vault\n");
+
         // Create system and global inbox nodes
         DS::Vault::Node node;
         node.set_NodeType(DS::Vault::e_NodeSystem);
@@ -68,11 +86,23 @@ bool init_vault()
         if (!v_ref_node(s_systemNode, globalInbox, 0))
             return false;
 
-        if (v_create_age(gen_uuid(), "city", "Ae'gura", DS::String(), 0, true) == 0)
+        if (v_create_age(gen_uuid(), "city", "Ae'gura", "", 0, true) == 0)
             return false;
-        if (v_create_age(gen_uuid(), "Neighborhood02", "Kirel", DS::String(), 0, true) == 0)
+        if (v_create_age(gen_uuid(), "Neighborhood02", "Kirel", "", 0, true) == 0)
             return false;
-        if (v_create_age(gen_uuid(), "GreatTreePub", "The Watcher's Pub", DS::String(), 0, true) == 0)
+        if (v_create_age(gen_uuid(), "Kveer", "K'veer", "", 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "GreatTreePub", "The Watcher's Pub", "", 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "GuildPub-Cartographers", "The Cartographers' Guild Pub", "", 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "GuildPub-Greeters", "The Greeters' Guild Pub", "", 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "GuildPub-Maintainers", "The Maintainers' Guild Pub", "", 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "GuildPub-Messengers", "The Messengers' Guild Pub", "", 0, true) == 0)
+            return false;
+        if (v_create_age(gen_uuid(), "GuildPub-Writers", "The Writers' Guild Pub", "", 0, true) == 0)
             return false;
     } else {
         DS_DASSERT(count == 1);
@@ -179,7 +209,16 @@ uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
     if (canVisitList == 0)
         return 0;
 
-    //TODO: Age SDL node
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeSDL);
+    node.set_CreatorUuid(ageId);
+    node.set_CreatorIdx(ageNode);
+    node.set_Int32_1(0);
+    node.set_String64_1(filename);
+    node.set_Blob_1(gen_default_sdl(filename));
+    uint32_t ageSdlNode = v_create_node(node);
+    if (ageSdlNode == 0)
+        return 0;
 
     node.clear();
     node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
@@ -213,8 +252,8 @@ uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
         return 0;
     if (!v_ref_node(ageInfoNode, canVisitList, 0))
         return 0;
-    //if (!v_ref_node(ageInfoNode, ageSdlNode, 0))
-    //    return 0;
+    if (!v_ref_node(ageInfoNode, ageSdlNode, 0))
+        return 0;
     if (!v_ref_node(ageInfoNode, ageOwners, 0))
         return 0;
     if (!v_ref_node(ageInfoNode, childAges, 0))
@@ -222,7 +261,28 @@ uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
 
     // Register with the database if it's a public age
     if (publicAge) {
-        //TODO
+        PostgresStrings<8> parms;
+        parms.set(0, ageId.toString());
+        parms.set(1, filename);
+        parms.set(2, instName);
+        parms.set(3, userName);
+        parms.set(4, userName.isEmpty() ? "" : userName + " " + instName);
+        parms.set(5, seqNumber);
+        parms.set(6, -1);   // Language
+        parms.set(7, 0);    // Population
+        PGresult* result = PQexecParams(s_postgres,
+                "INSERT INTO game.\"PublicAges\""
+                "    (\"AgeUuid\", \"AgeFilename\", \"AgeInstName\", \"AgeUserName\","
+                "     \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\")"
+                "    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+                8, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQclear(result);
+            return 0;
+        }
+        PQclear(result);
     }
 
     return ageNode;

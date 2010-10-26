@@ -20,6 +20,9 @@ SET escape_string_warning = off;
 CREATE SCHEMA auth;
 ALTER SCHEMA auth OWNER TO dirtsand;
 
+CREATE SCHEMA game;
+ALTER SCHEMA game OWNER TO dirtsand;
+
 CREATE SCHEMA vault;
 ALTER SCHEMA vault OWNER TO dirtsand;
 
@@ -131,6 +134,8 @@ ALTER TABLE vault."Nodes_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Nodes_idx_seq" OWNED BY "Nodes".idx;
 SELECT pg_catalog.setval('"Nodes_idx_seq"', 10001, false);
 
+SET search_path = game, pg_catalog;
+
 CREATE TABLE "PublicAges" (
     idx integer NOT NULL,
     "AgeUuid" uuid NOT NULL,
@@ -142,14 +147,14 @@ CREATE TABLE "PublicAges" (
     "Language" integer NOT NULL,
     "Population" integer NOT NULL
 );
-ALTER TABLE vault."PublicAges" OWNER TO dirtsand;
+ALTER TABLE game."PublicAges" OWNER TO dirtsand;
 CREATE SEQUENCE "PublicAges_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE vault."PublicAges_idx_seq" OWNER TO dirtsand;
+ALTER TABLE game."PublicAges_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "PublicAges_idx_seq" OWNED BY "PublicAges".idx;
 SELECT pg_catalog.setval('"PublicAges_idx_seq"', 1, false);
 
@@ -163,21 +168,22 @@ ALTER TABLE ONLY "Accounts"
     ADD CONSTRAINT "Accounts_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "Players"
     ADD CONSTRAINT "Players_pkey" PRIMARY KEY (idx);
+CREATE INDEX "Login_Index" ON "Accounts" USING hash ("Login");
 
 SET search_path = vault, pg_catalog;
 ALTER TABLE "NodeRefs" ALTER COLUMN idx SET DEFAULT nextval('"NodeRefs_idx_seq"'::regclass);
 ALTER TABLE "Nodes" ALTER COLUMN idx SET DEFAULT nextval('"Nodes_idx_seq"'::regclass);
-ALTER TABLE "PublicAges" ALTER COLUMN idx SET DEFAULT nextval('"PublicAges_idx_seq"'::regclass);
 
 ALTER TABLE ONLY "NodeRefs"
     ADD CONSTRAINT "NodeRefs_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "Nodes"
     ADD CONSTRAINT "Nodes_pkey" PRIMARY KEY (idx);
+
+SET search_path = game, pg_catalog;
+ALTER TABLE "PublicAges" ALTER COLUMN idx SET DEFAULT nextval('"PublicAges_idx_seq"'::regclass);
+
 ALTER TABLE ONLY "PublicAges"
     ADD CONSTRAINT "PublicAges_pkey" PRIMARY KEY (idx);
-
-SET search_path = auth, pg_catalog;
-CREATE INDEX "Login_Index" ON "Accounts" USING hash ("Login");
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
