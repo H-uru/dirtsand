@@ -457,6 +457,19 @@ void* wk_authWorker(void* sockp)
             case e_CliToAuth_FileDownloadChunkAck:
                 cb_downloadNext(client);
                 break;
+            case e_CliToAuth_ClientSetCCRLevel:
+            case e_CliToAuth_AcctSetRolesRequest:
+            case e_CliToAuth_AcctSetBillingTypeRequest:
+            case e_CliToAuth_AcctActivateRequest:
+            case e_CliToAuth_AcctCreateFromKeyRequest:
+            case e_CliToAuth_VaultNodeDelete:
+            case e_CliToAuth_UpgradeVisitorRequest:
+            case e_CliToAuth_SetPlayerBanStatusRequest:
+            case e_CliToAuth_KickPlayer:
+                fprintf(stderr, "[Auth] Got unsupported client message %d from %s\n",
+                        msgId, DS::SockIpAddress(client.m_sock).c_str());
+                DS::CloseSock(client.m_sock);
+                throw DS::SockHup();
             default:
                 /* Invalid message */
                 fprintf(stderr, "[Auth] Got invalid message ID %d from %s\n",
