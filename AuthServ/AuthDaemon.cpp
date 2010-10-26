@@ -261,14 +261,13 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     }
     PQclear(result);
 
-    DS::Uuid playerId = gen_uuid();
-    msg->m_playerNode = v_create_player(playerId, msg->m_playerName,
+    msg->m_playerNode = v_create_player(msg->m_client->m_acctUuid, msg->m_playerName,
                                         msg->m_avatarShape, true).first;
     if (msg->m_playerNode == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
     PostgresStrings<5> iparms;
-    iparms.set(0, playerId.toString());
+    iparms.set(0, msg->m_client->m_acctUuid.toString());
     iparms.set(1, msg->m_playerNode);
     iparms.set(2, msg->m_playerName);
     iparms.set(3, msg->m_avatarShape);
