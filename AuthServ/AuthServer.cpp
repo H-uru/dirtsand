@@ -235,7 +235,9 @@ void cb_setPlayer(AuthServer_Private& client)
         // No player -- always successful
         client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
     } else {
-        s_authChannel.putMessage(e_AuthSetPlayer, reinterpret_cast<void*>(&client));
+        Auth_ClientMessage msg;
+        msg.m_client = &client;
+        s_authChannel.putMessage(e_AuthSetPlayer, reinterpret_cast<void*>(&msg));
         DS::FifoMessage reply = client.m_channel.getMessage();
         client.m_buffer.write<uint32_t>(reply.m_messageType);
     }

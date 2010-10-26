@@ -126,9 +126,14 @@ extern PGconn* s_postgres;
 DS::Uuid gen_uuid();
 
 bool init_vault();
-uint32_t v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
-                      DS::String userName, int32_t seqNumber, bool publicAge);
-uint32_t v_create_player(DS::Uuid playerId, DS::String playerName,
-                         DS::String avatarShape, bool explorer);
+
+std::pair<uint32_t, uint32_t>
+v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
+             DS::String userName, int32_t seqNumber, bool publicAge);
+
+std::pair<uint32_t, uint32_t>
+v_create_player(DS::Uuid playerId, DS::String playerName,
+                DS::String avatarShape, bool explorer);
+
 uint32_t v_create_node(const DS::Vault::Node& node);
 bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx);

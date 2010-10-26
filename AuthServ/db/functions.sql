@@ -8,13 +8,15 @@ SET client_min_messages = warning;
 SET escape_string_warning = off;
 
 -- [Required] Fetch a complete noderef tree, for the FetchNodeRefs message --
-CREATE OR REPLACE FUNCTION vault.fetch_tree(integer) RETURNS SETOF vault."NodeRefs" AS
+CREATE OR REPLACE FUNCTION vault.fetch_tree(integer)
+RETURNS SETOF vault."NodeRefs" AS
 $BODY$
 DECLARE
     nodeId ALIAS FOR $1;
-    curNode RECORD;
+    curNode vault."NodeRefs";
 BEGIN
-    FOR curNode IN SELECT * FROM vault."NodeRefs" WHERE "ParentIdx"=nodeId LOOP
+    FOR curNode IN SELECT * FROM vault."NodeRefs" WHERE "ParentIdx"=nodeId
+    LOOP
         RETURN NEXT curNode;
         RETURN QUERY (SELECT * FROM vault.fetch_tree(curNode."ChildIdx"));
     END LOOP;
@@ -25,12 +27,36 @@ LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION vault.fetch_tree(IN integer) OWNER TO dirtsand;
 
 
+-- [Required] Fetch a specific folder child node --
+CREATE OR REPLACE FUNCTION vault.find_folder(integer, integer)
+RETURNS SETOF vault."Nodes" AS
+$BODY$
+DECLARE
+    nodeId ALIAS FOR $1;
+    folderType ALIAS FOR $2;
+    curNode vault."Nodes";
+BEGIN
+    FOR curNode IN SELECT * FROM vault."Nodes" WHERE idx IN
+        (SELECT "ChildIdx" FROM vault."NodeRefs" WHERE "ParentIdx"=nodeId)
+        AND ("NodeType"=22 OR "NodeType"=30 OR "NodeType"=34)
+        AND "Int32_1"=folderType
+    LOOP
+        RETURN NEXT curNode;
+    END LOOP;
+    RETURN;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+ALTER FUNCTION vault.find_folder(IN integer, IN integer) OWNER TO dirtsand;
+
+
 -- [Optional] Utility to clear an entire vault --
 CREATE OR REPLACE FUNCTION clear_vault() RETURNS void AS
 $BODY$
 SELECT setval('vault."Nodes_idx_seq"', 10001, false);
 SELECT setval('vault."NodeRefs_idx_seq"', 1, false);
 SELECT setval('game."PublicAges_idx_seq"', 1, false);
+SELECT setval('game."AgeSeqNumber"', 1, false);
 SELECT setval('auth."Players_idx_seq"', 1, false);
 DELETE FROM vault."Nodes";
 DELETE FROM vault."NodeRefs";

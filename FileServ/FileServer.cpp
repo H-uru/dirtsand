@@ -365,6 +365,6 @@ void DS::FileServer_Shutdown()
         usleep(100000);
     }
     if (!complete)
-        fprintf(stderr, "[File] Clients didn't die after 5 seconds!");
+        fprintf(stderr, "[File] Clients didn't die after 5 seconds!\n");
     pthread_mutex_destroy(&s_clientMutex);
 }

@@ -70,7 +70,7 @@ void dm_auth_shutdown()
         usleep(100000);
     }
     if (!complete)
-        fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!");
+        fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!\n");
 
     pthread_mutex_destroy(&s_authClientMutex);
     PQfinish(s_postgres);
@@ -262,14 +262,14 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     PQclear(result);
 
     DS::Uuid playerId = gen_uuid();
-    uint32_t playerNode = v_create_player(playerId, msg->m_playerName,
-                                          msg->m_avatarShape, true);
-    if (playerNode == 0)
+    msg->m_playerNode = v_create_player(playerId, msg->m_playerName,
+                                        msg->m_avatarShape, true).first;
+    if (msg->m_playerNode == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
     PostgresStrings<5> iparms;
     iparms.set(0, playerId.toString());
-    iparms.set(1, playerNode);
+    iparms.set(1, msg->m_playerNode);
     iparms.set(2, msg->m_playerName);
     iparms.set(3, msg->m_avatarShape);
     iparms.set(4, 1);
@@ -293,8 +293,8 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
 
 void* dm_authDaemon(void*)
 {
-    try {
-        for ( ;; ) {
+    for ( ;; ) {
+        try {
             DS::FifoMessage msg = s_authChannel.getMessage();
             switch (msg.m_messageType) {
             case e_AuthShutdown:
@@ -314,10 +314,10 @@ void* dm_authDaemon(void*)
                 DS_DASSERT(0);
                 break;
             }
+        } catch (DS::AssertException ex) {
+            fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
+                    ex.m_file, ex.m_line, ex.m_cond);
         }
-    } catch (DS::AssertException ex) {
-        fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
     }
 
     dm_auth_shutdown();

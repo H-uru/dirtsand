@@ -158,6 +158,15 @@ ALTER TABLE game."PublicAges_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "PublicAges_idx_seq" OWNED BY "PublicAges".idx;
 SELECT pg_catalog.setval('"PublicAges_idx_seq"', 1, false);
 
+CREATE SEQUENCE "AgeSeqNumber"
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+ALTER TABLE game."AgeSeqNumber" OWNER TO dirtsand;
+SELECT pg_catalog.setval('"AgeSeqNumber"', 1, false);
+
 SET search_path = auth, pg_catalog;
 ALTER TABLE "Accounts" ALTER COLUMN idx SET DEFAULT nextval('"Accounts_idx_seq"'::regclass);
 ALTER TABLE "Players" ALTER COLUMN idx SET DEFAULT nextval('"Players_idx_seq"'::regclass);

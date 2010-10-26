@@ -231,6 +231,6 @@ void DS::GateKeeper_Shutdown()
         usleep(100000);
     }
     if (!complete)
-        fprintf(stderr, "[GateKeeper] Clients didn't die after 5 seconds!");
+        fprintf(stderr, "[GateKeeper] Clients didn't die after 5 seconds!\n");
     pthread_mutex_destroy(&s_clientMutex);
 }
