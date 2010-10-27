@@ -232,14 +232,14 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
 
 void dm_auth_createPlayer(Auth_PlayerCreate* msg)
 {
-    if (msg->m_avatarShape != "male" && msg->m_avatarShape != "female") {
+    if (msg->m_player.m_avatarModel != "male" && msg->m_player.m_avatarModel != "female") {
         // Cheater!
-        msg->m_avatarShape = "male";
+        msg->m_player.m_avatarModel = "male";
     }
 
     // Check for existing player
     PostgresStrings<1> sparms;
-    sparms.set(0, msg->m_playerName);
+    sparms.set(0, msg->m_player.m_playerName);
     PGresult* result = PQexecParams(s_postgres,
             "SELECT idx FROM auth.\"Players\""
             "    WHERE \"PlayerName\"=$1",
@@ -254,24 +254,23 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     if (PQntuples(result) != 0) {
         fprintf(stderr, "[Auth] %s: Player %s already exists!\n",
                 DS::SockIpAddress(msg->m_client->m_sock).c_str(),
-                msg->m_playerName.c_str());
+                msg->m_player.m_playerName.c_str());
         PQclear(result);
         SEND_REPLY(msg, DS::e_NetPlayerAlreadyExists);
         return;
     }
     PQclear(result);
 
-    msg->m_playerNode = v_create_player(msg->m_client->m_acctUuid, msg->m_playerName,
-                                        msg->m_avatarShape, true).first;
-    if (msg->m_playerNode == 0)
+    msg->m_player.m_playerId = v_create_player(msg->m_client->m_acctUuid, msg->m_player).first;
+    if (msg->m_player.m_playerId == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
     PostgresStrings<5> iparms;
     iparms.set(0, msg->m_client->m_acctUuid.toString());
-    iparms.set(1, msg->m_playerNode);
-    iparms.set(2, msg->m_playerName);
-    iparms.set(3, msg->m_avatarShape);
-    iparms.set(4, 1);
+    iparms.set(1, msg->m_player.m_playerId);
+    iparms.set(2, msg->m_player.m_playerName);
+    iparms.set(3, msg->m_player.m_avatarModel);
+    iparms.set(4, msg->m_player.m_explorer);
     result = PQexecParams(s_postgres,
             "INSERT INTO auth.\"Players\""
             "    (\"AcctUuid\", \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\")"
@@ -287,6 +286,17 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     }
     DS_DASSERT(PQntuples(result) == 1);
     PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
+void dm_auth_createAge(Auth_AgeCreate* msg)
+{
+    std::pair<uint32_t, uint32_t> ageNodes = v_create_age(msg->m_age, false);
+    if (ageNodes.first == 0)
+        SEND_REPLY(msg, DS::e_NetInternalError);
+
+    msg->m_ageIdx = ageNodes.first;
+    msg->m_infoIdx = ageNodes.second;
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
@@ -441,6 +451,9 @@ void* dm_authDaemon(void*)
                     else
                         SEND_REPLY(info, DS::e_NetInternalError);
                 }
+                break;
+            case e_VaultInitAge:
+                dm_auth_createAge(reinterpret_cast<Auth_AgeCreate*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

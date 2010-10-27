@@ -43,6 +43,8 @@ namespace DS
         bool operator!=(const Uuid& other) const
         { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) != 0; }
 
+        bool isNull() const { return operator==(Uuid()); }
+
         void read(Stream* stream);
         void write(Stream* stream);
 

@@ -90,11 +90,18 @@ struct AuthServer_PlayerInfo
     DS::String m_playerName;
     DS::String m_avatarModel;
     uint32_t m_explorer;
+
+    AuthServer_PlayerInfo() : m_playerId(0), m_explorer(1) { }
 };
 
 struct AuthServer_AgeInfo
 {
-    //TODO
+    DS::Uuid m_ageId, m_parentId;
+    DS::String m_filename, m_instName, m_userName;
+    DS::String m_description;
+    int m_seqNumber, m_language;
+
+    AuthServer_AgeInfo() : m_seqNumber(0), m_language(-1) { }
 };
 
 struct AuthServer_Private
@@ -131,7 +138,7 @@ enum AuthDaemonMessages
 {
     e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
     e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
-    e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode,
+    e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode, e_VaultInitAge,
 };
 void AuthDaemon_SendMessage(int msg, void* data = 0);
 
@@ -153,10 +160,13 @@ struct Auth_LoginInfo : public Auth_ClientMessage
 
 struct Auth_PlayerCreate : public Auth_ClientMessage
 {
-    DS::String m_playerName;
-    DS::String m_avatarShape;
+    AuthServer_PlayerInfo m_player;
+};
 
-    uint32_t m_playerNode;
+struct Auth_AgeCreate : public Auth_ClientMessage
+{
+    AuthServer_AgeInfo m_age;
+    uint32_t m_ageIdx, m_infoIdx;
 };
 
 struct Auth_NodeInfo : public Auth_ClientMessage
@@ -214,12 +224,10 @@ DS::Uuid gen_uuid();
 bool init_vault();
 
 std::pair<uint32_t, uint32_t>
-v_create_age(DS::Uuid ageId, DS::String filename, DS::String instName,
-             DS::String userName, int32_t seqNumber, bool publicAge);
+v_create_age(const AuthServer_AgeInfo& age, bool publicAge);
 
 std::pair<uint32_t, uint32_t>
-v_create_player(DS::Uuid playerId, DS::String playerName,
-                DS::String avatarShape, bool explorer);
+v_create_player(DS::Uuid accountId, const AuthServer_PlayerInfo& player);
 
 uint32_t v_create_node(const DS::Vault::Node& node);
 bool v_update_node(const DS::Vault::Node& node);

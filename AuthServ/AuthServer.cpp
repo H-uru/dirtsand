@@ -198,8 +198,8 @@ void cb_playerCreate(AuthServer_Private& client)
 
     Auth_PlayerCreate msg;
     msg.m_client = &client;
-    msg.m_playerName = DS::CryptRecvString(client.m_sock, client.m_crypt);
-    msg.m_avatarShape = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_player.m_playerName = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_player.m_avatarModel = DS::CryptRecvString(client.m_sock, client.m_crypt);
     DS::CryptRecvString(client.m_sock, client.m_crypt);   // Friend invite
     s_authChannel.putMessage(e_AuthCreatePlayer, reinterpret_cast<void*>(&msg));
 
@@ -211,14 +211,48 @@ void cb_playerCreate(AuthServer_Private& client)
         client.m_buffer.write<uint16_t>(0);   // Player Name
         client.m_buffer.write<uint16_t>(0);   // Avatar Model
     } else {
-        client.m_buffer.write<uint32_t>(msg.m_playerNode);
+        client.m_buffer.write<uint32_t>(msg.m_player.m_playerId);
         client.m_buffer.write<uint32_t>(1);   // Explorer
-        DS::StringBuffer<chr16_t> wbuf = msg.m_playerName.toUtf16();
+        DS::StringBuffer<chr16_t> wbuf = msg.m_player.m_playerName.toUtf16();
         client.m_buffer.write<uint16_t>(wbuf.length());
         client.m_buffer.writeBytes(wbuf.data(), wbuf.length() * sizeof(chr16_t));
-        wbuf = msg.m_avatarShape.toUtf16();
+        wbuf = msg.m_player.m_avatarModel.toUtf16();
         client.m_buffer.write<uint16_t>(wbuf.length());
         client.m_buffer.writeBytes(wbuf.data(), wbuf.length() * sizeof(chr16_t));
+    }
+
+    SEND_REPLY();
+}
+
+void cb_ageCreate(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultInitAgeReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_AgeCreate msg;
+    msg.m_client = &client;
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, msg.m_age.m_ageId.m_bytes,
+                        sizeof(msg.m_age.m_ageId.m_bytes));
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, msg.m_age.m_parentId.m_bytes,
+                        sizeof(msg.m_age.m_parentId.m_bytes));
+    msg.m_age.m_filename = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_age.m_instName = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_age.m_userName = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_age.m_description = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_age.m_seqNumber = DS::CryptRecvValue<int32_t>(client.m_sock, client.m_crypt);
+    msg.m_age.m_language = DS::CryptRecvValue<int32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_VaultInitAge, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);   // Age Node Idx
+        client.m_buffer.write<uint32_t>(0);   // Age Info Node Idx
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_ageIdx);
+        client.m_buffer.write<uint32_t>(msg.m_infoIdx);
     }
 
     SEND_REPLY();
@@ -599,9 +633,9 @@ void* wk_authWorker(void* sockp)
             case e_CliToAuth_VaultFetchNodeRefs:
                 cb_nodeTree(client);
                 break;
-            //case e_CliToAuth_VaultInitAgeRequest:
-                //cb_ageCreate(client);
-                //break;
+            case e_CliToAuth_VaultInitAgeRequest:
+                cb_ageCreate(client);
+                break;
             case e_CliToAuth_VaultNodeFind:
                 cb_nodeFind(client);
                 break;
