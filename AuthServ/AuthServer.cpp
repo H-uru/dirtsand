@@ -28,62 +28,6 @@ bool s_authServerRunning = false;
 std::list<AuthServer_Private*> s_authClients;
 pthread_mutex_t s_authClientMutex;
 
-enum AuthServer_MsgIds
-{
-    e_CliToAuth_PingRequest = 0, e_CliToAuth_ClientRegisterRequest,
-    e_CliToAuth_ClientSetCCRLevel, e_CliToAuth_AcctLoginRequest,
-    e_CliToAuth_AcctSetEulaVersion, e_CliToAuth_AcctSetDataRequest,
-    e_CliToAuth_AcctSetPlayerRequest, e_CliToAuth_AcctCreateRequest,
-    e_CliToAuth_AcctChangePasswordRequest, e_CliToAuth_AcctSetRolesRequest,
-    e_CliToAuth_AcctSetBillingTypeRequest, e_CliToAuth_AcctActivateRequest,
-    e_CliToAuth_AcctCreateFromKeyRequest, e_CliToAuth_PlayerDeleteRequest,
-    e_CliToAuth_PlayerUndeleteRequest, e_CliToAuth_PlayerSelectRequest,
-    e_CliToAuth_PlayerRenameRequest, e_CliToAuth_PlayerCreateRequest,
-    e_CliToAuth_PlayerSetStatus, e_CliToAuth_PlayerChat,
-    e_CliToAuth_UpgradeVisitorRequest, e_CliToAuth_SetPlayerBanStatusRequest,
-    e_CliToAuth_KickPlayer, e_CliToAuth_ChangePlayerNameRequest,
-    e_CliToAuth_SendFriendInviteRequest, e_CliToAuth_VaultNodeCreate,
-    e_CliToAuth_VaultNodeFetch, e_CliToAuth_VaultNodeSave,
-    e_CliToAuth_VaultNodeDelete, e_CliToAuth_VaultNodeAdd,
-    e_CliToAuth_VaultNodeRemove, e_CliToAuth_VaultFetchNodeRefs,
-    e_CliToAuth_VaultInitAgeRequest, e_CliToAuth_VaultNodeFind,
-    e_CliToAuth_VaultSetSeen, e_CliToAuth_VaultSendNode, e_CliToAuth_AgeRequest,
-    e_CliToAuth_FileListRequest, e_CliToAuth_FileDownloadRequest,
-    e_CliToAuth_FileDownloadChunkAck, e_CliToAuth_PropagateBuffer,
-    e_CliToAuth_GetPublicAgeList, e_CliToAuth_SetAgePublic,
-    e_CliToAuth_LogPythonTraceback, e_CliToAuth_LogStackDump,
-    e_CliToAuth_LogClientDebuggerConnect, e_CliToAuth_ScoreCreate,
-    e_CliToAuth_ScoreDelete, e_CliToAuth_ScoreGetScores,
-    e_CliToAuth_ScoreAddPoints, e_CliToAuth_ScoreTransferPoints,
-    e_CliToAuth_ScoreSetPoints, e_CliToAuth_ScoreGetRanks,
-    e_CliToAuth_AcctExistsRequest,
-
-    e_AuthToCli_PingReply = 0, kAuthToCli_ServerAddr, e_AuthToCli_NotifyNewBuild,
-    e_AuthToCli_ClientRegisterReply, e_AuthToCli_AcctLoginReply,
-    e_AuthToCli_AcctData, e_AuthToCli_AcctPlayerInfo,
-    e_AuthToCli_AcctSetPlayerReply, e_AuthToCli_AcctCreateReply,
-    e_AuthToCli_AcctChangePasswordReply, e_AuthToCli_AcctSetRolesReply,
-    e_AuthToCli_AcctSetBillingTypeReply, e_AuthToCli_AcctActivateReply,
-    e_AuthToCli_AcctCreateFromKeyReply, e_AuthToCli_PlayerList,
-    e_AuthToCli_PlayerChat, e_AuthToCli_PlayerCreateReply,
-    e_AuthToCli_PlayerDeleteReply, e_AuthToCli_UpgradeVisitorReply,
-    e_AuthToCli_SetPlayerBanStatusReply, e_AuthToCli_ChangePlayerNameReply,
-    e_AuthToCli_SendFriendInviteReply, e_AuthToCli_FriendNotify,
-    e_AuthToCli_VaultNodeCreated, e_AuthToCli_VaultNodeFetched,
-    e_AuthToCli_VaultNodeChanged, e_AuthToCli_VaultNodeDeleted,
-    e_AuthToCli_VaultNodeAdded, e_AuthToCli_VaultNodeRemoved,
-    e_AuthToCli_VaultNodeRefsFetched, e_AuthToCli_VaultInitAgeReply,
-    e_AuthToCli_VaultNodeFindReply, e_AuthToCli_VaultSaveNodeReply,
-    e_AuthToCli_VaultAddNodeReply, e_AuthToCli_VaultRemoveNodeReply,
-    e_AuthToCli_AgeReply, e_AuthToCli_FileListReply,
-    e_AuthToCli_FileDownloadChunk, e_AuthToCli_PropagateBuffer,
-    e_AuthToCli_KickedOff, e_AuthToCli_PublicAgeList,
-    e_AuthToCli_ScoreCreateReply, e_AuthToCli_ScoreDeleteReply,
-    e_AuthToCli_ScoreGetScoresReply, e_AuthToCli_ScoreAddPointsReply,
-    e_AuthToCli_ScoreTransferPointsReply, e_AuthToCli_ScoreSetPointsReply,
-    e_AuthToCli_ScoreGetRanksReply, e_AuthToCli_AcctExistsReply,
-};
-
 #define START_REPLY(msgId) \
     client.m_buffer.truncate(); \
     client.m_buffer.write<uint16_t>(msgId)
@@ -280,6 +224,162 @@ void cb_playerCreate(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_nodeCreate(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultNodeCreated);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    uint32_t nodeSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint8_t* nodeBuffer = new uint8_t[nodeSize];
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer, nodeSize);
+    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer, nodeSize);
+    DS::BlobStream nodeStream(nodeData);
+
+    Auth_NodeInfo msg;
+    msg.m_client = &client;
+    msg.m_node.read(&nodeStream);
+    DS_PASSERT(nodeStream.atEof());
+    s_authChannel.putMessage(e_VaultCreateNode, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess)
+        client.m_buffer.write<uint32_t>(0);
+    else
+        client.m_buffer.write<uint32_t>(msg.m_node.m_NodeIdx);
+
+    SEND_REPLY();
+}
+
+void cb_nodeFetch(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultNodeFetched);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_NodeInfo msg;
+    msg.m_client = &client;
+    msg.m_node.set_NodeIdx(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+    s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);
+    } else {
+        uint32_t sizePos = client.m_buffer.tell();
+        client.m_buffer.write<uint32_t>(0);
+        msg.m_node.write(&client.m_buffer);
+        uint32_t endPos = client.m_buffer.tell();
+        client.m_buffer.seek(sizePos, SEEK_SET);
+        client.m_buffer.write<uint32_t>(endPos - sizePos - sizeof(uint32_t));
+    }
+
+    SEND_REPLY();
+}
+
+void cb_nodeUpdate(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultSaveNodeReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_NodeInfo msg;
+    msg.m_client = &client;
+    uint32_t m_nodeId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, &msg.m_revision.m_bytes,
+                        sizeof(msg.m_revision.m_bytes));
+
+    uint32_t nodeSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint8_t* nodeBuffer = new uint8_t[nodeSize];
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer, nodeSize);
+    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer, nodeSize);
+    DS::BlobStream nodeStream(nodeData);
+
+    msg.m_node.read(&nodeStream);
+    DS_PASSERT(nodeStream.atEof());
+    msg.m_node.m_NodeIdx = m_nodeId;
+    s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+
+    SEND_REPLY();
+}
+
+void cb_nodeRef(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultAddNodeReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_NodeRef msg;
+    msg.m_client = &client;
+    msg.m_ref.m_parent = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_ref.m_child = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_ref.m_owner = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_VaultRefNode, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+
+    SEND_REPLY();
+}
+
+void cb_nodeUnref(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultAddNodeReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_NodeRef msg;
+    msg.m_client = &client;
+    msg.m_ref.m_parent = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_ref.m_child = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_VaultUnrefNode, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+
+    SEND_REPLY();
+}
+
+void cb_nodeTree(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultNodeRefsFetched);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_NodeRefList msg;
+    msg.m_client = &client;
+    msg.m_nodeId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_VaultFetchNodeTree, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_refs.size());
+        for (std::vector<DS::Vault::NodeRef>::iterator it = msg.m_refs.begin();
+             it != msg.m_refs.end(); ++it) {
+            client.m_buffer.write<uint32_t>(it->m_parent);
+            client.m_buffer.write<uint32_t>(it->m_child);
+            client.m_buffer.write<uint32_t>(it->m_owner);
+            client.m_buffer.write<uint8_t>(it->m_seen);
+        }
+    }
+
+    SEND_REPLY();
+}
+
 void cb_fileList(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_FileListReply);
@@ -448,6 +548,30 @@ void* wk_authWorker(void* sockp)
             case e_CliToAuth_PlayerCreateRequest:
                 cb_playerCreate(client);
                 break;
+            case e_CliToAuth_VaultNodeCreate:
+                cb_nodeCreate(client);
+                break;
+            case e_CliToAuth_VaultNodeFetch:
+                cb_nodeFetch(client);
+                break;
+            case e_CliToAuth_VaultNodeSave:
+                cb_nodeUpdate(client);
+                break;
+            case e_CliToAuth_VaultNodeAdd:
+                cb_nodeRef(client);
+                break;
+            case e_CliToAuth_VaultNodeRemove:
+                cb_nodeUnref(client);
+                break;
+            case e_CliToAuth_VaultFetchNodeRefs:
+                cb_nodeTree(client);
+                break;
+            //case e_CliToAuth_VaultInitAgeRequest:
+                //cb_ageCreate(client);
+                //break;
+            //case e_CliToAuth_VaultNodeFind:
+                //cb_nodeFind(client;
+                //break;
             case e_CliToAuth_FileListRequest:
                 cb_fileList(client);
                 break;

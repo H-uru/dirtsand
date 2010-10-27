@@ -144,6 +144,10 @@ namespace Vault
 
         Node() : m_fields(0) { }
         void clear() { m_fields = 0; }
+        bool isNull() const { return m_fields == 0; }
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
 
     private:
         uint64_t m_fields;

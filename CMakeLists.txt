@@ -49,6 +49,7 @@ set(dirtsand_SOURCES
     AuthServ/AuthServer.cpp
     AuthServ/AuthDaemon.cpp
     AuthServ/AuthVault.cpp
+    AuthServ/VaultTypes.cpp
     strings.cpp
     streams.cpp
     settings.cpp

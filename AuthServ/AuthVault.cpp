@@ -650,7 +650,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     /* This should be plenty to store everything we need without a bunch
      * of dynamic reallocations
      */
-    PostgresStrings<32> parms;
+    PostgresStrings<31> parms;
     char fieldbuf[1024];
 
     size_t parmcount = 0;
@@ -659,8 +659,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     #define SET_FIELD(name, value) \
         { \
             parms.set(parmcount++, value); \
-            strcpy(fieldp, "\"" #name "\","); \
-            fieldp += strlen("\"" #name "\","); \
+            fieldp += sprintf(fieldp, "\"" #name "\","); \
         }
     int now = time(0);
     SET_FIELD(CreateTime, now);
@@ -756,6 +755,197 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     return idx;
 }
 
+bool v_update_node(const DS::Vault::Node& node)
+{
+    /* This should be plenty to store everything we need without a bunch
+     * of dynamic reallocations
+     */
+    PostgresStrings<32> parms;
+    char fieldbuf[1024];
+
+    size_t parmcount = 1;
+    char* fieldp = fieldbuf;
+
+    #define SET_FIELD(name, value) \
+        { \
+            parms.set(parmcount++, value); \
+            fieldp += sprintf(fieldp, "\"" #name "\"=$%u,", parmcount); \
+        }
+    int now = time(0);
+    SET_FIELD(ModifyTime, now);
+    if (node.has_CreateAgeName())
+        SET_FIELD(CreateAgeName, node.m_CreateAgeName);
+    if (node.has_CreateAgeUuid())
+        SET_FIELD(CreateAgeUuid, node.m_CreateAgeUuid.toString());
+    if (node.has_CreatorUuid())
+        SET_FIELD(CreatorUuid, node.m_CreatorUuid.toString());
+    if (node.has_CreatorIdx())
+        SET_FIELD(CreatorIdx, node.m_CreatorIdx);
+    if (node.has_NodeType())
+        SET_FIELD(NodeType, node.m_NodeType);
+    if (node.has_Int32_1())
+        SET_FIELD(Int32_1, node.m_Int32_1);
+    if (node.has_Int32_2())
+        SET_FIELD(Int32_2, node.m_Int32_2);
+    if (node.has_Int32_3())
+        SET_FIELD(Int32_3, node.m_Int32_3);
+    if (node.has_Int32_4())
+        SET_FIELD(Int32_4, node.m_Int32_4);
+    if (node.has_Uint32_1())
+        SET_FIELD(Uint32_1, node.m_Uint32_1);
+    if (node.has_Uint32_2())
+        SET_FIELD(Uint32_2, node.m_Uint32_2);
+    if (node.has_Uint32_3())
+        SET_FIELD(Uint32_3, node.m_Uint32_3);
+    if (node.has_Uint32_4())
+        SET_FIELD(Uint32_4, node.m_Uint32_4);
+    if (node.has_Uuid_1())
+        SET_FIELD(Uuid_1, node.m_Uuid_1.toString());
+    if (node.has_Uuid_2())
+        SET_FIELD(Uuid_2, node.m_Uuid_2.toString());
+    if (node.has_Uuid_3())
+        SET_FIELD(Uuid_3, node.m_Uuid_3.toString());
+    if (node.has_Uuid_4())
+        SET_FIELD(Uuid_4, node.m_Uuid_4.toString());
+    if (node.has_String64_1())
+        SET_FIELD(String64_1, node.m_String64_1);
+    if (node.has_String64_2())
+        SET_FIELD(String64_2, node.m_String64_2);
+    if (node.has_String64_3())
+        SET_FIELD(String64_3, node.m_String64_3);
+    if (node.has_String64_4())
+        SET_FIELD(String64_4, node.m_String64_4);
+    if (node.has_String64_5())
+        SET_FIELD(String64_5, node.m_String64_5);
+    if (node.has_String64_6())
+        SET_FIELD(String64_6, node.m_String64_6);
+    if (node.has_IString64_1())
+        SET_FIELD(IString64_1, node.m_IString64_1);
+    if (node.has_IString64_2())
+        SET_FIELD(IString64_2, node.m_IString64_2);
+    if (node.has_Text_1())
+        SET_FIELD(Text_1, node.m_Text_1);
+    if (node.has_Text_2())
+        SET_FIELD(Text_2, node.m_Text_2);
+    if (node.has_Blob_1())
+        SET_FIELD(Blob_1, DS::Base64Encode(node.m_Blob_1.buffer(), node.m_Blob_1.size()));
+    if (node.has_Blob_2())
+        SET_FIELD(Blob_2, DS::Base64Encode(node.m_Blob_2.buffer(), node.m_Blob_2.size()));
+    #undef SET_FIELD
+
+    DS_DASSERT(fieldp - fieldbuf < 1024);
+    *(fieldp - 1) = 0;  // Get rid of the last comma
+    DS::String queryStr = "UPDATE vault.\"Nodes\"\n    SET ";
+    queryStr += fieldbuf;
+    queryStr += "\n    WHERE idx=$1";
+    parms.set(0, node.m_NodeIdx);
+
+    check_postgres();
+    PGresult* result = PQexecParams(s_postgres, queryStr.c_str(),
+                                    parmcount, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+    PQclear(result);
+    return true;
+}
+
+DS::Vault::Node v_fetch_node(uint32_t nodeIdx)
+{
+    PostgresStrings<1> parm;
+    parm.set(0, nodeIdx);
+    PGresult* result = PQexecParams(s_postgres,
+        "SELECT idx, \"CreateTime\", \"ModifyTime\", \"CreateAgeName\","
+        "    \"CreateAgeUuid\", \"CreatorUuid\", \"CreatorIdx\", \"NodeType\","
+        "    \"Int32_1\", \"Int32_2\", \"Int32_3\", \"Int32_4\","
+        "    \"Uint32_1\", \"Uint32_2\", \"Uint32_3\", \"Uint32_4\","
+        "    \"Uuid_1\", \"Uuid_2\", \"Uuid_3\", \"Uuid_4\","
+        "    \"String64_1\", \"String64_2\", \"String64_3\", \"String64_4\","
+        "    \"String64_5\", \"String64_6\", \"IString64_1\", \"IString64_2\","
+        "    \"Text_1\", \"Text_2\", \"Blob_1\", \"Blob_2\""
+        "    FROM vault.\"Nodes\" WHERE idx=$1",
+        1, 0, parm.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return DS::Vault::Node();
+    }
+    if (PQntuples(result) == 0) {
+        PQclear(result);
+        return DS::Vault::Node();
+    }
+    DS_DASSERT(PQntuples(result) == 1);
+
+    DS::Vault::Node node;
+    node.set_NodeIdx(strtoul(PQgetvalue(result, 0, 0), 0, 10));
+    node.set_CreateTime(strtoul(PQgetvalue(result, 0, 1), 0, 10));
+    node.set_ModifyTime(strtoul(PQgetvalue(result, 0, 2), 0, 10));
+    if (!PQgetisnull(result, 0, 3))
+        node.set_CreateAgeName(PQgetvalue(result, 0, 3));
+    if (!PQgetisnull(result, 0, 4))
+        node.set_CreateAgeUuid(PQgetvalue(result, 0, 4));
+    if (!PQgetisnull(result, 0, 5))
+        node.set_CreatorUuid(PQgetvalue(result, 0, 5));
+    if (!PQgetisnull(result, 0, 6))
+        node.set_CreatorIdx(strtoul(PQgetvalue(result, 0, 6), 0, 10));
+    node.set_NodeType(strtoul(PQgetvalue(result, 0, 7), 0, 10));
+    if (!PQgetisnull(result, 0, 8))
+        node.set_Int32_1(strtol(PQgetvalue(result, 0, 8), 0, 10));
+    if (!PQgetisnull(result, 0, 9))
+        node.set_Int32_2(strtol(PQgetvalue(result, 0, 9), 0, 10));
+    if (!PQgetisnull(result, 0, 10))
+        node.set_Int32_3(strtol(PQgetvalue(result, 0, 10), 0, 10));
+    if (!PQgetisnull(result, 0, 11))
+        node.set_Int32_4(strtol(PQgetvalue(result, 0, 11), 0, 10));
+    if (!PQgetisnull(result, 0, 12))
+        node.set_Uint32_1(strtoul(PQgetvalue(result, 0, 12), 0, 10));
+    if (!PQgetisnull(result, 0, 13))
+        node.set_Uint32_2(strtoul(PQgetvalue(result, 0, 13), 0, 10));
+    if (!PQgetisnull(result, 0, 14))
+        node.set_Uint32_3(strtoul(PQgetvalue(result, 0, 14), 0, 10));
+    if (!PQgetisnull(result, 0, 15))
+        node.set_Uint32_4(strtoul(PQgetvalue(result, 0, 15), 0, 10));
+    if (!PQgetisnull(result, 0, 16))
+        node.set_Uuid_1(PQgetvalue(result, 0, 16));
+    if (!PQgetisnull(result, 0, 17))
+        node.set_Uuid_2(PQgetvalue(result, 0, 17));
+    if (!PQgetisnull(result, 0, 18))
+        node.set_Uuid_3(PQgetvalue(result, 0, 18));
+    if (!PQgetisnull(result, 0, 19))
+        node.set_Uuid_4(PQgetvalue(result, 0, 19));
+    if (!PQgetisnull(result, 0, 20))
+        node.set_String64_1(PQgetvalue(result, 0, 20));
+    if (!PQgetisnull(result, 0, 21))
+        node.set_String64_2(PQgetvalue(result, 0, 21));
+    if (!PQgetisnull(result, 0, 22))
+        node.set_String64_3(PQgetvalue(result, 0, 22));
+    if (!PQgetisnull(result, 0, 23))
+        node.set_String64_4(PQgetvalue(result, 0, 23));
+    if (!PQgetisnull(result, 0, 24))
+        node.set_String64_5(PQgetvalue(result, 0, 24));
+    if (!PQgetisnull(result, 0, 25))
+        node.set_String64_6(PQgetvalue(result, 0, 25));
+    if (!PQgetisnull(result, 0, 26))
+        node.set_IString64_1(PQgetvalue(result, 0, 26));
+    if (!PQgetisnull(result, 0, 27))
+        node.set_IString64_2(PQgetvalue(result, 0, 27));
+    if (!PQgetisnull(result, 0, 28))
+        node.set_Text_1(PQgetvalue(result, 0, 28));
+    if (!PQgetisnull(result, 0, 29))
+        node.set_Text_2(PQgetvalue(result, 0, 29));
+    if (!PQgetisnull(result, 0, 30))
+        node.set_Blob_1(DS::Base64Decode(PQgetvalue(result, 0, 30)));
+    if (!PQgetisnull(result, 0, 31))
+        node.set_Blob_2(DS::Base64Decode(PQgetvalue(result, 0, 31)));
+
+    PQclear(result);
+    return node;
+}
+
 bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx)
 {
     PostgresStrings<3> parms;
@@ -763,10 +953,10 @@ bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx)
     parms.set(1, childIdx);
     parms.set(2, ownerIdx);
     PGresult* result = PQexecParams(s_postgres,
-        "INSERT INTO vault.\"NodeRefs\""
-        "    (\"ParentIdx\", \"ChildIdx\", \"OwnerIdx\")"
-        "    VALUES ($1, $2, $3)",
-        3, 0, parms.m_values, 0, 0, 0);
+            "INSERT INTO vault.\"NodeRefs\""
+            "    (\"ParentIdx\", \"ChildIdx\", \"OwnerIdx\")"
+            "    VALUES ($1, $2, $3)",
+            3, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
@@ -775,4 +965,50 @@ bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx)
     }
     PQclear(result);
     return true;
+}
+
+bool v_unref_node(uint32_t parentIdx, uint32_t childIdx)
+{
+    PostgresStrings<2> parms;
+    parms.set(0, parentIdx);
+    parms.set(1, childIdx);
+    PGresult* result = PQexecParams(s_postgres,
+            "DELETE FROM vault.\"NodeRefs\""
+            "    WHERE \"ParentIdx\"=$1 AND \"ChildIdx\"=$2",
+            2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres DELETE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+    PQclear(result);
+    return true;
+}
+
+std::vector<DS::Vault::NodeRef> v_fetch_tree(uint32_t nodeId)
+{
+    PostgresStrings<1> parm;
+    parm.set(0, nodeId);
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT \"ParentIdx\", \"ChildIdx\", \"OwnerIdx\", \"Seen\""
+            "    FROM vault.fetch_tree($1);",
+            1, 0, parm.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return std::vector<DS::Vault::NodeRef>();
+    }
+
+    std::vector<DS::Vault::NodeRef> refs;
+    refs.resize(PQntuples(result));
+    for (size_t i=0; i<refs.size(); ++i) {
+        refs[i].m_parent = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        refs[i].m_child = strtoul(PQgetvalue(result, i, 1), 0, 10);
+        refs[i].m_owner = strtoul(PQgetvalue(result, i, 2), 0, 10);
+        refs[i].m_seen = strtoul(PQgetvalue(result, i, 3), 0, 10);
+    }
+    PQclear(result);
+    return refs;
 }

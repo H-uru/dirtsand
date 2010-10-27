@@ -28,12 +28,73 @@
 #include <list>
 #include <map>
 
+enum AuthServer_MsgIds
+{
+    e_CliToAuth_PingRequest = 0, e_CliToAuth_ClientRegisterRequest,
+    e_CliToAuth_ClientSetCCRLevel, e_CliToAuth_AcctLoginRequest,
+    e_CliToAuth_AcctSetEulaVersion, e_CliToAuth_AcctSetDataRequest,
+    e_CliToAuth_AcctSetPlayerRequest, e_CliToAuth_AcctCreateRequest,
+    e_CliToAuth_AcctChangePasswordRequest, e_CliToAuth_AcctSetRolesRequest,
+    e_CliToAuth_AcctSetBillingTypeRequest, e_CliToAuth_AcctActivateRequest,
+    e_CliToAuth_AcctCreateFromKeyRequest, e_CliToAuth_PlayerDeleteRequest,
+    e_CliToAuth_PlayerUndeleteRequest, e_CliToAuth_PlayerSelectRequest,
+    e_CliToAuth_PlayerRenameRequest, e_CliToAuth_PlayerCreateRequest,
+    e_CliToAuth_PlayerSetStatus, e_CliToAuth_PlayerChat,
+    e_CliToAuth_UpgradeVisitorRequest, e_CliToAuth_SetPlayerBanStatusRequest,
+    e_CliToAuth_KickPlayer, e_CliToAuth_ChangePlayerNameRequest,
+    e_CliToAuth_SendFriendInviteRequest, e_CliToAuth_VaultNodeCreate,
+    e_CliToAuth_VaultNodeFetch, e_CliToAuth_VaultNodeSave,
+    e_CliToAuth_VaultNodeDelete, e_CliToAuth_VaultNodeAdd,
+    e_CliToAuth_VaultNodeRemove, e_CliToAuth_VaultFetchNodeRefs,
+    e_CliToAuth_VaultInitAgeRequest, e_CliToAuth_VaultNodeFind,
+    e_CliToAuth_VaultSetSeen, e_CliToAuth_VaultSendNode, e_CliToAuth_AgeRequest,
+    e_CliToAuth_FileListRequest, e_CliToAuth_FileDownloadRequest,
+    e_CliToAuth_FileDownloadChunkAck, e_CliToAuth_PropagateBuffer,
+    e_CliToAuth_GetPublicAgeList, e_CliToAuth_SetAgePublic,
+    e_CliToAuth_LogPythonTraceback, e_CliToAuth_LogStackDump,
+    e_CliToAuth_LogClientDebuggerConnect, e_CliToAuth_ScoreCreate,
+    e_CliToAuth_ScoreDelete, e_CliToAuth_ScoreGetScores,
+    e_CliToAuth_ScoreAddPoints, e_CliToAuth_ScoreTransferPoints,
+    e_CliToAuth_ScoreSetPoints, e_CliToAuth_ScoreGetRanks,
+    e_CliToAuth_AcctExistsRequest,
+
+    e_AuthToCli_PingReply = 0, kAuthToCli_ServerAddr, e_AuthToCli_NotifyNewBuild,
+    e_AuthToCli_ClientRegisterReply, e_AuthToCli_AcctLoginReply,
+    e_AuthToCli_AcctData, e_AuthToCli_AcctPlayerInfo,
+    e_AuthToCli_AcctSetPlayerReply, e_AuthToCli_AcctCreateReply,
+    e_AuthToCli_AcctChangePasswordReply, e_AuthToCli_AcctSetRolesReply,
+    e_AuthToCli_AcctSetBillingTypeReply, e_AuthToCli_AcctActivateReply,
+    e_AuthToCli_AcctCreateFromKeyReply, e_AuthToCli_PlayerList,
+    e_AuthToCli_PlayerChat, e_AuthToCli_PlayerCreateReply,
+    e_AuthToCli_PlayerDeleteReply, e_AuthToCli_UpgradeVisitorReply,
+    e_AuthToCli_SetPlayerBanStatusReply, e_AuthToCli_ChangePlayerNameReply,
+    e_AuthToCli_SendFriendInviteReply, e_AuthToCli_FriendNotify,
+    e_AuthToCli_VaultNodeCreated, e_AuthToCli_VaultNodeFetched,
+    e_AuthToCli_VaultNodeChanged, e_AuthToCli_VaultNodeDeleted,
+    e_AuthToCli_VaultNodeAdded, e_AuthToCli_VaultNodeRemoved,
+    e_AuthToCli_VaultNodeRefsFetched, e_AuthToCli_VaultInitAgeReply,
+    e_AuthToCli_VaultNodeFindReply, e_AuthToCli_VaultSaveNodeReply,
+    e_AuthToCli_VaultAddNodeReply, e_AuthToCli_VaultRemoveNodeReply,
+    e_AuthToCli_AgeReply, e_AuthToCli_FileListReply,
+    e_AuthToCli_FileDownloadChunk, e_AuthToCli_PropagateBuffer,
+    e_AuthToCli_KickedOff, e_AuthToCli_PublicAgeList,
+    e_AuthToCli_ScoreCreateReply, e_AuthToCli_ScoreDeleteReply,
+    e_AuthToCli_ScoreGetScoresReply, e_AuthToCli_ScoreAddPointsReply,
+    e_AuthToCli_ScoreTransferPointsReply, e_AuthToCli_ScoreSetPointsReply,
+    e_AuthToCli_ScoreGetRanksReply, e_AuthToCli_AcctExistsReply,
+};
+
 struct AuthServer_PlayerInfo
 {
     uint32_t m_playerId;
     DS::String m_playerName;
     DS::String m_avatarModel;
     uint32_t m_explorer;
+};
+
+struct AuthServer_AgeInfo
+{
+    //TODO
 };
 
 struct AuthServer_Private
@@ -69,6 +130,8 @@ bool dm_auth_init();
 enum AuthDaemonMessages
 {
     e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
+    e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
+    e_VaultUnrefNode, e_VaultFetchNodeTree,
 };
 void AuthDaemon_SendMessage(int msg, void* data = 0);
 
@@ -94,6 +157,23 @@ struct Auth_PlayerCreate : public Auth_ClientMessage
     DS::String m_avatarShape;
 
     uint32_t m_playerNode;
+};
+
+struct Auth_NodeInfo : public Auth_ClientMessage
+{
+    DS::Vault::Node m_node;
+    DS::Uuid m_revision;
+};
+
+struct Auth_NodeRef : public Auth_ClientMessage
+{
+    DS::Vault::NodeRef m_ref;
+};
+
+struct Auth_NodeRefList : public Auth_ClientMessage
+{
+    uint32_t m_nodeId;
+    std::vector<DS::Vault::NodeRef> m_refs;
 };
 
 /* Vault/Postgres stuff */
@@ -136,4 +216,8 @@ v_create_player(DS::Uuid playerId, DS::String playerName,
                 DS::String avatarShape, bool explorer);
 
 uint32_t v_create_node(const DS::Vault::Node& node);
+bool v_update_node(const DS::Vault::Node& node);
+DS::Vault::Node v_fetch_node(uint32_t nodeIdx);
 bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx);
+bool v_unref_node(uint32_t parentIdx, uint32_t childIdx);
+std::vector<DS::Vault::NodeRef> v_fetch_tree(uint32_t nodeId);

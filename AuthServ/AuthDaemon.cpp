@@ -290,11 +290,69 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
+{
+    uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
+    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeChanged;
+    *reinterpret_cast<uint32_t*>(buffer + 2) = nodeIdx;
+    *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
+
+    pthread_mutex_lock(&s_authClientMutex);
+    std::list<AuthServer_Private*>::iterator client_iter;
+    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
+        }
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
+}
+
+void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
+{
+    uint8_t buffer[14];  // Msg ID, Parent, Child, Owner
+    *reinterpret_cast<uint16_t*>(buffer     ) = e_AuthToCli_VaultNodeAdded;
+    *reinterpret_cast<uint32_t*>(buffer +  2) = ref.m_parent;
+    *reinterpret_cast<uint32_t*>(buffer +  6) = ref.m_child;
+    *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
+
+    pthread_mutex_lock(&s_authClientMutex);
+    std::list<AuthServer_Private*>::iterator client_iter;
+    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
+        }
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
+}
+
+void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
+{
+    uint8_t buffer[10];  // Msg ID, Parent, Child
+    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeRemoved;
+    *reinterpret_cast<uint32_t*>(buffer + 2) = ref.m_parent;
+    *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
+
+    pthread_mutex_lock(&s_authClientMutex);
+    std::list<AuthServer_Private*>::iterator client_iter;
+    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
+        }
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
+}
+
 void* dm_authDaemon(void*)
 {
     for ( ;; ) {
+        DS::FifoMessage msg = s_authChannel.getMessage();
         try {
-            DS::FifoMessage msg = s_authChannel.getMessage();
             switch (msg.m_messageType) {
             case e_AuthShutdown:
                 dm_auth_shutdown();
@@ -308,6 +366,73 @@ void* dm_authDaemon(void*)
             case e_AuthCreatePlayer:
                 dm_auth_createPlayer(reinterpret_cast<Auth_PlayerCreate*>(msg.m_payload));
                 break;
+            case e_VaultCreateNode:
+                {
+                    Auth_NodeInfo* info = reinterpret_cast<Auth_NodeInfo*>(msg.m_payload);
+                    uint32_t nodeIdx = v_create_node(info->m_node);
+                    if (nodeIdx != 0) {
+                        info->m_node.set_NodeIdx(nodeIdx);
+                        SEND_REPLY(info, DS::e_NetSuccess);
+                    } else {
+                        SEND_REPLY(info, DS::e_NetInternalError);
+                    }
+                }
+                break;
+            case e_VaultFetchNode:
+                {
+                    Auth_NodeInfo* info = reinterpret_cast<Auth_NodeInfo*>(msg.m_payload);
+                    info->m_node = v_fetch_node(info->m_node.m_NodeIdx);
+                    if (info->m_node.isNull())
+                        SEND_REPLY(info, DS::e_NetVaultNodeNotFound);
+                    else
+                        SEND_REPLY(info, DS::e_NetSuccess);
+                }
+                break;
+            case e_VaultUpdateNode:
+                {
+                    Auth_NodeInfo* info = reinterpret_cast<Auth_NodeInfo*>(msg.m_payload);
+                    if (v_update_node(info->m_node)) {
+                        // Broadcast the change
+                        dm_auth_bcast_node(info->m_node.m_NodeIdx, info->m_revision);
+                        SEND_REPLY(info, DS::e_NetSuccess);
+                    } else {
+                        SEND_REPLY(info, DS::e_NetInternalError);
+                    }
+                }
+                break;
+            case e_VaultRefNode:
+                {
+                    Auth_NodeRef* info = reinterpret_cast<Auth_NodeRef*>(msg.m_payload);
+                    if (v_ref_node(info->m_ref.m_parent, info->m_ref.m_child, info->m_ref.m_owner)) {
+                        // Broadcast the change
+                        dm_auth_bcast_ref(info->m_ref);
+                        SEND_REPLY(info, DS::e_NetSuccess);
+                    } else {
+                        SEND_REPLY(info, DS::e_NetInternalError);
+                    }
+                }
+                break;
+            case e_VaultUnrefNode:
+                {
+                    Auth_NodeRef* info = reinterpret_cast<Auth_NodeRef*>(msg.m_payload);
+                    if (v_unref_node(info->m_ref.m_parent, info->m_ref.m_child)) {
+                        // Broadcast the change
+                        dm_auth_bcast_unref(info->m_ref);
+                        SEND_REPLY(info, DS::e_NetSuccess);
+                    } else {
+                        SEND_REPLY(info, DS::e_NetInternalError);
+                    }
+                }
+                break;
+            case e_VaultFetchNodeTree:
+                {
+                    // Note: it is not possible for this message to indicate
+                    // a failure to the client, since having 0 refs is possible!
+                    Auth_NodeRefList* info = reinterpret_cast<Auth_NodeRefList*>(msg.m_payload);
+                    info->m_refs = v_fetch_tree(info->m_nodeId);
+                    SEND_REPLY(info, DS::e_NetSuccess);
+                }
+                break;
             default:
                 /* Invalid message...  This shouldn't happen */
                 DS_DASSERT(0);
@@ -316,6 +441,11 @@ void* dm_authDaemon(void*)
         } catch (DS::AssertException ex) {
             fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
                     ex.m_file, ex.m_line, ex.m_cond);
+            if (msg.m_payload) {
+                // Keep clients from blocking on a reply
+                SEND_REPLY(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload),
+                           DS::e_NetInternalError);
+            }
         }
     }
 
