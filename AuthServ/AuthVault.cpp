@@ -87,7 +87,7 @@ static uint32_t find_a_friendly_neighborhood_for_our_new_visitor(uint32_t player
     } else {
         PQclear(result);
         ageId = gen_uuid();
-        ageNode = v_create_age(ageId, "Neighborhood", "DS", "", -1, true);
+        ageNode = v_create_age(ageId, "Neighborhood", "Neighborhood", "DS", -1, true);
         if (ageNode.second == 0)
             return 0;
     }
