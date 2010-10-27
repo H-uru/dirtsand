@@ -166,6 +166,7 @@ struct CryptState_Private
 {
     RC4_KEY m_writeKey;
     RC4_KEY m_readKey;
+    pthread_mutex_t m_mutex;
 };
 
 DS::CryptState DS::CryptStateInit(const uint8_t* key, size_t size)
@@ -173,12 +174,15 @@ DS::CryptState DS::CryptStateInit(const uint8_t* key, size_t size)
     CryptState_Private* state = new CryptState_Private;
     RC4_set_key(&state->m_readKey, size, key);
     RC4_set_key(&state->m_writeKey, size, key);
+    pthread_mutex_init(&state->m_mutex, 0);
     return reinterpret_cast<CryptState>(state);
 }
 
 void DS::CryptStateFree(DS::CryptState state)
 {
-    delete reinterpret_cast<CryptState_Private*>(state);
+    CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(state);
+    pthread_mutex_destroy(&statep->m_mutex);
+    delete statep;
 }
 
 void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
@@ -203,12 +207,16 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);
     if (size > 4096) {
         unsigned char* cryptbuf = new unsigned char[size];
+        pthread_mutex_lock(&statep->m_mutex);
         RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), cryptbuf);
+        pthread_mutex_unlock(&statep->m_mutex);
         DS::SendBuffer(sock, cryptbuf, size);
         delete[] cryptbuf;
     } else {
         unsigned char stack[4096];
+        pthread_mutex_lock(&statep->m_mutex);
         RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), stack);
+        pthread_mutex_unlock(&statep->m_mutex);
         DS::SendBuffer(sock, stack, size);
     }
 }
