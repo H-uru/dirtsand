@@ -48,7 +48,7 @@ void dm_game_shutdown(GameHost_Private* host)
     hostmap_t::iterator host_iter = s_gameHosts.begin();
     while (host_iter != s_gameHosts.end()) {
         if (host_iter->second == host)
-            s_gameHosts.erase(host_iter);
+            host_iter = s_gameHosts.erase(host_iter);
         else
             ++host_iter;
     }
@@ -102,6 +102,10 @@ GameHost_Private* start_game_host(const DS::Uuid& ageId)
     GameHost_Private* host = new GameHost_Private();
     pthread_mutex_init(&host->m_clientMutex, 0);
     host->m_instanceId = ageId;
+
+    pthread_mutex_lock(&s_gameHostMutex);
+    s_gameHosts[ageId] = host;
+    pthread_mutex_unlock(&s_gameHostMutex);
 
     pthread_t threadh;
     pthread_create(&threadh, 0, &dm_gameHost, reinterpret_cast<void*>(host));
