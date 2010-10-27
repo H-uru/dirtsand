@@ -15,57 +15,19 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_UUID_H
-#define _DS_UUID_H
+#ifndef _DS_GAMESERVER_H
+#define _DS_GAMESERVER_H
 
-#include "streams.h"
+#include "NetIO/SockIO.h"
+#include <exception>
 
 namespace DS
 {
-    class Uuid
-    {
-    public:
-        Uuid() : m_data1(0), m_data2(0), m_data3(0)
-        { memset(m_data4, 0, sizeof(m_data4)); }
+    void GameServer_Init();
+    void GameServer_Add(SocketHandle client);
+    void GameServer_Shutdown();
 
-        Uuid(uint32_t data1, uint16_t data2, uint16_t data3, const uint8_t* data4)
-            : m_data1(data1), m_data2(data2), m_data3(data3)
-        { memcpy(m_data4, data4, sizeof(m_data4)); }
-
-        Uuid(const uint8_t* bytes)
-        { memcpy(m_bytes, bytes, sizeof(m_bytes)); }
-
-        Uuid(const char* struuid);
-
-        bool operator==(const Uuid& other) const
-        { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) == 0; }
-
-        bool operator!=(const Uuid& other) const
-        { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) != 0; }
-
-        bool isNull() const { return operator==(Uuid()); }
-
-        void read(Stream* stream);
-        void write(Stream* stream);
-
-        String toString() const;
-
-    public:
-        union {
-            struct {
-                uint32_t m_data1;
-                uint16_t m_data2, m_data3;
-                uint8_t m_data4[8];
-            };
-            uint8_t m_bytes[16];
-        };
-    };
-
-    struct UuidHash
-    {
-        // Simple but effective
-        size_t operator()(const Uuid& value) const { return value.m_data1; }
-    };
+    void GameServer_DisplayClients();
 }
 
 #endif

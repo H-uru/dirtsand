@@ -20,6 +20,7 @@
 #include "GateKeeper/GateServ.h"
 #include "FileServ/FileServer.h"
 #include "AuthServ/AuthServer.h"
+#include "GameServ/GameServer.h"
 #include "SDL/DescriptorDb.h"
 #include "strings.h"
 #include "errors.h"
@@ -89,6 +90,7 @@ int main(int argc, char* argv[])
     SDL::DescriptorDb::LoadDescriptors(DS::Settings::SdlPath());
     DS::FileServer_Init();
     DS::AuthServer_Init();
+    DS::GameServer_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
 
@@ -210,6 +212,7 @@ int main(int argc, char* argv[])
             DS::GateKeeper_DisplayClients();
             DS::FileServer_DisplayClients();
             DS::AuthServer_DisplayClients();
+            DS::GameServer_DisplayClients();
         } else if (args[0] == "commdebug") {
 #ifdef DEBUG
             if (args.size() == 1)
@@ -239,6 +242,7 @@ int main(int argc, char* argv[])
 
     DS::StopLobby();
     DS::GateKeeper_Shutdown();
+    DS::GameServer_Shutdown();
     DS::AuthServer_Shutdown();
     DS::FileServer_Shutdown();
     return 0;

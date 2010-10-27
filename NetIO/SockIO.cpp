@@ -174,7 +174,9 @@ void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size
     while (size > 0) {
         ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                             buffer, size, 0);
-        if (bytes < 0 && errno == EPIPE)
+        if (bytes < 0 && (errno == EPIPE || errno == ECONNRESET))
+            throw DS::SockHup();
+        else if (bytes == 0)
             throw DS::SockHup();
         DS_PASSERT(bytes > 0);
 

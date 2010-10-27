@@ -19,6 +19,7 @@
 #include "GateKeeper/GateServ.h"
 #include "FileServ/FileServer.h"
 #include "AuthServ/AuthServer.h"
+#include "GameServ/GameServer.h"
 #include "Types/Uuid.h"
 #include "SockIO.h"
 #include "errors.h"
@@ -81,9 +82,7 @@ void* dm_lobby(void*)
                 }
                 break;
             case e_ConnCliToGame:
-                fprintf(stderr, "[%s] Unhandled game server connection\n",
-                        DS::SockIpAddress(client).c_str());
-                DS::FreeSock(client);
+                DS::GameServer_Add(client);
                 break;
             case e_ConnCliToCsr:
                 printf("[Lobby] %s - CSR client?  Get that mutha outta here!\n",
