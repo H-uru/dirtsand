@@ -19,6 +19,7 @@
 #include "NetIO/CryptIO.h"
 #include "NetIO/MsgChannel.h"
 #include "Types/Uuid.h"
+#include "PlasMOUL/factory.h"
 #include <list>
 
 struct GameClient_Private
@@ -27,6 +28,10 @@ struct GameClient_Private
     DS::CryptState m_crypt;
     DS::BufferStream m_buffer;
     DS::MsgChannel m_channel;
+    struct GameHost_Private* m_host;
+
+    DS::Uuid m_accountId;
+    uint32_t m_playerIdx;
 };
 
 struct GameHost_Private
@@ -43,7 +48,19 @@ extern pthread_mutex_t s_gameHostMutex;
 
 enum GameHostMessages
 {
-    e_GameShutdown, e_GameCleanup,
+    e_GameShutdown, e_GameCleanup, e_GameJoinAge, e_GamePropagate,
+};
+
+struct Game_ClientMessage
+{
+    GameClient_Private* m_client;
+    bool m_needReply;
+};
+
+struct Game_PropagateMessage : public Game_ClientMessage
+{
+    uint32_t m_messageType;
+    DS::Blob m_message;
 };
 
 GameHost_Private* start_game_host(const DS::Uuid& ageId);

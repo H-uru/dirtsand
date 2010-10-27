@@ -63,6 +63,17 @@ void dm_game_cleanup(GameHost_Private* host)
     //TODO: shutdown this host if no clients connect within a time limit
 }
 
+void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
+{
+    //TODO: announce the new player
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
+void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
+{
+    //TODO: stuff
+}
+
 void* dm_gameHost(void* hostp)
 {
     GameHost_Private* host = reinterpret_cast<GameHost_Private*>(hostp);
@@ -77,6 +88,12 @@ void* dm_gameHost(void* hostp)
             case e_GameCleanup:
                 dm_game_cleanup(host);
                 break;
+            case e_GameJoinAge:
+                dm_game_join(host, reinterpret_cast<Game_ClientMessage*>(msg.m_payload));
+                break;
+            case e_GamePropagate:
+                dm_game_message(host, reinterpret_cast<Game_PropagateMessage*>(msg.m_payload));
+                break;
             default:
                 /* Invalid message...  This shouldn't happen */
                 DS_DASSERT(0);
@@ -85,10 +102,10 @@ void* dm_gameHost(void* hostp)
         } catch (DS::AssertException ex) {
             fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                     ex.m_file, ex.m_line, ex.m_cond);
-            if (msg.m_payload) {
+            Game_ClientMessage* clientMsg = reinterpret_cast<Game_ClientMessage*>(msg.m_payload);
+            if (clientMsg && clientMsg->m_needReply) {
                 // Keep clients from blocking on a reply
-                //SEND_REPLY(reinterpret_cast<Game_ClientMessage*>(msg.m_payload),
-                //           DS::e_NetInternalError);
+                SEND_REPLY(clientMsg, DS::e_NetInternalError);
             }
         }
     }

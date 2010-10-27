@@ -93,6 +93,44 @@ void cb_ping(GameClient_Private& client)
     SEND_REPLY();
 }
 
+void cb_join(GameClient_Private& client)
+{
+    START_REPLY(e_GameToCli_JoinAgeReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    // MCP ID (ignored)
+    DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+
+    Game_ClientMessage msg;
+    msg.m_client = &client;
+    msg.m_needReply = true;
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, client.m_accountId.m_bytes,
+                        sizeof(client.m_accountId.m_bytes));
+    client.m_playerIdx = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_host->m_channel.putMessage(e_GameJoinAge, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+
+    SEND_REPLY();
+}
+
+void cb_netmsg(GameClient_Private& client)
+{
+    Game_PropagateMessage msg;
+    msg.m_client = &client;
+    msg.m_needReply = false;
+    msg.m_messageType = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+
+    uint32_t size = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint8_t* buffer = new uint8_t[size];
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
+    msg.m_message = DS::Blob::Steal(buffer, size);
+    client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
+}
+
 void* wk_gameWorker(void* sockp)
 {
     GameClient_Private client;
@@ -110,10 +148,10 @@ void* wk_gameWorker(void* sockp)
         return 0;
     }
 
-    GameHost_Private* host = find_game_host(ageUuid);
-    pthread_mutex_lock(&host->m_clientMutex);
-    host->m_clients.push_back(&client);
-    pthread_mutex_unlock(&host->m_clientMutex);
+    client.m_host = find_game_host(ageUuid);
+    pthread_mutex_lock(&client.m_host->m_clientMutex);
+    client.m_host->m_clients.push_back(&client);
+    pthread_mutex_unlock(&client.m_host->m_clientMutex);
 
     try {
         for ( ;; ) {
@@ -121,6 +159,12 @@ void* wk_gameWorker(void* sockp)
             switch (msgId) {
             case e_CliToGame_PingRequest:
                 cb_ping(client);
+                break;
+            case e_CliToGame_JoinAgeRequest:
+                cb_join(client);
+                break;
+            case e_CliToGame_Propagatebuffer:
+                cb_netmsg(client);
                 break;
             default:
                 /* Invalid message */
@@ -137,16 +181,16 @@ void* wk_gameWorker(void* sockp)
         // Socket closed...
     }
 
-    pthread_mutex_lock(&host->m_clientMutex);
-    std::list<GameClient_Private*>::iterator client_iter = host->m_clients.begin();
-    while (client_iter != host->m_clients.end()) {
+    pthread_mutex_lock(&client.m_host->m_clientMutex);
+    std::list<GameClient_Private*>::iterator client_iter = client.m_host->m_clients.begin();
+    while (client_iter != client.m_host->m_clients.end()) {
         if (*client_iter == &client)
-            client_iter = host->m_clients.erase(client_iter);
+            client_iter = client.m_host->m_clients.erase(client_iter);
         else
             ++client_iter;
     }
-    pthread_mutex_unlock(&host->m_clientMutex);
-    host->m_channel.putMessage(e_GameCleanup);
+    pthread_mutex_unlock(&client.m_host->m_clientMutex);
+    client.m_host->m_channel.putMessage(e_GameCleanup);
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
@@ -200,6 +244,10 @@ void DS::GameServer_DisplayClients()
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
          host_iter != s_gameHosts.end(); ++host_iter) {
         printf("    {%s}\n", host_iter->second->m_instanceId.toString().c_str());
+        std::list<GameClient_Private*>::iterator client_iter;
+        for (client_iter = host_iter->second->m_clients.begin();
+             client_iter != host_iter->second->m_clients.end(); ++ client_iter)
+            printf("      * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
     }
     pthread_mutex_unlock(&s_gameHostMutex);
 }
