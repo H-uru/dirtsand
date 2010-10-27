@@ -131,7 +131,7 @@ enum AuthDaemonMessages
 {
     e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
     e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
-    e_VaultUnrefNode, e_VaultFetchNodeTree,
+    e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode,
 };
 void AuthDaemon_SendMessage(int msg, void* data = 0);
 
@@ -174,6 +174,12 @@ struct Auth_NodeRefList : public Auth_ClientMessage
 {
     uint32_t m_nodeId;
     std::vector<DS::Vault::NodeRef> m_refs;
+};
+
+struct Auth_NodeFindList : public Auth_ClientMessage
+{
+    DS::Vault::Node m_template;
+    std::vector<uint32_t> m_nodes;
 };
 
 /* Vault/Postgres stuff */
@@ -220,4 +226,5 @@ bool v_update_node(const DS::Vault::Node& node);
 DS::Vault::Node v_fetch_node(uint32_t nodeIdx);
 bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx);
 bool v_unref_node(uint32_t parentIdx, uint32_t childIdx);
-std::vector<DS::Vault::NodeRef> v_fetch_tree(uint32_t nodeId);
+bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs);
+bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& nodes);

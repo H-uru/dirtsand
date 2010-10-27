@@ -27,6 +27,8 @@ namespace DS
     void AuthServer_Add(SocketHandle client);
     void AuthServer_Shutdown();
 
+    void AuthServer_DisplayClients();
+
     class DbException : public std::exception
     {
     public:

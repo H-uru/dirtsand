@@ -55,7 +55,7 @@ char** console_completer(const char* text, int start, int end)
 {
     static const char* completions[] = {
         /* Commands */
-        "commdebug", "help", "keygen", "quit", "restart",
+        "clients", "commdebug", "help", "keygen", "quit", "restart",
         /* Services */
         "auth", "lobby",
     };
@@ -206,6 +206,10 @@ int main(int argc, char* argv[])
                 fprintf(stderr, "Error: %s is not a valid keygen target\n", args[1].c_str());
                 continue;
             }
+        } else if (args[0] == "clients") {
+            DS::GateKeeper_DisplayClients();
+            DS::FileServer_DisplayClients();
+            DS::AuthServer_DisplayClients();
         } else if (args[0] == "commdebug") {
 #ifdef DEBUG
             if (args.size() == 1)
@@ -221,6 +225,7 @@ int main(int argc, char* argv[])
 #endif
         } else if (args[0] == "help") {
             printf("DirtSand v1.0 Console supported commands:\n"
+                   "    clients\n"
                    "    commdebug <on|off>\n"
                    "    help\n"
                    "    keygen <new|ue|pc>\n"

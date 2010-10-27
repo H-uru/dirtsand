@@ -380,6 +380,39 @@ void cb_nodeTree(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_nodeFind(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_VaultNodeFindReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_NodeFindList msg;
+    msg.m_client = &client;
+
+    uint32_t nodeSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint8_t* nodeBuffer = new uint8_t[nodeSize];
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer, nodeSize);
+    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer, nodeSize);
+    DS::BlobStream nodeStream(nodeData);
+
+    msg.m_template.read(&nodeStream);
+    DS_PASSERT(nodeStream.atEof());
+    s_authChannel.putMessage(e_VaultFindNode, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_nodes.size());
+        for (size_t i=0; i<msg.m_nodes.size(); ++i)
+            client.m_buffer.write<uint32_t>(msg.m_nodes[i]);
+    }
+
+    SEND_REPLY();
+}
+
 void cb_fileList(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_FileListReply);
@@ -569,9 +602,9 @@ void* wk_authWorker(void* sockp)
             //case e_CliToAuth_VaultInitAgeRequest:
                 //cb_ageCreate(client);
                 //break;
-            //case e_CliToAuth_VaultNodeFind:
-                //cb_nodeFind(client;
-                //break;
+            case e_CliToAuth_VaultNodeFind:
+                cb_nodeFind(client);
+                break;
             case e_CliToAuth_FileListRequest:
                 cb_fileList(client);
                 break;
@@ -653,4 +686,17 @@ void DS::AuthServer_Shutdown()
         s_authChannel.putMessage(e_AuthShutdown);
         pthread_join(s_authDaemonThread, 0);
     }
+}
+
+void DS::AuthServer_DisplayClients()
+{
+    pthread_mutex_lock(&s_authClientMutex);
+    if (s_authClients.size())
+        printf("Auth Server:\n");
+    std::list<AuthServer_Private*>::iterator client_iter;
+    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        printf("  * %s {%s}\n", DS::SockIpAddress((*client_iter)->m_sock).c_str(),
+               (*client_iter)->m_acctUuid.toString().c_str());
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
 }

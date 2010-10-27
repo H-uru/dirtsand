@@ -25,6 +25,8 @@ namespace DS
     void FileServer_Init();
     void FileServer_Add(SocketHandle client);
     void FileServer_Shutdown();
+
+    void FileServer_DisplayClients();
 }
 
 #endif

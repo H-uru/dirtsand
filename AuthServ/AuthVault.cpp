@@ -986,7 +986,7 @@ bool v_unref_node(uint32_t parentIdx, uint32_t childIdx)
     return true;
 }
 
-std::vector<DS::Vault::NodeRef> v_fetch_tree(uint32_t nodeId)
+bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs)
 {
     PostgresStrings<1> parm;
     parm.set(0, nodeId);
@@ -998,10 +998,9 @@ std::vector<DS::Vault::NodeRef> v_fetch_tree(uint32_t nodeId)
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         PQclear(result);
-        return std::vector<DS::Vault::NodeRef>();
+        return false;
     }
 
-    std::vector<DS::Vault::NodeRef> refs;
     refs.resize(PQntuples(result));
     for (size_t i=0; i<refs.size(); ++i) {
         refs[i].m_parent = strtoul(PQgetvalue(result, i, 0), 0, 10);
@@ -1010,5 +1009,116 @@ std::vector<DS::Vault::NodeRef> v_fetch_tree(uint32_t nodeId)
         refs[i].m_seen = strtoul(PQgetvalue(result, i, 3), 0, 10);
     }
     PQclear(result);
-    return refs;
+    return true;
+}
+
+bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& nodes)
+{
+    if (nodeTemplate.isNull())
+        return false;
+
+    /* This should be plenty to store everything we need without a bunch
+     * of dynamic reallocations
+     */
+    PostgresStrings<31> parms;
+    char fieldbuf[1024];
+
+    size_t parmcount = 0;
+    char* fieldp = fieldbuf;
+
+    #define SET_FIELD(name, value) \
+        { \
+            parms.set(parmcount++, value); \
+            fieldp += sprintf(fieldp, "\"" #name "\"=$%u AND ", parmcount); \
+        }
+    #define SET_FIELD_I(name, value) \
+        { \
+            parms.set(parmcount++, value); \
+            fieldp += sprintf(fieldp, "LOWER(\"" #name "\")=LOWER($%u) AND ", parmcount); \
+        }
+    if (nodeTemplate.has_CreateTime())
+        SET_FIELD(CreateTime, nodeTemplate.m_CreateTime);
+    if (nodeTemplate.has_ModifyTime())
+        SET_FIELD(ModifyTime, nodeTemplate.m_ModifyTime);
+    if (nodeTemplate.has_CreateAgeName())
+        SET_FIELD(CreateAgeName, nodeTemplate.m_CreateAgeName);
+    if (nodeTemplate.has_CreateAgeUuid())
+        SET_FIELD(CreateAgeUuid, nodeTemplate.m_CreateAgeUuid.toString());
+    if (nodeTemplate.has_CreatorUuid())
+        SET_FIELD(CreatorUuid, nodeTemplate.m_CreatorUuid.toString());
+    if (nodeTemplate.has_CreatorIdx())
+        SET_FIELD(CreatorIdx, nodeTemplate.m_CreatorIdx);
+    if (nodeTemplate.has_NodeType())
+        SET_FIELD(NodeType, nodeTemplate.m_NodeType);
+    if (nodeTemplate.has_Int32_1())
+        SET_FIELD(Int32_1, nodeTemplate.m_Int32_1);
+    if (nodeTemplate.has_Int32_2())
+        SET_FIELD(Int32_2, nodeTemplate.m_Int32_2);
+    if (nodeTemplate.has_Int32_3())
+        SET_FIELD(Int32_3, nodeTemplate.m_Int32_3);
+    if (nodeTemplate.has_Int32_4())
+        SET_FIELD(Int32_4, nodeTemplate.m_Int32_4);
+    if (nodeTemplate.has_Uint32_1())
+        SET_FIELD(Uint32_1, nodeTemplate.m_Uint32_1);
+    if (nodeTemplate.has_Uint32_2())
+        SET_FIELD(Uint32_2, nodeTemplate.m_Uint32_2);
+    if (nodeTemplate.has_Uint32_3())
+        SET_FIELD(Uint32_3, nodeTemplate.m_Uint32_3);
+    if (nodeTemplate.has_Uint32_4())
+        SET_FIELD(Uint32_4, nodeTemplate.m_Uint32_4);
+    if (nodeTemplate.has_Uuid_1())
+        SET_FIELD(Uuid_1, nodeTemplate.m_Uuid_1.toString());
+    if (nodeTemplate.has_Uuid_2())
+        SET_FIELD(Uuid_2, nodeTemplate.m_Uuid_2.toString());
+    if (nodeTemplate.has_Uuid_3())
+        SET_FIELD(Uuid_3, nodeTemplate.m_Uuid_3.toString());
+    if (nodeTemplate.has_Uuid_4())
+        SET_FIELD(Uuid_4, nodeTemplate.m_Uuid_4.toString());
+    if (nodeTemplate.has_String64_1())
+        SET_FIELD(String64_1, nodeTemplate.m_String64_1);
+    if (nodeTemplate.has_String64_2())
+        SET_FIELD(String64_2, nodeTemplate.m_String64_2);
+    if (nodeTemplate.has_String64_3())
+        SET_FIELD(String64_3, nodeTemplate.m_String64_3);
+    if (nodeTemplate.has_String64_4())
+        SET_FIELD(String64_4, nodeTemplate.m_String64_4);
+    if (nodeTemplate.has_String64_5())
+        SET_FIELD(String64_5, nodeTemplate.m_String64_5);
+    if (nodeTemplate.has_String64_6())
+        SET_FIELD(String64_6, nodeTemplate.m_String64_6);
+    if (nodeTemplate.has_IString64_1())
+        SET_FIELD_I(IString64_1, nodeTemplate.m_IString64_1);
+    if (nodeTemplate.has_IString64_2())
+        SET_FIELD_I(IString64_2, nodeTemplate.m_IString64_2);
+    if (nodeTemplate.has_Text_1())
+        SET_FIELD(Text_1, nodeTemplate.m_Text_1);
+    if (nodeTemplate.has_Text_2())
+        SET_FIELD(Text_2, nodeTemplate.m_Text_2);
+    if (nodeTemplate.has_Blob_1())
+        SET_FIELD(Blob_1, DS::Base64Encode(nodeTemplate.m_Blob_1.buffer(), nodeTemplate.m_Blob_1.size()));
+    if (nodeTemplate.has_Blob_2())
+        SET_FIELD(Blob_2, DS::Base64Encode(nodeTemplate.m_Blob_2.buffer(), nodeTemplate.m_Blob_2.size()));
+    #undef SET_FIELD
+    #undef SET_FIELD_I
+
+    DS_DASSERT(fieldp - fieldbuf < 1024);
+    *(fieldp - 5) = 0;  // Get rid of the last ' AND '
+    DS::String queryStr = "SELECT idx FROM vault.\"Nodes\"\n    WHERE ";
+    queryStr += fieldbuf;
+
+    check_postgres();
+    PGresult* result = PQexecParams(s_postgres, queryStr.c_str(),
+                                    parmcount, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+
+    nodes.resize(PQntuples(result));
+    for (size_t i=0; i<nodes.size(); ++i)
+        nodes[i] = strtoul(PQgetvalue(result, i, 0), 0, 10);
+    PQclear(result);
+    return true;
 }

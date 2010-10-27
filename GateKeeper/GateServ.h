@@ -25,6 +25,8 @@ namespace DS
     void GateKeeper_Init();
     void GateKeeper_Add(SocketHandle client);
     void GateKeeper_Shutdown();
+
+    void GateKeeper_DisplayClients();
 }
 
 #endif

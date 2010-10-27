@@ -426,11 +426,20 @@ void* dm_authDaemon(void*)
                 break;
             case e_VaultFetchNodeTree:
                 {
-                    // Note: it is not possible for this message to indicate
-                    // a failure to the client, since having 0 refs is possible!
                     Auth_NodeRefList* info = reinterpret_cast<Auth_NodeRefList*>(msg.m_payload);
-                    info->m_refs = v_fetch_tree(info->m_nodeId);
-                    SEND_REPLY(info, DS::e_NetSuccess);
+                    if (v_fetch_tree(info->m_nodeId, info->m_refs))
+                        SEND_REPLY(info, DS::e_NetSuccess);
+                    else
+                        SEND_REPLY(info, DS::e_NetInternalError);
+                }
+                break;
+            case e_VaultFindNode:
+                {
+                    Auth_NodeFindList* info = reinterpret_cast<Auth_NodeFindList*>(msg.m_payload);
+                    if (v_find_nodes(info->m_template, info->m_nodes))
+                        SEND_REPLY(info, DS::e_NetSuccess);
+                    else
+                        SEND_REPLY(info, DS::e_NetInternalError);
                 }
                 break;
             default:

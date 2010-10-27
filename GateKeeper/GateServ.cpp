@@ -234,3 +234,14 @@ void DS::GateKeeper_Shutdown()
         fprintf(stderr, "[GateKeeper] Clients didn't die after 5 seconds!\n");
     pthread_mutex_destroy(&s_clientMutex);
 }
+
+void DS::GateKeeper_DisplayClients()
+{
+    pthread_mutex_lock(&s_clientMutex);
+    if (s_clients.size())
+        printf("Gate Keeper:\n");
+    std::list<GateKeeper_Private*>::iterator client_iter;
+    for (client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
+        printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
+    pthread_mutex_unlock(&s_clientMutex);
+}
