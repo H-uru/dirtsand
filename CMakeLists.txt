@@ -22,6 +22,7 @@ include_directories("${CMAKE_SOURCE_DIR}"
 
 set(PlasMOUL_SOURCES
     PlasMOUL/Key.cpp
+    PlasMOUL/Messages/Message.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/PlayerPage.cpp
     PlasMOUL/factory.cpp

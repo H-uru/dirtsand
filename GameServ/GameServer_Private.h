@@ -22,6 +22,15 @@
 #include "PlasMOUL/factory.h"
 #include <list>
 
+enum GameServer_MsgIds
+{
+    e_CliToGame_PingRequest = 0, e_CliToGame_JoinAgeRequest,
+    e_CliToGame_Propagatebuffer, e_CliToGame_GameMgrMsg,
+
+    e_GameToCli_PingReply = 0, e_GameToCli_JoinAgeReply,
+    e_GameToCli_PropagateBuffer, e_GameToCli_GameMgrMsg,
+};
+
 struct GameClient_Private
 {
     DS::SocketHandle m_sock;
@@ -40,6 +49,7 @@ struct GameHost_Private
     std::list<GameClient_Private*> m_clients;
     pthread_mutex_t m_clientMutex;
     DS::MsgChannel m_channel;
+    DS::BufferStream m_buffer;
 };
 
 typedef std::tr1::unordered_map<DS::Uuid, GameHost_Private*, DS::UuidHash> hostmap_t;

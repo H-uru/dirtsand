@@ -39,11 +39,11 @@ namespace MOUL
     class Creatable
     {
     public:
-        template <class CRE> CRE* Cast()
-        { return dynamic_cast<CRE*>(this); }
+        template <class cre_t> cre_t* Cast()
+        { return dynamic_cast<cre_t*>(this); }
 
-        template <class CRE> const CRE* Cast() const
-        { return dynamic_cast<const CRE*>(this); }
+        template <class cre_t> const cre_t* Cast() const
+        { return dynamic_cast<const cre_t*>(this); }
 
         uint16_t type() const { return m_type; }
 

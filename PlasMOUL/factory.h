@@ -21,19 +21,60 @@
 #include <exception>
 #include "creatable.h"
 
+#ifdef DEBUG
+#include <typeinfo>
+#endif
+
 namespace MOUL
 {
     class Factory
     {
     public:
-        static Creatable* Create (uint16_t type);
+        static Creatable* Create(uint16_t type);
+
+        static Creatable* ReadCreatable(DS::Stream* stream);
+        static void WriteCreatable(DS::Stream* stream, Creatable* obj);
+
+        template <class cre_t>
+        static cre_t* Read(DS::Stream* stream)
+        {
+            Creatable* obj = ReadCreatable(stream);
+            if (obj) {
+                cre_t* result = obj->Cast<cre_t>();
+#ifdef DEBUG
+                if (!result) {
+                    fprintf(stderr, "Error: Cast did not match expected type\n");
+                    fprintf(stderr, "    FROM %s ; TO %s\n",
+                            typeid(*obj).name(), typeid(cre_t).name());
+                }
+#endif
+                if (!result)
+                    obj->unref();
+                return result;
+            } else {
+                return 0;
+            }
+        }
     };
 
     class FactoryException : public std::exception
     {
     public:
+        enum Type { e_UnknownType };
+
+        FactoryException(Type type) throw() : m_type(type) { }
+        virtual ~FactoryException() throw() { }
+
         virtual const char* what() const throw()
-        { return "[FactoryException] Unknown creatable ID"; }
+        {
+            static const char* _messages[] = {
+                "[FactoryException] Unknown creatable ID"
+            };
+            return _messages[m_type];
+        }
+
+    private:
+        Type m_type;
     };
 }
 

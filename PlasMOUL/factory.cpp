@@ -29,6 +29,31 @@ MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
 #undef CREATABLE_TYPE
     case 0x8000: return static_cast<Creatable*>(0);
     default:
-        throw FactoryException();
+        throw FactoryException(FactoryException::e_UnknownType);
+    }
+}
+
+MOUL::Creatable* MOUL::Factory::ReadCreatable(DS::Stream* stream)
+{
+    uint16_t type = stream->read<uint16_t>();
+    Creatable* obj = Create(type);
+    if (obj) {
+        try {
+            obj->read(stream);
+        } catch (...) {
+            obj->unref();
+            throw;
+        }
+    }
+    return obj;
+}
+
+void MOUL::Factory::WriteCreatable(DS::Stream* stream, MOUL::Creatable* obj)
+{
+    if (obj) {
+        stream->write<uint16_t>(obj->type());
+        obj->write(stream);
+    } else {
+        stream->write<uint16_t>(0x8000);
     }
 }

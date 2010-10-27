@@ -21,15 +21,6 @@
 
 extern bool s_commdebug;
 
-enum GameServer_MsgIds
-{
-    e_CliToGame_PingRequest = 0, e_CliToGame_JoinAgeRequest,
-    e_CliToGame_Propagatebuffer, e_CliToGame_GameMgrMsg,
-
-    e_GameToCli_PingReply = 0, e_GameToCli_JoinAgeReply,
-    e_GameToCli_PropagateBuffer, e_GameToCli_GameMgrMsg,
-};
-
 #define START_REPLY(msgId) \
     client.m_buffer.truncate(); \
     client.m_buffer.write<uint16_t>(msgId)

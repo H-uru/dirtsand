@@ -15,29 +15,31 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_LOADCLONEMSG_H
-#define _MOUL_LOADCLONEMSG_H
+#include "LoadCloneMsg.h"
+#include "factory.h"
 
-#include "Message.h"
-
-namespace MOUL
+void MOUL::LoadCloneMsg::read(DS::Stream* stream)
 {
-    class LoadCloneMsg : public Message
-    {
-        FACTORY_CREATABLE(LoadCloneMsg)
+    Message::read(stream);
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
-
-    public:
-        MOUL::Key m_cloneKey, m_requestorKey;
-        uint8_t m_validMsg, m_isLoading;
-        uint32_t m_userData, m_originPlayerId;
-        MOUL::Message* m_triggerMsg;
-
-    protected:
-        LoadCloneMsg(uint16_t type) : Message(type) { }
-    };
+    m_cloneKey.read(stream);
+    m_requestorKey.read(stream);
+    m_originPlayerId = stream->read<uint32_t>();
+    m_userData = stream->read<uint32_t>();
+    m_validMsg = stream->read<uint8_t>();
+    m_isLoading = stream->read<uint8_t>();
+    m_triggerMsg = Factory::Read<Message>(stream);
 }
 
-#endif
+void MOUL::LoadCloneMsg::write(DS::Stream* stream)
+{
+    MOUL::Message::write(stream);
+
+    m_cloneKey.write(stream);
+    m_requestorKey.write(stream);
+    stream->write<uint32_t>(m_originPlayerId);
+    stream->write<uint32_t>(m_userData);
+    stream->write<uint8_t>(m_validMsg);
+    stream->write<uint8_t>(m_isLoading);
+    Factory::WriteCreatable(stream, m_triggerMsg);
+}

@@ -69,9 +69,78 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg)
+{
+    host->m_buffer.truncate();
+    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer);
+    host->m_buffer.write<uint32_t>(msg->type());
+    host->m_buffer.write<uint32_t>(0);
+    MOUL::Factory::WriteCreatable(&host->m_buffer, msg);
+    host->m_buffer.seek(6, SEEK_SET);
+    host->m_buffer.write<uint32_t>(host->m_buffer.size() - 10);
+
+    pthread_mutex_lock(&host->m_clientMutex);
+    std::list<GameClient_Private*>::iterator client_iter;
+    for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+        DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
+                            host->m_buffer.buffer(), host->m_buffer.size());
+    }
+    pthread_mutex_unlock(&host->m_clientMutex);
+}
+
+void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType)
+{
+    host->m_buffer.truncate();
+    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer);
+    host->m_buffer.write<uint32_t>(msgType);
+    host->m_buffer.write<uint32_t>(cooked.size());
+    host->m_buffer.writeBytes(cooked.buffer(), cooked.size());
+
+    pthread_mutex_lock(&host->m_clientMutex);
+    std::list<GameClient_Private*>::iterator client_iter;
+    for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+        DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
+                            host->m_buffer.buffer(), host->m_buffer.size());
+    }
+    pthread_mutex_unlock(&host->m_clientMutex);
+}
+
 void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
 {
-    //TODO: stuff
+    DS::BlobStream stream(msg->m_message);
+    MOUL::Creatable* netmsg;
+    try {
+        netmsg = MOUL::Factory::ReadCreatable(&stream);
+    } catch (MOUL::FactoryException) {
+        fprintf(stderr, "[Game] Warning: Ignoring message: %04X\n",
+                msg->m_messageType);
+        return;
+    } catch (DS::AssertException ex) {
+        fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
+                ex.m_file, ex.m_line, ex.m_cond);
+        return;
+    }
+#ifdef DEBUG
+    if (!stream.atEof()) {
+        fprintf(stderr, "[Game] Warning: Incomplete parse of %04X\n",
+                netmsg->type());
+        netmsg->unref();
+        return;
+    }
+#endif
+
+    switch (netmsg->type()) {
+    default:
+        fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",
+                netmsg->type());
+#ifdef DEBUG
+        // In debug builds, we'll just go ahead and blindly propagate
+        // any unknown message type
+        dm_propagate(host, msg->m_message, msg->m_messageType);
+#endif
+        break;
+    }
+    netmsg->unref();
 }
 
 void* dm_gameHost(void* hostp)
