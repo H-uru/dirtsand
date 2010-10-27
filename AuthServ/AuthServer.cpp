@@ -142,7 +142,7 @@ void cb_login(AuthServer_Private& client)
 
     for (std::vector<AuthServer_PlayerInfo>::iterator player_iter = msg.m_players.begin();
          player_iter != msg.m_players.end(); ++player_iter) {
-        START_REPLY(e_AuthToCli_AcctLoginReply);
+        START_REPLY(e_AuthToCli_AcctPlayerInfo);
         client.m_buffer.write<uint32_t>(transId);
         client.m_buffer.write<uint32_t>(player_iter->m_playerId);
         DS::StringBuffer<chr16_t> wstrbuf = player_iter->m_playerName.toUtf16();
