@@ -32,6 +32,7 @@ namespace DS
     void FreeSock(SocketHandle sock);
 
     String SockIpAddress(const SocketHandle sock);
+    uint32_t GetAddress4(const char* lookup);
 
     void SendBuffer(const SocketHandle sock, const void* buffer, size_t size);
     void RecvBuffer(const SocketHandle sock, void* buffer, size_t size);

@@ -300,6 +300,33 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_findAge(Auth_GameAge* msg)
+{
+#ifdef DEBUG
+    printf("[Auth] %s Requesting game server {%s} %s\n",
+           DS::SockIpAddress(msg->m_client->m_sock).c_str(),
+           msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
+#endif
+
+    DS::Vault::Node search;
+    search.set_NodeType(DS::Vault::e_NodeAge);
+    search.set_Uuid_1(msg->m_instanceId);
+
+    std::vector<uint32_t> nodes;
+    if (v_find_nodes(search, nodes) && nodes.size() != 0) {
+        DS_DASSERT(nodes.size() == 1);
+        msg->m_ageNodeIdx = nodes[0];
+        msg->m_mcpId = 0;
+        msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress());
+        SEND_REPLY(msg, DS::e_NetSuccess);
+    } else {
+        fprintf(stderr, "[Auth] %s Requested age {%s} %s not found\n",
+                DS::SockIpAddress(msg->m_client->m_sock).c_str(),
+                msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
+        SEND_REPLY(msg, DS::e_NetAgeNotFound);
+    }
+}
+
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
 {
     uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
@@ -454,6 +481,9 @@ void* dm_authDaemon(void*)
                 break;
             case e_VaultInitAge:
                 dm_auth_createAge(reinterpret_cast<Auth_AgeCreate*>(msg.m_payload));
+                break;
+            case e_AuthFindGameServer:
+                dm_auth_findAge(reinterpret_cast<Auth_GameAge*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

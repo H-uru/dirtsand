@@ -31,7 +31,7 @@ static struct
     // TODO: Allow multiple servers for load balancing
     DS::StringBuffer<chr16_t> m_fileServ;
     DS::StringBuffer<chr16_t> m_authServ;
-    DS::StringBuffer<chr16_t> m_gameServ;
+    DS::String m_gameServ;
 
     /* Host configuration */
     DS::String m_lobbyAddr, m_lobbyPort;
@@ -109,7 +109,7 @@ bool DS::Settings::LoadFrom(const char* filename)
             } else if (params[0] == "Auth.Host") {
                 s_settings.m_authServ = params[1].toUtf16();
             } else if (params[0] == "Game.Host") {
-                s_settings.m_gameServ = params[1].toUtf16();
+                s_settings.m_gameServ = params[1];
             } else if (params[0] == "Lobby.Addr") {
                 s_settings.m_lobbyAddr = params[1];
             } else if (params[0] == "Lobby.Port") {
@@ -155,7 +155,7 @@ void DS::Settings::UseDefaults()
 
     s_settings.m_authServ = String("localhost").toUtf16();
     s_settings.m_fileServ = String("localhost").toUtf16();
-    s_settings.m_gameServ = String("localhost").toUtf16();
+    s_settings.m_gameServ = "localhost";
     s_settings.m_lobbyPort = "14617";
 
     s_settings.m_fileRoot = "./data";
@@ -190,9 +190,9 @@ DS::StringBuffer<chr16_t> DS::Settings::AuthServerAddress()
     return s_settings.m_authServ;
 }
 
-DS::StringBuffer<chr16_t> DS::Settings::GameServerAddress()
+const char* DS::Settings::GameServerAddress()
 {
-    return s_settings.m_gameServ;
+    return s_settings.m_gameServ.c_str();
 }
 
 const char* DS::Settings::LobbyAddress()

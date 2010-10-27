@@ -447,6 +447,37 @@ void cb_nodeFind(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_ageRequest(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_AgeReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_GameAge msg;
+    msg.m_client = &client;
+    msg.m_name = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, &msg.m_instanceId.m_bytes,
+                        sizeof(msg.m_instanceId.m_bytes));
+    s_authChannel.putMessage(e_AuthFindGameServer, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);   // MCP ID
+        client.m_buffer.writeBytes(DS::Uuid().m_bytes, sizeof(DS::Uuid::m_bytes));
+        client.m_buffer.write<uint32_t>(0);   // Age Node Idx
+        client.m_buffer.write<uint32_t>(0);   // Game server address
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_mcpId);
+        client.m_buffer.writeBytes(msg.m_instanceId.m_bytes, sizeof(DS::Uuid::m_bytes));
+        client.m_buffer.write<uint32_t>(msg.m_ageNodeIdx);
+        client.m_buffer.write<uint32_t>(msg.m_serverAddress);
+    }
+
+    SEND_REPLY();
+}
+
 void cb_fileList(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_FileListReply);
@@ -638,6 +669,9 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_VaultNodeFind:
                 cb_nodeFind(client);
+                break;
+            case e_CliToAuth_AgeRequest:
+                cb_ageRequest(client);
                 break;
             case e_CliToAuth_FileListRequest:
                 cb_fileList(client);

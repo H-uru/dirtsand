@@ -151,6 +151,24 @@ DS::String DS::SockIpAddress(const DS::SocketHandle sock)
     return String::Format("%s/%u", addrbuf, get_in_port(sockp));
 }
 
+uint32_t DS::GetAddress4(const char* lookup)
+{
+    addrinfo info;
+    memset(&info, 0, sizeof(info));
+    info.ai_family = AF_INET;
+    info.ai_socktype = SOCK_STREAM;
+    info.ai_flags = 0;
+
+    addrinfo* addrList;
+    int result = getaddrinfo(lookup, 0, &info, &addrList);
+    DS_PASSERT(result == 0);
+    DS_PASSERT(addrList != 0);
+    uint32_t addr = reinterpret_cast<sockaddr_in*>(addrList->ai_addr)->sin_addr.s_addr;
+    freeaddrinfo(addrList);
+
+    return ntohl(addr);
+}
+
 void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size)
 {
     while (size > 0) {

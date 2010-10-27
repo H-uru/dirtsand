@@ -139,6 +139,7 @@ enum AuthDaemonMessages
     e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
     e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
     e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode, e_VaultInitAge,
+    e_AuthFindGameServer,
 };
 void AuthDaemon_SendMessage(int msg, void* data = 0);
 
@@ -190,6 +191,16 @@ struct Auth_NodeFindList : public Auth_ClientMessage
 {
     DS::Vault::Node m_template;
     std::vector<uint32_t> m_nodes;
+};
+
+struct Auth_GameAge : public Auth_ClientMessage
+{
+    DS::String m_name;
+    DS::Uuid m_instanceId;
+
+    uint32_t m_mcpId;
+    uint32_t m_ageNodeIdx;
+    uint32_t m_serverAddress;
 };
 
 /* Vault/Postgres stuff */

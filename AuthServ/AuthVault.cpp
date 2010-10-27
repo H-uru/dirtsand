@@ -1151,6 +1151,7 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     #undef SET_FIELD
     #undef SET_FIELD_I
 
+    DS_DASSERT(parmcount > 0);
     DS_DASSERT(fieldp - fieldbuf < 1024);
     *(fieldp - 5) = 0;  // Get rid of the last ' AND '
     DS::String queryStr = "SELECT idx FROM vault.\"Nodes\"\n    WHERE ";
