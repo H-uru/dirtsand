@@ -15,34 +15,31 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_LOADCLONEMSG_H
-#define _MOUL_LOADCLONEMSG_H
+#include "LoadAvatarMsg.h"
+#include "factory.h"
 
-#include "Message.h"
-
-namespace MOUL
+void MOUL::LoadAvatarMsg::read(DS::Stream* stream)
 {
-    class LoadCloneMsg : public Message
-    {
-        FACTORY_CREATABLE(LoadCloneMsg)
+    LoadCloneMsg::read(stream);
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
-
-    public:
-        Key m_cloneKey, m_requestorKey;
-        uint8_t m_validMsg, m_isLoading;
-        uint32_t m_userData, m_originPlayerId;
-        Message* m_triggerMsg;
-
-    protected:
-        LoadCloneMsg(uint16_t type) : Message(type) { }
-
-        virtual ~LoadCloneMsg()
-        {
-            m_triggerMsg->unref();
-        }
-    };
+    m_isPlayer = stream->readBool();
+    m_spawnPoint.read(stream);
+    if (stream->readBool())
+        m_initTask = Factory::Read<AvTask>(stream);
+    m_userString = stream->readSafeString();
 }
 
-#endif
+void MOUL::LoadAvatarMsg::write(DS::Stream* stream)
+{
+    LoadCloneMsg::write(stream);
+
+    stream->writeBool(m_isPlayer);
+    m_spawnPoint.write(stream);
+    if (m_initTask) {
+        stream->writeBool(true);
+        Factory::WriteCreatable(stream, m_initTask);
+    } else {
+        stream->writeBool(false);
+    }
+    stream->writeSafeString(m_userString);
+}

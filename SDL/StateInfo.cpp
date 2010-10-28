@@ -142,10 +142,8 @@ void SDL::Variable::_ref::clear()
         delete[] m_key;
         break;
     case e_VarCreatable:
-        for (int i=0; i<m_desc->m_size; ++i) {
-            if (m_creatable[i])
-                m_creatable[i]->unref();
-        }
+        for (int i=0; i<m_desc->m_size; ++i)
+            m_creatable[i]->unref();
         delete[] m_creatable;
         break;
     case e_VarDouble:
@@ -475,8 +473,7 @@ void SDL::Variable::setDefault()
             m_data->m_key[i] = MOUL::Uoid();
             break;
         case e_VarCreatable:
-            if (m_data->m_creatable[i])
-                m_data->m_creatable[i]->unref();
+            m_data->m_creatable[i]->unref();
             m_data->m_creatable[i] = 0;
             break;
         case e_VarDouble:

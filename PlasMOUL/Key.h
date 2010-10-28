@@ -107,7 +107,7 @@ namespace MOUL
 
         ~Key()
         {
-            if (m_data && --m_data->m_refs)
+            if (m_data && (--m_data->m_refs == 0))
                 delete m_data;
         }
 
@@ -115,7 +115,7 @@ namespace MOUL
         {
             if (copy.m_data)
                 ++copy.m_data->m_refs;
-            if (m_data && --m_data->m_refs)
+            if (m_data && (--m_data->m_refs == 0))
                 delete m_data;
             m_data = copy.m_data;
             return *this;
@@ -123,7 +123,7 @@ namespace MOUL
 
         Key& operator=(const Uoid& copy)
         {
-            if (m_data && --m_data->m_refs)
+            if (m_data && (--m_data->m_refs == 0))
                 delete m_data;
             m_data = new _keydata;
             m_data->m_refs = 1;

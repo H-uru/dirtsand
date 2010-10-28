@@ -18,6 +18,7 @@
 #include "factory.h"
 #include "errors.h"
 
+#include "Messages/LoadAvatarMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 

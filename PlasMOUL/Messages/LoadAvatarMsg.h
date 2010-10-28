@@ -15,32 +15,34 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_LOADCLONEMSG_H
-#define _MOUL_LOADCLONEMSG_H
+#ifndef _MOUL_LOADAVATARMSG_H
+#define _MOUL_LOADAVATARMSG_H
 
-#include "Message.h"
+#include "LoadCloneMsg.h"
+#include "Avatar/AvTask.h"
 
 namespace MOUL
 {
-    class LoadCloneMsg : public Message
+    class LoadAvatarMsg : public LoadCloneMsg
     {
-        FACTORY_CREATABLE(LoadCloneMsg)
+        FACTORY_CREATABLE(LoadAvatarMsg)
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
     public:
-        Key m_cloneKey, m_requestorKey;
-        uint8_t m_validMsg, m_isLoading;
-        uint32_t m_userData, m_originPlayerId;
-        Message* m_triggerMsg;
+        bool m_isPlayer;
+        Key m_spawnPoint;
+        AvTask* m_initTask;
+        DS::String m_userString;
 
     protected:
-        LoadCloneMsg(uint16_t type) : Message(type) { }
+        LoadAvatarMsg(uint16_t type)
+            : LoadCloneMsg(type), m_initTask(0) { }
 
-        virtual ~LoadCloneMsg()
+        virtual ~LoadAvatarMsg()
         {
-            m_triggerMsg->unref();
+            m_initTask->unref();
         }
     };
 }

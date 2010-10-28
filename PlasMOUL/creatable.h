@@ -51,7 +51,7 @@ namespace MOUL
 
         void unref()
         {
-            if (--m_refs == 0)
+            if (this && --m_refs == 0)
                 delete this;
         }
 

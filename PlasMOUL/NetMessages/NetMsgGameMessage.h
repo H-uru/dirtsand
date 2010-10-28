@@ -53,6 +53,11 @@ namespace MOUL
             : NetMessage(type), m_compression(NetMsgStream::e_CompressNone),
               m_message(0) { }
 
+        virtual ~NetMsgGameMessage()
+        {
+            m_message->unref();
+        }
+
     public:
         NetMsgStream::Compression m_compression;
         MOUL::Message* m_message;
