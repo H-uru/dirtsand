@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "GameServer_Private.h"
+#include "PlasMOUL/NetMessages/NetMessage.h"
 #include "errors.h"
 
 hostmap_t s_gameHosts;
@@ -108,16 +109,18 @@ void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType)
 void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
 {
     DS::BlobStream stream(msg->m_message);
-    MOUL::Creatable* netmsg;
+    MOUL::NetMessage* netmsg;
     try {
-        netmsg = MOUL::Factory::ReadCreatable(&stream);
+        netmsg = MOUL::Factory::Read<MOUL::NetMessage>(&stream);
     } catch (MOUL::FactoryException) {
         fprintf(stderr, "[Game] Warning: Ignoring message: %04X\n",
                 msg->m_messageType);
+        SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     } catch (DS::AssertException ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
+        SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
 #ifdef DEBUG
@@ -125,14 +128,18 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         fprintf(stderr, "[Game] Warning: Incomplete parse of %04X\n",
                 netmsg->type());
         netmsg->unref();
+        SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
 #endif
 
-    switch (netmsg->type()) {
+    switch (msg->m_messageType) {
+    case MOUL::ID_NetMsgLoadClone:
+        dm_propagate(host, msg->m_message, msg->m_messageType);
+        break;
     default:
         fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",
-                netmsg->type());
+                msg->m_messageType);
 #ifdef DEBUG
         // In debug builds, we'll just go ahead and blindly propagate
         // any unknown message type
@@ -141,6 +148,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         break;
     }
     netmsg->unref();
+    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void* dm_gameHost(void* hostp)
@@ -171,10 +179,10 @@ void* dm_gameHost(void* hostp)
         } catch (DS::AssertException ex) {
             fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                     ex.m_file, ex.m_line, ex.m_cond);
-            Game_ClientMessage* clientMsg = reinterpret_cast<Game_ClientMessage*>(msg.m_payload);
-            if (clientMsg && clientMsg->m_needReply) {
+            if (msg.m_payload) {
                 // Keep clients from blocking on a reply
-                SEND_REPLY(clientMsg, DS::e_NetInternalError);
+                SEND_REPLY(reinterpret_cast<Game_ClientMessage*>(msg.m_payload),
+                           DS::e_NetInternalError);
             }
         }
     }

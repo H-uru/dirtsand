@@ -13,18 +13,22 @@ find_package(Threads REQUIRED)
 find_package(Postgres REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
+find_package(ZLIB REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}"
                     "${CMAKE_SOURCE_DIR}/PlasMOUL"
                     "${POSTGRES_INCLUDE_DIR}"
                     "${OPENSSL_INCLUDE_DIR}"
-                    "${READLINE_INCLUDE_DIR}")
+                    "${READLINE_INCLUDE_DIR}"
+                    "${ZLIB_INCLUDE_DIR}")
 
 set(PlasMOUL_SOURCES
     PlasMOUL/Key.cpp
     PlasMOUL/Messages/Message.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
-    PlasMOUL/NetMessages/PlayerPage.cpp
+    PlasMOUL/NetMessages/NetMsgGameMessage.cpp
+    PlasMOUL/NetMessages/NetMsgLoadClone.cpp
+    PlasMOUL/NetMessages/NetMsgPlayerPage.cpp
     PlasMOUL/factory.cpp
 )
 
@@ -62,7 +66,8 @@ set(dirtsand_SOURCES
 
 add_executable(dirtsand ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
 target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT} ${POSTGRES_LIBRARY}
-                               ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY})
+                               ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY}
+                               ${ZLIB_LIBRARY})
 set_target_properties(dirtsand PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin")
 

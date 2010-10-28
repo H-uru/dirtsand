@@ -15,28 +15,24 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_PLAYERPAGE_H
-#define _MOUL_PLAYERPAGE_H
+#include "NetMsgLoadClone.h"
 
-#include "NetMessage.h"
-#include "Key.h"
-
-namespace MOUL
+void MOUL::NetMsgLoadClone::read(DS::Stream* stream)
 {
-    class NetMsgPlayerPage : public NetMessage
-    {
-        FACTORY_CREATABLE(NetMsgPlayerPage)
+    NetMsgGameMessage::read(stream);
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
-
-    protected:
-        NetMsgPlayerPage(uint16_t type) : NetMessage(type) { }
-
-    public:
-        unsigned char m_unload;
-        MOUL::Uoid m_uoid;
-    };
+    m_object.read(stream);
+    m_isPlayer = stream->readBool();
+    m_isLoading = stream->readBool();
+    m_isInitialState = stream->readBool();
 }
 
-#endif
+void MOUL::NetMsgLoadClone::write(DS::Stream* stream)
+{
+    NetMsgGameMessage::write(stream);
+
+    m_object.write(stream);
+    stream->writeBool(m_isPlayer);
+    stream->writeBool(m_isLoading);
+    stream->writeBool(m_isInitialState);
+}

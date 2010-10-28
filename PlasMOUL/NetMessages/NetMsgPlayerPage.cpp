@@ -15,48 +15,18 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "factory.h"
-#include "errors.h"
+#include "NetMsgPlayerPage.h"
 
-#include "NetMessages/NetMsgLoadClone.h"
-#include "NetMessages/NetMsgPlayerPage.h"
-
-MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
+void MOUL::NetMsgPlayerPage::read(DS::Stream* stream)
 {
-    switch (type) {
-/* THAR BE MAJICK HERE */
-#define CREATABLE_TYPE(id, cre) \
-    case id: return new cre(id);
-#include "creatable_types.inl"
-#undef CREATABLE_TYPE
-    case 0x8000: return static_cast<Creatable*>(0);
-    default:
-        fprintf(stderr, "[Factory] Tried to create unknown type %04X\n", type);
-        throw FactoryException(FactoryException::e_UnknownType);
-    }
+    MOUL::NetMessage::read(stream);
+    m_unload = stream->read<uint8_t>();
+    m_uoid.read(stream);
 }
 
-MOUL::Creatable* MOUL::Factory::ReadCreatable(DS::Stream* stream)
+void MOUL::NetMsgPlayerPage::write(DS::Stream* stream)
 {
-    uint16_t type = stream->read<uint16_t>();
-    Creatable* obj = Create(type);
-    if (obj) {
-        try {
-            obj->read(stream);
-        } catch (...) {
-            obj->unref();
-            throw;
-        }
-    }
-    return obj;
-}
-
-void MOUL::Factory::WriteCreatable(DS::Stream* stream, MOUL::Creatable* obj)
-{
-    if (obj) {
-        stream->write<uint16_t>(obj->type());
-        obj->write(stream);
-    } else {
-        stream->write<uint16_t>(0x8000);
-    }
+    MOUL::NetMessage::write(stream);
+    stream->write<uint8_t>(m_unload);
+    m_uoid.write(stream);
 }

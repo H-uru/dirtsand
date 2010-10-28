@@ -96,7 +96,6 @@ void cb_join(GameClient_Private& client)
 
     Game_ClientMessage msg;
     msg.m_client = &client;
-    msg.m_needReply = true;
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, client.m_accountId.m_bytes,
                         sizeof(client.m_accountId.m_bytes));
     client.m_playerIdx = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
@@ -112,7 +111,6 @@ void cb_netmsg(GameClient_Private& client)
 {
     Game_PropagateMessage msg;
     msg.m_client = &client;
-    msg.m_needReply = false;
     msg.m_messageType = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
 
     uint32_t size = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
@@ -120,6 +118,7 @@ void cb_netmsg(GameClient_Private& client)
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
     msg.m_message = DS::Blob::Steal(buffer, size);
     client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
+    client.m_channel.getMessage();
 }
 
 void* wk_gameWorker(void* sockp)

@@ -135,19 +135,6 @@ bool DS::FileStream::atEof()
 }
 
 
-DS::BufferStream::BufferStream(const void* data, size_t size)
-    : m_position(0)
-{
-    if (data) {
-        m_size = m_alloc = size;
-        m_buffer = new uint8_t[m_alloc];
-        memcpy(m_buffer, data, m_size);
-    } else {
-        m_buffer = 0;
-        m_size = m_alloc = 0;
-    }
-}
-
 ssize_t DS::BufferStream::readBytes(void* buffer, size_t count)
 {
     if (m_position + count > m_size)
@@ -187,6 +174,28 @@ void DS::BufferStream::seek(int32_t offset, int whence)
         m_position = m_size - offset;
 
     DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_size);
+}
+
+void DS::BufferStream::set(const void* data, size_t size)
+{
+    delete[] m_buffer;
+    if (data) {
+        m_size = m_alloc = size;
+        m_buffer = new uint8_t[m_alloc];
+        memcpy(m_buffer, data, m_size);
+    } else {
+        m_buffer = 0;
+        m_size = m_alloc = 0;
+    }
+    m_position = 0;
+}
+
+void DS::BufferStream::steal(uint8_t* buffer, size_t size)
+{
+    delete[] m_buffer;
+    m_buffer = buffer;
+    m_size = m_alloc = size;
+    m_position = 0;
 }
 
 

@@ -64,7 +64,6 @@ enum GameHostMessages
 struct Game_ClientMessage
 {
     GameClient_Private* m_client;
-    bool m_needReply;
 };
 
 struct Game_PropagateMessage : public Game_ClientMessage

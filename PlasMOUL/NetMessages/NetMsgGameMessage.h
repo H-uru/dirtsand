@@ -15,48 +15,49 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "factory.h"
-#include "errors.h"
+#ifndef _MOUL_NETMSGGAMEMESSAGE_H
+#define _MOUL_NETMSGGAMEMESSAGE_H
 
-#include "NetMessages/NetMsgLoadClone.h"
-#include "NetMessages/NetMsgPlayerPage.h"
+#include "NetMessage.h"
+#include "Messages/Message.h"
+#include "Key.h"
 
-MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
+namespace MOUL
 {
-    switch (type) {
-/* THAR BE MAJICK HERE */
-#define CREATABLE_TYPE(id, cre) \
-    case id: return new cre(id);
-#include "creatable_types.inl"
-#undef CREATABLE_TYPE
-    case 0x8000: return static_cast<Creatable*>(0);
-    default:
-        fprintf(stderr, "[Factory] Tried to create unknown type %04X\n", type);
-        throw FactoryException(FactoryException::e_UnknownType);
-    }
+    class NetMsgStream
+    {
+    public:
+        enum Compression {
+            e_CompressNone, e_CompressFail, e_CompressZlib, e_CompressNever
+        };
+
+        NetMsgStream(Compression compress = e_CompressNone)
+            : m_compression(compress) { }
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+
+        Compression m_compression;
+        DS::BufferStream m_stream;
+    };
+
+    class NetMsgGameMessage : public NetMessage
+    {
+        FACTORY_CREATABLE(NetMsgGameMessage)
+
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
+    protected:
+        NetMsgGameMessage(uint16_t type)
+            : NetMessage(type), m_compression(NetMsgStream::e_CompressNone),
+              m_message(0) { }
+
+    public:
+        NetMsgStream::Compression m_compression;
+        MOUL::Message* m_message;
+        DS::UnifiedTime m_deliveryTime;
+    };
 }
 
-MOUL::Creatable* MOUL::Factory::ReadCreatable(DS::Stream* stream)
-{
-    uint16_t type = stream->read<uint16_t>();
-    Creatable* obj = Create(type);
-    if (obj) {
-        try {
-            obj->read(stream);
-        } catch (...) {
-            obj->unref();
-            throw;
-        }
-    }
-    return obj;
-}
-
-void MOUL::Factory::WriteCreatable(DS::Stream* stream, MOUL::Creatable* obj)
-{
-    if (obj) {
-        stream->write<uint16_t>(obj->type());
-        obj->write(stream);
-    } else {
-        stream->write<uint16_t>(0x8000);
-    }
-}
+#endif
