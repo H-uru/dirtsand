@@ -67,6 +67,12 @@ namespace MOUL
         uint32_t m_context, m_transId, m_playerId;
         DS::Uuid m_acctId;
     };
+
+    class NetMsgServerToClient : public NetMessage
+    {
+    protected:
+        NetMsgServerToClient(uint16_t type) : NetMessage(type) { }
+    };
 }
 
 #endif

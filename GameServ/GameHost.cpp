@@ -137,6 +137,9 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     case MOUL::ID_NetMsgLoadClone:
         dm_propagate(host, msg->m_message, msg->m_messageType);
         break;
+    case MOUL::ID_NetMsgPlayerPage:
+        //dm_propagate(host, msg->m_message, msg->m_messageType);
+        break;
     default:
         fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",
                 msg->m_messageType);

@@ -21,6 +21,7 @@
 #include "Messages/LoadAvatarMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
+#include "NetMessages/NetMsgMembersList.h"
 
 MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
 {

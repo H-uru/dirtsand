@@ -32,6 +32,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
     PlasMOUL/NetMessages/NetMsgLoadClone.cpp
     PlasMOUL/NetMessages/NetMsgPlayerPage.cpp
+    PlasMOUL/NetMessages/NetMsgMembersList.cpp
     PlasMOUL/factory.cpp
 )
 
