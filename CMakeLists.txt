@@ -28,6 +28,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/Message.cpp
     PlasMOUL/Messages/LoadCloneMsg.cpp
     PlasMOUL/Messages/LoadAvatarMsg.cpp
+    PlasMOUL/Messages/AvatarInputStateMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
     PlasMOUL/NetMessages/NetMsgLoadClone.cpp
