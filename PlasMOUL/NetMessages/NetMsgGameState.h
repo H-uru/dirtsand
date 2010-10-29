@@ -15,26 +15,32 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_NETMSGLOADCLONE_H
-#define _MOUL_NETMSGLOADCLONE_H
+#ifndef _MOUL_NETMSGGAMESTATE_H
+#define _MOUL_NETMSGGAMESTATE_H
 
-#include "NetMsgGameMessage.h"
-#include "Key.h"
+#include "NetMsgRoomsList.h"
 
 namespace MOUL
 {
-    class NetMsgLoadClone : public NetMsgGameMessage
+    class NetMsgGameStateRequest : public NetMsgRoomsList
     {
-        FACTORY_CREATABLE(NetMsgLoadClone)
+        FACTORY_CREATABLE(NetMsgGameStateRequest)
 
-        MOUL::Uoid m_object;
-        bool m_isPlayer, m_isLoading, m_isInitialState;
+    protected:
+        NetMsgGameStateRequest(uint16_t type) : NetMsgRoomsList(type) { }
+    };
+
+    class NetMsgInitialAgeStateSent : public NetMsgServerToClient
+    {
+        FACTORY_CREATABLE(NetMsgInitialAgeStateSent)
+
+        uint32_t m_numStates;
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
     protected:
-        NetMsgLoadClone(uint16_t type) : NetMsgGameMessage(type) { }
+        NetMsgInitialAgeStateSent(uint16_t type) : NetMsgServerToClient(type) { }
     };
 }
 

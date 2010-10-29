@@ -15,14 +15,15 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
+CREATABLE_TYPE(0x0218, NetMsgPagingRoom)
 CREATABLE_TYPE(0x0253, LoadCloneMsg)
-//CREATABLE_TYPE(0x0265, NetMsgGameStateRequest)
+CREATABLE_TYPE(0x0265, NetMsgGameStateRequest)
 CREATABLE_TYPE(0x026B, NetMsgGameMessage)
 //CREATABLE_TYPE(0x027D, NetMsgTestAndSet)
 CREATABLE_TYPE(0x02AD, NetMsgMembersListReq)
 CREATABLE_TYPE(0x02AE, NetMsgMembersList)
 CREATABLE_TYPE(0x02B1, NetMsgMemberUpdate)
-//CREATABLE_TYPE(0x02B8, NetMsgInitialAgeStateSent)
+CREATABLE_TYPE(0x02B8, NetMsgInitialAgeStateSent)
 //CREATABLE_TYPE(0x02CD, NetMsgSDLState)
 //CREATABLE_TYPE(0x0329, NetMsgSDLStateBCast)
 //CREATABLE_TYPE(0x032E, NetMsgGameMessageDirected)

@@ -72,6 +72,28 @@ namespace DS
         template <typename tp> void write(tp value)
         { writeBytes(&value, sizeof(value)); }
 
+        template <typename sz_t>
+        String readPString(DS::StringType format = e_StringRAW8)
+        {
+            sz_t length = read<sz_t>();
+            return readString(length);
+        }
+
+        template <typename sz_t>
+        void writePString(const String& value, DS::StringType format = e_StringRAW8)
+        {
+            if (format == e_StringUTF16) {
+                StringBuffer<chr16_t> buffer = value.toUtf16();
+                write<sz_t>(buffer.length());
+                writeBytes(buffer.data(), buffer.length());
+            } else {
+                StringBuffer<chr8_t> buffer = (format == e_StringUTF8) ? value.toUtf8()
+                                                                       : value.toRaw();
+                write<sz_t>(buffer.length());
+                writeBytes(buffer.data(), buffer.length());
+            }
+        }
+
         void writeString(const String& value, DS::StringType format = e_StringRAW8);
         void writeSafeString(const String& value, DS::StringType format = e_StringRAW8);
         void writeBool(bool value) { write<uint8_t>(value ? 1 : 0); }

@@ -18,6 +18,7 @@
 #include "GameServer_Private.h"
 #include "PlasMOUL/NetMessages/NetMsgMembersList.h"
 #include "PlasMOUL/NetMessages/NetMsgLoadClone.h"
+#include "PlasMOUL/NetMessages/NetMsgGameState.h"
 #include "errors.h"
 
 hostmap_t s_gameHosts;
@@ -110,6 +111,24 @@ void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType)
     pthread_mutex_unlock(&host->m_clientMutex);
 }
 
+void dm_send_state(GameHost_Private* host, GameClient_Private* client)
+{
+    //TODO: Send saved SDL states
+
+
+    MOUL::NetMsgInitialAgeStateSent* reply = MOUL::NetMsgInitialAgeStateSent::Create();
+    reply->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                          | MOUL::NetMessage::e_IsSystemMessage
+                          | MOUL::NetMessage::e_NeedsReliableSend;
+    reply->m_timestamp.setNow();
+    reply->m_numStates = 0;
+
+    DM_WRITEMSG(host, reply);
+    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                        host->m_buffer.buffer(), host->m_buffer.size());
+    reply->unref();
+}
+
 void dm_send_members(GameHost_Private* host, GameClient_Private* client)
 {
     MOUL::NetMsgMembersList* members = MOUL::NetMsgMembersList::Create();
@@ -168,6 +187,9 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
 #endif
 
     switch (msg->m_messageType) {
+    case MOUL::ID_NetMsgGameStateRequest:
+        dm_send_state(host, msg->m_client);
+        break;
     case MOUL::ID_NetMsgMembersListReq:
         dm_send_members(host, msg->m_client);
         break;

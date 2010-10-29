@@ -52,6 +52,12 @@ namespace MOUL
             e_RouteToAllPlayers         = (1<<19),
         };
 
+        uint32_t m_contentFlags;
+        uint8_t m_protocolVerMaj, m_protocolVerMin;
+        DS::UnifiedTime m_timestamp;
+        uint32_t m_context, m_transId, m_playerId;
+        DS::Uuid m_acctId;
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
@@ -59,13 +65,6 @@ namespace MOUL
         NetMessage(uint16_t type)
             : Creatable(type), m_contentFlags(0), m_protocolVerMaj(12),
               m_protocolVerMin(6), m_context(0), m_transId(0), m_playerId(0) { }
-
-    public:
-        uint32_t m_contentFlags;
-        uint8_t m_protocolVerMaj, m_protocolVerMin;
-        DS::UnifiedTime m_timestamp;
-        uint32_t m_context, m_transId, m_playerId;
-        DS::Uuid m_acctId;
     };
 
     class NetMsgServerToClient : public NetMessage

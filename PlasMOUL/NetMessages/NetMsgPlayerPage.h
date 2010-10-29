@@ -27,15 +27,14 @@ namespace MOUL
     {
         FACTORY_CREATABLE(NetMsgPlayerPage)
 
+        uint8_t m_unload;
+        MOUL::Uoid m_uoid;
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
     protected:
         NetMsgPlayerPage(uint16_t type) : NetMessage(type) { }
-
-    public:
-        unsigned char m_unload;
-        MOUL::Uoid m_uoid;
     };
 }
 

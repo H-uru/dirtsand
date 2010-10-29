@@ -45,6 +45,10 @@ namespace MOUL
     {
         FACTORY_CREATABLE(NetMsgGameMessage)
 
+        NetMsgStream::Compression m_compression;
+        MOUL::Message* m_message;
+        DS::UnifiedTime m_deliveryTime;
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
@@ -57,11 +61,6 @@ namespace MOUL
         {
             m_message->unref();
         }
-
-    public:
-        NetMsgStream::Compression m_compression;
-        MOUL::Message* m_message;
-        DS::UnifiedTime m_deliveryTime;
     };
 }
 

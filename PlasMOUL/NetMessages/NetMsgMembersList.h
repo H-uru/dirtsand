@@ -91,11 +91,10 @@ namespace MOUL
     {
         FACTORY_CREATABLE(NetMsgMembersList)
 
+        std::vector<NetMsgMemberInfo> m_members;
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
-
-    public:
-        std::vector<NetMsgMemberInfo> m_members;
 
     protected:
         NetMsgMembersList(uint16_t type) : NetMsgServerToClient(type) { }
@@ -105,12 +104,11 @@ namespace MOUL
     {
         FACTORY_CREATABLE(NetMsgMemberUpdate)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
-
-    public:
         NetMsgMemberInfo m_member;
         bool m_addMember;
+
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
 
     protected:
         NetMsgMemberUpdate(uint16_t type) : NetMsgServerToClient(type) { }

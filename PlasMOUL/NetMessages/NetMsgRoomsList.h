@@ -15,26 +15,52 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_NETMSGLOADCLONE_H
-#define _MOUL_NETMSGLOADCLONE_H
+#ifndef _MOUL_NETMSGROOMSLIST_H
+#define _MOUL_NETMSGROOMSLIST_H
 
-#include "NetMsgGameMessage.h"
+#include "NetMessage.h"
 #include "Key.h"
+#include <vector>
 
 namespace MOUL
 {
-    class NetMsgLoadClone : public NetMsgGameMessage
+    class NetMsgRoomsList : public NetMessage
     {
-        FACTORY_CREATABLE(NetMsgLoadClone)
+    public:
+        struct Room
+        {
+            Location m_location;
+            DS::String m_name;
+        };
 
-        MOUL::Uoid m_object;
-        bool m_isPlayer, m_isLoading, m_isInitialState;
+        std::vector<Room> m_rooms;
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
     protected:
-        NetMsgLoadClone(uint16_t type) : NetMsgGameMessage(type) { }
+        NetMsgRoomsList(uint16_t type) : NetMessage(type) { }
+    };
+
+    class NetMsgPagingRoom : public NetMsgRoomsList
+    {
+        FACTORY_CREATABLE(NetMsgPagingRoom)
+
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
+        enum PagingFlags
+        {
+            e_PagingOut      = (1<<0),
+            e_ResetList      = (1<<1),
+            e_RequestState   = (1<<2),
+            e_FinalRoomInAge = (1<<3),
+        };
+
+        uint8_t m_pagingFlags;
+
+    protected:
+        NetMsgPagingRoom(uint16_t type) : NetMsgRoomsList(type) { }
     };
 }
 

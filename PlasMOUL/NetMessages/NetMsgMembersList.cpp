@@ -25,10 +25,8 @@ void MOUL::ClientGuid::read(DS::Stream* stream)
         m_AcctUuid.read(stream);
     if ((m_flags & e_HasPlayerId) || (m_flags & e_HasTempPlayerId))
         m_PlayerId = stream->read<uint32_t>();
-    if (m_flags & e_HasPlayerName) {
-        size_t length = stream->read<uint16_t>();
-        m_PlayerName = stream->readString(length);
-    }
+    if (m_flags & e_HasPlayerName)
+        m_PlayerName = stream->readPString<uint16_t>();
     if (m_flags & e_HasCCRLevel)
         m_CCRLevel = stream->read<uint8_t>();
     if (m_flags & e_HasProtectedLogin)
@@ -41,10 +39,8 @@ void MOUL::ClientGuid::read(DS::Stream* stream)
         m_SrcPort = stream->read<uint16_t>();
     if (m_flags & e_HasReserved)
         m_Reserved = stream->read<uint16_t>();
-    if (m_flags & e_HasClientKey) {
-        size_t length = stream->read<uint16_t>();
-        m_ClientKey = stream->readString(length);
-    }
+    if (m_flags & e_HasClientKey)
+        m_ClientKey = stream->readPString<uint16_t>();
 }
 
 void MOUL::ClientGuid::write(DS::Stream* stream)
