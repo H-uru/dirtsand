@@ -16,10 +16,12 @@
  ******************************************************************************/
 
 #include "GameServer.h"
+#include "AuthServ/AuthClient.h"
 #include "NetIO/CryptIO.h"
 #include "NetIO/MsgChannel.h"
 #include "Types/Uuid.h"
 #include "PlasMOUL/factory.h"
+#include "PlasMOUL/NetMessages/NetMsgMembersList.h"
 #include <list>
 
 enum GameServer_MsgIds
@@ -31,16 +33,14 @@ enum GameServer_MsgIds
     e_GameToCli_PropagateBuffer, e_GameToCli_GameMgrMsg,
 };
 
-struct GameClient_Private
+struct GameClient_Private : public AuthClient_Private
 {
-    DS::SocketHandle m_sock;
-    DS::CryptState m_crypt;
-    DS::BufferStream m_buffer;
-    DS::MsgChannel m_channel;
     struct GameHost_Private* m_host;
+    DS::BufferStream m_buffer;
 
-    DS::Uuid m_accountId;
-    uint32_t m_playerIdx;
+    DS::Uuid m_clientId;
+    MOUL::ClientGuid m_clientInfo;
+    MOUL::Uoid m_clientKey;
 };
 
 struct GameHost_Private

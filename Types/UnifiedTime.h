@@ -39,6 +39,8 @@ namespace DS
         }
         bool operator!=(const UnifiedTime& other) const { return !operator==(other); }
 
+        void setNow();
+
     public:
         union {
             uint32_t m_secs;

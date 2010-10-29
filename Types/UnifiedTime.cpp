@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "UnifiedTime.h"
+#include <sys/time.h>
 
 void DS::UnifiedTime::read(DS::Stream* stream)
 {
@@ -27,4 +28,12 @@ void DS::UnifiedTime::write(DS::Stream* stream)
 {
     stream->write<uint32_t>(m_secs);
     stream->write<uint32_t>(m_micros);
+}
+
+void DS::UnifiedTime::setNow()
+{
+    timeval now;
+    gettimeofday(&now, 0);
+    m_secs = now.tv_sec;
+    m_micros = now.tv_usec;
 }

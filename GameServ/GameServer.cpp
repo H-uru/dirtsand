@@ -96,12 +96,27 @@ void cb_join(GameClient_Private& client)
 
     Game_ClientMessage msg;
     msg.m_client = &client;
-    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, client.m_accountId.m_bytes,
-                        sizeof(client.m_accountId.m_bytes));
-    client.m_playerIdx = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    client.m_host->m_channel.putMessage(e_GameJoinAge, reinterpret_cast<void*>(&msg));
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, client.m_clientId.m_bytes,
+                        sizeof(client.m_clientId.m_bytes));
+    client.m_clientInfo.set_PlayerId(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    // Get player info from the vault
+    Auth_NodeInfo nodeInfo;
+    nodeInfo.m_client = &client;
+    nodeInfo.m_node.set_NodeIdx(client.m_clientInfo.m_PlayerId);
+    s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&nodeInfo));
 
     DS::FifoMessage reply = client.m_channel.getMessage();
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(reply.m_messageType);
+        SEND_REPLY();
+        return;
+    }
+    msg.m_client->m_clientInfo.set_PlayerName(nodeInfo.m_node.m_IString64_1);
+    msg.m_client->m_clientInfo.set_CCRLevel(0);
+    client.m_host->m_channel.putMessage(e_GameJoinAge, reinterpret_cast<void*>(&msg));
+
+    reply = client.m_channel.getMessage();
     client.m_buffer.write<uint32_t>(reply.m_messageType);
 
     SEND_REPLY();
