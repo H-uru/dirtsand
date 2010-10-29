@@ -18,29 +18,11 @@
 #ifndef _MOUL_NETMSGGAMEMESSAGE_H
 #define _MOUL_NETMSGGAMEMESSAGE_H
 
-#include "NetMessage.h"
+#include "NetMsgObject.h"
 #include "Messages/Message.h"
-#include "Key.h"
 
 namespace MOUL
 {
-    class NetMsgStream
-    {
-    public:
-        enum Compression {
-            e_CompressNone, e_CompressFail, e_CompressZlib, e_CompressNever
-        };
-
-        NetMsgStream(Compression compress = e_CompressNone)
-            : m_compression(compress) { }
-
-        void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
-
-        Compression m_compression;
-        DS::BufferStream m_stream;
-    };
-
     class NetMsgGameMessage : public NetMessage
     {
         FACTORY_CREATABLE(NetMsgGameMessage)

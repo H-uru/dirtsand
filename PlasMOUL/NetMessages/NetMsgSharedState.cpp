@@ -15,34 +15,27 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "NetMsgGameMessage.h"
-#include "factory.h"
+#include "NetMsgSharedState.h"
+#include "errors.h"
 
-void MOUL::NetMsgGameMessage::read(DS::Stream* stream)
+void MOUL::NetMsgSharedState::read(DS::Stream* stream)
 {
-    NetMessage::read(stream);
+    NetMsgObject::read(stream);
 
     NetMsgStream msgStream;
     msgStream.read(stream);
     m_compression = msgStream.m_compression;
-    m_message = Factory::Read<Message>(&msgStream.m_stream);
+    //TODO
 
-    if (stream->readBool())
-        m_deliveryTime.read(stream);
+    m_lockRequest = stream->read<uint8_t>();
 }
 
-void MOUL::NetMsgGameMessage::write(DS::Stream* stream)
+void MOUL::NetMsgSharedState::write(DS::Stream* stream)
 {
-    NetMessage::write(stream);
+    NetMsgObject::write(stream);
 
-    NetMsgStream msgStream(m_compression);
-    Factory::WriteCreatable(&msgStream.m_stream, m_message);
-    msgStream.write(stream);
+    //TODO
+    DS_PASSERT(0);
 
-    if (!m_deliveryTime.isNull()) {
-        stream->writeBool(true);
-        m_deliveryTime.write(stream);
-    } else {
-        stream->writeBool(false);
-    }
+    stream->write<uint8_t>(m_lockRequest);
 }

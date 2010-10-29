@@ -20,10 +20,12 @@
 
 #include "Messages/LoadAvatarMsg.h"
 #include "Messages/AvatarInputStateMsg.h"
+#include "Messages/ServerReplyMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
 #include "NetMessages/NetMsgGameState.h"
+#include "NetMessages/NetMsgSharedState.h"
 
 MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
 {

@@ -29,13 +29,16 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/LoadCloneMsg.cpp
     PlasMOUL/Messages/LoadAvatarMsg.cpp
     PlasMOUL/Messages/AvatarInputStateMsg.cpp
+    PlasMOUL/Messages/ServerReplyMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
+    PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
     PlasMOUL/NetMessages/NetMsgLoadClone.cpp
     PlasMOUL/NetMessages/NetMsgPlayerPage.cpp
     PlasMOUL/NetMessages/NetMsgMembersList.cpp
     PlasMOUL/NetMessages/NetMsgRoomsList.cpp
     PlasMOUL/NetMessages/NetMsgGameState.cpp
+    PlasMOUL/NetMessages/NetMsgSharedState.cpp
     PlasMOUL/factory.cpp
 )
 

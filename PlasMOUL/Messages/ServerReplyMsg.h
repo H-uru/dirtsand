@@ -15,34 +15,26 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "NetMsgGameMessage.h"
-#include "factory.h"
+#ifndef _MOUL_SERVERREPLYMSG_H
+#define _MOUL_SERVERREPLYMSG_H
 
-void MOUL::NetMsgGameMessage::read(DS::Stream* stream)
+#include "Message.h"
+
+namespace MOUL
 {
-    NetMessage::read(stream);
+    class ServerReplyMsg : public Message
+    {
+        FACTORY_CREATABLE(ServerReplyMsg)
 
-    NetMsgStream msgStream;
-    msgStream.read(stream);
-    m_compression = msgStream.m_compression;
-    m_message = Factory::Read<Message>(&msgStream.m_stream);
+        enum Type { e_Invalid = -1, e_Deny, e_Affirm };
+        Type m_reply;
 
-    if (stream->readBool())
-        m_deliveryTime.read(stream);
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
+    protected:
+        ServerReplyMsg(uint16_t type) : Message(type), m_reply(e_Invalid) { }
+    };
 }
 
-void MOUL::NetMsgGameMessage::write(DS::Stream* stream)
-{
-    NetMessage::write(stream);
-
-    NetMsgStream msgStream(m_compression);
-    Factory::WriteCreatable(&msgStream.m_stream, m_message);
-    msgStream.write(stream);
-
-    if (!m_deliveryTime.isNull()) {
-        stream->writeBool(true);
-        m_deliveryTime.write(stream);
-    } else {
-        stream->writeBool(false);
-    }
-}
+#endif

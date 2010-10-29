@@ -19,6 +19,8 @@
 #include "PlasMOUL/NetMessages/NetMsgMembersList.h"
 #include "PlasMOUL/NetMessages/NetMsgLoadClone.h"
 #include "PlasMOUL/NetMessages/NetMsgGameState.h"
+#include "PlasMOUL/NetMessages/NetMsgSharedState.h"
+#include "PlasMOUL/Messages/ServerReplyMsg.h"
 #include "errors.h"
 
 hostmap_t s_gameHosts;
@@ -115,7 +117,6 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
     //TODO: Send saved SDL states
 
-
     MOUL::NetMsgInitialAgeStateSent* reply = MOUL::NetMsgInitialAgeStateSent::Create();
     reply->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                           | MOUL::NetMessage::e_IsSystemMessage
@@ -127,6 +128,28 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                         host->m_buffer.buffer(), host->m_buffer.size());
     reply->unref();
+}
+
+void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
+                     MOUL::NetMsgTestAndSet* msg)
+{
+    //TODO: Whatever the client is expecting us to do
+
+    MOUL::ServerReplyMsg* reply = MOUL::ServerReplyMsg::Create();
+    reply->m_receivers.push_back(msg->m_object);
+    reply->m_bcastFlags = MOUL::Message::e_LocalPropagate;
+    reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
+
+    MOUL::NetMsgGameMessage* netReply = MOUL::NetMsgGameMessage::Create();
+    netReply->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                             | MOUL::NetMessage::e_NeedsReliableSend;
+    netReply->m_timestamp.setNow();
+    netReply->m_message = reply;
+
+    DM_WRITEMSG(host, netReply);
+    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                        host->m_buffer.buffer(), host->m_buffer.size());
+    netReply->unref();
 }
 
 void dm_send_members(GameHost_Private* host, GameClient_Private* client)
@@ -189,6 +212,9 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     switch (msg->m_messageType) {
     case MOUL::ID_NetMsgGameStateRequest:
         dm_send_state(host, msg->m_client);
+        break;
+    case MOUL::ID_NetMsgTestAndSet:
+        dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());
         break;
     case MOUL::ID_NetMsgMembersListReq:
         dm_send_members(host, msg->m_client);
