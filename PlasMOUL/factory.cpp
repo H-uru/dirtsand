@@ -21,6 +21,7 @@
 #include "Messages/LoadAvatarMsg.h"
 #include "Messages/AvatarInputStateMsg.h"
 #include "Messages/ServerReplyMsg.h"
+#include "Messages/NotifyMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"

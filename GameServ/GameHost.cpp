@@ -195,7 +195,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
 void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
 {
     DS::BlobStream stream(msg->m_message);
-    MOUL::NetMessage* netmsg;
+    MOUL::NetMessage* netmsg = 0;
     try {
         netmsg = MOUL::Factory::Read<MOUL::NetMessage>(&stream);
     } catch (MOUL::FactoryException) {
@@ -224,6 +224,21 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         case MOUL::ID_NetMsgGameStateRequest:
             dm_send_state(host, msg->m_client);
             break;
+        case MOUL::ID_NetMsgGameMessage:
+            {
+                MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
+                switch (gameMsg->m_message->type())
+                {
+                case MOUL::ID_NotifyMsg:
+                case MOUL::ID_AvatarInputStateMsg:
+                    dm_propagate(host, msg->m_message, msg->m_messageType);
+                    break;
+                default:
+                    fprintf(stderr, "[Game] Warning: Unhandled game message: %04X\n",
+                            gameMsg->m_message->type());
+                }
+            }
+            break;
         case MOUL::ID_NetMsgTestAndSet:
             dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());
             break;
@@ -242,11 +257,6 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         default:
             fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",
                     msg->m_messageType);
-#ifdef DEBUG
-            // In debug builds, we'll just go ahead and blindly propagate
-            // any unknown message type
-            dm_propagate(host, msg->m_message, msg->m_messageType);
-#endif
             break;
         }
     } catch (DS::SockHup) {
