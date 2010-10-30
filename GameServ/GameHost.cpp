@@ -25,6 +25,7 @@
 
 hostmap_t s_gameHosts;
 pthread_mutex_t s_gameHostMutex;
+agemap_t s_ages;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)

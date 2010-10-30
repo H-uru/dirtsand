@@ -38,7 +38,7 @@ static struct
 
     /* Data locations */
     DS::String m_fileRoot, m_authRoot;
-    DS::String m_sdlPath;
+    DS::String m_sdlPath, m_agePath;
 
     /* Database */
     DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
@@ -124,6 +124,8 @@ bool DS::Settings::LoadFrom(const char* filename)
                     s_settings.m_authRoot += "/";
             } else if (params[0] == "Sdl.Path") {
                 s_settings.m_sdlPath = params[1];
+            } else if (params[0] == "Age.Path") {
+                s_settings.m_agePath = params[1];
             } else if (params[0] == "Db.Host") {
                 s_settings.m_dbHostname = params[1];
             } else if (params[0] == "Db.Port") {
@@ -161,6 +163,7 @@ void DS::Settings::UseDefaults()
     s_settings.m_fileRoot = "./data";
     s_settings.m_authRoot = "./authdata";
     s_settings.m_sdlPath = "./SDL";
+    s_settings.m_agePath = "./ages";
 
     s_settings.m_dbHostname = "localhost";
     s_settings.m_dbPort = "5432";
@@ -218,6 +221,11 @@ DS::String DS::Settings::AuthRoot()
 const char* DS::Settings::SdlPath()
 {
     return s_settings.m_sdlPath.c_str();
+}
+
+const char* DS::Settings::AgePath()
+{
+    return s_settings.m_agePath.c_str();
 }
 
 const char* DS::Settings::DbHostname()

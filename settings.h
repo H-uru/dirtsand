@@ -55,6 +55,7 @@ namespace DS
         DS::String FileRoot();
         DS::String AuthRoot();
         const char* SdlPath();
+        const char* AgePath();
 
         const char* DbHostname();
         const char* DbPort();

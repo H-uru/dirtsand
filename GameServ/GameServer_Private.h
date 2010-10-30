@@ -59,6 +59,20 @@ typedef std::tr1::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
 extern hostmap_t s_gameHosts;
 extern pthread_mutex_t s_gameHostMutex;
 
+struct Game_AgeInfo
+{
+    uint32_t m_startTime, m_lingerTime;
+    double m_dayLength;
+    uint32_t m_maxCapacity;
+    int32_t m_seqPrefix;
+
+    Game_AgeInfo()
+        : m_startTime(0), m_lingerTime(180), m_dayLength(24), m_maxCapacity(10),
+          m_seqPrefix(0) { }
+};
+typedef std::tr1::unordered_map<DS::String, Game_AgeInfo, DS::StringHash> agemap_t;
+extern agemap_t s_ages;
+
 enum GameHostMessages
 {
     e_GameShutdown, e_GameCleanup, e_GameJoinAge, e_GamePropagate,

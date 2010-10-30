@@ -18,6 +18,9 @@
 #include "GameServer_Private.h"
 #include "settings.h"
 #include "errors.h"
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 extern bool s_commdebug;
 
@@ -201,8 +204,78 @@ void* wk_gameWorker(void* sockp)
     return 0;
 }
 
+static int sel_age(const dirent* de)
+{
+    return strcmp(strrchr(de->d_name, '.'), ".age") == 0;
+}
+
+Game_AgeInfo age_parse(FILE* stream)
+{
+    char lnbuffer[4096];
+
+    Game_AgeInfo age;
+    while (fgets(lnbuffer, 4096, stream)) {
+        std::vector<DS::String> line = DS::String(lnbuffer).strip('#').split('=');
+        if (line.size() == 0)
+            continue;
+        if (line.size() != 2) {
+            fprintf(stderr, "[Game] Invalid AGE line: %s", lnbuffer);
+            continue;
+        }
+        if (line[0] == "StartDateTime") {
+            age.m_startTime = line[1].toUint(10);
+        } else if (line[0] == "DayLength") {
+            age.m_dayLength = line[1].toDouble();
+        } else if (line[0] == "MaxCapacity") {
+            age.m_maxCapacity = line[1].toUint(10);
+        } else if (line[0] == "LingerTime") {
+            age.m_lingerTime = line[1].toUint(10);
+        } else if (line[0] == "SequencePrefix") {
+            age.m_seqPrefix = line[1].toInt(10);
+        } else if (line[0] == "ReleaseVersion" || line[0] == "Page") {
+            // Ignored
+        } else {
+            fprintf(stderr, "[Game] Invalid AGE line: %s", lnbuffer);
+        }
+    }
+    return age;
+}
+
 void DS::GameServer_Init()
 {
+    dirent** dirls;
+    int count = scandir(DS::Settings::AgePath(), &dirls, &sel_age, &alphasort);
+    if (count < 0) {
+        fprintf(stderr, "[Game] Error reading age descriptors: %s\n", strerror(errno));
+    } else if (count == 0) {
+        fprintf(stderr, "[Game] Warning: No age descriptors found!\n");
+        free(dirls);
+    } else {
+        for (int i=0; i<count; ++i) {
+            DS::String filename = DS::String::Format("%s/%s", DS::Settings::AgePath(), dirls[i]->d_name);
+            FILE* ageFile = fopen(filename.c_str(), "r");
+            if (ageFile) {
+                char magic[12];
+                fread(magic, 1, 12, ageFile);
+                if (memcmp(magic, "whatdoyousee", 12) == 0 || memcmp(magic, "notthedroids", 12) == 0
+                    || memcmp(magic, "BriceIsSmart", 12) == 0) {
+                    fprintf(stderr, "[Game] Error: Please decrypt your .age files before using!\n");
+                    break;
+                }
+                fseek(ageFile, 0, SEEK_SET);
+
+                DS::String ageName = dirls[i]->d_name;
+                ageName = ageName.left(ageName.find(".age"));
+                Game_AgeInfo age = age_parse(ageFile);
+                if (age.m_seqPrefix >= 0)
+                    s_ages[ageName] = age;
+                fclose(ageFile);
+            }
+            free(dirls[i]);
+        }
+        free(dirls);
+    }
+
     pthread_mutex_init(&s_gameHostMutex, 0);
 }
 
