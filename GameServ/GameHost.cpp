@@ -90,8 +90,13 @@ void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg)
     pthread_mutex_lock(&host->m_clientMutex);
     std::list<GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
-        DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+        } catch (DS::SockHup) {
+            // This is handled below too, but we don't want to skip the rest
+            // of the client list if one hung up
+        }
     }
     pthread_mutex_unlock(&host->m_clientMutex);
 }
@@ -107,8 +112,13 @@ void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType)
     pthread_mutex_lock(&host->m_clientMutex);
     std::list<GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
-        DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+        } catch (DS::SockHup) {
+            // This is handled below too, but we don't want to skip the rest
+            // of the client list if one hung up
+        }
     }
     pthread_mutex_unlock(&host->m_clientMutex);
 }
@@ -209,34 +219,38 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     }
 #endif
 
-    switch (msg->m_messageType) {
-    case MOUL::ID_NetMsgGameStateRequest:
-        dm_send_state(host, msg->m_client);
-        break;
-    case MOUL::ID_NetMsgTestAndSet:
-        dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());
-        break;
-    case MOUL::ID_NetMsgMembersListReq:
-        dm_send_members(host, msg->m_client);
-        break;
-    case MOUL::ID_NetMsgLoadClone:
-        pthread_mutex_lock(&host->m_clientMutex);
-        msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
-        pthread_mutex_unlock(&host->m_clientMutex);
-        dm_propagate(host, msg->m_message, msg->m_messageType);
-        break;
-    case MOUL::ID_NetMsgPlayerPage:
-        // Do we care?
-        break;
-    default:
-        fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",
-                msg->m_messageType);
+    try {
+        switch (msg->m_messageType) {
+        case MOUL::ID_NetMsgGameStateRequest:
+            dm_send_state(host, msg->m_client);
+            break;
+        case MOUL::ID_NetMsgTestAndSet:
+            dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());
+            break;
+        case MOUL::ID_NetMsgMembersListReq:
+            dm_send_members(host, msg->m_client);
+            break;
+        case MOUL::ID_NetMsgLoadClone:
+            pthread_mutex_lock(&host->m_clientMutex);
+            msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
+            pthread_mutex_unlock(&host->m_clientMutex);
+            dm_propagate(host, msg->m_message, msg->m_messageType);
+            break;
+        case MOUL::ID_NetMsgPlayerPage:
+            // Do we care?
+            break;
+        default:
+            fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",
+                    msg->m_messageType);
 #ifdef DEBUG
-        // In debug builds, we'll just go ahead and blindly propagate
-        // any unknown message type
-        dm_propagate(host, msg->m_message, msg->m_messageType);
+            // In debug builds, we'll just go ahead and blindly propagate
+            // any unknown message type
+            dm_propagate(host, msg->m_message, msg->m_messageType);
 #endif
-        break;
+            break;
+        }
+    } catch (DS::SockHup) {
+        // Client wasn't paying attention
     }
     netmsg->unref();
     SEND_REPLY(msg, DS::e_NetSuccess);
