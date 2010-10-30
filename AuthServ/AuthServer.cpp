@@ -682,6 +682,17 @@ void* wk_authWorker(void* sockp)
             case e_CliToAuth_FileDownloadChunkAck:
                 cb_downloadNext(client);
                 break;
+            case e_CliToAuth_LogPythonTraceback:
+                printf("[Auth] Got client python traceback:\n%s\n",
+                       DS::CryptRecvString(client.m_sock, client.m_crypt).c_str());
+                break;
+            case e_CliToAuth_LogStackDump:
+                printf("[Auth] Got client stackdump:\n%s\n",
+                       DS::CryptRecvString(client.m_sock, client.m_crypt).c_str());
+                break;
+            case e_CliToAuth_LogClientDebuggerConnect:
+                // Nobody cares
+                break;
             case e_CliToAuth_ClientSetCCRLevel:
             case e_CliToAuth_AcctSetRolesRequest:
             case e_CliToAuth_AcctSetBillingTypeRequest:
