@@ -29,14 +29,14 @@ extern bool s_commdebug;
     DS::CryptSendBuffer(client.m_sock, client.m_crypt, \
                         client.m_buffer.buffer(), client.m_buffer.size())
 
-DS::Uuid game_client_init(GameClient_Private& client)
+void game_client_init(GameClient_Private& client)
 {
     /* Game client header:  size, account uuid, age instance uuid */
     uint32_t size = DS::RecvValue<uint32_t>(client.m_sock);
     DS_PASSERT(size == 36);
-    DS::Uuid clientUuid, ageUuid;
+    DS::Uuid clientUuid, connUuid;
     DS::RecvBuffer(client.m_sock, clientUuid.m_bytes, sizeof(clientUuid.m_bytes));
-    DS::RecvBuffer(client.m_sock, ageUuid.m_bytes, sizeof(ageUuid.m_bytes));
+    DS::RecvBuffer(client.m_sock, connUuid.m_bytes, sizeof(connUuid.m_bytes));
 
     /* Establish encryption */
     uint8_t msgId = DS::RecvValue<uint8_t>(client.m_sock);
@@ -60,18 +60,17 @@ DS::Uuid game_client_init(GameClient_Private& client)
     DS::SendBuffer(client.m_sock, client.m_buffer.buffer(), client.m_buffer.size());
 
     client.m_crypt = DS::CryptStateInit(sharedKey, 7);
-    return ageUuid;
 }
 
-GameHost_Private* find_game_host(const DS::Uuid& ageUuid)
+GameHost_Private* find_game_host(uint32_t ageMcpId)
 {
     pthread_mutex_lock(&s_gameHostMutex);
-    hostmap_t::iterator host_iter = s_gameHosts.find(ageUuid);
+    hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
     GameHost_Private* host = 0;
     if (host_iter != s_gameHosts.end())
         host = host_iter->second;
     pthread_mutex_unlock(&s_gameHostMutex);
-    return host ? host : start_game_host(ageUuid);
+    return host ? host : start_game_host(ageMcpId);
 }
 
 void cb_ping(GameClient_Private& client)
@@ -91,8 +90,12 @@ void cb_join(GameClient_Private& client)
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
-    // MCP ID (ignored)
-    DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint32_t mcpId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_host = find_game_host(mcpId);
+    DS_PASSERT(client.m_host != 0);
+    pthread_mutex_lock(&client.m_host->m_clientMutex);
+    client.m_host->m_clients.push_back(&client);
+    pthread_mutex_unlock(&client.m_host->m_clientMutex);
 
     Game_ClientMessage msg;
     msg.m_client = &client;
@@ -140,10 +143,10 @@ void* wk_gameWorker(void* sockp)
 {
     GameClient_Private client;
     client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);
+    client.m_host = 0;
 
-    DS::Uuid ageUuid;
     try {
-        ageUuid = game_client_init(client);
+        game_client_init(client);
     } catch (DS::AssertException ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
@@ -152,11 +155,6 @@ void* wk_gameWorker(void* sockp)
         // Socket closed...
         return 0;
     }
-
-    client.m_host = find_game_host(ageUuid);
-    pthread_mutex_lock(&client.m_host->m_clientMutex);
-    client.m_host->m_clients.push_back(&client);
-    pthread_mutex_unlock(&client.m_host->m_clientMutex);
 
     try {
         for ( ;; ) {
@@ -169,6 +167,7 @@ void* wk_gameWorker(void* sockp)
                 cb_join(client);
                 break;
             case e_CliToGame_Propagatebuffer:
+                DS_PASSERT(client.m_host != 0);
                 cb_netmsg(client);
                 break;
             default:

@@ -46,13 +46,16 @@ struct GameClient_Private : public AuthClient_Private
 struct GameHost_Private
 {
     DS::Uuid m_instanceId;
+    DS::String m_ageFilename;
+    uint32_t m_ageIdx;
+
     std::list<GameClient_Private*> m_clients;
     pthread_mutex_t m_clientMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
 };
 
-typedef std::tr1::unordered_map<DS::Uuid, GameHost_Private*, DS::UuidHash> hostmap_t;
+typedef std::tr1::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
 extern hostmap_t s_gameHosts;
 extern pthread_mutex_t s_gameHostMutex;
 
@@ -72,4 +75,4 @@ struct Game_PropagateMessage : public Game_ClientMessage
     DS::Blob m_message;
 };
 
-GameHost_Private* start_game_host(const DS::Uuid& ageId);
+GameHost_Private* start_game_host(uint32_t ageMcpId);

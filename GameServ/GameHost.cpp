@@ -313,18 +313,32 @@ void* dm_gameHost(void* hostp)
     return 0;
 }
 
-GameHost_Private* start_game_host(const DS::Uuid& ageId)
+GameHost_Private* start_game_host(uint32_t ageMcpId)
 {
-    GameHost_Private* host = new GameHost_Private();
-    pthread_mutex_init(&host->m_clientMutex, 0);
-    host->m_instanceId = ageId;
+    AuthClient_Private tempClient;
+    Auth_GameAge ageMsg;
+    ageMsg.m_client = &tempClient;
+    ageMsg.m_mcpId = ageMcpId;
+    s_authChannel.putMessage(e_AuthFetchAgeServer, reinterpret_cast<void*>(&ageMsg));
 
-    pthread_mutex_lock(&s_gameHostMutex);
-    s_gameHosts[ageId] = host;
-    pthread_mutex_unlock(&s_gameHostMutex);
+    DS::FifoMessage ageReply = tempClient.m_channel.getMessage();
+    if (ageReply.m_messageType == DS::e_NetSuccess) {
+        GameHost_Private* host = new GameHost_Private();
+        pthread_mutex_init(&host->m_clientMutex, 0);
+        host->m_instanceId = ageMsg.m_instanceId;
+        host->m_ageFilename = ageMsg.m_name;
+        host->m_ageIdx = ageMsg.m_ageNodeIdx;
 
-    pthread_t threadh;
-    pthread_create(&threadh, 0, &dm_gameHost, reinterpret_cast<void*>(host));
-    pthread_detach(threadh);
-    return host;
+        pthread_mutex_lock(&s_gameHostMutex);
+        s_gameHosts[ageMcpId] = host;
+        pthread_mutex_unlock(&s_gameHostMutex);
+
+        pthread_t threadh;
+        pthread_create(&threadh, 0, &dm_gameHost, reinterpret_cast<void*>(host));
+        pthread_detach(threadh);
+        return host;
+    } else if (ageReply.m_messageType == DS::e_NetAgeNotFound) {
+        fprintf(stderr, "[Game] Age MCP %u not found\n", ageMcpId);
+    }
+    return 0;
 }

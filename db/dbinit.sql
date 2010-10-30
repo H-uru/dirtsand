@@ -136,6 +136,23 @@ SELECT pg_catalog.setval('"Nodes_idx_seq"', 10001, false);
 
 SET search_path = game, pg_catalog;
 
+CREATE TABLE "Servers" (
+    idx integer NOT NULL,
+    "AgeUuid" uuid NOT NULL,
+    "AgeFilename" character varying(64) NOT NULL,
+    "AgeIdx" integer NOT NULL
+);
+ALTER TABLE game."Servers" OWNER TO dirtsand;
+CREATE SEQUENCE "Servers_idx_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+ALTER TABLE game."Servers_idx_seq" OWNER TO dirtsand;
+ALTER SEQUENCE "Servers_idx_seq" OWNED BY "Servers".idx;
+SELECT pg_catalog.setval('"Servers_idx_seq"', 1, false);
+
 CREATE TABLE "PublicAges" (
     idx integer NOT NULL,
     "AgeUuid" uuid NOT NULL,
@@ -189,8 +206,11 @@ ALTER TABLE ONLY "Nodes"
     ADD CONSTRAINT "Nodes_pkey" PRIMARY KEY (idx);
 
 SET search_path = game, pg_catalog;
+ALTER TABLE "Servers" ALTER COLUMN idx SET DEFAULT nextval('"Servers_idx_seq"'::regclass);
 ALTER TABLE "PublicAges" ALTER COLUMN idx SET DEFAULT nextval('"PublicAges_idx_seq"'::regclass);
 
+ALTER TABLE ONLY "Servers"
+    ADD CONSTRAINT "Servers_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "PublicAges"
     ADD CONSTRAINT "PublicAges_pkey" PRIMARY KEY (idx);
 

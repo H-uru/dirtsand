@@ -58,7 +58,7 @@ enum AuthDaemonMessages
     e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
     e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
     e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode, e_VaultInitAge,
-    e_AuthFindGameServer,
+    e_AuthFindGameServer, e_AuthFetchAgeServer,
 };
 
 struct Auth_ClientMessage

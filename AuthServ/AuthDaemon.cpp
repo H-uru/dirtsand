@@ -311,23 +311,61 @@ void dm_auth_findAge(Auth_GameAge* msg)
            msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
 #endif
 
-    DS::Vault::Node search;
-    search.set_NodeType(DS::Vault::e_NodeAge);
-    search.set_Uuid_1(msg->m_instanceId);
-
-    std::vector<uint32_t> nodes;
-    if (v_find_nodes(search, nodes) && nodes.size() != 0) {
-        DS_DASSERT(nodes.size() == 1);
-        msg->m_ageNodeIdx = nodes[0];
-        msg->m_mcpId = 0;
-        msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress());
-        SEND_REPLY(msg, DS::e_NetSuccess);
-    } else {
+    PostgresStrings<1> parms;
+    parms.set(0, msg->m_instanceId.toString());
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT idx, \"AgeIdx\" FROM game.\"Servers\""
+            "    WHERE \"AgeUuid\"=$1",
+            1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) == 0) {
         fprintf(stderr, "[Auth] %s Requested age {%s} %s not found\n",
                 DS::SockIpAddress(msg->m_client->m_sock).c_str(),
                 msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
         SEND_REPLY(msg, DS::e_NetAgeNotFound);
+    } else {
+        DS_DASSERT(PQntuples(result) == 1);
+        msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), 0, 10);
+        msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress());
+        SEND_REPLY(msg, DS::e_NetSuccess);
     }
+    PQclear(result);
+}
+
+void dm_auth_fetchServer(Auth_GameAge* msg)
+{
+    PostgresStrings<1> parms;
+    parms.set(0, msg->m_mcpId);
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\""
+            "    FROM game.\"Servers\" WHERE idx=$1",
+            1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) == 0) {
+        fprintf(stderr, "[Auth] %s Requested server %u not found\n",
+                DS::SockIpAddress(msg->m_client->m_sock).c_str(), msg->m_mcpId);
+        SEND_REPLY(msg, DS::e_NetAgeNotFound);
+    } else {
+        DS_DASSERT(PQntuples(result) == 1);
+        msg->m_instanceId = PQgetvalue(result, 0, 0);
+        msg->m_name = PQgetvalue(result, 0, 1);
+        msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+        SEND_REPLY(msg, DS::e_NetSuccess);
+    }
+    PQclear(result);
 }
 
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
@@ -487,6 +525,9 @@ void* dm_authDaemon(void*)
                 break;
             case e_AuthFindGameServer:
                 dm_auth_findAge(reinterpret_cast<Auth_GameAge*>(msg.m_payload));
+                break;
+            case e_AuthFetchAgeServer:
+                dm_auth_fetchServer(reinterpret_cast<Auth_GameAge*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
