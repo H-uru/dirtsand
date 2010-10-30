@@ -83,13 +83,15 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     host->m_buffer.seek(6, SEEK_SET); \
     host->m_buffer.write<uint32_t>(host->m_buffer.size() - 10)
 
-void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg)
+void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg, uint32_t sender)
 {
     DM_WRITEMSG(host, msg);
 
     pthread_mutex_lock(&host->m_clientMutex);
     std::list<GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+        if ((*client_iter)->m_clientInfo.m_PlayerId == sender)
+            continue;
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
                                 host->m_buffer.buffer(), host->m_buffer.size());
@@ -101,7 +103,7 @@ void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg)
     pthread_mutex_unlock(&host->m_clientMutex);
 }
 
-void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType)
+void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType, uint32_t sender)
 {
     host->m_buffer.truncate();
     host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer);
@@ -112,6 +114,8 @@ void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType)
     pthread_mutex_lock(&host->m_clientMutex);
     std::list<GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+        if ((*client_iter)->m_clientInfo.m_PlayerId == sender)
+            continue;
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt,
                                 host->m_buffer.buffer(), host->m_buffer.size());
@@ -157,9 +161,9 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
     netReply->m_message = reply;
 
     DM_WRITEMSG(host, netReply);
+    netReply->unref();
     DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                         host->m_buffer.buffer(), host->m_buffer.size());
-    netReply->unref();
 }
 
 void dm_send_members(GameHost_Private* host, GameClient_Private* client)
@@ -231,7 +235,9 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                 {
                 case MOUL::ID_NotifyMsg:
                 case MOUL::ID_AvatarInputStateMsg:
-                    dm_propagate(host, msg->m_message, msg->m_messageType);
+                case MOUL::ID_InputIfaceMgrMsg:
+                    dm_propagate(host, msg->m_message, msg->m_messageType,
+                                 msg->m_client->m_clientInfo.m_PlayerId);
                     break;
                 default:
                     fprintf(stderr, "[Game] Warning: Unhandled game message: %04X\n",
@@ -249,7 +255,8 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             pthread_mutex_lock(&host->m_clientMutex);
             msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
             pthread_mutex_unlock(&host->m_clientMutex);
-            dm_propagate(host, msg->m_message, msg->m_messageType);
+            dm_propagate(host, msg->m_message, msg->m_messageType,
+                         msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgPlayerPage:
             // Do we care?

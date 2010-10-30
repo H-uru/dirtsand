@@ -16,7 +16,6 @@
  ******************************************************************************/
 
 #include "NotifyMsg.h"
-#include "errors.h"
 
 MOUL::NotifyMsg::~NotifyMsg()
 {

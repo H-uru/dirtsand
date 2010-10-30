@@ -32,6 +32,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/AvatarInputStateMsg.cpp
     PlasMOUL/Messages/ServerReplyMsg.cpp
     PlasMOUL/Messages/NotifyMsg.cpp
+    PlasMOUL/Messages/InputIfaceMgrMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
