@@ -21,6 +21,7 @@
 #include "PlasMOUL/NetMessages/NetMsgGameState.h"
 #include "PlasMOUL/NetMessages/NetMsgSharedState.h"
 #include "PlasMOUL/NetMessages/NetMsgSDLState.h"
+#include "PlasMOUL/NetMessages/NetMsgGroupOwner.h"
 #include "PlasMOUL/Messages/ServerReplyMsg.h"
 #include "errors.h"
 
@@ -30,6 +31,15 @@ agemap_t s_ages;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
+
+#define DM_WRITEMSG(host, msg) \
+    host->m_buffer.truncate(); \
+    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer); \
+    host->m_buffer.write<uint32_t>(msg->type()); \
+    host->m_buffer.write<uint32_t>(0); \
+    MOUL::Factory::WriteCreatable(&host->m_buffer, msg); \
+    host->m_buffer.seek(6, SEEK_SET); \
+    host->m_buffer.write<uint32_t>(host->m_buffer.size() - 10)
 
 void dm_game_shutdown(GameHost_Private* host)
 {
@@ -64,26 +74,6 @@ void dm_game_shutdown(GameHost_Private* host)
     pthread_mutex_destroy(&host->m_clientMutex);
     delete host;
 }
-
-void dm_game_cleanup(GameHost_Private* host)
-{
-    //TODO: shutdown this host if no clients connect within a time limit
-}
-
-void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
-{
-    //TODO: announce the new player
-    SEND_REPLY(msg, DS::e_NetSuccess);
-}
-
-#define DM_WRITEMSG(host, msg) \
-    host->m_buffer.truncate(); \
-    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer); \
-    host->m_buffer.write<uint32_t>(msg->type()); \
-    host->m_buffer.write<uint32_t>(0); \
-    MOUL::Factory::WriteCreatable(&host->m_buffer, msg); \
-    host->m_buffer.seek(6, SEEK_SET); \
-    host->m_buffer.write<uint32_t>(host->m_buffer.size() - 10)
 
 void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg, uint32_t sender)
 {
@@ -127,6 +117,30 @@ void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType, uin
         }
     }
     pthread_mutex_unlock(&host->m_clientMutex);
+}
+
+void dm_game_cleanup(GameHost_Private* host)
+{
+    //TODO: shutdown this host if no clients connect within a time limit
+}
+
+void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
+{
+    MOUL::NetMsgGroupOwner* groupMsg = MOUL::NetMsgGroupOwner::Create();
+    groupMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                             | MOUL::NetMessage::e_IsSystemMessage
+                             | MOUL::NetMessage::e_NeedsReliableSend;
+    groupMsg->m_timestamp.setNow();
+    groupMsg->m_groups.resize(1);
+    groupMsg->m_groups[0].m_own = true;
+
+    DM_WRITEMSG(host, groupMsg);
+    DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
+                        host->m_buffer.buffer(), host->m_buffer.size());
+    groupMsg->unref();
+
+    //TODO: announce the new player
+    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void dm_send_state(GameHost_Private* host, GameClient_Private* client)

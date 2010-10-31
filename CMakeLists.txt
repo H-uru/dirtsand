@@ -43,6 +43,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/NetMessages/NetMsgGameState.cpp
     PlasMOUL/NetMessages/NetMsgSharedState.cpp
     PlasMOUL/NetMessages/NetMsgSDLState.cpp
+    PlasMOUL/NetMessages/NetMsgGroupOwner.cpp
     PlasMOUL/factory.cpp
 )
 

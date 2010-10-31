@@ -29,6 +29,7 @@
 #include "NetMessages/NetMsgGameState.h"
 #include "NetMessages/NetMsgSharedState.h"
 #include "NetMessages/NetMsgSDLState.h"
+#include "NetMessages/NetMsgGroupOwner.h"
 
 MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
 {

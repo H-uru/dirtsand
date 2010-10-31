@@ -17,8 +17,9 @@
 
 #include "Key.h"
 
-MOUL::Location MOUL::Location::Invalid(0xFFFFFFFF, 0);
-MOUL::Location MOUL::Location::Virtual(0, 0);
+MOUL::Location MOUL::Location::Invalid      (0xFFFFFFFF, 0);
+MOUL::Location MOUL::Location::Virtual      (0,          0);
+MOUL::Location MOUL::Location::GlobalServer (0xFF000000, e_Reserved);
 
 MOUL::Location::Location(int prefix, int page, uint16_t flags)
     : m_flags(flags)
