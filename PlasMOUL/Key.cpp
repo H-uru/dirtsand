@@ -55,12 +55,16 @@ void MOUL::Uoid::read(DS::Stream* stream)
     m_location.read(stream);
     if (contents & e_HasLoadMask)
         m_loadMask = stream->read<uint8_t>();
+    else
+        m_loadMask = 0xFF;
     m_type = stream->read<uint16_t>();
     m_id = stream->read<uint32_t>();
     m_name = stream->readSafeString();
     if (contents & e_HasCloneIds) {
         m_cloneId = stream->read<uint32_t>();
         m_clonePlayerId = stream->read<uint32_t>();
+    } else {
+        m_cloneId = m_clonePlayerId = 0;
     }
 }
 

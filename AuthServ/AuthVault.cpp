@@ -472,15 +472,16 @@ v_create_age(const AuthServer_AgeInfo& age, bool publicAge)
 
     // Register with the server database
     {
-        PostgresStrings<3> parms;
+        PostgresStrings<4> parms;
         parms.set(0, age.m_ageId.toString());
         parms.set(1, age.m_filename);
         parms.set(2, ageNode);
+        parms.set(3, ageSdlNode);
         PGresult* result = PQexecParams(s_postgres,
                 "INSERT INTO game.\"Servers\""
-                "    (\"AgeUuid\", \"AgeFilename\", \"AgeIdx\")"
-                "    VALUES ($1, $2, $3)",
-                3, 0, parms.m_values, 0, 0, 0);
+                "    (\"AgeUuid\", \"AgeFilename\", \"AgeIdx\", \"SdlIdx\")"
+                "    VALUES ($1, $2, $3, $4)",
+                4, 0, parms.m_values, 0, 0, 0);
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
             fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
                     __FILE__, __LINE__, PQerrorMessage(s_postgres));

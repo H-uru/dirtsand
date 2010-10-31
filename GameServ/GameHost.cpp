@@ -157,7 +157,28 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
     check_postgres(host);
 
+    MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
+    state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                        | MOUL::NetMessage::e_NeedsReliableSend;
+    state->m_timestamp.setNow();
+    state->m_isInitial = true;
+    state->m_persistOnServer = true;
+    state->m_isAvatar = false;
+
     uint32_t states = 0;
+    if (host->m_ageSdl.size()) {
+        Game_AgeInfo info = s_ages[host->m_ageFilename];
+        state->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
+        state->m_object.m_name = "AgeSDLHook";
+        state->m_object.m_type = 1;  // SceneObject
+        state->m_object.m_id = 1;
+        state->m_sdlBlob = host->m_ageSdl;
+        DM_WRITEMSG(host, state);
+        DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                            host->m_buffer.buffer(), host->m_buffer.size());
+        ++states;
+    }
+
     PostgresStrings<1> parms;
     parms.set(0, host->m_serverIdx);
     PGresult* result = PQexecParams(host->m_postgres,
@@ -168,21 +189,11 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
     } else {
-        MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
-        state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                            | MOUL::NetMessage::e_NeedsReliableSend;
-        state->m_timestamp.setNow();
-        state->m_isInitial = true;
-        state->m_persistOnServer = true;
-        state->m_isAvatar = false;
-
         int count = PQntuples(result);
-        bool haveAgeSDL = false;
+
         for (int i=0; i<count; ++i) {
             DS::BlobStream bsObject(DS::Base64Decode(PQgetvalue(result, i, 0)));
             state->m_object.read(&bsObject);
-            if (state->m_object.m_name == "AgeSDLHook")
-                haveAgeSDL = true;
 
             state->m_sdlBlob = DS::Base64Decode(PQgetvalue(result, i, 1));
             DM_WRITEMSG(host, state);
@@ -190,21 +201,9 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
                                 host->m_buffer.buffer(), host->m_buffer.size());
             ++states;
         }
-        if (!haveAgeSDL) {
-            Game_AgeInfo info = s_ages[host->m_ageFilename];
-            state->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
-            state->m_object.m_name = "AgeSDLHook";
-            state->m_object.m_type = 1;  // SceneObject
-            state->m_object.m_id = 1;
-            state->m_sdlBlob = gen_default_sdl(host->m_ageFilename);
-            DM_WRITEMSG(host, state);
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size());
-            ++states;
-        }
-        state->unref();
     }
     PQclear(result);
+    state->unref();
 
     // Final message indicating the whole state was sent
     MOUL::NetMsgInitialAgeStateSent* reply = MOUL::NetMsgInitialAgeStateSent::Create();
@@ -466,7 +465,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
     PostgresStrings<1> parms;
     parms.set(0, ageMcpId);
     PGresult* result = PQexecParams(postgres,
-            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\""
+            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\", \"SdlIdx\""
             "    FROM game.\"Servers\" WHERE idx=$1",
             1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -491,6 +490,22 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
         host->m_serverIdx = ageMcpId;
         host->m_postgres = postgres;
+
+        // Fetch the vault's SDL blob
+        Auth_NodeInfo sdlFind;
+        AuthClient_Private fakeClient;
+        sdlFind.m_client = &fakeClient;
+        sdlFind.m_node.set_NodeIdx(strtoul(PQgetvalue(result, 0, 3), 0, 10));
+        s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&sdlFind));
+        DS::FifoMessage reply = fakeClient.m_channel.getMessage();
+        if (reply.m_messageType != DS::e_NetSuccess) {
+            fprintf(stderr, "[Game] Error fetching Age SDL\n");
+            PQclear(result);
+            PQfinish(postgres);
+            delete host;
+            return 0;
+        }
+        host->m_ageSdl = sdlFind.m_node.m_Blob_1;
 
         pthread_mutex_lock(&s_gameHostMutex);
         s_gameHosts[ageMcpId] = host;

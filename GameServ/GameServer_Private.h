@@ -54,7 +54,9 @@ struct GameHost_Private
     pthread_mutex_t m_clientMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
+
     PGconn* m_postgres;
+    DS::Blob m_ageSdl;
 };
 
 typedef std::tr1::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
