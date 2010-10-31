@@ -157,6 +157,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
     check_postgres(host);
 
+    uint32_t states = 0;
     PostgresStrings<1> parms;
     parms.set(0, host->m_serverIdx);
     PGresult* result = PQexecParams(host->m_postgres,
@@ -187,6 +188,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
             DM_WRITEMSG(host, state);
             DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                                 host->m_buffer.buffer(), host->m_buffer.size());
+            ++states;
         }
         if (!haveAgeSDL) {
             Game_AgeInfo info = s_ages[host->m_ageFilename];
@@ -198,6 +200,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
             DM_WRITEMSG(host, state);
             DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                                 host->m_buffer.buffer(), host->m_buffer.size());
+            ++states;
         }
         state->unref();
     }
@@ -209,7 +212,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
                           | MOUL::NetMessage::e_IsSystemMessage
                           | MOUL::NetMessage::e_NeedsReliableSend;
     reply->m_timestamp.setNow();
-    reply->m_numStates = 0;
+    reply->m_numStates = states;
 
     DM_WRITEMSG(host, reply);
     DS::CryptSendBuffer(client->m_sock, client->m_crypt,
