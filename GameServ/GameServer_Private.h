@@ -56,6 +56,7 @@ struct GameHost_Private
     DS::BufferStream m_buffer;
 
     PGconn* m_postgres;
+    uint32_t m_sdlIdx;
     DS::Blob m_ageSdl;
 };
 

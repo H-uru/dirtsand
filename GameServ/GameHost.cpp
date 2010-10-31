@@ -131,6 +131,16 @@ void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType, uin
 
 void dm_game_cleanup(GameHost_Private* host)
 {
+    // Good time to write this back to the vault
+    Auth_NodeInfo sdlNode;
+    AuthClient_Private fakeClient;
+    sdlNode.m_client = &fakeClient;
+    sdlNode.m_node.set_NodeIdx(host->m_sdlIdx);
+    sdlNode.m_node.set_Blob_1(host->m_ageSdl);
+    s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
+    if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
+        fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
+
     //TODO: shutdown this host if no clients connect within a time limit
 }
 
@@ -220,9 +230,11 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 }
 
 void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
-                 MOUL::NetMsgSDLState* state)
+                 MOUL::NetMsgSDLState* state, bool bcast)
 {
-    if (state->m_persistOnServer) {
+    if (state->m_object.m_name == "AgeSDLHook") {
+        host->m_ageSdl = state->m_sdlBlob;
+    } else if (state->m_persistOnServer) {
         check_postgres(host);
 
         PostgresStrings<3> parms;
@@ -274,7 +286,19 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         }
     }
 
-    //TODO: Broadcast the SDL udpate to other clients
+    if (bcast) {
+        MOUL::NetMsgSDLState* bcastState = MOUL::NetMsgSDLState::Create();
+        bcastState->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                                   | MOUL::NetMessage::e_NeedsReliableSend;
+        bcastState->m_timestamp.setNow();
+        bcastState->m_isInitial = false;
+        bcastState->m_persistOnServer = state->m_persistOnServer;
+        bcastState->m_isAvatar = state->m_isAvatar;
+        bcastState->m_object = state->m_object;
+        bcastState->m_sdlBlob = state->m_sdlBlob;
+        dm_propagate(host, bcastState, client->m_clientInfo.m_PlayerId);
+        bcastState->unref();
+    }
 }
 
 void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
@@ -385,7 +409,10 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             dm_send_members(host, msg->m_client);
             break;
         case MOUL::ID_NetMsgSDLState:
-            dm_read_sdl(host, msg->m_client, netmsg->Cast<MOUL::NetMsgSDLState>());
+            dm_read_sdl(host, msg->m_client, netmsg->Cast<MOUL::NetMsgSDLState>(), false);
+            break;
+        case MOUL::ID_NetMsgSDLStateBCast:
+            dm_read_sdl(host, msg->m_client, netmsg->Cast<MOUL::NetMsgSDLState>(), true);
             break;
         case MOUL::ID_NetMsgLoadClone:
             pthread_mutex_lock(&host->m_clientMutex);
@@ -505,6 +532,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             delete host;
             return 0;
         }
+        host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
         host->m_ageSdl = sdlFind.m_node.m_Blob_1;
 
         pthread_mutex_lock(&s_gameHostMutex);

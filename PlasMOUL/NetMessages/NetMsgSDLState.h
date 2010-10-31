@@ -35,6 +35,14 @@ namespace MOUL
     protected:
         NetMsgSDLState(uint16_t type) : NetMsgObject(type) { }
     };
+
+    class NetMsgSDLStateBCast : public NetMsgSDLState
+    {
+        FACTORY_CREATABLE(NetMsgSDLStateBCast)
+
+    protected:
+        NetMsgSDLStateBCast(uint16_t type) : NetMsgSDLState(type) { }
+    };
 }
 
 #endif
