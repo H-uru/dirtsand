@@ -738,7 +738,7 @@ void* wk_authWorker(void* sockp)
 
 void DS::AuthServer_Init()
 {
-    s_authServerRunning = dm_auth_init();
+    s_authServerRunning = (s_postgres != 0) && dm_vault_init();
     if (s_authServerRunning) {
         pthread_mutex_init(&s_authClientMutex, 0);
         pthread_create(&s_authDaemonThread, 0, &dm_authDaemon, 0);

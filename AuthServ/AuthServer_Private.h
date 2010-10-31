@@ -17,8 +17,8 @@
 
 #include "AuthServer.h"
 #include "AuthClient.h"
+#include "db/pqaccess.h"
 #include "streams.h"
-#include <libpq-fe.h>
 #include <pthread.h>
 #include <vector>
 #include <list>
@@ -103,38 +103,7 @@ extern pthread_mutex_t s_authClientMutex;
 extern pthread_t s_authDaemonThread;
 
 void* dm_authDaemon(void*);
-bool dm_auth_init();
-
-/* Vault/Postgres stuff */
-template <size_t count>
-struct PostgresStrings
-{
-    const char* m_values[count];
-    DS::String m_strings[count];
-
-    void set(size_t idx, const DS::String& str)
-    {
-        m_strings[idx] = str;
-        this->m_values[idx] = str.c_str();
-    }
-
-    void set(size_t idx, uint32_t value)
-    {
-        m_strings[idx] = DS::String::Format("%u", value);
-        this->m_values[idx] = m_strings[idx].c_str();
-    }
-
-    void set(size_t idx, int value)
-    {
-        m_strings[idx] = DS::String::Format("%d", value);
-        this->m_values[idx] = m_strings[idx].c_str();
-    }
-};
-
-extern PGconn* s_postgres;
-DS::Uuid gen_uuid();
-
-bool init_vault();
+bool dm_vault_init();
 
 std::pair<uint32_t, uint32_t>
 v_create_age(const AuthServer_AgeInfo& age, bool publicAge);

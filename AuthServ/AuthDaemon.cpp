@@ -23,7 +23,6 @@
 
 pthread_t s_authDaemonThread;
 DS::MsgChannel s_authChannel;
-PGconn* s_postgres;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -33,23 +32,6 @@ static inline void check_postgres()
     if (PQstatus(s_postgres) == CONNECTION_BAD)
         PQreset(s_postgres);
     DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
-}
-
-bool dm_auth_init()
-{
-    s_postgres = PQconnectdb(DS::String::Format(
-                    "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
-                    DS::Settings::DbHostname(), DS::Settings::DbPort(),
-                    DS::Settings::DbUsername(), DS::Settings::DbPassword(),
-                    DS::Settings::DbDbaseName()).c_str());
-    if (PQstatus(s_postgres) != CONNECTION_OK) {
-        fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(s_postgres));
-        PQfinish(s_postgres);
-        return false;
-    }
-
-    init_vault();
-    return true;
 }
 
 void dm_auth_shutdown()
@@ -73,7 +55,6 @@ void dm_auth_shutdown()
         fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!\n");
 
     pthread_mutex_destroy(&s_authClientMutex);
-    PQfinish(s_postgres);
 }
 
 void dm_auth_login(Auth_LoginInfo* info)
@@ -339,35 +320,6 @@ void dm_auth_findAge(Auth_GameAge* msg)
     PQclear(result);
 }
 
-void dm_auth_fetchServer(Auth_GameAge* msg)
-{
-    PostgresStrings<1> parms;
-    parms.set(0, msg->m_mcpId);
-    PGresult* result = PQexecParams(s_postgres,
-            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\""
-            "    FROM game.\"Servers\" WHERE idx=$1",
-            1, 0, parms.m_values, 0, 0, 0);
-    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
-        PQclear(result);
-        SEND_REPLY(msg, DS::e_NetInternalError);
-        return;
-    }
-    if (PQntuples(result) == 0) {
-        fprintf(stderr, "[Auth] %s Requested server %u not found\n",
-                DS::SockIpAddress(msg->m_client->m_sock).c_str(), msg->m_mcpId);
-        SEND_REPLY(msg, DS::e_NetAgeNotFound);
-    } else {
-        DS_DASSERT(PQntuples(result) == 1);
-        msg->m_instanceId = PQgetvalue(result, 0, 0);
-        msg->m_name = PQgetvalue(result, 0, 1);
-        msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
-        SEND_REPLY(msg, DS::e_NetSuccess);
-    }
-    PQclear(result);
-}
-
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
 {
     uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
@@ -525,9 +477,6 @@ void* dm_authDaemon(void*)
                 break;
             case e_AuthFindGameServer:
                 dm_auth_findAge(reinterpret_cast<Auth_GameAge*>(msg.m_payload));
-                break;
-            case e_AuthFetchAgeServer:
-                dm_auth_fetchServer(reinterpret_cast<Auth_GameAge*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

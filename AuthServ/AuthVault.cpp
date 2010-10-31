@@ -187,7 +187,7 @@ static uint32_t find_public_age_1(const DS::String& filename)
     return ageNode;
 }
 
-bool init_vault()
+bool dm_vault_init()
 {
     PostgresStrings<1> sparm;
     sparm.set(0, DS::Vault::e_NodeSystem);

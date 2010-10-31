@@ -23,6 +23,7 @@
 #include "PlasMOUL/NetMessages/NetMsgSDLState.h"
 #include "PlasMOUL/NetMessages/NetMsgGroupOwner.h"
 #include "PlasMOUL/Messages/ServerReplyMsg.h"
+#include "db/pqaccess.h"
 #include "errors.h"
 
 hostmap_t s_gameHosts;
@@ -147,7 +148,6 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
     //TODO: Send saved SDL states
 
-#if 0
     Game_AgeInfo info = s_ages[host->m_ageFilename];
     MOUL::Uoid ageSdlHook;
     ageSdlHook.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
@@ -169,7 +169,6 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                         host->m_buffer.buffer(), host->m_buffer.size());
     state->unref();
-#endif
 
     // Final message indicating the whole state was sent
     MOUL::NetMsgInitialAgeStateSent* reply = MOUL::NetMsgInitialAgeStateSent::Create();
@@ -356,30 +355,39 @@ void* dm_gameHost(void* hostp)
 
 GameHost_Private* start_game_host(uint32_t ageMcpId)
 {
-    AuthClient_Private tempClient;
-    Auth_GameAge ageMsg;
-    ageMsg.m_client = &tempClient;
-    ageMsg.m_mcpId = ageMcpId;
-    s_authChannel.putMessage(e_AuthFetchAgeServer, reinterpret_cast<void*>(&ageMsg));
+    PostgresStrings<1> parms;
+    parms.set(0, ageMcpId);
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\""
+            "    FROM game.\"Servers\" WHERE idx=$1",
+            1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return 0;
+    }
+    if (PQntuples(result) == 0) {
+        fprintf(stderr, "[Game] Age MCP %u not found\n", ageMcpId);
+        PQclear(result);
+        return 0;
+    } else {
+        DS_DASSERT(PQntuples(result) == 1);
 
-    DS::FifoMessage ageReply = tempClient.m_channel.getMessage();
-    if (ageReply.m_messageType == DS::e_NetSuccess) {
         GameHost_Private* host = new GameHost_Private();
         pthread_mutex_init(&host->m_clientMutex, 0);
-        host->m_instanceId = ageMsg.m_instanceId;
-        host->m_ageFilename = ageMsg.m_name;
-        host->m_ageIdx = ageMsg.m_ageNodeIdx;
+        host->m_instanceId = PQgetvalue(result, 0, 0);
+        host->m_ageFilename = PQgetvalue(result, 0, 1);
+        host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
 
         pthread_mutex_lock(&s_gameHostMutex);
         s_gameHosts[ageMcpId] = host;
         pthread_mutex_unlock(&s_gameHostMutex);
+        PQclear(result);
 
         pthread_t threadh;
         pthread_create(&threadh, 0, &dm_gameHost, reinterpret_cast<void*>(host));
         pthread_detach(threadh);
         return host;
-    } else if (ageReply.m_messageType == DS::e_NetAgeNotFound) {
-        fprintf(stderr, "[Game] Age MCP %u not found\n", ageMcpId);
     }
-    return 0;
 }

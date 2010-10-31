@@ -22,6 +22,7 @@
 #include "AuthServ/AuthServer.h"
 #include "GameServ/GameServer.h"
 #include "SDL/DescriptorDb.h"
+#include "db/pqaccess.h"
 #include "strings.h"
 #include "errors.h"
 #include "settings.h"
@@ -34,6 +35,8 @@
 #ifdef DEBUG
 extern bool s_commdebug;
 #endif
+
+PGconn* s_postgres;
 
 char** dup_strlist(const char* text, const char** strlist, size_t count)
 {
@@ -82,6 +85,17 @@ int main(int argc, char* argv[])
         DS::Settings::UseDefaults();
     } else if (!DS::Settings::LoadFrom(argv[1])) {
         return 1;
+    }
+
+    s_postgres = PQconnectdb(DS::String::Format(
+                    "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
+                    DS::Settings::DbHostname(), DS::Settings::DbPort(),
+                    DS::Settings::DbUsername(), DS::Settings::DbPassword(),
+                    DS::Settings::DbDbaseName()).c_str());
+    if (PQstatus(s_postgres) != CONNECTION_OK) {
+        fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(s_postgres));
+        PQfinish(s_postgres);
+        s_postgres = 0;
     }
 
     // Ignore sigpipe and force send() to return EPIPE
@@ -245,5 +259,7 @@ int main(int argc, char* argv[])
     DS::GameServer_Shutdown();
     DS::AuthServer_Shutdown();
     DS::FileServer_Shutdown();
+    if (s_postgres)
+        PQfinish(s_postgres);
     return 0;
 }
