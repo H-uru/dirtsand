@@ -121,3 +121,4 @@ struct Auth_GameAge : public Auth_ClientMessage
     uint32_t m_serverAddress;
 };
 
+DS::Blob gen_default_sdl(const DS::String& filename);

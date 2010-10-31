@@ -36,6 +36,7 @@ namespace MOUL
 
         static Location Invalid;
         static Location Virtual;
+        static Location GlobalServer;
 
         Location(uint32_t sequence = 0xFFFFFFFF, uint16_t flags = 0)
             : m_sequence(sequence), m_flags(flags) { }

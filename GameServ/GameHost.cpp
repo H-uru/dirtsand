@@ -20,6 +20,7 @@
 #include "PlasMOUL/NetMessages/NetMsgLoadClone.h"
 #include "PlasMOUL/NetMessages/NetMsgGameState.h"
 #include "PlasMOUL/NetMessages/NetMsgSharedState.h"
+#include "PlasMOUL/NetMessages/NetMsgSDLState.h"
 #include "PlasMOUL/Messages/ServerReplyMsg.h"
 #include "errors.h"
 
@@ -132,6 +133,31 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
     //TODO: Send saved SDL states
 
+#if 0
+    Game_AgeInfo info = s_ages[host->m_ageFilename];
+    MOUL::Uoid ageSdlHook;
+    ageSdlHook.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
+    ageSdlHook.m_name = "AgeSDLHook";
+    ageSdlHook.m_type = 1;  // SceneObject
+    ageSdlHook.m_id = 1;
+
+    MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
+    state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                          | MOUL::NetMessage::e_NeedsReliableSend;
+    state->m_timestamp.setNow();
+    state->m_object = ageSdlHook;
+    state->m_sdlBlob = gen_default_sdl(host->m_ageFilename);
+    state->m_isInitial = true;
+    state->m_persistOnServer = true;
+    state->m_isAvatar = false;
+
+    DM_WRITEMSG(host, state);
+    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                        host->m_buffer.buffer(), host->m_buffer.size());
+    state->unref();
+#endif
+
+    // Final message indicating the whole state was sent
     MOUL::NetMsgInitialAgeStateSent* reply = MOUL::NetMsgInitialAgeStateSent::Create();
     reply->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                           | MOUL::NetMessage::e_IsSystemMessage

@@ -34,7 +34,7 @@ static inline void check_postgres()
     DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
 }
 
-static DS::Blob gen_default_sdl(const DS::String& filename)
+DS::Blob gen_default_sdl(const DS::String& filename)
 {
     SDL::StateDescriptor* desc = SDL::DescriptorDb::FindDescriptor(filename, -1);
     if (!desc) {
