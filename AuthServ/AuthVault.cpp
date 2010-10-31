@@ -454,6 +454,21 @@ v_create_age(const AuthServer_AgeInfo& age, bool publicAge)
     if (!v_ref_node(ageInfoNode, childAges, 0))
         return std::make_pair(0, 0);
 
+    // Stupid DS hack for stupid client hack
+    if (age.m_filename == "Personal") {
+        node.clear();
+        node.set_NodeType(DS::Vault::e_NodeAgeInfoList);
+        node.set_CreatorUuid(age.m_ageId);
+        node.set_CreatorIdx(ageNode);
+        node.set_Int32_1(DS::Vault::e_AgesIOwnFolder);
+        uint32_t ownedAges = v_create_node(node);
+        if (ownedAges == 0)
+            return std::make_pair(0, 0);
+
+        if (!v_ref_node(ageNode, ownedAges, 0))
+            return std::make_pair(0, 0);
+    }
+
     // Register with the server database
     {
         PostgresStrings<3> parms;
