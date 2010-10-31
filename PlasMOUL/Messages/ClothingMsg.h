@@ -15,33 +15,45 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-CREATABLE_TYPE(0x0218, NetMsgPagingRoom)
-CREATABLE_TYPE(0x0253, LoadCloneMsg)
-CREATABLE_TYPE(0x0264, NetMsgGroupOwner)
-CREATABLE_TYPE(0x0265, NetMsgGameStateRequest)
-CREATABLE_TYPE(0x026B, NetMsgGameMessage)
-CREATABLE_TYPE(0x026F, ServerReplyMsg)
-CREATABLE_TYPE(0x027D, NetMsgTestAndSet)
-CREATABLE_TYPE(0x02AD, NetMsgMembersListReq)
-CREATABLE_TYPE(0x02AE, NetMsgMembersList)
-CREATABLE_TYPE(0x02B1, NetMsgMemberUpdate)
-CREATABLE_TYPE(0x02B8, NetMsgInitialAgeStateSent)
-CREATABLE_TYPE(0x02CD, NetMsgSDLState)
-CREATABLE_TYPE(0x02ED, NotifyMsg)
-CREATABLE_TYPE(0x0300, LinkEffectsTriggerMsg)
-CREATABLE_TYPE(0x0329, NetMsgSDLStateBCast)
-//CREATABLE_TYPE(0x032E, NetMsgGameMessageDirected)
-CREATABLE_TYPE(0x0347, AvatarInputStateMsg)
-CREATABLE_TYPE(0x0357, ClothingMsg)
-CREATABLE_TYPE(0x0363, InputIfaceMgrMsg)
-CREATABLE_TYPE(0x036B, AvAnimTask)
-CREATABLE_TYPE(0x036C, AvSeekTask)
-CREATABLE_TYPE(0x036E, AvOneShotTask)
-CREATABLE_TYPE(0x0370, AvTaskBrain)
-//CREATABLE_TYPE(0x038F, AvBrainGenericMsg)
-CREATABLE_TYPE(0x0390, AvTaskSeek)
-//CREATABLE_TYPE(0x03AC, NetMsgRelevanceRegions)
-CREATABLE_TYPE(0x03B1, LoadAvatarMsg)
-CREATABLE_TYPE(0x03B3, NetMsgLoadClone)
-CREATABLE_TYPE(0x03B4, NetMsgPlayerPage)
-CREATABLE_TYPE(0x0488, AvOneShotLinkTask)
+#ifndef _MOUL_CLOTHINGMSG_H
+#define _MOUL_CLOTHINGMSG_H
+
+#include "Message.h"
+#include "Types/Color.h"
+
+namespace MOUL
+{
+    class ClothingMsg : public Message
+    {
+        FACTORY_CREATABLE(ClothingMsg)
+
+        enum Commands
+        {
+            e_AddItem            = (1<<0),
+            e_RemoveItem         = (1<<1),
+            e_UpdateTexture      = (1<<2),
+            e_TintItem           = (1<<3),
+            e_Retry              = (1<<4),
+            e_TintSkin           = (1<<5),
+            e_BlendSkin          = (1<<6),
+            e_MorphItem          = (1<<7),
+            e_SaveCustomizations = (1<<8),
+        };
+
+        uint32_t m_commands;
+        Key m_item;
+        DS::ColorRgba m_color;
+        uint8_t m_layer, m_delta;
+        float m_weight;
+
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
+    protected:
+        ClothingMsg(uint16_t type)
+            : Message(type), m_commands(0), m_layer(0), m_delta(0),
+              m_weight(0) { }
+    };
+}
+
+#endif

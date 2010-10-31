@@ -386,21 +386,8 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             dm_send_state(host, msg->m_client);
             break;
         case MOUL::ID_NetMsgGameMessage:
-            {
-                MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
-                switch (gameMsg->m_message->type())
-                {
-                case MOUL::ID_NotifyMsg:
-                case MOUL::ID_AvatarInputStateMsg:
-                case MOUL::ID_InputIfaceMgrMsg:
-                    dm_propagate(host, msg->m_message, msg->m_messageType,
-                                 msg->m_client->m_clientInfo.m_PlayerId);
-                    break;
-                default:
-                    fprintf(stderr, "[Game] Warning: Unhandled game message: %04X\n",
-                            gameMsg->m_message->type());
-                }
-            }
+            dm_propagate(host, msg->m_message, msg->m_messageType,
+                         msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgTestAndSet:
             dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());

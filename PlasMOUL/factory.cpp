@@ -23,6 +23,8 @@
 #include "Messages/ServerReplyMsg.h"
 #include "Messages/NotifyMsg.h"
 #include "Messages/InputIfaceMgrMsg.h"
+#include "Messages/ClothingMsg.h"
+#include "Messages/LinkEffectsTriggerMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"

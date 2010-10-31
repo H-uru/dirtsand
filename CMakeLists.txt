@@ -33,6 +33,8 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/ServerReplyMsg.cpp
     PlasMOUL/Messages/NotifyMsg.cpp
     PlasMOUL/Messages/InputIfaceMgrMsg.cpp
+    PlasMOUL/Messages/ClothingMsg.cpp
+    PlasMOUL/Messages/LinkEffectsTriggerMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
