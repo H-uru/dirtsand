@@ -23,6 +23,7 @@
 #include <ctime>
 
 static uint32_t s_systemNode = 0;
+extern PGconn* s_postgres;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -32,6 +33,22 @@ static inline void check_postgres()
     if (PQstatus(s_postgres) == CONNECTION_BAD)
         PQreset(s_postgres);
     DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
+}
+
+DS::Uuid gen_uuid()
+{
+    check_postgres();
+    PGresult* result = PQexec(s_postgres, "SELECT uuid_generate_v4()");
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return DS::Uuid();
+    }
+    DS_DASSERT(PQntuples(result) == 1);
+    DS::Uuid uuid(PQgetvalue(result, 0, 0));
+    PQclear(result);
+    return uuid;
 }
 
 DS::Blob gen_default_sdl(const DS::String& filename)
@@ -285,22 +302,6 @@ bool dm_vault_init()
     }
 
     return true;
-}
-
-DS::Uuid gen_uuid()
-{
-    check_postgres();
-    PGresult* result = PQexec(s_postgres, "SELECT uuid_generate_v4()");
-    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
-        PQclear(result);
-        return DS::Uuid();
-    }
-    DS_DASSERT(PQntuples(result) == 1);
-    DS::Uuid uuid(PQgetvalue(result, 0, 0));
-    PQclear(result);
-    return uuid;
 }
 
 std::pair<uint32_t, uint32_t>

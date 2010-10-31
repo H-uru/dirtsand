@@ -23,6 +23,7 @@
 
 pthread_t s_authDaemonThread;
 DS::MsgChannel s_authChannel;
+PGconn* s_postgres;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -55,6 +56,7 @@ void dm_auth_shutdown()
         fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!\n");
 
     pthread_mutex_destroy(&s_authClientMutex);
+    PQfinish(s_postgres);
 }
 
 void dm_auth_login(Auth_LoginInfo* info)
@@ -380,6 +382,23 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
 
 void* dm_authDaemon(void*)
 {
+    s_postgres = PQconnectdb(DS::String::Format(
+                    "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
+                    DS::Settings::DbHostname(), DS::Settings::DbPort(),
+                    DS::Settings::DbUsername(), DS::Settings::DbPassword(),
+                    DS::Settings::DbDbaseName()).c_str());
+    if (PQstatus(s_postgres) != CONNECTION_OK) {
+        fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(s_postgres));
+        PQfinish(s_postgres);
+        s_postgres = 0;
+        return 0;
+    }
+
+    if (!dm_vault_init()) {
+        fprintf(stderr, "[Auth] Vault failed to initialize\n");
+        return 0;
+    }
+
     for ( ;; ) {
         DS::FifoMessage msg = s_authChannel.getMessage();
         try {

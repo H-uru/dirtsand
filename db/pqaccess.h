@@ -15,57 +15,30 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_SETTINGS_H
-#define _DS_SETTINGS_H
+#include "Types/Uuid.h"
+#include <libpq-fe.h>
 
-#include "strings.h"
-
-#define CRYPT_BASE_AUTH (41)
-#define CRYPT_BASE_GAME (73)
-#define CRYPT_BASE_GATE (4)
-
-#define CLIENT_BUILD_ID   (893)
-#define CLIENT_BUILD_TYPE (50)
-#define CLIENT_BRANCH_ID  (1)
-#define CLIENT_PRODUCT_ID "ea489821-6c35-4bd0-9dae-bb17c585e680"
-
-#define CHUNK_SIZE (0x8000)
-
-namespace DS
+template <size_t count>
+struct PostgresStrings
 {
-    enum KeyType
+    const char* m_values[count];
+    DS::String m_strings[count];
+
+    void set(size_t idx, const DS::String& str)
     {
-        e_KeyGate_N, e_KeyGate_K, e_KeyAuth_N, e_KeyAuth_K, e_KeyGame_N,
-        e_KeyGame_K, e_KeyMaxTypes
-    };
-
-    namespace Settings
-    {
-        const uint8_t* CryptKey(KeyType key);
-        const uint32_t* DroidKey();
-
-        // Optimized for throwing onto the network
-        DS::StringBuffer<chr16_t> FileServerAddress();
-        DS::StringBuffer<chr16_t> AuthServerAddress();
-        const char* GameServerAddress();
-
-        const char* LobbyAddress();
-        const char* LobbyPort();
-
-        DS::String FileRoot();
-        DS::String AuthRoot();
-        const char* SdlPath();
-        const char* AgePath();
-
-        const char* DbHostname();
-        const char* DbPort();
-        const char* DbUsername();
-        const char* DbPassword();
-        const char* DbDbaseName();
-
-        bool LoadFrom(const char* filename);
-        void UseDefaults();
+        m_strings[idx] = str;
+        this->m_values[idx] = str.c_str();
     }
-}
 
-#endif
+    void set(size_t idx, uint32_t value)
+    {
+        m_strings[idx] = DS::String::Format("%u", value);
+        this->m_values[idx] = m_strings[idx].c_str();
+    }
+
+    void set(size_t idx, int value)
+    {
+        m_strings[idx] = DS::String::Format("%d", value);
+        this->m_values[idx] = m_strings[idx].c_str();
+    }
+};

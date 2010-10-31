@@ -23,8 +23,9 @@
 #include "PlasMOUL/NetMessages/NetMsgSDLState.h"
 #include "PlasMOUL/NetMessages/NetMsgGroupOwner.h"
 #include "PlasMOUL/Messages/ServerReplyMsg.h"
-#include "db/pqaccess.h"
+#include "settings.h"
 #include "errors.h"
+#include "encodings.h"
 
 hostmap_t s_gameHosts;
 pthread_mutex_t s_gameHostMutex;
@@ -41,6 +42,13 @@ agemap_t s_ages;
     MOUL::Factory::WriteCreatable(&host->m_buffer, msg); \
     host->m_buffer.seek(6, SEEK_SET); \
     host->m_buffer.write<uint32_t>(host->m_buffer.size() - 10)
+
+static inline void check_postgres(GameHost_Private* host)
+{
+    if (PQstatus(host->m_postgres) == CONNECTION_BAD)
+        PQreset(host->m_postgres);
+    DS_DASSERT(PQstatus(host->m_postgres) == CONNECTION_OK);
+}
 
 void dm_game_shutdown(GameHost_Private* host)
 {
@@ -73,6 +81,7 @@ void dm_game_shutdown(GameHost_Private* host)
     pthread_mutex_unlock(&s_gameHostMutex);
 
     pthread_mutex_destroy(&host->m_clientMutex);
+    PQfinish(host->m_postgres);
     delete host;
 }
 
@@ -146,29 +155,53 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
 
 void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
-    //TODO: Send saved SDL states
+    check_postgres(host);
 
-    Game_AgeInfo info = s_ages[host->m_ageFilename];
-    MOUL::Uoid ageSdlHook;
-    ageSdlHook.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
-    ageSdlHook.m_name = "AgeSDLHook";
-    ageSdlHook.m_type = 1;  // SceneObject
-    ageSdlHook.m_id = 1;
+    PostgresStrings<1> parms;
+    parms.set(0, host->m_serverIdx);
+    PGresult* result = PQexecParams(host->m_postgres,
+            "SELECT \"ObjectKey\", \"SdlBlob\""
+            "    FROM game.\"AgeStates\" WHERE \"ServerIdx\"=$1",
+            1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+    } else {
+        MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
+        state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                            | MOUL::NetMessage::e_NeedsReliableSend;
+        state->m_timestamp.setNow();
+        state->m_isInitial = true;
+        state->m_persistOnServer = true;
+        state->m_isAvatar = false;
 
-    MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
-    state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                          | MOUL::NetMessage::e_NeedsReliableSend;
-    state->m_timestamp.setNow();
-    state->m_object = ageSdlHook;
-    state->m_sdlBlob = gen_default_sdl(host->m_ageFilename);
-    state->m_isInitial = true;
-    state->m_persistOnServer = true;
-    state->m_isAvatar = false;
+        int count = PQntuples(result);
+        bool haveAgeSDL = false;
+        for (int i=0; i<count; ++i) {
+            DS::BlobStream bsObject(DS::Base64Decode(PQgetvalue(result, i, 0)));
+            state->m_object.read(&bsObject);
+            if (state->m_object.m_name == "AgeSDLHook")
+                haveAgeSDL = true;
 
-    DM_WRITEMSG(host, state);
-    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
-    state->unref();
+            state->m_sdlBlob = DS::Base64Decode(PQgetvalue(result, i, 1));
+            DM_WRITEMSG(host, state);
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+        }
+        if (!haveAgeSDL) {
+            Game_AgeInfo info = s_ages[host->m_ageFilename];
+            state->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
+            state->m_object.m_name = "AgeSDLHook";
+            state->m_object.m_type = 1;  // SceneObject
+            state->m_object.m_id = 1;
+            state->m_sdlBlob = gen_default_sdl(host->m_ageFilename);
+            DM_WRITEMSG(host, state);
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+        }
+        state->unref();
+    }
+    PQclear(result);
 
     // Final message indicating the whole state was sent
     MOUL::NetMsgInitialAgeStateSent* reply = MOUL::NetMsgInitialAgeStateSent::Create();
@@ -182,6 +215,64 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                         host->m_buffer.buffer(), host->m_buffer.size());
     reply->unref();
+}
+
+void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
+                 MOUL::NetMsgSDLState* state)
+{
+    if (state->m_persistOnServer) {
+        check_postgres(host);
+
+        PostgresStrings<3> parms;
+        host->m_buffer.truncate();
+        state->m_object.write(&host->m_buffer);
+        parms.set(0, host->m_serverIdx);
+        parms.set(1, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
+        parms.set(2, DS::Base64Encode(state->m_sdlBlob.buffer(), state->m_sdlBlob.size()));
+        PGresult* result = PQexecParams(host->m_postgres,
+            "SELECT idx FROM game.\"AgeStates\""
+            "    WHERE \"ServerIdx\"=$1 AND \"ObjectKey\"=$2",
+            2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            PQclear(result);
+            return;
+        }
+        if (PQntuples(result) == 0) {
+            PQclear(result);
+            result = PQexecParams(host->m_postgres,
+                "INSERT INTO game.\"AgeStates\""
+                "    (\"ServerIdx\", \"ObjectKey\", \"SdlBlob\")"
+                "    VALUES ($1, $2, $3)",
+                3, 0, parms.m_values, 0, 0, 0);
+            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                        __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+                PQclear(result);
+                return;
+            }
+            PQclear(result);
+        } else {
+            DS_DASSERT(PQntuples(result) == 1);
+            parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
+            PQclear(result);
+            result = PQexecParams(host->m_postgres,
+                "UPDATE game.\"AgeStates\""
+                "    SET \"ObjectKey\"=$2, \"SdlBlob\"=$3"
+                "    WHERE idx=$1",
+                3, 0, parms.m_values, 0, 0, 0);
+            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                        __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+                PQclear(result);
+                return;
+            }
+            PQclear(result);
+        }
+    }
+
+    //TODO: Broadcast the SDL udpate to other clients
 }
 
 void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
@@ -291,6 +382,9 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         case MOUL::ID_NetMsgMembersListReq:
             dm_send_members(host, msg->m_client);
             break;
+        case MOUL::ID_NetMsgSDLState:
+            dm_read_sdl(host, msg->m_client, netmsg->Cast<MOUL::NetMsgSDLState>());
+            break;
         case MOUL::ID_NetMsgLoadClone:
             pthread_mutex_lock(&host->m_clientMutex);
             msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
@@ -355,21 +449,34 @@ void* dm_gameHost(void* hostp)
 
 GameHost_Private* start_game_host(uint32_t ageMcpId)
 {
+    PGconn* postgres = PQconnectdb(DS::String::Format(
+                    "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
+                    DS::Settings::DbHostname(), DS::Settings::DbPort(),
+                    DS::Settings::DbUsername(), DS::Settings::DbPassword(),
+                    DS::Settings::DbDbaseName()).c_str());
+    if (PQstatus(postgres) != CONNECTION_OK) {
+        fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(postgres));
+        PQfinish(postgres);
+        return 0;
+    }
+
     PostgresStrings<1> parms;
     parms.set(0, ageMcpId);
-    PGresult* result = PQexecParams(s_postgres,
+    PGresult* result = PQexecParams(postgres,
             "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\""
             "    FROM game.\"Servers\" WHERE idx=$1",
             1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+                __FILE__, __LINE__, PQerrorMessage(postgres));
         PQclear(result);
+        PQfinish(postgres);
         return 0;
     }
     if (PQntuples(result) == 0) {
         fprintf(stderr, "[Game] Age MCP %u not found\n", ageMcpId);
         PQclear(result);
+        PQfinish(postgres);
         return 0;
     } else {
         DS_DASSERT(PQntuples(result) == 1);
@@ -379,6 +486,8 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         host->m_instanceId = PQgetvalue(result, 0, 0);
         host->m_ageFilename = PQgetvalue(result, 0, 1);
         host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+        host->m_serverIdx = ageMcpId;
+        host->m_postgres = postgres;
 
         pthread_mutex_lock(&s_gameHostMutex);
         s_gameHosts[ageMcpId] = host;

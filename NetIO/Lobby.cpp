@@ -73,13 +73,7 @@ void* dm_lobby(void*)
                 DS::FileServer_Add(client);
                 break;
             case e_ConnCliToAuth:
-                if (s_authServerRunning) {
-                    DS::AuthServer_Add(client);
-                } else {
-                    fprintf(stderr, "[%s] Unhandled auth server connection\n",
-                            DS::SockIpAddress(client).c_str());
-                    DS::FreeSock(client);
-                }
+                DS::AuthServer_Add(client);
                 break;
             case e_ConnCliToGame:
                 DS::GameServer_Add(client);

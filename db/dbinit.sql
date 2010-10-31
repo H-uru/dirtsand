@@ -184,6 +184,23 @@ CREATE SEQUENCE "AgeSeqNumber"
 ALTER TABLE game."AgeSeqNumber" OWNER TO dirtsand;
 SELECT pg_catalog.setval('"AgeSeqNumber"', 1, false);
 
+CREATE TABLE "AgeStates" (
+    idx integer NOT NULL,
+    "ServerIdx" integer NOT NULL,
+    "ObjectKey" bytea NOT NULL,
+    "SdlBlob" bytea NOT NULL
+);
+ALTER TABLE game."AgeStates" OWNER TO dirtsand;
+CREATE SEQUENCE "AgeStates_idx_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+ALTER TABLE game."AgeStates_idx_seq" OWNER TO dirtsand;
+ALTER SEQUENCE "AgeStates_idx_seq" OWNED BY "AgeStates".idx;
+SELECT pg_catalog.setval('"AgeStates_idx_seq"', 1, false);
+
 SET search_path = auth, pg_catalog;
 ALTER TABLE "Accounts" ALTER COLUMN idx SET DEFAULT nextval('"Accounts_idx_seq"'::regclass);
 ALTER TABLE "Players" ALTER COLUMN idx SET DEFAULT nextval('"Players_idx_seq"'::regclass);
@@ -208,11 +225,14 @@ ALTER TABLE ONLY "Nodes"
 SET search_path = game, pg_catalog;
 ALTER TABLE "Servers" ALTER COLUMN idx SET DEFAULT nextval('"Servers_idx_seq"'::regclass);
 ALTER TABLE "PublicAges" ALTER COLUMN idx SET DEFAULT nextval('"PublicAges_idx_seq"'::regclass);
+ALTER TABLE "AgeStates" ALTER COLUMN idx SET DEFAULT nextval('"AgeStates_idx_seq"'::regclass);
 
 ALTER TABLE ONLY "Servers"
     ADD CONSTRAINT "Servers_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "PublicAges"
     ADD CONSTRAINT "PublicAges_pkey" PRIMARY KEY (idx);
+ALTER TABLE ONLY "AgeStates"
+    ADD CONSTRAINT "AgeStates_pkey" PRIMARY KEY (idx);
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;

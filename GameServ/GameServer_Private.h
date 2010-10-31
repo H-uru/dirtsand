@@ -22,6 +22,7 @@
 #include "Types/Uuid.h"
 #include "PlasMOUL/factory.h"
 #include "PlasMOUL/NetMessages/NetMsgMembersList.h"
+#include "db/pqaccess.h"
 #include <list>
 
 enum GameServer_MsgIds
@@ -47,12 +48,13 @@ struct GameHost_Private
 {
     DS::Uuid m_instanceId;
     DS::String m_ageFilename;
-    uint32_t m_ageIdx;
+    uint32_t m_ageIdx, m_serverIdx;
 
     std::list<GameClient_Private*> m_clients;
     pthread_mutex_t m_clientMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
+    PGconn* m_postgres;
 };
 
 typedef std::tr1::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
