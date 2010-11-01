@@ -44,6 +44,19 @@ namespace MOUL
             m_message->unref();
         }
     };
+
+    class NetMsgGameMessageDirected : public NetMsgGameMessage
+    {
+        FACTORY_CREATABLE(NetMsgGameMessageDirected)
+
+        std::vector<uint32_t> m_receivers;
+
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
+    protected:
+        NetMsgGameMessageDirected(uint16_t type) : NetMsgGameMessage(type) { }
+    };
 }
 
 #endif

@@ -96,15 +96,17 @@ void cb_join(GameClient_Private& client)
     uint32_t mcpId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     client.m_host = find_game_host(mcpId);
     DS_PASSERT(client.m_host != 0);
-    pthread_mutex_lock(&client.m_host->m_clientMutex);
-    client.m_host->m_clients.push_back(&client);
-    pthread_mutex_unlock(&client.m_host->m_clientMutex);
 
     Game_ClientMessage msg;
     msg.m_client = &client;
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, client.m_clientId.m_bytes,
                         sizeof(client.m_clientId.m_bytes));
     client.m_clientInfo.set_PlayerId(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+    if (client.m_clientInfo.m_PlayerId == 0) {
+        client.m_buffer.write<uint32_t>(DS::e_NetInvalidParameter);
+        SEND_REPLY();
+        return;
+    }
 
     // Get player info from the vault
     Auth_NodeInfo nodeInfo;
@@ -126,6 +128,10 @@ void cb_join(GameClient_Private& client)
     client.m_buffer.write<uint32_t>(reply.m_messageType);
 
     SEND_REPLY();
+
+    pthread_mutex_lock(&client.m_host->m_clientMutex);
+    client.m_host->m_clients[client.m_clientInfo.m_PlayerId] = &client;
+    pthread_mutex_unlock(&client.m_host->m_clientMutex);
 }
 
 void cb_netmsg(GameClient_Private& client)
@@ -189,13 +195,7 @@ void* wk_gameWorker(void* sockp)
     }
 
     pthread_mutex_lock(&client.m_host->m_clientMutex);
-    std::list<GameClient_Private*>::iterator client_iter = client.m_host->m_clients.begin();
-    while (client_iter != client.m_host->m_clients.end()) {
-        if (*client_iter == &client)
-            client_iter = client.m_host->m_clients.erase(client_iter);
-        else
-            ++client_iter;
-    }
+    client.m_host->m_clients.erase(client.m_clientInfo.m_PlayerId);
     pthread_mutex_unlock(&client.m_host->m_clientMutex);
     client.m_host->m_channel.putMessage(e_GameCleanup);
 
@@ -321,10 +321,10 @@ void DS::GameServer_DisplayClients()
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
          host_iter != s_gameHosts.end(); ++host_iter) {
         printf("    {%s}\n", host_iter->second->m_instanceId.toString().c_str());
-        std::list<GameClient_Private*>::iterator client_iter;
+        std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
         for (client_iter = host_iter->second->m_clients.begin();
              client_iter != host_iter->second->m_clients.end(); ++ client_iter)
-            printf("      * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
+            printf("      * %s\n", DS::SockIpAddress(client_iter->second->m_sock).c_str());
     }
     pthread_mutex_unlock(&s_gameHostMutex);
 }

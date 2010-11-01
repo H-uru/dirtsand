@@ -23,6 +23,7 @@
 #include "PlasMOUL/factory.h"
 #include "PlasMOUL/NetMessages/NetMsgMembersList.h"
 #include "db/pqaccess.h"
+#include <tr1/unordered_map>
 #include <list>
 
 enum GameServer_MsgIds
@@ -50,7 +51,7 @@ struct GameHost_Private
     DS::String m_ageFilename;
     uint32_t m_ageIdx, m_serverIdx;
 
-    std::list<GameClient_Private*> m_clients;
+    std::tr1::unordered_map<uint32_t, GameClient_Private*> m_clients;
     pthread_mutex_t m_clientMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
