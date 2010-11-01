@@ -324,7 +324,9 @@ void DS::GameServer_DisplayClients()
         std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
         for (client_iter = host_iter->second->m_clients.begin();
              client_iter != host_iter->second->m_clients.end(); ++ client_iter)
-            printf("      * %s\n", DS::SockIpAddress(client_iter->second->m_sock).c_str());
+            printf("      * %s - %s (%u)\n", DS::SockIpAddress(client_iter->second->m_sock).c_str(),
+                   client_iter->second->m_clientInfo.m_PlayerName.c_str(),
+                   client_iter->second->m_clientInfo.m_PlayerId);
     }
     pthread_mutex_unlock(&s_gameHostMutex);
 }
