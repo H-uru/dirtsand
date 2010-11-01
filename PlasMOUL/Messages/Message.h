@@ -57,6 +57,8 @@ namespace MOUL
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
+        virtual bool makeSafeForNet() { return true; }
+
     protected:
         Message(uint16_t type)
             : Creatable(type), m_timestamp(0.0), m_bcastFlags(0) { }

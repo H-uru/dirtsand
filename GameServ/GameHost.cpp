@@ -85,7 +85,7 @@ void dm_game_shutdown(GameHost_Private* host)
     delete host;
 }
 
-void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg, uint32_t sender)
+void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender)
 {
     DM_WRITEMSG(host, msg);
 
@@ -105,38 +105,10 @@ void dm_propagate(GameHost_Private* host, MOUL::Creatable* msg, uint32_t sender)
     pthread_mutex_unlock(&host->m_clientMutex);
 }
 
-void dm_propagate(GameHost_Private* host, DS::Blob cooked, uint32_t msgType, uint32_t sender)
-{
-    host->m_buffer.truncate();
-    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer);
-    host->m_buffer.write<uint32_t>(msgType);
-    host->m_buffer.write<uint32_t>(cooked.size());
-    host->m_buffer.writeBytes(cooked.buffer(), cooked.size());
-
-    pthread_mutex_lock(&host->m_clientMutex);
-    std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
-    for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
-        if (client_iter->second->m_clientInfo.m_PlayerId == sender)
-            continue;
-        try {
-            DS::CryptSendBuffer(client_iter->second->m_sock, client_iter->second->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size());
-        } catch (DS::SockHup) {
-            // This is handled below too, but we don't want to skip the rest
-            // of the client list if one hung up
-        }
-    }
-    pthread_mutex_unlock(&host->m_clientMutex);
-}
-
-void dm_propagate_to(GameHost_Private* host, DS::Blob cooked, uint32_t msgType,
+void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
                      const std::vector<uint32_t>& receivers)
 {
-    host->m_buffer.truncate();
-    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer);
-    host->m_buffer.write<uint32_t>(msgType);
-    host->m_buffer.write<uint32_t>(cooked.size());
-    host->m_buffer.writeBytes(cooked.buffer(), cooked.size());
+    DM_WRITEMSG(host, msg);
 
     pthread_mutex_lock(&host->m_clientMutex);
     std::vector<uint32_t>::const_iterator rcvr_iter;
@@ -408,19 +380,22 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     try {
         switch (msg->m_messageType) {
         case MOUL::ID_NetMsgPagingRoom:
-            dm_propagate(host, msg->m_message, msg->m_messageType,
-                         msg->m_client->m_clientInfo.m_PlayerId);
+            dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgGameStateRequest:
             dm_send_state(host, msg->m_client);
             break;
         case MOUL::ID_NetMsgGameMessage:
-            dm_propagate(host, msg->m_message, msg->m_messageType,
-                         msg->m_client->m_clientInfo.m_PlayerId);
+            if (netmsg->Cast<MOUL::NetMsgGameMessage>()->m_message->makeSafeForNet())
+                dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgGameMessageDirected:
-            dm_propagate_to(host, msg->m_message, msg->m_messageType,
-                            netmsg->Cast<MOUL::NetMsgGameMessageDirected>()->m_receivers);
+            {
+                MOUL::NetMsgGameMessageDirected* directedMsg =
+                        netmsg->Cast<MOUL::NetMsgGameMessageDirected>();
+                if (directedMsg->m_message->makeSafeForNet())
+                    dm_propagate_to(host, netmsg, directedMsg->m_receivers);
+            }
             break;
         case MOUL::ID_NetMsgTestAndSet:
             dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());
@@ -441,8 +416,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             pthread_mutex_lock(&host->m_clientMutex);
             msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
             pthread_mutex_unlock(&host->m_clientMutex);
-            dm_propagate(host, msg->m_message, msg->m_messageType,
-                         msg->m_client->m_clientInfo.m_PlayerId);
+            dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgPlayerPage:
             //TODO: Whatever the client is expecting us to do

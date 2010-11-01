@@ -25,6 +25,7 @@
 #include "Messages/InputIfaceMgrMsg.h"
 #include "Messages/ClothingMsg.h"
 #include "Messages/LinkEffectsTriggerMsg.h"
+#include "Messages/KIMessage.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
