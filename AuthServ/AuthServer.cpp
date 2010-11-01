@@ -446,9 +446,9 @@ void cb_nodeFind(AuthServer_Private& client)
     SEND_REPLY();
 }
 
-void cb_ageRequest(AuthServer_Private& client)
+void cb_ageRequest(AuthServer_Private& client, bool ext)
 {
-    START_REPLY(e_AuthToCli_AgeReply);
+    START_REPLY(ext ? e_AuthToCli_AgeReplyEx : e_AuthToCli_AgeReply);
 
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
@@ -466,12 +466,22 @@ void cb_ageRequest(AuthServer_Private& client)
         client.m_buffer.write<uint32_t>(0);   // MCP ID
         client.m_buffer.writeBytes(DS::Uuid().m_bytes, sizeof(DS::Uuid::m_bytes));
         client.m_buffer.write<uint32_t>(0);   // Age Node Idx
-        client.m_buffer.write<uint32_t>(0);   // Game server address
+        // Game server address
+        if (ext)
+            client.m_buffer.write<uint16_t>(0);
+        else
+            client.m_buffer.write<uint32_t>(0);
     } else {
         client.m_buffer.write<uint32_t>(msg.m_mcpId);
         client.m_buffer.writeBytes(msg.m_instanceId.m_bytes, sizeof(DS::Uuid::m_bytes));
         client.m_buffer.write<uint32_t>(msg.m_ageNodeIdx);
-        client.m_buffer.write<uint32_t>(msg.m_serverAddress);
+        if (ext) {
+            DS::StringBuffer<chr16_t> wbuf = DS::Settings::GameServerAddress().toUtf16();
+            client.m_buffer.write<uint16_t>(wbuf.length());
+            client.m_buffer.writeBytes(wbuf.data(), wbuf.length());
+        } else {
+            client.m_buffer.write<uint32_t>(msg.m_serverAddress);
+        }
     }
 
     SEND_REPLY();
@@ -670,7 +680,10 @@ void* wk_authWorker(void* sockp)
                 cb_nodeFind(client);
                 break;
             case e_CliToAuth_AgeRequest:
-                cb_ageRequest(client);
+                cb_ageRequest(client, false);
+                break;
+            case e_CliToAuth_AgeRequestEx:
+                cb_ageRequest(client, true);
                 break;
             case e_CliToAuth_FileListRequest:
                 cb_fileList(client);

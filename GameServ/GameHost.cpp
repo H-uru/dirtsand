@@ -413,7 +413,8 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                          msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgPlayerPage:
-            // Do we care?
+            dm_propagate(host, msg->m_message, msg->m_messageType,
+                         msg->m_client->m_clientInfo.m_PlayerId);
             break;
         default:
             fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",

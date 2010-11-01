@@ -47,7 +47,7 @@ namespace DS
         // Optimized for throwing onto the network
         DS::StringBuffer<chr16_t> FileServerAddress();
         DS::StringBuffer<chr16_t> AuthServerAddress();
-        const char* GameServerAddress();
+        DS::String GameServerAddress();
 
         const char* LobbyAddress();
         const char* LobbyPort();

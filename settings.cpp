@@ -193,9 +193,9 @@ DS::StringBuffer<chr16_t> DS::Settings::AuthServerAddress()
     return s_settings.m_authServ;
 }
 
-const char* DS::Settings::GameServerAddress()
+DS::String DS::Settings::GameServerAddress()
 {
-    return s_settings.m_gameServ.c_str();
+    return s_settings.m_gameServ;
 }
 
 const char* DS::Settings::LobbyAddress()

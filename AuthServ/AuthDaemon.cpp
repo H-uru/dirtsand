@@ -316,7 +316,7 @@ void dm_auth_findAge(Auth_GameAge* msg)
         DS_DASSERT(PQntuples(result) == 1);
         msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), 0, 10);
         msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
-        msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress());
+        msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress().c_str());
         SEND_REPLY(msg, DS::e_NetSuccess);
     }
     PQclear(result);
