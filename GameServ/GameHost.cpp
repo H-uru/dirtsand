@@ -185,7 +185,6 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
                         host->m_buffer.buffer(), host->m_buffer.size());
     groupMsg->unref();
 
-    //TODO: announce the new player
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
@@ -435,6 +434,9 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         case MOUL::ID_NetMsgSDLStateBCast:
             dm_read_sdl(host, msg->m_client, netmsg->Cast<MOUL::NetMsgSDLState>(), true);
             break;
+        case MOUL::ID_NetMsgRelevanceRegions:
+            //TODO: Filter messages by client's requested relevance regions
+            break;
         case MOUL::ID_NetMsgLoadClone:
             pthread_mutex_lock(&host->m_clientMutex);
             msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
@@ -443,8 +445,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                          msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgPlayerPage:
-            dm_propagate(host, msg->m_message, msg->m_messageType,
-                         msg->m_client->m_clientInfo.m_PlayerId);
+            //TODO: Whatever the client is expecting us to do
             break;
         default:
             fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",

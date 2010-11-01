@@ -25,6 +25,7 @@ include_directories("${CMAKE_SOURCE_DIR}"
 set(PlasMOUL_SOURCES
     PlasMOUL/Key.cpp
     PlasMOUL/Avatar/AvTask.cpp
+    PlasMOUL/Avatar/ArmatureBrain.cpp
     PlasMOUL/Messages/EventData.cpp
     PlasMOUL/Messages/Message.cpp
     PlasMOUL/Messages/LoadCloneMsg.cpp
@@ -46,6 +47,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/NetMessages/NetMsgSharedState.cpp
     PlasMOUL/NetMessages/NetMsgSDLState.cpp
     PlasMOUL/NetMessages/NetMsgGroupOwner.cpp
+    PlasMOUL/NetMessages/NetMsgRelevanceRegions.cpp
     PlasMOUL/factory.cpp
 )
 

@@ -34,3 +34,17 @@ void DS::BitVector::set(size_t idx, bool bit)
     else
         m_bits[idx / 32] &= ~(1 << (idx % 32));
 }
+
+void DS::BitVector::read(DS::Stream* stream)
+{
+    delete[] m_bits;
+    m_words = stream->read<uint32_t>();
+    m_bits = m_words ? new uint32_t[m_words] : 0;
+    stream->readBytes(m_bits, m_words * sizeof(uint32_t));
+}
+
+void DS::BitVector::write(DS::Stream* stream)
+{
+    stream->write<uint32_t>(m_words);
+    stream->writeBytes(m_bits, m_words * sizeof(uint32_t));
+}

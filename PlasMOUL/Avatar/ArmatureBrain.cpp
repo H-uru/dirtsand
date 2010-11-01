@@ -15,53 +15,39 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "NetMsgGameMessage.h"
-#include "factory.h"
+#include "ArmatureBrain.h"
+#include "Key.h"
 
-void MOUL::NetMsgGameMessage::read(DS::Stream* stream)
+void MOUL::ArmatureBrain::read(DS::Stream* stream)
 {
-    NetMessage::read(stream);
-
-    NetMsgStream msgStream;
-    msgStream.read(stream);
-    m_compression = msgStream.m_compression;
-    m_message->unref();
-    m_message = Factory::Read<Message>(&msgStream.m_stream);
-
-    if (stream->readBool())
-        m_deliveryTime.read(stream);
-}
-
-void MOUL::NetMsgGameMessage::write(DS::Stream* stream)
-{
-    NetMessage::write(stream);
-
-    NetMsgStream msgStream(m_compression);
-    Factory::WriteCreatable(&msgStream.m_stream, m_message);
-    msgStream.write(stream);
-
-    if (!m_deliveryTime.isNull()) {
-        stream->writeBool(true);
-        m_deliveryTime.write(stream);
-    } else {
-        stream->writeBool(false);
+    // Pointless waste of bytes
+    stream->read<uint32_t>();
+    if (stream->readBool()) {
+        Key justPretendThisIsntHere;
+        justPretendThisIsntHere.read(stream);
     }
+    stream->read<uint32_t>();
+    stream->read<float>();
+    stream->read<double>();
 }
 
-void MOUL::NetMsgGameMessageDirected::read(DS::Stream* stream)
+void MOUL::ArmatureBrain::write(DS::Stream* stream)
 {
-    NetMsgGameMessage::read(stream);
-
-    m_receivers.resize(stream->read<uint8_t>());
-    for (size_t i=0; i<m_receivers.size(); ++i)
-        m_receivers[i] = stream->read<uint32_t>();
+    stream->write<uint32_t>(0);
+    stream->writeBool(false);
+    stream->write<uint32_t>(0);
+    stream->write<float>(0);
+    stream->write<double>(0);
 }
 
-void MOUL::NetMsgGameMessageDirected::write(DS::Stream* stream)
+void MOUL::AvBrainHuman::read(DS::Stream* stream)
 {
-    NetMsgGameMessage::write(stream);
+    ArmatureBrain::read(stream);
+    m_isCustomAvatar = stream->readBool();
+}
 
-    stream->write<uint8_t>(m_receivers.size());
-    for (size_t i=0; i<m_receivers.size(); ++i)
-        stream->write<uint32_t>(m_receivers[i]);
+void MOUL::AvBrainHuman::write(DS::Stream* stream)
+{
+    ArmatureBrain::write(stream);
+    stream->writeBool(m_isCustomAvatar);
 }

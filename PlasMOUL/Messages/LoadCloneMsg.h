@@ -36,7 +36,7 @@ namespace MOUL
         Message* m_triggerMsg;
 
     protected:
-        LoadCloneMsg(uint16_t type) : Message(type) { }
+        LoadCloneMsg(uint16_t type) : Message(type), m_triggerMsg(0) { }
 
         virtual ~LoadCloneMsg()
         {

@@ -15,91 +15,75 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_AVTASK_H
-#define _MOUL_AVTASK_H
+#ifndef _MOUL_ARMATUREBRAIN_H
+#define _MOUL_ARMATUREBRAIN_H
 
-#include "ArmatureBrain.h"
+#include "creatable.h"
 
 namespace MOUL
 {
-    class AvTask : public Creatable
+    class ArmatureBrain : public Creatable
     {
+    public:
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
     protected:
-        AvTask(uint16_t type) : Creatable(type) { }
+        ArmatureBrain(uint16_t type) : Creatable(type) { }
     };
 
-    class AvAnimTask : public AvTask
+    class AvBrainHuman : public ArmatureBrain
     {
-        FACTORY_CREATABLE(AvAnimTask)
+        FACTORY_CREATABLE(AvBrainHuman)
+
+        bool m_isCustomAvatar;
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
-    public:
-        DS::String m_animName;
-        float m_initialBlend, m_targetBlend;
-        float m_fadeSpeed, m_setTime;
-        bool m_start, m_loop, m_attach;
-
     protected:
-        AvAnimTask(uint16_t type) : AvTask(type) { }
+        AvBrainHuman(uint16_t type)
+            : ArmatureBrain(type), m_isCustomAvatar(false) { }
     };
 
-    class AvOneShotTask : public AvTask
+    class AvBrainClimb : public ArmatureBrain
     {
-        FACTORY_CREATABLE(AvOneShotTask)
+        FACTORY_CREATABLE(AvBrainClimb)
 
     protected:
-        AvOneShotTask(uint16_t type) : AvTask(type) { }
+        AvBrainClimb(uint16_t type) : ArmatureBrain(type) { }
     };
 
-    class AvOneShotLinkTask : public AvOneShotTask
+    class AvBrainCritter : public ArmatureBrain
     {
-        FACTORY_CREATABLE(AvOneShotLinkTask)
-
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
-
-    public:
-        DS::String m_animName, m_markerName;
+        FACTORY_CREATABLE(AvBrainCritter)
 
     protected:
-        AvOneShotLinkTask(uint16_t type) : AvOneShotTask(type) { }
+        AvBrainCritter(uint16_t type) : ArmatureBrain(type) { }
     };
 
-    class AvSeekTask : public AvTask
+    class AvBrainDrive : public ArmatureBrain
     {
-        FACTORY_CREATABLE(AvSeekTask)
+        FACTORY_CREATABLE(AvBrainDrive)
 
     protected:
-        AvSeekTask(uint16_t type) : AvTask(type) { }
+        AvBrainDrive(uint16_t type) : ArmatureBrain(type) { }
     };
 
-    class AvTaskBrain : public AvTask
+    class AvBrainRideAnimatedPhysical : public ArmatureBrain
     {
-        FACTORY_CREATABLE(AvTaskBrain)
-
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
-
-    public:
-        ArmatureBrain* m_brain;
+        FACTORY_CREATABLE(AvBrainRideAnimatedPhysical)
 
     protected:
-        AvTaskBrain(uint16_t type) : AvTask(type), m_brain(0) { }
-
-        virtual ~AvTaskBrain()
-        {
-            m_brain->unref();
-        }
+        AvBrainRideAnimatedPhysical(uint16_t type) : ArmatureBrain(type) { }
     };
 
-    class AvTaskSeek : public AvTask
+    class AvBrainSwim : public ArmatureBrain
     {
-        FACTORY_CREATABLE(AvTaskSeek)
+        FACTORY_CREATABLE(AvBrainSwim)
 
     protected:
-        AvTaskSeek(uint16_t type) : AvTask(type) { }
+        AvBrainSwim(uint16_t type) : ArmatureBrain(type) { }
     };
 }
 

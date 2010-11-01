@@ -52,6 +52,9 @@ namespace DS
             return *this;
         }
 
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+
     private:
         uint32_t* m_bits;
         size_t m_words;

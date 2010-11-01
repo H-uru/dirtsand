@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "AvTask.h"
+#include "factory.h"
 
 void MOUL::AvAnimTask::read(DS::Stream* stream)
 {
@@ -56,11 +57,11 @@ void MOUL::AvOneShotLinkTask::write(DS::Stream* stream)
 #include "errors.h"
 void MOUL::AvTaskBrain::read(DS::Stream* stream)
 {
-    //TODO
-    DS_PASSERT(0);
+    m_brain->unref();
+    m_brain = Factory::Read<ArmatureBrain>(stream);
 }
 
 void MOUL::AvTaskBrain::write(DS::Stream* stream)
 {
-    DS_PASSERT(0);
+    Factory::WriteCreatable(stream, m_brain);
 }
