@@ -65,6 +65,8 @@ namespace MOUL
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
+
+        ClientGuid() : m_flags(0) { }
     };
 
     struct NetMsgMemberInfo
