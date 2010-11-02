@@ -127,8 +127,21 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
     pthread_mutex_unlock(&host->m_clientMutex);
 }
 
-void dm_game_cleanup(GameHost_Private* host)
+void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 {
+    MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
+    memberMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                              | MOUL::NetMessage::e_IsSystemMessage
+                              | MOUL::NetMessage::e_NeedsReliableSend;
+    memberMsg->m_timestamp.setNow();
+    memberMsg->m_member.m_client = msg->m_client->m_clientInfo;
+    memberMsg->m_member.m_avatarKey = msg->m_client->m_clientKey;
+    memberMsg->m_addMember = false;
+
+    dm_propagate(host, memberMsg, msg->m_client->m_clientInfo.m_PlayerId);
+    memberMsg->unref();
+    SEND_REPLY(msg, DS::e_NetSuccess);
+
     // Good time to write this back to the vault
     Auth_NodeInfo sdlNode;
     AuthClient_Private fakeClient;
@@ -156,6 +169,18 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
                         host->m_buffer.buffer(), host->m_buffer.size());
     groupMsg->unref();
+
+    MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
+    memberMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                              | MOUL::NetMessage::e_IsSystemMessage
+                              | MOUL::NetMessage::e_NeedsReliableSend;
+    memberMsg->m_timestamp.setNow();
+    memberMsg->m_member.m_client = msg->m_client->m_clientInfo;
+    memberMsg->m_member.m_avatarKey = msg->m_client->m_clientKey;
+    memberMsg->m_addMember = true;
+
+    dm_propagate(host, memberMsg, msg->m_client->m_clientInfo.m_PlayerId);
+    memberMsg->unref();
 
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
@@ -444,8 +469,8 @@ void* dm_gameHost(void* hostp)
             case e_GameShutdown:
                 dm_game_shutdown(host);
                 return 0;
-            case e_GameCleanup:
-                dm_game_cleanup(host);
+            case e_GameDisconnect:
+                dm_game_disconnect(host, reinterpret_cast<Game_ClientMessage*>(msg.m_payload));
                 break;
             case e_GameJoinAge:
                 dm_game_join(host, reinterpret_cast<Game_ClientMessage*>(msg.m_payload));

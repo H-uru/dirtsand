@@ -148,6 +148,24 @@ void cb_netmsg(GameClient_Private& client)
     client.m_channel.getMessage();
 }
 
+void cb_gameMgrMsg(GameClient_Private& client)
+{
+    uint32_t size = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint8_t* buffer = new uint8_t[size];
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
+
+    printf("GAME MGR MSG");
+    for (size_t i=0; i<size; ++i) {
+        if ((i % 16) == 0)
+            printf("\n    ");
+        else if ((i % 16) == 8)
+            printf("   ");
+        printf("%02X ", buffer[i]);
+    }
+    printf("\n");
+    delete[] buffer;
+}
+
 void* wk_gameWorker(void* sockp)
 {
     GameClient_Private client;
@@ -179,6 +197,10 @@ void* wk_gameWorker(void* sockp)
                 DS_PASSERT(client.m_host != 0);
                 cb_netmsg(client);
                 break;
+            case e_CliToGame_GameMgrMsg:
+                DS_PASSERT(client.m_host != 0);
+                cb_gameMgrMsg(client);
+                break;
             default:
                 /* Invalid message */
                 fprintf(stderr, "[Game] Got invalid message ID %d from %s\n",
@@ -197,7 +219,10 @@ void* wk_gameWorker(void* sockp)
     pthread_mutex_lock(&client.m_host->m_clientMutex);
     client.m_host->m_clients.erase(client.m_clientInfo.m_PlayerId);
     pthread_mutex_unlock(&client.m_host->m_clientMutex);
-    client.m_host->m_channel.putMessage(e_GameCleanup);
+    Game_ClientMessage msg;
+    msg.m_client = &client;
+    client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
+    client.m_channel.getMessage();
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
