@@ -20,17 +20,34 @@
 void MOUL::KIMessage::read(DS::Stream* stream)
 {
     Message::read(stream);
+
+    m_command = stream->read<uint8_t>();
+    m_user = stream->readSafeString();
+    m_playerId = stream->read<uint32_t>();
+    m_string = stream->readSafeString(DS::e_StringUTF16);
+    m_flags = stream->read<uint32_t>();
+    m_delay = stream->read<float>();
+    m_value = stream->read<int32_t>();
 }
 
 void MOUL::KIMessage::write(DS::Stream* stream)
 {
     Message::write(stream);
+
+    stream->write<uint8_t>(m_command);
+    stream->writeSafeString(m_user);
+    stream->write<uint32_t>(m_playerId);
+    stream->writeSafeString(m_string, DS::e_StringUTF16);
+    stream->write<uint32_t>(m_flags);
+    stream->write<float>(m_delay);
+    stream->write<int32_t>(m_value);
 }
 
 bool MOUL::KIMessage::makeSafeForNet()
 {
     if (m_command != e_ChatMessage) {
         // Client is being naughty
+        fprintf(stderr, "Ignoring KI message %d\n", m_command);
         return false;
     }
     m_flags &= ~e_AdminMsg;
