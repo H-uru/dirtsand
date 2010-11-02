@@ -277,7 +277,7 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
 
 void dm_auth_createAge(Auth_AgeCreate* msg)
 {
-    std::pair<uint32_t, uint32_t> ageNodes = v_create_age(msg->m_age, false);
+    std::pair<uint32_t, uint32_t> ageNodes = v_create_age(msg->m_age, 0);
     if (ageNodes.first == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 

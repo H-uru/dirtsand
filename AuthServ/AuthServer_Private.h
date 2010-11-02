@@ -107,8 +107,14 @@ extern pthread_t s_authDaemonThread;
 void* dm_authDaemon(void*);
 bool dm_vault_init();
 
+enum AgeFlags
+{
+    e_AgePublic  = (1<<0),
+    e_AgeIsRelto = (1<<1),
+};
+
 std::pair<uint32_t, uint32_t>
-v_create_age(const AuthServer_AgeInfo& age, bool publicAge);
+v_create_age(const AuthServer_AgeInfo& age, uint32_t flags);
 
 std::pair<uint32_t, uint32_t>
 v_create_player(DS::Uuid accountId, const AuthServer_PlayerInfo& player);
