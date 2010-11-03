@@ -108,6 +108,7 @@ static uint32_t find_a_friendly_neighborhood_for_our_new_visitor(uint32_t player
         age.m_filename = "Neighborhood";
         age.m_instName = "Neighborhood";
         age.m_userName = "DS";
+        age.m_description = "DS Neighborhood";
         age.m_seqNumber = -1;   // Auto-generate
         ageNode = v_create_age(age, e_AgePublic);
         if (ageNode.second == 0)
@@ -471,10 +472,14 @@ v_create_age(const AuthServer_AgeInfo& age, uint32_t flags)
 
     // Register with the server database
     {
+        DS::String agedesc = !age.m_description.isEmpty() ? age.m_description
+                           : !age.m_instName.isEmpty() ? age.m_instName
+                           : age.m_filename;
+
         PostgresStrings<5> parms;
         parms.set(0, age.m_ageId.toString());
         parms.set(1, age.m_filename);
-        parms.set(2, age.m_description.isEmpty() ? age.m_instName : age.m_description);
+        parms.set(2, agedesc);
         parms.set(3, ageNode);
         parms.set(4, ageSdlNode);
         PGresult* result = PQexecParams(s_postgres,
