@@ -23,6 +23,7 @@
 #include "PlasMOUL/NetMessages/NetMsgSDLState.h"
 #include "PlasMOUL/NetMessages/NetMsgGroupOwner.h"
 #include "PlasMOUL/Messages/ServerReplyMsg.h"
+#include "PlasMOUL/Messages/LoadAvatarMsg.h"
 #include "settings.h"
 #include "errors.h"
 #include "encodings.h"
@@ -373,6 +374,42 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                         host->m_buffer.buffer(), host->m_buffer.size());
     members->unref();
+
+    // Load clones for players already in the age
+    MOUL::NetMsgLoadClone* cloneMsg = MOUL::NetMsgLoadClone::Create();
+    cloneMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                             | MOUL::NetMessage::e_NeedsReliableSend;
+    cloneMsg->m_timestamp.setNow();
+    cloneMsg->m_isPlayer = true;
+    cloneMsg->m_isLoading = true;
+    cloneMsg->m_isInitialState = true;
+
+    MOUL::LoadAvatarMsg* avatarMsg = MOUL::LoadAvatarMsg::Create();
+    avatarMsg->m_bcastFlags = MOUL::Message::e_NetPropagate
+                            | MOUL::Message::e_LocalPropagate;
+    avatarMsg->m_receivers.push_back(MOUL::Key::NetClientMgrKey);
+    avatarMsg->m_requestorKey = MOUL::Key::AvatarMgrKey;
+    avatarMsg->m_userData = 0;
+    avatarMsg->m_validMsg = true;
+    avatarMsg->m_isLoading = true;
+    avatarMsg->m_isPlayer = true;
+    cloneMsg->m_message = avatarMsg;
+
+    pthread_mutex_lock(&host->m_clientMutex);
+    for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+        if (client_iter->second->m_clientInfo.m_PlayerId != client->m_clientInfo.m_PlayerId
+            && !client->m_clientKey.isNull()) {
+            avatarMsg->m_cloneKey = client_iter->second->m_clientKey;
+            avatarMsg->m_originPlayerId = client_iter->second->m_clientInfo.m_PlayerId;
+
+            DM_WRITEMSG(host, cloneMsg);
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+
+        }
+    }
+    pthread_mutex_unlock(&host->m_clientMutex);
+    cloneMsg->unref();
 }
 
 void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)

@@ -31,12 +31,14 @@ namespace MOUL
 
     public:
         Key m_cloneKey, m_requestorKey;
-        uint8_t m_validMsg, m_isLoading;
+        bool m_validMsg, m_isLoading;
         uint32_t m_userData, m_originPlayerId;
         Message* m_triggerMsg;
 
     protected:
-        LoadCloneMsg(uint16_t type) : Message(type), m_triggerMsg(0) { }
+        LoadCloneMsg(uint16_t type)
+            : Message(type), m_validMsg(false), m_isLoading(false),
+              m_userData(0), m_originPlayerId(0), m_triggerMsg(0) { }
 
         virtual ~LoadCloneMsg()
         {

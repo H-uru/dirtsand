@@ -38,7 +38,7 @@ namespace MOUL
 
     protected:
         LoadAvatarMsg(uint16_t type)
-            : LoadCloneMsg(type), m_initTask(0) { }
+            : LoadCloneMsg(type), m_isPlayer(true), m_initTask(0) { }
 
         virtual ~LoadAvatarMsg()
         {

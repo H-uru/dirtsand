@@ -21,6 +21,9 @@ MOUL::Location MOUL::Location::Invalid      (0xFFFFFFFF, 0);
 MOUL::Location MOUL::Location::Virtual      (0,          0);
 MOUL::Location MOUL::Location::GlobalServer (0xFF000000, e_Reserved);
 
+MOUL::Key MOUL::Key::AvatarMgrKey   (Uoid(Location::Virtual, 0x00F4, "kAvatarMgr_KEY"));
+MOUL::Key MOUL::Key::NetClientMgrKey(Uoid(Location::Virtual, 0x0052, "kNetClientMgr_KEY"));
+
 MOUL::Location::Location(int prefix, int page, uint16_t flags)
     : m_flags(flags)
 {
