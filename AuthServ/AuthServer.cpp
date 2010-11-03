@@ -733,6 +733,11 @@ void* wk_authWorker(void* sockp)
         // Socket closed...
     }
 
+    Auth_ClientMessage disconMsg;
+    disconMsg.m_client = &client;
+    s_authChannel.putMessage(e_AuthDisconnect, reinterpret_cast<void*>(&disconMsg));
+    client.m_channel.getMessage();
+
     pthread_mutex_lock(&s_authClientMutex);
     std::list<AuthServer_Private*>::iterator client_iter = s_authClients.begin();
     while (client_iter != s_authClients.end()) {

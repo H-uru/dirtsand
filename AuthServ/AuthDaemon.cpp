@@ -164,6 +164,30 @@ void dm_auth_login(Auth_LoginInfo* info)
     SEND_REPLY(info, DS::e_NetSuccess);
 }
 
+void dm_auth_disconnect(Auth_ClientMessage* msg)
+{
+    AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
+    if (client->m_player.m_playerId) {
+        // Mark player as offline
+        check_postgres();
+        PostgresStrings<2> parms;
+        parms.set(0, DS::Vault::e_NodePlayerInfo);
+        parms.set(1, client->m_player.m_playerId);
+        PGresult* result = PQexecParams(s_postgres,
+                "UPDATE vault.\"Nodes\" SET"
+                "    \"Int32_1\"=0, \"String64_1\"='',"
+                "    \"Uuid_1\"='00000000-0000-0000-0000-000000000000'"
+                "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2",
+                2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            // This doesn't block continuing...
+        }
+        PQclear(result);
+    }
+}
+
 void dm_auth_setPlayer(Auth_ClientMessage* msg)
 {
     check_postgres();
@@ -206,6 +230,22 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
     client->m_player.m_playerName = PQgetvalue(result, 0, 0);
     client->m_player.m_avatarModel = PQgetvalue(result, 0, 1);
     client->m_player.m_explorer = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+    PQclear(result);
+
+    // Mark player as online
+    parms.set(0, DS::Vault::e_NodePlayerInfo);
+    parms.set(1, client->m_player.m_playerId);
+    result = PQexecParams(s_postgres,
+            "UPDATE vault.\"Nodes\" SET"
+            "    \"Int32_1\"=1, \"String64_1\"='Lobby',"
+            "    \"Uuid_1\"='00000000-0000-0000-0000-000000000000'"
+            "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2",
+            2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        // This doesn't block continuing...
+    }
     PQclear(result);
 
     printf("[Auth] {%s} signed in as %s (%u)\n",
@@ -294,10 +334,10 @@ void dm_auth_findAge(Auth_GameAge* msg)
            msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
 #endif
 
-    PostgresStrings<1> parms;
+    PostgresStrings<4> parms;
     parms.set(0, msg->m_instanceId.toString());
     PGresult* result = PQexecParams(s_postgres,
-            "SELECT idx, \"AgeIdx\" FROM game.\"Servers\""
+            "SELECT idx, \"AgeIdx\", \"DisplayName\" FROM game.\"Servers\""
             "    WHERE \"AgeUuid\"=$1",
             1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -307,19 +347,40 @@ void dm_auth_findAge(Auth_GameAge* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
+    DS::String ageDesc;
     if (PQntuples(result) == 0) {
         fprintf(stderr, "[Auth] %s Requested age {%s} %s not found\n",
                 DS::SockIpAddress(msg->m_client->m_sock).c_str(),
                 msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
         SEND_REPLY(msg, DS::e_NetAgeNotFound);
+        PQclear(result);
+        return;
     } else {
         DS_DASSERT(PQntuples(result) == 1);
         msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), 0, 10);
         msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
         msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress().c_str());
-        SEND_REPLY(msg, DS::e_NetSuccess);
+        ageDesc = PQgetvalue(result, 0, 2);
     }
     PQclear(result);
+
+    // Update the player info to show up in the age
+    parms.set(0, DS::Vault::e_NodePlayerInfo);
+    parms.set(1, reinterpret_cast<AuthServer_Private*>(msg->m_client)->m_player.m_playerId);
+    parms.set(2, ageDesc);
+    parms.set(3, msg->m_instanceId.toString());
+    result = PQexecParams(s_postgres,
+            "UPDATE vault.\"Nodes\" SET"
+            "    \"String64_1\"=$3, \"Uuid_1\"=$4"
+            "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2",
+            4, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        // This doesn't block continuing...
+    }
+    PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
@@ -496,6 +557,9 @@ void* dm_authDaemon(void*)
                 break;
             case e_AuthFindGameServer:
                 dm_auth_findAge(reinterpret_cast<Auth_GameAge*>(msg.m_payload));
+                break;
+            case e_AuthDisconnect:
+                dm_auth_disconnect(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

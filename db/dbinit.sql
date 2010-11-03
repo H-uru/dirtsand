@@ -140,6 +140,7 @@ CREATE TABLE "Servers" (
     idx integer NOT NULL,
     "AgeUuid" uuid NOT NULL,
     "AgeFilename" character varying(64) NOT NULL,
+    "DisplayName" character varying(1024) NOT NULL,
     "AgeIdx" integer NOT NULL,
     "SdlIdx" integer NOT NULL
 );
