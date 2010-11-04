@@ -186,6 +186,7 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
         }
         PQclear(result);
     }
+    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void dm_auth_setPlayer(Auth_ClientMessage* msg)
