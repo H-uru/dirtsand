@@ -228,6 +228,22 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
     }
 #endif
 
+    pthread_mutex_lock(&s_authClientMutex);
+    std::list<AuthServer_Private*>::iterator client_iter;
+    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        if (client != *client_iter && (*client_iter)->m_player.m_playerId == client->m_player.m_playerId) {
+            printf("[Auth] {%s} requested already-active player (%u)\n",
+                   client->m_acctUuid.toString().c_str(),
+                   client->m_player.m_playerId);
+            PQclear(result);
+            client->m_player.m_playerId = 0;
+            SEND_REPLY(msg, DS::e_NetLoggedInElsewhere);
+            pthread_mutex_unlock(&s_authClientMutex);
+            return;
+        }
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
+
     client->m_player.m_playerName = PQgetvalue(result, 0, 0);
     client->m_player.m_avatarModel = PQgetvalue(result, 0, 1);
     client->m_player.m_explorer = strtoul(PQgetvalue(result, 0, 2), 0, 10);
