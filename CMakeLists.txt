@@ -49,6 +49,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/NetMessages/NetMsgSDLState.cpp
     PlasMOUL/NetMessages/NetMsgGroupOwner.cpp
     PlasMOUL/NetMessages/NetMsgRelevanceRegions.cpp
+    PlasMOUL/NetMessages/NetMsgVoice.cpp
     PlasMOUL/factory.cpp
 )
 

@@ -22,6 +22,7 @@
 #include "PlasMOUL/NetMessages/NetMsgSharedState.h"
 #include "PlasMOUL/NetMessages/NetMsgSDLState.h"
 #include "PlasMOUL/NetMessages/NetMsgGroupOwner.h"
+#include "PlasMOUL/NetMessages/NetMsgVoice.h"
 #include "PlasMOUL/Messages/ServerReplyMsg.h"
 #include "PlasMOUL/Messages/LoadAvatarMsg.h"
 #include "settings.h"
@@ -459,6 +460,8 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                     dm_propagate_to(host, netmsg, directedMsg->m_receivers);
             }
             break;
+        case MOUL::ID_NetMsgVoice:
+            dm_propagate_to(host, netmsg, netmsg->Cast<MOUL::NetMsgVoice>()->m_receivers);
         case MOUL::ID_NetMsgTestAndSet:
             dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());
             break;

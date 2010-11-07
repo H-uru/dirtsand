@@ -34,6 +34,7 @@
 #include "NetMessages/NetMsgSDLState.h"
 #include "NetMessages/NetMsgGroupOwner.h"
 #include "NetMessages/NetMsgRelevanceRegions.h"
+#include "NetMessages/NetMsgVoice.h"
 
 MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
 {
