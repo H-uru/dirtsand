@@ -461,6 +461,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             break;
         case MOUL::ID_NetMsgVoice:
             dm_propagate_to(host, netmsg, netmsg->Cast<MOUL::NetMsgVoice>()->m_receivers);
+            break;
         case MOUL::ID_NetMsgTestAndSet:
             dm_test_and_set(host, msg->m_client, netmsg->Cast<MOUL::NetMsgTestAndSet>());
             break;
