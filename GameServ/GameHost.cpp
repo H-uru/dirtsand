@@ -432,8 +432,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     }
 #ifdef DEBUG
     if (!stream.atEof()) {
-        fprintf(stderr, "[Game] Warning: Incomplete parse of %04X\n",
-                netmsg->type());
+        fprintf(stderr, "[Game] Incomplete parse of %04X\n", netmsg->type());
         netmsg->unref();
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;

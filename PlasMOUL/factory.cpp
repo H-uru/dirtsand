@@ -26,6 +26,7 @@
 #include "Messages/ClothingMsg.h"
 #include "Messages/LinkEffectsTriggerMsg.h"
 #include "Messages/KIMessage.h"
+#include "Messages/AvSeekMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
