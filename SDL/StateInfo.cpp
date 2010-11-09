@@ -185,8 +185,6 @@ void SDL::Variable::_ref::clear()
 
 void SDL::Variable::_ref::read(DS::Stream* stream)
 {
-    m_flags |= e_XIsDirty;
-
     for (size_t i=0; i<m_size; ++i) {
         switch (m_desc->m_type) {
         case e_VarInt:
@@ -395,6 +393,7 @@ void SDL::Variable::read(DS::Stream* stream)
             m_data->read(stream);
         }
     }
+    m_data->m_flags |= e_XIsDirty;
 }
 
 void SDL::Variable::write(DS::Stream* stream)
@@ -799,23 +798,9 @@ void SDL::State::add(const SDL::State& state)
     if (!m_data)
         return;
 
-    fprintf(stderr, "[SDL] Adding state %s\n", state.m_data->m_desc->m_name.c_str());
     for (size_t i=0; i<m_data->m_vars.size(); ++i) {
-        if (state.m_data->m_vars[i].descriptor()->m_type == e_VarStateDesc) {
-            for (size_t j=0; j<state.m_data->m_vars[i].data()->m_size; ++j) {
-                if (state.m_data->m_vars[i].data()->m_child[j].isDirty()) {
-                    fprintf(stderr, "[SDL] * Adding complex var %s[%d]\n",
-                            state.m_data->m_desc->m_vars[i].m_name.c_str(), j);
-                    m_data->m_vars[i].data()->m_child[j].add(state.m_data->m_vars[i].data()->m_child[j]);
-                }
-            }
-        } else {
-            if (state.m_data->m_vars[i].data()->m_flags & Variable::e_XIsDirty) {
-                fprintf(stderr, "[SDL] * Adding simple var %s\n",
-                        state.m_data->m_desc->m_vars[i].m_name.c_str());
-                m_data->m_vars[i] = state.m_data->m_vars[i];
-            }
-        }
+        if (state.m_data->m_vars[i].data()->m_flags & Variable::e_XIsDirty)
+            m_data->m_vars[i] = state.m_data->m_vars[i];
     }
 }
 
@@ -845,16 +830,10 @@ bool SDL::State::isDirty() const
     if (!m_data)
         return false;
 
-    for (std::vector<Variable>::const_iterator it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it) {
-        if (it->descriptor()->m_type == e_VarStateDesc) {
-            for (size_t i=0; i<it->data()->m_size; ++i) {
-                if (it->data()->m_child[i].isDirty())
-                    return true;
-            }
-        } else {
-            if (it->data()->m_flags & Variable::e_XIsDirty)
-                return true;
-        }
+    for (std::vector<Variable>::const_iterator it = m_data->m_vars.begin();
+         it != m_data->m_vars.end(); ++it) {
+        if (it->data()->m_flags & Variable::e_XIsDirty)
+            return true;
     }
     return false;
 }
