@@ -113,6 +113,8 @@ void SDL::Variable::_ref::resize(size_t size)
         break;
     case e_VarStateDesc:
         m_child = new SDL::State[m_size];
+        for (size_t i=0; i<m_size; ++i)
+            m_child[i] = SDL::State(DescriptorDb::FindDescriptor(m_desc->m_typeName, -1));
         break;
     default:
         break;
@@ -377,6 +379,7 @@ void SDL::Variable::read(DS::Stream* stream)
         bool useIndices = (count != m_data->m_size);
         for (size_t i=0; i<count; ++i) {
             size_t idx = useIndices ? stupidLengthRead(stream, m_data->m_size) : i;
+            DS_PASSERT(idx < m_data->m_size);
             m_data->m_child[idx].read(stream);
         }
     } else {
@@ -694,18 +697,19 @@ bool SDL::Variable::isDefault() const
 }
 
 SDL::State::State(SDL::StateDescriptor* desc)
-    : m_desc(desc), m_flags(0)
+    : m_data(0)
 {
-    if (m_desc) {
-        m_vars.resize(desc->m_vars.size());
-        m_simpleVars.reserve(desc->m_vars.size());
-        m_sdVars.reserve(desc->m_vars.size());
+    if (desc) {
+        m_data = new _ref(desc);
+        m_data->m_vars.resize(desc->m_vars.size());
+        m_data->m_simpleVars.reserve(desc->m_vars.size());
+        m_data->m_sdVars.reserve(desc->m_vars.size());
         for (size_t i=0; i<desc->m_vars.size(); ++i) {
-            m_vars[i] = SDL::Variable(&m_desc->m_vars[i]);
+            m_data->m_vars[i] = SDL::Variable(&m_data->m_desc->m_vars[i]);
             if (desc->m_vars[i].m_type == e_VarStateDesc)
-                m_sdVars.push_back(&m_vars[i]);
+                m_data->m_sdVars.push_back(&m_data->m_vars[i]);
             else
-                m_simpleVars.push_back(&m_vars[i]);
+                m_data->m_simpleVars.push_back(&m_data->m_vars[i]);
         }
         setDefault();
     }
@@ -715,82 +719,121 @@ enum { e_HFlagVolatile = (1<<0) };
 
 void SDL::State::read(DS::Stream* stream)
 {
-    m_flags = stream->read<uint16_t>();
+    if (!m_data)
+        return;
+
+    m_data->m_flags = stream->read<uint16_t>();
     if (stream->read<uint8_t>() != SDL_IOVERSION)
         DS_PASSERT(0);
 
-    size_t count = stupidLengthRead(stream, m_desc->m_vars.size());
-    bool useIndices = (count != m_simpleVars.size());
+    size_t count = stupidLengthRead(stream, m_data->m_desc->m_vars.size());
+    bool useIndices = (count != m_data->m_simpleVars.size());
     for (size_t i=0; i<count; ++i) {
-        size_t idx = useIndices ? stupidLengthRead(stream, m_desc->m_vars.size()) : i;
-        m_simpleVars[idx]->read(stream);
+        size_t idx = useIndices ? stupidLengthRead(stream, m_data->m_desc->m_vars.size()) : i;
+        DS_PASSERT(idx < m_data->m_simpleVars.size());
+        m_data->m_simpleVars[idx]->read(stream);
     }
 
-    count = stupidLengthRead(stream, m_desc->m_vars.size());
-    useIndices = (count != m_sdVars.size());
+    count = stupidLengthRead(stream, m_data->m_desc->m_vars.size());
+    useIndices = (count != m_data->m_sdVars.size());
     for (size_t i=0; i<count; ++i) {
-        size_t idx = useIndices ? stupidLengthRead(stream, m_desc->m_vars.size()) : i;
-        m_sdVars[idx]->read(stream);
+        size_t idx = useIndices ? stupidLengthRead(stream, m_data->m_desc->m_vars.size()) : i;
+        DS_PASSERT(idx < m_data->m_sdVars.size());
+        m_data->m_sdVars[idx]->read(stream);
     }
 }
 
 void SDL::State::write(DS::Stream* stream)
 {
+    if (!m_data)
+        return;
+
     // Stream header (see ::Create)
     uint16_t hflags = 0x8000;
-    if (!m_object.isNull())
+    if (!m_data->m_object.isNull())
         hflags |= e_HFlagVolatile;
     stream->write<uint16_t>(hflags);
-    stream->writeSafeString(m_desc->m_name);
-    stream->write<int16_t>(m_desc->m_version);
+    stream->writeSafeString(m_data->m_desc->m_name);
+    stream->write<int16_t>(m_data->m_desc->m_version);
 
-    if (!m_object.isNull())
-        m_object.write(stream);
+    if (!m_data->m_object.isNull())
+        m_data->m_object.write(stream);
 
     // State data
-    stream->write<uint16_t>(m_flags);
+    stream->write<uint16_t>(m_data->m_flags);
     stream->write<uint8_t>(SDL_IOVERSION);
 
     size_t count = 0;
-    for (size_t i=0; i<m_simpleVars.size(); ++i) {
-        if (m_simpleVars[i]->data()->m_flags & Variable::e_XIsDirty)
+    for (size_t i=0; i<m_data->m_simpleVars.size(); ++i) {
+        if (m_data->m_simpleVars[i]->data()->m_flags & Variable::e_XIsDirty)
             ++count;
     }
-    stupidLengthWrite(stream, m_desc->m_vars.size(), count);
-    bool useIndices = (count != m_simpleVars.size());
-    for (size_t i=0; i<m_simpleVars.size(); ++i) {
-        if (m_simpleVars[i]->data()->m_flags & Variable::e_XIsDirty) {
+    stupidLengthWrite(stream, m_data->m_desc->m_vars.size(), count);
+    bool useIndices = (count != m_data->m_simpleVars.size());
+    for (size_t i=0; i<m_data->m_simpleVars.size(); ++i) {
+        if (m_data->m_simpleVars[i]->data()->m_flags & Variable::e_XIsDirty) {
             if (useIndices)
-                stupidLengthWrite(stream, m_desc->m_vars.size(), i);
-            m_simpleVars[i]->write(stream);
+                stupidLengthWrite(stream, m_data->m_desc->m_vars.size(), i);
+            m_data->m_simpleVars[i]->write(stream);
         }
     }
 
     count = 0;
-    for (size_t i=0; i<m_sdVars.size(); ++i) {
-        if (m_sdVars[i]->data()->m_flags & Variable::e_XIsDirty)
+    for (size_t i=0; i<m_data->m_sdVars.size(); ++i) {
+        if (m_data->m_sdVars[i]->data()->m_flags & Variable::e_XIsDirty)
             ++count;
     }
-    stupidLengthWrite(stream, m_desc->m_vars.size(), count);
-    useIndices = (count != m_sdVars.size());
+    stupidLengthWrite(stream, m_data->m_desc->m_vars.size(), count);
+    useIndices = (count != m_data->m_sdVars.size());
     for (size_t i=0; i<count; ++i) {
-        if (m_sdVars[i]->data()->m_flags & Variable::e_XIsDirty) {
+        if (m_data->m_sdVars[i]->data()->m_flags & Variable::e_XIsDirty) {
             if (useIndices)
-                stupidLengthWrite(stream, m_desc->m_vars.size(), i);
-            m_sdVars[i]->write(stream);
+                stupidLengthWrite(stream, m_data->m_desc->m_vars.size(), i);
+            m_data->m_sdVars[i]->write(stream);
+        }
+    }
+}
+
+void SDL::State::add(const SDL::State& state)
+{
+    if (!m_data)
+        return;
+
+    fprintf(stderr, "[SDL] Adding state %s\n", state.m_data->m_desc->m_name.c_str());
+    for (size_t i=0; i<m_data->m_vars.size(); ++i) {
+        if (state.m_data->m_vars[i].descriptor()->m_type == e_VarStateDesc) {
+            for (size_t j=0; j<state.m_data->m_vars[i].data()->m_size; ++j) {
+                if (state.m_data->m_vars[i].data()->m_child[j].isDirty()) {
+                    fprintf(stderr, "[SDL] * Adding complex var %s[%d]\n",
+                            state.m_data->m_desc->m_vars[i].m_name.c_str(), j);
+                    m_data->m_vars[i].data()->m_child[j].add(state.m_data->m_vars[i].data()->m_child[j]);
+                }
+            }
+        } else {
+            if (state.m_data->m_vars[i].data()->m_flags & Variable::e_XIsDirty) {
+                fprintf(stderr, "[SDL] * Adding simple var %s\n",
+                        state.m_data->m_desc->m_vars[i].m_name.c_str());
+                m_data->m_vars[i] = state.m_data->m_vars[i];
+            }
         }
     }
 }
 
 void SDL::State::setDefault()
 {
-    for (std::vector<Variable>::iterator it = m_vars.begin(); it != m_vars.end(); ++it)
+    if (!m_data)
+        return;
+
+    for (std::vector<Variable>::iterator it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it)
         it->setDefault();
 }
 
 bool SDL::State::isDefault() const
 {
-    for (std::vector<Variable>::const_iterator it = m_vars.begin(); it != m_vars.end(); ++it) {
+    if (!m_data)
+        return true;
+
+    for (std::vector<Variable>::const_iterator it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it) {
         if (!it->isDefault())
             return false;
     }
@@ -799,7 +842,10 @@ bool SDL::State::isDefault() const
 
 bool SDL::State::isDirty() const
 {
-    for (std::vector<Variable>::const_iterator it = m_vars.begin(); it != m_vars.end(); ++it) {
+    if (!m_data)
+        return false;
+
+    for (std::vector<Variable>::const_iterator it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it) {
         if (it->descriptor()->m_type == e_VarStateDesc) {
             for (size_t i=0; i<it->data()->m_size; ++i) {
                 if (it->data()->m_child[i].isDirty())
@@ -823,7 +869,7 @@ SDL::State SDL::State::Create(DS::Stream* stream)
     SDL::StateDescriptor* desc = SDL::DescriptorDb::FindDescriptor(name, version);
     State state(desc);
 
-    if (flags & e_HFlagVolatile)
-        state.m_object.read(stream);
+    if (state.m_data && (flags & e_HFlagVolatile) != 0)
+        state.m_data->m_object.read(stream);
     return state;
 }

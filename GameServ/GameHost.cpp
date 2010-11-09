@@ -149,7 +149,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     AuthClient_Private fakeClient;
     sdlNode.m_client = &fakeClient;
     sdlNode.m_node.set_NodeIdx(host->m_sdlIdx);
-    sdlNode.m_node.set_Blob_1(host->m_ageSdl);
+    sdlNode.m_node.set_Blob_1(host->m_vaultState.toBlob());
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
         fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
@@ -200,13 +200,14 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     state->m_isAvatar = false;
 
     uint32_t states = 0;
-    if (host->m_ageSdl.size()) {
+    DS::Blob ageSdlBlob = host->m_vaultState.toBlob();
+    if (ageSdlBlob.size()) {
         Game_AgeInfo info = s_ages[host->m_ageFilename];
         state->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
         state->m_object.m_name = "AgeSDLHook";
         state->m_object.m_type = 1;  // SceneObject
         state->m_object.m_id = 1;
-        state->m_sdlBlob = host->m_ageSdl;
+        state->m_sdlBlob = ageSdlBlob;
         DM_WRITEMSG(host, state);
         DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                             host->m_buffer.buffer(), host->m_buffer.size());
@@ -256,57 +257,66 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
                  MOUL::NetMsgSDLState* state, bool bcast)
 {
-    if (state->m_object.m_name == "AgeSDLHook") {
-        host->m_ageSdl = state->m_sdlBlob;
-    } else if (state->m_persistOnServer) {
-        check_postgres(host);
+    SDL::State update = SDL::State::FromBlob(state->m_sdlBlob);
 
-        PostgresStrings<3> parms;
-        host->m_buffer.truncate();
-        state->m_object.write(&host->m_buffer);
-        parms.set(0, host->m_serverIdx);
-        parms.set(1, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
-        parms.set(2, DS::Base64Encode(state->m_sdlBlob.buffer(), state->m_sdlBlob.size()));
-        PGresult* result = PQexecParams(host->m_postgres,
-            "SELECT idx FROM game.\"AgeStates\""
-            "    WHERE \"ServerIdx\"=$1 AND \"ObjectKey\"=$2",
-            2, 0, parms.m_values, 0, 0, 0);
-        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-            PQclear(result);
-            return;
-        }
-        if (PQntuples(result) == 0) {
-            PQclear(result);
-            result = PQexecParams(host->m_postgres,
-                "INSERT INTO game.\"AgeStates\""
-                "    (\"ServerIdx\", \"ObjectKey\", \"SdlBlob\")"
-                "    VALUES ($1, $2, $3)",
-                3, 0, parms.m_values, 0, 0, 0);
-            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-                fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+    if (state->m_object.m_name == "AgeSDLHook") {
+        host->m_vaultState.add(update);
+    } else {
+        if (host->m_states.find(state->m_object) == host->m_states.end())
+            host->m_states[state->m_object] = update;
+        else
+            host->m_states[state->m_object].add(update);
+
+        if (state->m_persistOnServer) {
+            check_postgres(host);
+
+            PostgresStrings<3> parms;
+            host->m_buffer.truncate();
+            state->m_object.write(&host->m_buffer);
+            parms.set(0, host->m_serverIdx);
+            parms.set(1, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
+            parms.set(2, DS::Base64Encode(state->m_sdlBlob.buffer(), state->m_sdlBlob.size()));
+            PGresult* result = PQexecParams(host->m_postgres,
+                "SELECT idx FROM game.\"AgeStates\""
+                "    WHERE \"ServerIdx\"=$1 AND \"ObjectKey\"=$2",
+                2, 0, parms.m_values, 0, 0, 0);
+            if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+                fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                         __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
                 PQclear(result);
                 return;
             }
-            PQclear(result);
-        } else {
-            DS_DASSERT(PQntuples(result) == 1);
-            parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
-            PQclear(result);
-            result = PQexecParams(host->m_postgres,
-                "UPDATE game.\"AgeStates\""
-                "    SET \"ObjectKey\"=$2, \"SdlBlob\"=$3"
-                "    WHERE idx=$1",
-                3, 0, parms.m_values, 0, 0, 0);
-            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-                fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                        __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            if (PQntuples(result) == 0) {
                 PQclear(result);
-                return;
+                result = PQexecParams(host->m_postgres,
+                    "INSERT INTO game.\"AgeStates\""
+                    "    (\"ServerIdx\", \"ObjectKey\", \"SdlBlob\")"
+                    "    VALUES ($1, $2, $3)",
+                    3, 0, parms.m_values, 0, 0, 0);
+                if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                    fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                            __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+                    PQclear(result);
+                    return;
+                }
+                PQclear(result);
+            } else {
+                DS_DASSERT(PQntuples(result) == 1);
+                parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
+                PQclear(result);
+                result = PQexecParams(host->m_postgres,
+                    "UPDATE game.\"AgeStates\""
+                    "    SET \"ObjectKey\"=$2, \"SdlBlob\"=$3"
+                    "    WHERE idx=$1",
+                    3, 0, parms.m_values, 0, 0, 0);
+                if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                    fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                            __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+                    PQclear(result);
+                    return;
+                }
+                PQclear(result);
             }
-            PQclear(result);
         }
     }
 
@@ -595,7 +605,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             return 0;
         }
         host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
-        host->m_ageSdl = sdlFind.m_node.m_Blob_1;
+        host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
 
         pthread_mutex_lock(&s_gameHostMutex);
         s_gameHosts[ageMcpId] = host;

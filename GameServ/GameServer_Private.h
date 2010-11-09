@@ -22,6 +22,7 @@
 #include "Types/Uuid.h"
 #include "PlasMOUL/factory.h"
 #include "PlasMOUL/NetMessages/NetMsgMembersList.h"
+#include "SDL/StateInfo.h"
 #include "db/pqaccess.h"
 #include <tr1/unordered_map>
 #include <list>
@@ -58,7 +59,8 @@ struct GameHost_Private
 
     PGconn* m_postgres;
     uint32_t m_sdlIdx;
-    DS::Blob m_ageSdl;
+    SDL::State m_vaultState;
+    std::tr1::unordered_map<MOUL::Uoid, SDL::State, MOUL::UoidHash> m_states;
 };
 
 typedef std::tr1::unordered_map<uint32_t, GameHost_Private*> hostmap_t;

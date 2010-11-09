@@ -45,22 +45,22 @@ namespace MOUL
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
 
-        bool operator==(const Location& other)
+        bool operator==(const Location& other) const
         { return m_sequence == other.m_sequence; }
 
-        bool operator!=(const Location& other)
+        bool operator!=(const Location& other) const
         { return m_sequence != other.m_sequence; }
 
-        bool operator<(const Location& other)
+        bool operator<(const Location& other) const
         { return m_sequence < other.m_sequence; }
 
-        bool operator>(const Location& other)
+        bool operator>(const Location& other) const
         { return m_sequence > other.m_sequence; }
 
-        bool operator<=(const Location& other)
+        bool operator<=(const Location& other) const
         { return m_sequence <= other.m_sequence; }
 
-        bool operator>=(const Location& other)
+        bool operator>=(const Location& other) const
         { return m_sequence >= other.m_sequence; }
 
         static Location Make(int32_t prefix, uint16_t page, uint16_t flags)
@@ -92,6 +92,15 @@ namespace MOUL
         void write(DS::Stream* stream);
 
         bool isNull() const { return m_type == 0x8000; }
+
+        bool operator==(const Uoid& other) const
+        {
+            return (m_location == other.m_location) && (m_type == other.m_type)
+                   && (m_name == other.m_name) && (m_id == other.m_id)
+                   && (m_cloneId == other.m_cloneId)
+                   && (m_clonePlayerId == other.m_clonePlayerId);
+        }
+        bool operator!=(const Uoid& other) const { return !operator==(other); }
 
     public:
         Location m_location;
@@ -172,6 +181,15 @@ namespace MOUL
             Uoid m_uoid;
             int m_refs;
         }* m_data;
+    };
+
+    struct UoidHash : public DS::StringHash
+    {
+        size_t operator()(const Uoid& value) const
+        {
+            return DS::StringHash::operator()(value.m_name)
+                   ^ (value.m_location.m_sequence + (value.m_type << 8));
+        }
     };
 }
 

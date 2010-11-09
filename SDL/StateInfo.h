@@ -150,22 +150,79 @@ namespace SDL
     class State
     {
     public:
-        StateDescriptor* m_desc;
-        std::vector<Variable> m_vars;
-        std::vector<Variable*> m_simpleVars, m_sdVars;
-        MOUL::Uoid m_object;
-        uint16_t m_flags;
-
         State(StateDescriptor* desc = 0);
+
+        State(const State& copy) : m_data(copy.m_data)
+        {
+            if (m_data)
+                m_data->ref();
+        }
+
+        ~State()
+        {
+            if (m_data)
+                m_data->unref();
+        }
+
+        State& operator=(const State& copy)
+        {
+            if (copy.m_data)
+                copy.m_data->ref();
+            if (m_data)
+                m_data->unref();
+            m_data = copy.m_data;
+            return *this;
+        }
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
+        void add(const State& state);
 
         void setDefault();
         bool isDefault() const;
         bool isDirty() const;
 
         static State Create(DS::Stream* stream);
+
+        DS::Blob toBlob()
+        {
+            DS::BufferStream buffer;
+            write(&buffer);
+            return DS::Blob(buffer.buffer(), buffer.size());
+        }
+
+        static State FromBlob(const DS::Blob& blob)
+        {
+            DS::BlobStream bs(blob);
+            State state = Create(&bs);
+            state.read(&bs);
+#ifdef DEBUG
+            if (!bs.atEof())
+                fprintf(stderr, "[SDL] Did not fully parse SDL blob! (@0x%x)\n", bs.tell());
+#endif
+            return state;
+        }
+
+    private:
+        struct _ref
+        {
+            int m_refs;
+            StateDescriptor* m_desc;
+            std::vector<Variable> m_vars;
+            std::vector<Variable*> m_simpleVars, m_sdVars;
+            MOUL::Uoid m_object;
+            uint16_t m_flags;
+
+            _ref(StateDescriptor* desc)
+                : m_refs(1), m_desc(desc), m_flags(0) { }
+
+            void ref() { ++m_refs; }
+            void unref()
+            {
+                if (--m_refs == 0)
+                    delete this;
+            }
+        }* m_data;
     };
 }
 
