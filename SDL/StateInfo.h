@@ -223,6 +223,10 @@ namespace SDL
                     delete this;
             }
         }* m_data;
+
+    public:
+        StateDescriptor* descriptor() const { return m_data ? m_data->m_desc : 0; }
+        _ref* data() const { return m_data; }
     };
 }
 

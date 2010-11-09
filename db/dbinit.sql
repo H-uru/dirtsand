@@ -189,6 +189,7 @@ SELECT pg_catalog.setval('"AgeSeqNumber"', 1, false);
 CREATE TABLE "AgeStates" (
     idx integer NOT NULL,
     "ServerIdx" integer NOT NULL,
+    "Descriptor" character varying(64) NOT NULL,
     "ObjectKey" bytea NOT NULL,
     "SdlBlob" bytea NOT NULL
 );

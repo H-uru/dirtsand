@@ -19,7 +19,7 @@
 
 void DS::BitVector::set(size_t idx, bool bit)
 {
-    if (m_words < (idx / 32)) {
+    if (m_words < (idx / 32) + 1) {
         size_t moreWords = (idx / 32) + 1;
         uint32_t* moreBits = new uint32_t[moreWords];
         memset(moreBits, 0, moreWords * sizeof(uint32_t));

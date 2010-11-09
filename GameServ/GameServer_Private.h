@@ -46,6 +46,9 @@ struct GameClient_Private : public AuthClient_Private
     MOUL::Uoid m_clientKey;
 };
 
+typedef std::tr1::unordered_map<DS::String, SDL::State, DS::StringHash> sdlnamemap_t;
+typedef std::tr1::unordered_map<MOUL::Uoid, sdlnamemap_t, MOUL::UoidHash> sdlstatemap_t;
+
 struct GameHost_Private
 {
     DS::Uuid m_instanceId;
@@ -60,7 +63,7 @@ struct GameHost_Private
     PGconn* m_postgres;
     uint32_t m_sdlIdx;
     SDL::State m_vaultState;
-    std::tr1::unordered_map<MOUL::Uoid, SDL::State, MOUL::UoidHash> m_states;
+    sdlstatemap_t m_states;
 };
 
 typedef std::tr1::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
