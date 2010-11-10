@@ -193,6 +193,9 @@ namespace SDL
 
         static State FromBlob(const DS::Blob& blob)
         {
+            if (!blob.size())
+                return State();
+
             DS::BlobStream bs(blob);
             State state = Create(&bs);
             state.read(&bs);

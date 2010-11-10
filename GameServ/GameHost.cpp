@@ -603,7 +603,12 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             return 0;
         }
         host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
-        host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
+        try {
+            host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
+        } catch (DS::EofException) {
+            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
+                    host->m_ageFilename.c_str());
+        }
 
         pthread_mutex_lock(&s_gameHostMutex);
         s_gameHosts[ageMcpId] = host;
@@ -625,10 +630,15 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
 
             for (int i=0; i<count; ++i) {
                 DS::BlobStream bsObject(DS::Base64Decode(PQgetvalue(result, i, 1)));
+                DS::Blob sdlblob = DS::Base64Decode(PQgetvalue(result, i, 2));
                 MOUL::Uoid key;
                 key.read(&bsObject);
-                host->m_states[key][PQgetvalue(result, i, 0)] =
-                    SDL::State::FromBlob(DS::Base64Decode(PQgetvalue(result, i, 2)));
+                try {
+                    host->m_states[key][PQgetvalue(result, i, 0)] = SDL::State::FromBlob(sdlblob);
+                } catch (DS::EofException) {
+                    fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s\n",
+                            PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str());
+                }
             }
         }
         PQclear(result);
