@@ -246,7 +246,16 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
                  MOUL::NetMsgSDLState* state, bool bcast)
 {
-    SDL::State update = SDL::State::FromBlob(state->m_sdlBlob);
+    if (state->m_sdlBlob.size() == 0)
+        return;
+
+    SDL::State update;
+    try {
+        update = SDL::State::FromBlob(state->m_sdlBlob);
+    } catch (DS::EofException) {
+        fprintf(stderr, "[SDL] Error parsing state\n");
+        return;
+    }
 
     if (state->m_object.m_name == "AgeSDLHook") {
         host->m_vaultState.add(update);

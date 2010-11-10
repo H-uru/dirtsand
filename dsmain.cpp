@@ -35,7 +35,7 @@
 extern bool s_commdebug;
 #endif
 
-char** dup_strlist(const char* text, const char** strlist, size_t count)
+static char** dup_strlist(const char* text, const char** strlist, size_t count)
 {
     char** dupe;
     if (count == 1) {
@@ -52,7 +52,7 @@ char** dup_strlist(const char* text, const char** strlist, size_t count)
     return dupe;
 }
 
-char** console_completer(const char* text, int start, int end)
+static char** console_completer(const char* text, int start, int end)
 {
     static const char* completions[] = {
         /* Commands */
@@ -75,6 +75,24 @@ char** console_completer(const char* text, int start, int end)
     return dup_strlist(text, matches.data(), matches.size());
 }
 
+#include <execinfo.h>
+void print_trace()
+{
+    const size_t max_depth = 100;
+    size_t stack_depth;
+    void* stack_addrs[max_depth];
+    char** stack_strings;
+
+    stack_depth = backtrace(stack_addrs, max_depth);
+    stack_strings = backtrace_symbols(stack_addrs, stack_depth);
+
+    fprintf(stderr, "Unhandled exception at %s\n", stack_strings[0]);
+    for (size_t i=1; i<stack_depth; ++i)
+        fprintf(stderr, "    from %s\n", stack_strings[i]);
+    free(stack_strings);
+    exit(-1);
+}
+
 int main(int argc, char* argv[])
 {
     if (argc == 1) {
@@ -83,6 +101,8 @@ int main(int argc, char* argv[])
     } else if (!DS::Settings::LoadFrom(argv[1])) {
         return 1;
     }
+
+    std::set_terminate(print_trace);
 
     // Ignore sigpipe and force send() to return EPIPE
     signal(SIGPIPE, SIG_IGN);
