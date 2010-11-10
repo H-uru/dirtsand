@@ -216,13 +216,15 @@ void* wk_gameWorker(void* sockp)
         // Socket closed...
     }
 
-    pthread_mutex_lock(&client.m_host->m_clientMutex);
-    client.m_host->m_clients.erase(client.m_clientInfo.m_PlayerId);
-    pthread_mutex_unlock(&client.m_host->m_clientMutex);
-    Game_ClientMessage msg;
-    msg.m_client = &client;
-    client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
-    client.m_channel.getMessage();
+    if (client.m_host) {
+        pthread_mutex_lock(&client.m_host->m_clientMutex);
+        client.m_host->m_clients.erase(client.m_clientInfo.m_PlayerId);
+        pthread_mutex_unlock(&client.m_host->m_clientMutex);
+        Game_ClientMessage msg;
+        msg.m_client = &client;
+        client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
+        client.m_channel.getMessage();
+    }
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
