@@ -90,17 +90,18 @@ static void print_trace(const char* text)
     for (size_t i=1; i<stack_depth; ++i)
         fprintf(stderr, "    from %s\n", stack_strings[i]);
     free(stack_strings);
-    exit(-1);
 }
 
 static void sigh_segv(int)
 {
     print_trace("Segfault");
+    abort();
 }
 
 static void exception_filter()
 {
     print_trace("Unhandled exception");
+    abort();
 }
 
 int main(int argc, char* argv[])
