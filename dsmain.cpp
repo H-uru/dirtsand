@@ -29,6 +29,7 @@
 #include <readline.h>
 #include <history.h>
 #include <signal.h>
+#include <execinfo.h>
 #include <cstdio>
 
 #ifdef DEBUG
@@ -75,8 +76,7 @@ static char** console_completer(const char* text, int start, int end)
     return dup_strlist(text, matches.data(), matches.size());
 }
 
-#include <execinfo.h>
-void print_trace()
+static void print_trace(const char* text)
 {
     const size_t max_depth = 100;
     size_t stack_depth;
@@ -86,11 +86,21 @@ void print_trace()
     stack_depth = backtrace(stack_addrs, max_depth);
     stack_strings = backtrace_symbols(stack_addrs, stack_depth);
 
-    fprintf(stderr, "Unhandled exception at %s\n", stack_strings[0]);
+    fprintf(stderr, "%s at %s\n", text, stack_strings[0]);
     for (size_t i=1; i<stack_depth; ++i)
         fprintf(stderr, "    from %s\n", stack_strings[i]);
     free(stack_strings);
     exit(-1);
+}
+
+static void sigh_segv(int)
+{
+    print_trace("Segfault");
+}
+
+static void exception_filter()
+{
+    print_trace("Unhandled exception");
 }
 
 int main(int argc, char* argv[])
@@ -102,7 +112,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::set_terminate(print_trace);
+    // Show a stackdump in case we crash
+    std::set_terminate(&exception_filter);
+    signal(SIGSEGV, &sigh_segv);
 
     // Ignore sigpipe and force send() to return EPIPE
     signal(SIGPIPE, SIG_IGN);
