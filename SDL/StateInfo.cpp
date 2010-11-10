@@ -441,6 +441,86 @@ void SDL::Variable::write(DS::Stream* stream)
     }
 }
 
+#ifdef DEBUG
+void SDL::Variable::debug()
+{
+    DS_DASSERT(m_data != 0);
+
+    for (size_t i=0; i<m_data->m_size; ++i) {
+        switch (m_data->m_desc->m_type) {
+        case e_VarInt:
+            fprintf(stderr, "%d", m_data->m_int[i]);
+            break;
+        case e_VarFloat:
+            fprintf(stderr, "%f", m_data->m_float[i]);
+            break;
+        case e_VarBool:
+            fprintf(stderr, m_data->m_bool[i] ? "true" : "false");
+            break;
+        case e_VarString:
+            fprintf(stderr, "\"%s\"", m_data->m_string[i].c_str());
+            break;
+        case e_VarKey:
+            fprintf(stderr, "{loc=%08X,flag=%04X,type=%04X,name=\"%s\"}",
+                    m_data->m_key[i].m_location.m_sequence,
+                    m_data->m_key[i].m_location.m_flags,
+                    m_data->m_key[i].m_type, m_data->m_key[i].m_name.c_str());
+            m_data->m_key[i] = MOUL::Uoid();
+            break;
+        case e_VarCreatable:
+            fprintf(stderr, "{type=%04X}", m_data->m_creatable[i]->type());
+            break;
+        case e_VarDouble:
+            fprintf(stderr, "%f", m_data->m_double[i]);
+            break;
+        case e_VarTime:
+            fprintf(stderr, "{%u,%u}", m_data->m_time[i].m_secs,
+                    m_data->m_time[i].m_micros);
+            break;
+        case e_VarByte:
+            fprintf(stderr, "%d", m_data->m_byte[i]);
+            break;
+        case e_VarShort:
+            fprintf(stderr, "%d", m_data->m_short[i]);
+            break;
+        case e_VarVector3:
+        case e_VarPoint3:
+            fprintf(stderr, "{%f,%f,%f}", m_data->m_vector[i].m_X,
+                    m_data->m_vector[i].m_Y, m_data->m_vector[i].m_Z);
+            break;
+        case e_VarQuaternion:
+            fprintf(stderr, "{%f,%f,%f,%f}", m_data->m_quat[i].m_X,
+                    m_data->m_quat[i].m_Y, m_data->m_quat[i].m_Z,
+                    m_data->m_quat[i].m_W);
+            break;
+        case e_VarRgb:
+        case e_VarRgba:
+            fprintf(stderr, "{%f,%f,%f,%f}", m_data->m_color[i].m_R,
+                    m_data->m_color[i].m_G, m_data->m_color[i].m_B,
+                    m_data->m_color[i].m_A);
+            break;
+        case e_VarRgb8:
+        case e_VarRgba8:
+            fprintf(stderr, "{%u,%u,%u,%u}", m_data->m_color8[i].m_R,
+                    m_data->m_color8[i].m_G, m_data->m_color8[i].m_B,
+                    m_data->m_color8[i].m_A);
+            break;
+        case e_VarStateDesc:
+            fprintf(stderr, "<STATEDESC>\n");
+            m_data->m_child[i].debug();
+            fprintf(stderr, "</STATEDESC>");
+            break;
+        default:
+            break;
+        }
+        if (i + 1 < m_data->m_size)
+            fprintf(stderr, ", ");
+        else
+            fprintf(stderr, "\n");
+    }
+}
+#endif
+
 void SDL::Variable::setDefault()
 {
     DS_DASSERT(m_data != 0);
@@ -792,6 +872,22 @@ void SDL::State::write(DS::Stream* stream)
         }
     }
 }
+
+#ifdef DEBUG
+void SDL::State::debug()
+{
+    if (!m_data)
+        return;
+
+    fprintf(stderr, "{%s}\n", m_data->m_desc->m_name.c_str());
+    for (size_t i=0; i<m_data->m_vars.size(); ++i) {
+        if (m_data->m_vars[i].data()->m_flags & Variable::e_XIsDirty) {
+            fprintf(stderr, "  * %s=", m_data->m_desc->m_vars[i].m_name.c_str());
+            m_data->m_vars[i].debug();
+        }
+    }
+}
+#endif
 
 void SDL::State::add(const SDL::State& state)
 {

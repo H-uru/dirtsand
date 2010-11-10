@@ -257,6 +257,12 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         return;
     }
 
+#if 0  // Enable for SDL debugging
+    fprintf(stderr, "[SDL] Bcasting SDL %s for [%04X]%s\n",
+            update.descriptor()->m_name.c_str(), state->m_object.m_type,
+            state->m_object.m_name.c_str());
+    update.debug();
+#endif
     if (state->m_object.m_name == "AgeSDLHook") {
         host->m_vaultState.add(update);
     } else if (state->m_persistOnServer) {

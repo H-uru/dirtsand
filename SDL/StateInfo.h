@@ -88,6 +88,10 @@ namespace SDL
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
 
+#ifdef DEBUG
+        void debug();
+#endif
+
         void setDefault();
         bool isDefault() const;
 
@@ -177,6 +181,10 @@ namespace SDL
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
         void add(const State& state);
+
+#ifdef DEBUG
+        void debug();
+#endif
 
         void setDefault();
         bool isDefault() const;
