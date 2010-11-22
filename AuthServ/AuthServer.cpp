@@ -464,7 +464,7 @@ void cb_ageRequest(AuthServer_Private& client, bool ext)
     client.m_buffer.write<uint32_t>(reply.m_messageType);
     if (reply.m_messageType != DS::e_NetSuccess) {
         client.m_buffer.write<uint32_t>(0);   // MCP ID
-        client.m_buffer.writeBytes(DS::Uuid().m_bytes, sizeof(DS::Uuid::m_bytes));
+        client.m_buffer.write<DS::Uuid>(DS::Uuid());
         client.m_buffer.write<uint32_t>(0);   // Age Node Idx
         // Game server address
         if (ext)
@@ -473,7 +473,7 @@ void cb_ageRequest(AuthServer_Private& client, bool ext)
             client.m_buffer.write<uint32_t>(0);
     } else {
         client.m_buffer.write<uint32_t>(msg.m_mcpId);
-        client.m_buffer.writeBytes(msg.m_instanceId.m_bytes, sizeof(DS::Uuid::m_bytes));
+        client.m_buffer.write<DS::Uuid>(msg.m_instanceId);
         client.m_buffer.write<uint32_t>(msg.m_ageNodeIdx);
         if (ext) {
             DS::StringBuffer<chr16_t> wbuf = DS::Settings::GameServerAddress().toUtf16();
