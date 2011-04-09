@@ -87,7 +87,7 @@ void cb_ping(FileServer_Private& client)
 
 void cb_buildId(FileServer_Private& client)
 {
-    START_REPLY(e_FileToCli_PingReply);
+    START_REPLY(e_FileToCli_BuildIdReply);
 
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
