@@ -95,8 +95,10 @@ void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
     pthread_mutex_lock(&host->m_clientMutex);
     std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
-        if (client_iter->second->m_clientInfo.m_PlayerId == sender)
+        if (client_iter->second->m_clientInfo.m_PlayerId == sender
+            && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
             continue;
+
         try {
             DS::CryptSendBuffer(client_iter->second->m_sock, client_iter->second->m_crypt,
                                 host->m_buffer.buffer(), host->m_buffer.size());
