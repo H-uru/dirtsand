@@ -48,7 +48,7 @@ void MOUL::NetMsgStream::read(DS::Stream* stream)
 
 void MOUL::NetMsgStream::write(DS::Stream* stream)
 {
-    stream->write<uint32_t>(m_compression == e_CompressZlib ? m_stream.size() : 0);
+    stream->write<uint32_t>(m_stream.size());
     stream->write<uint8_t>(m_compression);
 
     if (m_compression == e_CompressZlib) {
