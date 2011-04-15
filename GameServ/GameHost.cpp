@@ -464,13 +464,18 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             dm_send_state(host, msg->m_client);
             break;
         case MOUL::ID_NetMsgGameMessage:
-            if (netmsg->Cast<MOUL::NetMsgGameMessage>()->m_message->makeSafeForNet())
-                dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
+            {
+                MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
+                gameMsg->m_message->m_bcastFlags |= MOUL::Message::e_NetNonLocal;
+                if (gameMsg->m_message->makeSafeForNet())
+                    dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
+            }
             break;
         case MOUL::ID_NetMsgGameMessageDirected:
             {
                 MOUL::NetMsgGameMessageDirected* directedMsg =
                         netmsg->Cast<MOUL::NetMsgGameMessageDirected>();
+                directedMsg->m_message->m_bcastFlags |= MOUL::Message::e_NetNonLocal;
                 if (directedMsg->m_message->makeSafeForNet())
                     dm_propagate_to(host, netmsg, directedMsg->m_receivers);
             }
