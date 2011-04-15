@@ -23,6 +23,9 @@
 #include "Types/Uuid.h"
 #include <vector>
 
+#define NETMSG_PROTOCOL_MAJ  (12)
+#define NETMSG_PROTOCOL_MIN  ( 6)
+
 namespace MOUL
 {
     class NetMessage : public Creatable
@@ -63,8 +66,9 @@ namespace MOUL
 
     protected:
         NetMessage(uint16_t type)
-            : Creatable(type), m_contentFlags(0), m_protocolVerMaj(12),
-              m_protocolVerMin(6), m_context(0), m_transId(0), m_playerId(0) { }
+            : Creatable(type), m_contentFlags(0), m_protocolVerMaj(NETMSG_PROTOCOL_MAJ),
+              m_protocolVerMin(NETMSG_PROTOCOL_MIN), m_context(0), m_transId(0),
+              m_playerId(0) { }
     };
 
     class NetMsgServerToClient : public NetMessage

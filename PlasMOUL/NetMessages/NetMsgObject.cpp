@@ -26,7 +26,10 @@ void MOUL::NetMsgStream::read(DS::Stream* stream)
     uint32_t size = stream->read<uint32_t>();
     uint8_t* buffer = new uint8_t[size];
     stream->readBytes(buffer, size);
-    if (m_compression == e_CompressZlib && size >= 2) {
+
+    if (m_compression == e_CompressZlib) {
+        DS_PASSERT(size >= 2);
+
         uint8_t* zbuf = new uint8_t[uncompressedSize];
         uLongf zlength = uncompressedSize - 2;
         memcpy(zbuf, buffer, 2);
@@ -47,7 +50,10 @@ void MOUL::NetMsgStream::write(DS::Stream* stream)
 {
     stream->write<uint32_t>(m_compression == e_CompressZlib ? m_stream.size() : 0);
     stream->write<uint8_t>(m_compression);
-    if (m_compression == e_CompressZlib && m_stream.size() >= 2) {
+
+    if (m_compression == e_CompressZlib) {
+        DS_PASSERT(m_stream.size() >= 2);
+
         uLongf zlength = compressBound(m_stream.size() - 2);
         uint8_t* zbuf = new uint8_t[zlength + 2];
         memcpy(zbuf, m_stream.buffer(), 2);

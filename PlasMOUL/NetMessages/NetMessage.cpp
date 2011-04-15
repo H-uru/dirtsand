@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "NetMessage.h"
+#include "errors.h"
 
 void MOUL::NetMessage::read(DS::Stream* stream)
 {
@@ -24,6 +25,9 @@ void MOUL::NetMessage::read(DS::Stream* stream)
     if (m_contentFlags & e_HasVersion) {
         m_protocolVerMaj = stream->read<uint8_t>();
         m_protocolVerMin = stream->read<uint8_t>();
+
+        DS_PASSERT(m_protocolVerMaj == NETMSG_PROTOCOL_MAJ);
+        DS_PASSERT(m_protocolVerMin == NETMSG_PROTOCOL_MIN);
     }
 
     if (m_contentFlags & e_HasTimeSent)
