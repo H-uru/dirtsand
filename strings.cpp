@@ -113,7 +113,6 @@ static void utf16_to_utf8(chr8_t** dest, size_t* destlen,
                 *dptr++ = 0x80 | ((ch >> 12) & 0x3F);
                 *dptr++ = 0x80 | ((ch >>  6) & 0x3F);
                 *dptr++ = 0x80 | ((ch      ) & 0x3F);
-                ++sptr;
             } else if (*sptr >= 0x800) {
                 *dptr++ = 0xE0 | ((*sptr >> 12) & 0x0F);
                 *dptr++ = 0x80 | ((*sptr >>  6) & 0x3F);
