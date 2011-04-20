@@ -175,12 +175,12 @@ int main(int argc, char* argv[])
 
                 printf("\n--------------------\n");
                 printf("Server keys:\n");
-                printf("Key.Auth.N = %s\n", DS::Base64Encode(nbuffer[0], 64).c_str());
-                printf("Key.Auth.K = %s\n", DS::Base64Encode(kbuffer[0], 64).c_str());
-                printf("Key.Game.N = %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
-                printf("Key.Game.K = %s\n", DS::Base64Encode(kbuffer[1], 64).c_str());
-                printf("Key.Gate.N = %s\n", DS::Base64Encode(nbuffer[2], 64).c_str());
-                printf("Key.Gate.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
+                printf("Server.Auth.N = %s\n", DS::Base64Encode(nbuffer[0], 64).c_str());
+                printf("Server.Auth.K = %s\n", DS::Base64Encode(kbuffer[0], 64).c_str());
+                printf("Server.Game.N = %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
+                printf("Server.Game.K = %s\n", DS::Base64Encode(kbuffer[1], 64).c_str());
+                printf("Server.Gate.N = %s\n", DS::Base64Encode(nbuffer[2], 64).c_str());
+                printf("Server.Gate.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
 
                 printf("--------------------\n");
                 printf("UruExplorer:\n");
