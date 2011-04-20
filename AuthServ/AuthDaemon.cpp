@@ -41,14 +41,14 @@ void dm_auth_addacct(Auth_AccountInfo* info)
 {
     DS::StringBuffer<chr8_t> pwBuf = info->m_password.toUtf8();
     DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.length());
-    PostgresStrings<5> iparms;
+    PostgresStrings<3> iparms;
     iparms.set(0, gen_uuid().toString());
     iparms.set(1, pwHash.toString());
     iparms.set(2, info->m_acctName);
     PGresult* result = PQexecParams(s_postgres,
             "INSERT INTO auth.\"Accounts\""
             "    (\"AcctUuid\", \"PassHash\", \"Login\", \"AcctFlags\", \"BillingType\")"
-            "    VALUES ($1, $2, $3, 12, 1)" // These flags indicate a paid non-gametap user who's also a beta tester
+            "    VALUES ($1, $2, $3, 0, 1)"
             "    RETURNING idx",
             3, 0, iparms.m_values, 0, 0, 0);
     delete info;
