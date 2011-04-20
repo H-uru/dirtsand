@@ -35,6 +35,31 @@ static inline void check_postgres()
     DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
 }
 
+void dm_auth_addacct(Auth_AccountInfo* info)
+{
+    DS::StringBuffer<chr8_t> pwBuf = info->m_password.toUtf8();
+    DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.length());
+    PostgresStrings<3> iparms;
+    iparms.set(0, gen_uuid().toString());
+    iparms.set(1, pwHash.toString());
+    iparms.set(2, info->m_acctName);
+    PGresult* result = PQexecParams(s_postgres,
+            "INSERT INTO auth.\"Accounts\""
+            "    (\"AcctUuid\", \"PassHash\", \"Login\", \"AcctFlags\", \"BillingType\")"
+            "    VALUES ($1, $2, $3, 0, 1)"
+            "    RETURNING idx",
+            3, 0, iparms.m_values, 0, 0, 0);
+    delete info;
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return;
+    }
+    DS_DASSERT(PQntuples(result) == 1);
+    PQclear(result);
+}
+
 void dm_auth_shutdown()
 {
     pthread_mutex_lock(&s_authClientMutex);
@@ -577,6 +602,9 @@ void* dm_authDaemon(void*)
                 break;
             case e_AuthDisconnect:
                 dm_auth_disconnect(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload));
+                break;
+            case e_AuthAddAcct:
+                dm_auth_addacct(reinterpret_cast<Auth_AccountInfo*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

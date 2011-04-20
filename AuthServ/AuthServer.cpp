@@ -789,3 +789,11 @@ void DS::AuthServer_DisplayClients()
     }
     pthread_mutex_unlock(&s_authClientMutex);
 }
+
+void DS::AuthServer_AddAcct(DS::String acctName, DS::String password)
+{
+    Auth_AccountInfo* info = new Auth_AccountInfo;
+    info->m_acctName = acctName;
+    info->m_password = password;
+    s_authChannel.putMessage(e_AuthAddAcct, info);
+}

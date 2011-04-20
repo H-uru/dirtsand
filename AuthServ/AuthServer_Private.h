@@ -107,6 +107,8 @@ extern pthread_t s_authDaemonThread;
 void* dm_authDaemon(void*);
 bool dm_vault_init();
 
+DS::Uuid gen_uuid();
+
 enum AgeFlags
 {
     e_AgePublic  = (1<<0),
