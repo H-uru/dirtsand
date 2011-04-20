@@ -25,8 +25,6 @@ pthread_t s_authDaemonThread;
 DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
 
-DS::Uuid gen_uuid();
-
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
 
