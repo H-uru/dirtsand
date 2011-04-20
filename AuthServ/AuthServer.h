@@ -29,6 +29,8 @@ namespace DS
 
     void AuthServer_DisplayClients();
 
+    void AuthServer_AddAcct(DS::String, DS::String);
+
     class DbException : public std::exception
     {
     public:
