@@ -52,6 +52,7 @@ DS::String DS::Stream::readSafeString(DS::StringType format)
     if (format == e_StringUTF16) {
         chr16_t* buffer = new chr16_t[length];
         ssize_t bytes = readBytes(buffer, length * sizeof(chr16_t));
+        read<uint16_t>(); // redundant L'\0'
         DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(chr16_t)));
         if (length && (buffer[0] & 0x8000)) {
             for (uint16_t i=0; i<length; ++i)
@@ -97,6 +98,7 @@ void DS::Stream::writeSafeString(const String& value, DS::StringType format)
             data[i] = ~data[i];
         write<uint16_t>(length | 0xF000);
         writeBytes(data, length * sizeof(chr16_t));
+        write<uint16_t>(0);
         delete[] data;
     } else {
         StringBuffer<chr8_t> buffer = (format == e_StringUTF8) ? value.toUtf8()
