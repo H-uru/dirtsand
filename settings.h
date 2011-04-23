@@ -24,7 +24,7 @@
 #define CRYPT_BASE_GAME (73)
 #define CRYPT_BASE_GATE (4)
 
-#define CLIENT_BUILD_ID   (897)
+#define CLIENT_BUILD_ID   (902)
 #define CLIENT_BUILD_TYPE (50)
 #define CLIENT_BRANCH_ID  (1)
 #define CLIENT_PRODUCT_ID "ea489821-6c35-4bd0-9dae-bb17c585e680"
