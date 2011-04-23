@@ -446,6 +446,13 @@ void cb_nodeFind(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_nodeSend(AuthServer_Private& client)
+{
+    uint32_t nodeId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint32_t playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    v_send_node(nodeId, playerId);
+}
+
 void cb_ageRequest(AuthServer_Private& client, bool ext)
 {
     START_REPLY(ext ? e_AuthToCli_AgeReplyEx : e_AuthToCli_AgeReply);
@@ -692,6 +699,9 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_VaultNodeFind:
                 cb_nodeFind(client);
+                break;
+            case e_CliToAuth_VaultSendNode:
+                cb_nodeSend(client);
                 break;
             case e_CliToAuth_AgeRequest:
                 cb_ageRequest(client, false);

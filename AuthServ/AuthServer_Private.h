@@ -128,3 +128,4 @@ bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx);
 bool v_unref_node(uint32_t parentIdx, uint32_t childIdx);
 bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs);
 bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& nodes);
+bool v_send_node(uint32_t nodeId, uint32_t playerId);

@@ -1299,3 +1299,26 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     PQclear(result);
     return true;
 }
+
+bool v_send_node(uint32_t nodeId, uint32_t playerId)
+{
+    PostgresStrings<2> parms;
+    parms.set(0, playerId);
+    parms.set(1, DS::Vault::e_InboxFolder);
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT idx FROM vault.find_folder($1, $2);",
+            2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+    DS_DASSERT(PQntuples(result) == 1);
+    uint32_t inbox = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+
+    if (!v_ref_node(inbox, nodeId, 0))
+        return false;
+    return true;
+}
