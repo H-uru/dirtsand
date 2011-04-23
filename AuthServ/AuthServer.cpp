@@ -624,6 +624,20 @@ void cb_downloadNext(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+// TODO: Actually retreive scores. This is a STUB
+void cb_scoreGetScores(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_ScoreGetScoresReply);
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+    uint32_t playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    DS::String gamename = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
+    client.m_buffer.write<uint32_t>(0);
+    client.m_buffer.write<uint32_t>(0);
+    SEND_REPLY();
+}
+
 void* wk_authWorker(void* sockp)
 {
     AuthServer_Private client;
@@ -704,6 +718,9 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_LogClientDebuggerConnect:
                 // Nobody cares
+                break;
+            case e_CliToAuth_ScoreGetScores:
+                cb_scoreGetScores(client);
                 break;
             case e_CliToAuth_ClientSetCCRLevel:
             case e_CliToAuth_AcctSetRolesRequest:
