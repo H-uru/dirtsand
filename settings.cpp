@@ -101,11 +101,6 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_droidKey[3] = BUF_TO_UINT(data.buffer() + 12);
             } else if (params[0] == "File.Host") {
                 s_settings.m_fileServ = params[1].toUtf16();
-                if (s_settings.m_fileServ.length() > 24) {
-                    fprintf(stderr, "Warning: The client has a limit of 24 chars for the File Server address...\n"
-                                    "    The configured address is %Zu chars long, which may cause problems!",
-                                    s_settings.m_fileServ.length());
-                }
             } else if (params[0] == "Auth.Host") {
                 s_settings.m_authServ = params[1].toUtf16();
             } else if (params[0] == "Game.Host") {
