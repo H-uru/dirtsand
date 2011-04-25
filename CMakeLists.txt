@@ -99,3 +99,5 @@ set_target_properties(dirtsand PROPERTIES
 
 install(TARGETS dirtsand
         RUNTIME DESTINATION "bin")
+install(FILES ${CMAKE_SOURCE_DIR}/bin/dsData.sh
+        DESTINATION "bin")
