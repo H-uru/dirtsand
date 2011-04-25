@@ -43,7 +43,6 @@ namespace DS
 
     void GenPrimeKeys(uint8_t* N, uint8_t* K);
     void CryptCalcX(uint8_t* X, const uint8_t* N, const uint8_t* K, uint32_t base);
-    void PrintClientKeys(const uint8_t* X, const uint8_t* N);
 
     void CryptEstablish(uint8_t* seed, uint8_t* key, const uint8_t* N,
                         const uint8_t* K, uint8_t* Y);

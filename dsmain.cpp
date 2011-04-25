@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
         } else if (args[0] == "keygen") {
             uint8_t xbuffer[64];
             if (args.size() != 2) {
-                fprintf(stderr, "Please specify new, ue or pc\n");
+                fprintf(stderr, "Usage:  keygen (new|show)\n");
             } else if (args[1] == "new") {
                 uint8_t nbuffer[3][64], kbuffer[3][64];
                 printf("Generating new server keys...  This will take a while.");
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
                     DS::GenPrimeKeys(nbuffer[i], kbuffer[i]);
 
                 printf("\n--------------------\n");
-                printf("Server keys:\n");
+                printf("Server keys: (dirtsand.ini)\n");
                 printf("Server.Auth.N = %s\n", DS::Base64Encode(nbuffer[0], 64).c_str());
                 printf("Server.Auth.K = %s\n", DS::Base64Encode(kbuffer[0], 64).c_str());
                 printf("Server.Game.N = %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
@@ -183,62 +183,32 @@ int main(int argc, char* argv[])
                 printf("Server.Gate.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
 
                 printf("--------------------\n");
-                printf("UruExplorer:\n");
-                printf("Auth client keys:\n");
+                printf("Client keys: (server.ini)\n");
                 DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
-                DS::PrintClientKeys(xbuffer, nbuffer[0]);
-
-                printf("Game client keys:\n");
+                printf("Server.Auth.N \"%s\"\n", DS::Base64Encode(nbuffer[0], 64).c_str());
+                printf("Server.Auth.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
                 DS::CryptCalcX(xbuffer, nbuffer[1], kbuffer[1], CRYPT_BASE_GAME);
-                DS::PrintClientKeys(xbuffer, nbuffer[1]);
-
-                printf("GateKeeper client keys:\n");
+                printf("Server.Game.N \"%s\"\n", DS::Base64Encode(nbuffer[1], 64).c_str());
+                printf("Server.Game.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
                 DS::CryptCalcX(xbuffer, nbuffer[2], kbuffer[2], CRYPT_BASE_GATE);
-                DS::PrintClientKeys(xbuffer, nbuffer[2]);
-
+                printf("Server.Gate.N \"%s\"\n", DS::Base64Encode(nbuffer[2], 64).c_str());
+                printf("Server.Gate.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
                 printf("--------------------\n");
-                printf("PlasmaClient:\n");
-                DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
-                printf("Server.Auth.N %s\n", DS::Base64Encode(nbuffer[0], 64).c_str());
-                printf("Server.Auth.X %s\n", DS::Base64Encode(xbuffer, 64).c_str());
-                DS::CryptCalcX(xbuffer, nbuffer[1], kbuffer[1], CRYPT_BASE_GAME);
-                printf("Server.Game.N %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
-                printf("Server.Game.X %s\n", DS::Base64Encode(xbuffer, 64).c_str());
-                DS::CryptCalcX(xbuffer, nbuffer[2], kbuffer[2], CRYPT_BASE_GATE);
-                printf("Server.Gate.N %s\n", DS::Base64Encode(nbuffer[2], 64).c_str());
-                printf("Server.Gate.X %s\n", DS::Base64Encode(xbuffer, 64).c_str());
-                printf("--------------------\n");
-            } else if (args[1] == "ue") {
-                uint8_t xbuffer[64];
+            } else if (args[1] == "show") {
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
                                DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
-                printf("Auth client keys:\n");
-                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N));
-
+                printf("Server.Auth.N \"%s\"\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyAuth_N), 64).c_str());
+                printf("Server.Auth.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N),
                                DS::Settings::CryptKey(DS::e_KeyGame_K), CRYPT_BASE_GAME);
-                printf("Game client keys:\n");
-                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N));
-
+                printf("Server.Game.N \"%s\"\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyGame_N), 64).c_str());
+                printf("Server.Game.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N),
                                DS::Settings::CryptKey(DS::e_KeyGate_K), CRYPT_BASE_GATE);
-                printf("GateKeeper client keys:\n");
-                DS::PrintClientKeys(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N));
-            } else if (args[1] == "pc") {
-                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
-                               DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
-                printf("Server.Auth.N %s\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyAuth_N), 64).c_str());
-                printf("Server.Auth.X %s\n", DS::Base64Encode(xbuffer, 64).c_str());
-                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N),
-                               DS::Settings::CryptKey(DS::e_KeyGame_K), CRYPT_BASE_GAME);
-                printf("Server.Game.N %s\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyGame_N), 64).c_str());
-                printf("Server.Game.X %s\n", DS::Base64Encode(xbuffer, 64).c_str());
-                DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N),
-                               DS::Settings::CryptKey(DS::e_KeyGate_K), CRYPT_BASE_GATE);
-                printf("Server.Gate.N %s\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyGate_N), 64).c_str());
-                printf("Server.Gate.X %s\n", DS::Base64Encode(xbuffer, 64).c_str());
+                printf("Server.Gate.N \"%s\"\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyGate_N), 64).c_str());
+                printf("Server.Gate.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
             } else {
-                fprintf(stderr, "Error: %s is not a valid keygen target\n", args[1].c_str());
+                fprintf(stderr, "Error: keygen parameter should be 'new' or 'show'\n");
                 continue;
             }
         } else if (args[0] == "clients") {

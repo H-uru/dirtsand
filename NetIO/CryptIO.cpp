@@ -89,46 +89,6 @@ void DS::CryptCalcX(uint8_t* X, const uint8_t* N, const uint8_t* K, uint32_t bas
     BN_CTX_free(ctx);
 }
 
-void DS::PrintClientKeys(const uint8_t* X, const uint8_t* N)
-{
-    /* These are put into large blocks so a single line will go to stdout
-     * at a time (in case other threads need to write).  Eventually, perhaps
-     * some form of I/O control/locking would be better, but for now this
-     * works well enough
-     */
-
-    uint8_t swapbuf[64];
-    memcpy(swapbuf, N, 64);
-    BYTE_SWAP_BUFFER(swapbuf, 64);
-    printf("N = %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[ 0], swapbuf[ 1], swapbuf[ 2], swapbuf[ 3], swapbuf[ 4], swapbuf[ 5], swapbuf[ 6], swapbuf[ 7],
-           swapbuf[ 8], swapbuf[ 9], swapbuf[10], swapbuf[11], swapbuf[12], swapbuf[13], swapbuf[14], swapbuf[15]);
-    printf("    %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[16], swapbuf[17], swapbuf[18], swapbuf[19], swapbuf[20], swapbuf[21], swapbuf[22], swapbuf[23],
-           swapbuf[24], swapbuf[25], swapbuf[26], swapbuf[27], swapbuf[28], swapbuf[29], swapbuf[30], swapbuf[31]);
-    printf("    %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[32], swapbuf[33], swapbuf[34], swapbuf[35], swapbuf[36], swapbuf[37], swapbuf[38], swapbuf[39],
-           swapbuf[40], swapbuf[41], swapbuf[42], swapbuf[43], swapbuf[44], swapbuf[45], swapbuf[46], swapbuf[47]);
-    printf("    %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[48], swapbuf[49], swapbuf[50], swapbuf[51], swapbuf[52], swapbuf[53], swapbuf[54], swapbuf[55],
-           swapbuf[56], swapbuf[57], swapbuf[58], swapbuf[59], swapbuf[60], swapbuf[61], swapbuf[62], swapbuf[63]);
-
-    memcpy(swapbuf, X, 64);
-    BYTE_SWAP_BUFFER(swapbuf, 64);
-    printf("X = %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[ 0], swapbuf[ 1], swapbuf[ 2], swapbuf[ 3], swapbuf[ 4], swapbuf[ 5], swapbuf[ 6], swapbuf[ 7],
-           swapbuf[ 8], swapbuf[ 9], swapbuf[10], swapbuf[11], swapbuf[12], swapbuf[13], swapbuf[14], swapbuf[15]);
-    printf("    %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[16], swapbuf[17], swapbuf[18], swapbuf[19], swapbuf[20], swapbuf[21], swapbuf[22], swapbuf[23],
-           swapbuf[24], swapbuf[25], swapbuf[26], swapbuf[27], swapbuf[28], swapbuf[29], swapbuf[30], swapbuf[31]);
-    printf("    %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[32], swapbuf[33], swapbuf[34], swapbuf[35], swapbuf[36], swapbuf[37], swapbuf[38], swapbuf[39],
-           swapbuf[40], swapbuf[41], swapbuf[42], swapbuf[43], swapbuf[44], swapbuf[45], swapbuf[46], swapbuf[47]);
-    printf("    %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-           swapbuf[48], swapbuf[49], swapbuf[50], swapbuf[51], swapbuf[52], swapbuf[53], swapbuf[54], swapbuf[55],
-           swapbuf[56], swapbuf[57], swapbuf[58], swapbuf[59], swapbuf[60], swapbuf[61], swapbuf[62], swapbuf[63]);
-}
-
 void DS::CryptEstablish(uint8_t* seed, uint8_t* key, const uint8_t* N,
                         const uint8_t* K, uint8_t* Y)
 {
