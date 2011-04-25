@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     char* cmdbuf = 0;
     rl_attempted_completion_function = &console_completer;
     for ( ;; ) {
-        cmdbuf = readline("");
+        cmdbuf = readline("ds> ");
         if (!cmdbuf)
             break;
 
