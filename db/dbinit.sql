@@ -1,14 +1,5 @@
 -- DirtSand DB initialization script --
 
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = off;
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-SET escape_string_warning = off;
-
-CREATE DATABASE dirtsand WITH TEMPLATE = template0 ENCODING = 'UTF8';
-ALTER DATABASE dirtsand OWNER TO dirtsand;
-
 \connect dirtsand
 
 SET client_encoding = 'UTF8';
