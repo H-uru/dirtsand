@@ -131,8 +131,11 @@ int main(int argc, char* argv[])
     rl_attempted_completion_function = &console_completer;
     for ( ;; ) {
         cmdbuf = readline("ds> ");
-        if (!cmdbuf)
+        if (!cmdbuf) {
+            // Get us out of the prompt
+            printf("\n");
             break;
+        }
 
         std::vector<DS::String> args = DS::String(cmdbuf).strip('#').split();
         if (args.size() == 0) {
