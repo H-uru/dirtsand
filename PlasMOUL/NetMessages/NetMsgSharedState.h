@@ -26,7 +26,7 @@ namespace MOUL
     {
     public:
         uint8_t m_lockRequest;
-    private:
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 

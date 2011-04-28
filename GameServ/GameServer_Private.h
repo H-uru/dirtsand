@@ -27,7 +27,6 @@
 #include <tr1/unordered_map>
 #include <tr1/unordered_set>
 #include <list>
-#include <set>
 
 enum GameServer_MsgIds
 {
@@ -60,8 +59,8 @@ struct GameHost_Private
 
     std::tr1::unordered_map<uint32_t, GameClient_Private*> m_clients;
     uoidset_t m_locks;
-    pthread_mutex_t m_lockMutex;
     pthread_mutex_t m_clientMutex;
+    pthread_mutex_t m_lockMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
 

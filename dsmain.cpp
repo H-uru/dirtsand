@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
         } else if (args[0] == "keygen") {
             uint8_t xbuffer[64];
             if (args.size() != 2) {
-                fprintf(stderr, "Usage:  keygen (new|show)\n");
+                fprintf(stderr, "Usage:  keygen <new|show>\n");
             } else if (args[1] == "new") {
                 uint8_t nbuffer[3][64], kbuffer[3][64];
                 printf("Generating new server keys...  This will take a while.");
@@ -231,17 +231,17 @@ int main(int argc, char* argv[])
 #endif
         } else if (args[0] == "addacct") {
             if (args.size() != 3)
-                printf("Usage: addacct [user] [password]\n");
+                printf("Usage: addacct <user> <password>\n");
             DS::AuthServer_AddAcct(args[1], args[2]);
         } else if (args[0] == "help") {
             printf("DirtSand v1.0 Console supported commands:\n"
-                   "    addacct [user] [password]\n"
+                   "    addacct <user> <password>\n"
                    "    clients\n"
                    "    commdebug <on|off>\n"
                    "    help\n"
-                   "    keygen <new|ue|pc>\n"
+                   "    keygen <new|show>\n"
                    "    quit\n"
-                   "    restart <auth|lobby>\n"
+                   "    restart <auth|lobby> [...]\n"
                   );
         } else {
             fprintf(stderr, "Error: Unrecognized command: %s\n", args[0].c_str());
