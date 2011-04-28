@@ -35,11 +35,16 @@ static void init_rand()
     static bool _rand_seeded = false;
     if (!_rand_seeded) {
         struct {
-            pid_t mypid;
+            pid_t   mypid;
             timeval now;
+            uint8_t buffer[2048 - sizeof(pid_t) - sizeof(timeval)];
         } _random;
         _random.mypid = getpid();
         gettimeofday(&_random.now, 0);
+        FILE* urand = fopen("/dev/urandom", "rb");
+        DS_PASSERT(urand != 0);
+        fread(_random.buffer, 1, sizeof(_random.buffer), urand);
+        fclose(urand);
         RAND_seed(&_random, sizeof(_random));
         _rand_seeded = true;
     }
