@@ -25,7 +25,9 @@
 #include "SDL/StateInfo.h"
 #include "db/pqaccess.h"
 #include <tr1/unordered_map>
+#include <tr1/unordered_set>
 #include <list>
+#include <set>
 
 enum GameServer_MsgIds
 {
@@ -48,6 +50,7 @@ struct GameClient_Private : public AuthClient_Private
 
 typedef std::tr1::unordered_map<DS::String, SDL::State, DS::StringHash> sdlnamemap_t;
 typedef std::tr1::unordered_map<MOUL::Uoid, sdlnamemap_t, MOUL::UoidHash> sdlstatemap_t;
+typedef std::tr1::unordered_set<MOUL::Uoid, MOUL::UoidHash> uoidset_t;
 
 struct GameHost_Private
 {
@@ -56,6 +59,8 @@ struct GameHost_Private
     uint32_t m_ageIdx, m_serverIdx;
 
     std::tr1::unordered_map<uint32_t, GameClient_Private*> m_clients;
+    uoidset_t m_locks;
+    pthread_mutex_t m_lockMutex;
     pthread_mutex_t m_clientMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;

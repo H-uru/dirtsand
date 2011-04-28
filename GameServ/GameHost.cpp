@@ -341,15 +341,32 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
     }
 }
 
+#include <set>
+
 void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
                      MOUL::NetMsgTestAndSet* msg)
-{
-    //TODO: Whatever the client is expecting us to do
-
+{   
     MOUL::ServerReplyMsg* reply = MOUL::ServerReplyMsg::Create();
     reply->m_receivers.push_back(msg->m_object);
     reply->m_bcastFlags = MOUL::Message::e_LocalPropagate;
-    reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
+    pthread_mutex_lock(&host->m_lockMutex);
+    if(msg->m_lockRequest) {
+        if(host->m_locks.find(msg->m_object) == host->m_locks.end()) {
+            reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
+            host->m_locks.insert(msg->m_object);
+        } else {
+            reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
+        }
+    } else {
+        uoidset_t::iterator it = host->m_locks.find(msg->m_object);
+        if(it != host->m_locks.end()) {
+            host->m_locks.erase(it);
+            reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
+        } else {
+            reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
+        }
+    }
+    pthread_mutex_unlock(&host->m_lockMutex);
 
     MOUL::NetMsgGameMessage* netReply = MOUL::NetMsgGameMessage::Create();
     netReply->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
