@@ -118,7 +118,7 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
     pthread_mutex_lock(&host->m_clientMutex);
     std::vector<uint32_t>::const_iterator rcvr_iter;
     for (rcvr_iter = receivers.begin(); rcvr_iter != receivers.end(); ++rcvr_iter) {
-        for(hostmap_t::iterator recv_host = s_gameHosts.begin(); recv_host != s_gameHosts.end(); recv_host++) {
+        for (hostmap_t::iterator recv_host = s_gameHosts.begin(); recv_host != s_gameHosts.end(); ++recv_host) {
             std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client = recv_host->second->m_clients.find(*rcvr_iter);
             if (client != recv_host->second->m_clients.end()) {
                 try {
