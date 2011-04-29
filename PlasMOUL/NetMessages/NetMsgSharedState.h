@@ -22,10 +22,50 @@
 
 namespace MOUL
 {
+    struct GenericType
+    {
+        enum Type
+        {
+            e_TypeInt, e_TypeFloat, e_TypeBool, e_TypeString, e_TypeByte,
+            e_TypeAny, e_TypeUint, e_TypeDouble, e_TypeNone = 0xFF,
+        };
+
+        union
+        {
+            int32_t  m_int;
+            uint32_t m_uint;
+            float    m_float;
+            double   m_double;
+            bool     m_bool;
+            uint8_t  m_byte;
+        };
+        DS::String   m_string;
+        uint8_t      m_type;
+
+        GenericType() : m_type(e_TypeNone) { }
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+    };
+
+    struct GenericVar
+    {
+        DS::String  m_name;
+        GenericType m_value;
+
+        void read(DS::Stream* stream);
+        void write(DS::Stream* stream);
+    };
+
     class NetMsgSharedState : public NetMsgObject
     {
     public:
         uint8_t m_lockRequest;
+
+        // Shared state info
+        bool m_serverMayDelete;
+        DS::String m_stateName;
+        std::vector<GenericVar> m_vars;
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
