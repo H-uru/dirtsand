@@ -127,10 +127,13 @@ int main(int argc, char* argv[])
     DS::GateKeeper_Init();
     DS::StartLobby();
 
+    char rl_prompt[32];
+    snprintf(rl_prompt, 32, "ds-%u> ", CLIENT_BUILD_ID);
+
     char* cmdbuf = 0;
     rl_attempted_completion_function = &console_completer;
     for ( ;; ) {
-        cmdbuf = readline("ds> ");
+        cmdbuf = readline(rl_prompt);
         if (!cmdbuf) {
             // Get us out of the prompt
             printf("\n");
