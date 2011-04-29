@@ -47,11 +47,11 @@ namespace MOUL
 
         uint16_t type() const { return m_type; }
 
-        void ref() { ++m_refs; }
+        void ref() { __sync_fetch_and_add(&m_refs, 1); }
 
         void unref()
         {
-            if (this && --m_refs == 0)
+            if (this && __sync_add_and_fetch(&m_refs, -1) == 0)
                 delete this;
         }
 
