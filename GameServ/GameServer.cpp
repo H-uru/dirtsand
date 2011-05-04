@@ -348,7 +348,7 @@ void DS::GameServer_DisplayClients()
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
          host_iter != s_gameHosts.end(); ++host_iter) {
         printf("    {%s}\n", host_iter->second->m_instanceId.toString().c_str());
-        std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
+        std::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
         for (client_iter = host_iter->second->m_clients.begin();
              client_iter != host_iter->second->m_clients.end(); ++ client_iter)
             printf("      * %s - %s (%u)\n", DS::SockIpAddress(client_iter->second->m_sock).c_str(),

@@ -56,7 +56,7 @@ static inline void check_postgres(GameHost_Private* host)
 void dm_game_shutdown(GameHost_Private* host)
 {
     pthread_mutex_lock(&host->m_clientMutex);
-    std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
+    std::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter)
         DS::CloseSock(client_iter->second->m_sock);
     pthread_mutex_unlock(&host->m_clientMutex);
@@ -93,7 +93,7 @@ void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
     DM_WRITEMSG(host, msg);
 
     pthread_mutex_lock(&host->m_clientMutex);
-    std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
+    std::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId == sender
             && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
@@ -119,7 +119,7 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
     std::vector<uint32_t>::const_iterator rcvr_iter;
     for (rcvr_iter = receivers.begin(); rcvr_iter != receivers.end(); ++rcvr_iter) {
         for (hostmap_t::iterator recv_host = s_gameHosts.begin(); recv_host != s_gameHosts.end(); ++recv_host) {
-            std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client = recv_host->second->m_clients.find(*rcvr_iter);
+            std::unordered_map<uint32_t, GameClient_Private*>::iterator client = recv_host->second->m_clients.find(*rcvr_iter);
             if (client != recv_host->second->m_clients.end()) {
                 try {
                     DS::CryptSendBuffer(client->second->m_sock, client->second->m_crypt,
@@ -394,7 +394,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
 
     pthread_mutex_lock(&host->m_clientMutex);
     members->m_members.reserve(host->m_clients.size() - 1);
-    std::tr1::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
+    std::unordered_map<uint32_t, GameClient_Private*>::iterator client_iter;
     for (client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId != client->m_clientInfo.m_PlayerId
             && !client->m_clientKey.isNull()) {
