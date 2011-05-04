@@ -425,6 +425,35 @@ void dm_auth_findAge(Auth_GameAge* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_get_public(Auth_PubAgeRequest* msg) {
+    PostgresStrings<4> parms;
+    parms.set(0, msg->m_agename);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT idx, \"AgeUuid\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\" FROM game.\"PublicAges\""
+                                    "    WHERE \"AgeFilename\"=$1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+      fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+              __FILE__, __LINE__, PQerrorMessage(s_postgres));
+      PQclear(result);
+      SEND_REPLY(msg, DS::e_NetInternalError);
+      return;
+    }
+    for (int i = 0; i < PQntuples(result); i++) {
+      Auth_PubAgeRequest::pnNetAgeInfo ai;
+      ai.m_instance = DS::Uuid(PQgetvalue(result, 0, 1));
+      ai.m_instancename = PQgetvalue(result, 0, 2);
+      ai.m_username = PQgetvalue(result, 0, 3);
+      ai.m_description = PQgetvalue(result, 0, 4);
+      ai.m_sequence = strtoul(PQgetvalue(result, 0, 5), 0, 10);
+      ai.m_language = strtoul(PQgetvalue(result, 0, 6), 0, 10);
+      ai.m_population = strtoul(PQgetvalue(result, 0, 7), 0, 10);
+      msg->m_ages.push_back(ai);
+    }
+    PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
 {
     uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
@@ -605,6 +634,9 @@ void* dm_authDaemon(void*)
                 break;
             case e_AuthAddAcct:
                 dm_auth_addacct(reinterpret_cast<Auth_AccountInfo*>(msg.m_payload));
+                break;
+            case e_AuthGetPublic:
+                dm_auth_get_public(reinterpret_cast<Auth_PubAgeRequest*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
