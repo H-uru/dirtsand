@@ -179,7 +179,7 @@ namespace MOUL
         struct _keydata
         {
             Uoid m_uoid;
-            int m_refs;
+            std::atomic_int m_refs;
         }* m_data;
     };
 

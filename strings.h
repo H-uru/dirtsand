@@ -24,6 +24,7 @@
 #include <cstdarg>
 #include <unordered_map>
 #include <string>
+#include <stdatomic.h>
 
 /* Important note:  Strings passed in as raw character constants (e.g. "blah")
  * are assumed to be in UTF-8 format, for the sake of minimal conversion
@@ -82,7 +83,7 @@ namespace DS
         {
             const char_type* m_string;
             size_t m_length;
-            int m_refs;
+            std::atomic_int m_refs;
 
             _buffer(const char_type* str, size_t length)
                 : m_string(str), m_length(length), m_refs(1) { }

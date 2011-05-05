@@ -47,11 +47,11 @@ namespace MOUL
 
         uint16_t type() const { return m_type; }
 
-        void ref() { __sync_fetch_and_add(&m_refs, 1); }
+        void ref() { ++m_refs; }
 
         void unref()
         {
-            if (this && __sync_add_and_fetch(&m_refs, -1) == 0)
+            if (this && --m_refs == 0)
                 delete this;
         }
 
@@ -67,7 +67,7 @@ namespace MOUL
         virtual ~Creatable() { }
 
     private:
-        int m_refs;
+        std::atomic_int m_refs;
         uint16_t m_type;
 
         /* Prevent stack copying of creatables */
