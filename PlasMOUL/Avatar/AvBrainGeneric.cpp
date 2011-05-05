@@ -20,7 +20,7 @@
 
 MOUL::AvBrainGeneric::~AvBrainGeneric()
 {
-    for (std::vector<AnimStage*>::iterator it = m_stages.begin(); it != m_stages.end(); ++it)
+    for (auto it = m_stages.begin(); it != m_stages.end(); ++it)
         (*it)->unref();
     m_startMessage->unref();
     m_endMessage->unref();
@@ -30,7 +30,7 @@ void MOUL::AvBrainGeneric::read(DS::Stream* stream)
 {
     MOUL::ArmatureBrain::read(stream);
 
-    for (std::vector<AnimStage*>::iterator it = m_stages.begin(); it != m_stages.end(); ++it)
+    for (auto it = m_stages.begin(); it != m_stages.end(); ++it)
         (*it)->unref();
 
     m_stages.resize(stream->read<uint32_t>());

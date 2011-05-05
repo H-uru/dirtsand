@@ -48,8 +48,7 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
         DS::String filename = DS::String::Format("%s/%s", sdlpath, dirls[i]->d_name);
         if (parser.open(filename.c_str())) {
             std::list<StateDescriptor> descriptors = parser.parse();
-            for (std::list<StateDescriptor>::iterator it = descriptors.begin();
-                 it != descriptors.end(); ++it) {
+            for (auto it = descriptors.begin(); it != descriptors.end(); ++it) {
 #ifdef DEBUG
                 descmap_t::iterator namei = s_descriptors.find(it->m_name);
                 if (namei != s_descriptors.end()) {

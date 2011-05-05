@@ -139,8 +139,7 @@ void cb_login(AuthServer_Private& client)
         return;
     }
 
-    for (std::vector<AuthServer_PlayerInfo>::iterator player_iter = msg.m_players.begin();
-         player_iter != msg.m_players.end(); ++player_iter) {
+    for (auto player_iter = msg.m_players.begin(); player_iter != msg.m_players.end(); ++player_iter) {
         START_REPLY(e_AuthToCli_AcctPlayerInfo);
         client.m_buffer.write<uint32_t>(transId);
         client.m_buffer.write<uint32_t>(player_iter->m_playerId);
@@ -401,8 +400,7 @@ void cb_nodeTree(AuthServer_Private& client)
         client.m_buffer.write<uint32_t>(0);
     } else {
         client.m_buffer.write<uint32_t>(msg.m_refs.size());
-        for (std::vector<DS::Vault::NodeRef>::iterator it = msg.m_refs.begin();
-             it != msg.m_refs.end(); ++it) {
+        for (auto it = msg.m_refs.begin(); it != msg.m_refs.end(); ++it) {
             client.m_buffer.write<uint32_t>(it->m_parent);
             client.m_buffer.write<uint32_t>(it->m_child);
             client.m_buffer.write<uint32_t>(it->m_owner);
@@ -604,7 +602,7 @@ void cb_downloadNext(AuthServer_Private& client)
     uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     client.m_buffer.write<uint32_t>(transId);
 
-    std::map<uint32_t, DS::Stream*>::iterator fi = client.m_downloads.find(transId);
+    auto fi = client.m_downloads.find(transId);
     if (fi == client.m_downloads.end()) {
         // The last chunk was already sent, we don't care anymore
         return;
@@ -766,7 +764,7 @@ void* wk_authWorker(void* sockp)
     client.m_channel.getMessage();
 
     pthread_mutex_lock(&s_authClientMutex);
-    std::list<AuthServer_Private*>::iterator client_iter = s_authClients.begin();
+    auto client_iter = s_authClients.begin();
     while (client_iter != s_authClients.end()) {
         if (*client_iter == &client)
             client_iter = s_authClients.erase(client_iter);
@@ -809,8 +807,7 @@ void DS::AuthServer_DisplayClients()
     pthread_mutex_lock(&s_authClientMutex);
     if (s_authClients.size())
         printf("Auth Server:\n");
-    std::list<AuthServer_Private*>::iterator client_iter;
-    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         printf("  * %s {%s}\n", DS::SockIpAddress((*client_iter)->m_sock).c_str(),
                (*client_iter)->m_acctUuid.toString().c_str());
     }

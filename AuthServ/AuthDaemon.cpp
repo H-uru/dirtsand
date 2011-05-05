@@ -63,8 +63,7 @@ void dm_auth_addacct(Auth_AccountInfo* info)
 void dm_auth_shutdown()
 {
     pthread_mutex_lock(&s_authClientMutex);
-    std::list<AuthServer_Private*>::iterator client_iter;
-    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter)
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter)
         DS::CloseSock((*client_iter)->m_sock);
     pthread_mutex_unlock(&s_authClientMutex);
 
@@ -254,8 +253,7 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
 #endif
 
     pthread_mutex_lock(&s_authClientMutex);
-    std::list<AuthServer_Private*>::iterator client_iter;
-    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         if (client != *client_iter && (*client_iter)->m_player.m_playerId == client->m_player.m_playerId) {
             printf("[Auth] {%s} requested already-active player (%u)\n",
                    client->m_acctUuid.toString().c_str(),
@@ -433,8 +431,7 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
     *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
 
     pthread_mutex_lock(&s_authClientMutex);
-    std::list<AuthServer_Private*>::iterator client_iter;
-    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
         } catch (DS::SockHup) {
@@ -453,8 +450,7 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
 
     pthread_mutex_lock(&s_authClientMutex);
-    std::list<AuthServer_Private*>::iterator client_iter;
-    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
         } catch (DS::SockHup) {
@@ -472,8 +468,7 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
 
     pthread_mutex_lock(&s_authClientMutex);
-    std::list<AuthServer_Private*>::iterator client_iter;
-    for (client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
         } catch (DS::SockHup) {

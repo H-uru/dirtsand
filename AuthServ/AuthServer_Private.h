@@ -93,7 +93,7 @@ struct AuthServer_Private : public AuthClient_Private
     ~AuthServer_Private()
     {
         while (!m_downloads.empty()) {
-            std::map<uint32_t, DS::Stream*>::iterator item = m_downloads.begin();
+            auto item = m_downloads.begin();
             delete item->second;
             m_downloads.erase(item);
         }

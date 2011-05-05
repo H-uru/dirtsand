@@ -155,8 +155,7 @@ int main(int argc, char* argv[])
                 fprintf(stderr, "Error: No services specified\n");
                 continue;
             }
-            for (std::vector<DS::String>::iterator svc = args.begin() + 1;
-                 svc != args.end(); ++svc) {
+            for (auto svc = args.begin() + 1; svc != args.end(); ++svc) {
                 if (*svc == "lobby") {
                     DS::StopLobby();
                     DS::StartLobby();

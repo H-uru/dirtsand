@@ -906,7 +906,7 @@ void SDL::State::setDefault()
     if (!m_data)
         return;
 
-    for (std::vector<Variable>::iterator it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it)
+    for (auto it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it)
         it->setDefault();
 }
 
@@ -915,7 +915,7 @@ bool SDL::State::isDefault() const
     if (!m_data)
         return true;
 
-    for (std::vector<Variable>::const_iterator it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it) {
+    for (auto it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it) {
         if (!it->isDefault())
             return false;
     }
@@ -927,8 +927,7 @@ bool SDL::State::isDirty() const
     if (!m_data)
         return false;
 
-    for (std::vector<Variable>::const_iterator it = m_data->m_vars.begin();
-         it != m_data->m_vars.end(); ++it) {
+    for (auto it = m_data->m_vars.begin(); it != m_data->m_vars.end(); ++it) {
         if (it->data()->m_flags & Variable::e_XIsDirty)
             return true;
     }

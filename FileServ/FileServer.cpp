@@ -35,7 +35,7 @@ struct FileServer_Private
     ~FileServer_Private()
     {
         while (!m_downloads.empty()) {
-            std::map<uint32_t, DS::Stream*>::iterator item = m_downloads.begin();
+            auto item = m_downloads.begin();
             delete item->second;
             m_downloads.erase(item);
         }
@@ -244,7 +244,7 @@ void cb_downloadNext(FileServer_Private& client)
     client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
 
     uint32_t readerId = DS::RecvValue<uint32_t>(client.m_sock);
-    std::map<uint32_t, DS::Stream*>::iterator fi = client.m_downloads.find(readerId);
+    auto fi = client.m_downloads.find(readerId);
     if (fi == client.m_downloads.end()) {
         // The last chunk was already sent, we don't care anymore
         return;
@@ -322,7 +322,7 @@ void* wk_fileServ(void* sockp)
     }
 
     pthread_mutex_lock(&s_clientMutex);
-    std::list<FileServer_Private*>::iterator client_iter = s_clients.begin();
+    auto client_iter = s_clients.begin();
     while (client_iter != s_clients.end()) {
         if (*client_iter == &client)
             client_iter = s_clients.erase(client_iter);
@@ -350,8 +350,7 @@ void DS::FileServer_Add(DS::SocketHandle client)
 void DS::FileServer_Shutdown()
 {
     pthread_mutex_lock(&s_clientMutex);
-    std::list<FileServer_Private*>::iterator client_iter;
-    for (client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
+    for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         DS::CloseSock((*client_iter)->m_sock);
     pthread_mutex_unlock(&s_clientMutex);
 
@@ -374,8 +373,7 @@ void DS::FileServer_DisplayClients()
     pthread_mutex_lock(&s_clientMutex);
     if (s_clients.size())
         printf("File Server:\n");
-    std::list<FileServer_Private*>::iterator client_iter;
-    for (client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
+    for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
     pthread_mutex_unlock(&s_clientMutex);
 }

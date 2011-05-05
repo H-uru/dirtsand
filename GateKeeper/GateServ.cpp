@@ -182,7 +182,7 @@ void* wk_gateKeeper(void* sockp)
     }
 
     pthread_mutex_lock(&s_clientMutex);
-    std::list<GateKeeper_Private*>::iterator client_iter = s_clients.begin();
+    auto client_iter = s_clients.begin();
     while (client_iter != s_clients.end()) {
         if (*client_iter == &client)
             client_iter = s_clients.erase(client_iter);
@@ -216,8 +216,7 @@ void DS::GateKeeper_Add(DS::SocketHandle client)
 void DS::GateKeeper_Shutdown()
 {
     pthread_mutex_lock(&s_clientMutex);
-    std::list<GateKeeper_Private*>::iterator client_iter;
-    for (client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
+    for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         DS::CloseSock((*client_iter)->m_sock);
     pthread_mutex_unlock(&s_clientMutex);
 
@@ -240,8 +239,7 @@ void DS::GateKeeper_DisplayClients()
     pthread_mutex_lock(&s_clientMutex);
     if (s_clients.size())
         printf("Gate Keeper:\n");
-    std::list<GateKeeper_Private*>::iterator client_iter;
-    for (client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
+    for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
     pthread_mutex_unlock(&s_clientMutex);
 }
