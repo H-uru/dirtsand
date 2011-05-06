@@ -59,6 +59,7 @@ enum AuthDaemonMessages
     e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
     e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode, e_VaultInitAge,
     e_AuthFindGameServer, e_AuthDisconnect, e_AuthAddAcct, e_AuthGetPublic,
+    e_AuthSetPublic
 };
 
 struct Auth_AccountInfo
@@ -140,6 +141,12 @@ struct Auth_PubAgeRequest : public Auth_ClientMessage
 
     DS::String m_agename;
     std::vector<pnNetAgeInfo> m_ages;
+};
+
+struct Auth_SetPublic : public Auth_ClientMessage
+{
+    uint32_t m_node;
+    uint8_t m_public;
 };
 
 DS::Blob gen_default_sdl(const DS::String& filename);

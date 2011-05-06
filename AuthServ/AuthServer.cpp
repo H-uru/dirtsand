@@ -704,6 +704,18 @@ void cb_getPublicAges(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_setAgePublic(AuthServer_Private& client)
+{
+    Auth_SetPublic msg;
+    msg.m_client = &client;
+    msg.m_node = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_public = DS::CryptRecvValue<uint8_t>(client.m_sock, client.m_crypt);
+
+    s_authChannel.putMessage(e_AuthSetPublic, reinterpret_cast<void*>(&msg));
+
+    client.m_channel.getMessage(); // wait for daemon to finish
+}
+
 void* wk_authWorker(void* sockp)
 {
     AuthServer_Private client;
@@ -795,6 +807,7 @@ void* wk_authWorker(void* sockp)
                 cb_getPublicAges(client);
                 break;
             case e_CliToAuth_SetAgePublic:
+                cb_setAgePublic(client);
                 break;
             case e_CliToAuth_ClientSetCCRLevel:
             case e_CliToAuth_AcctSetRolesRequest:
