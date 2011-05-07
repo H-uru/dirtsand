@@ -157,7 +157,8 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
         fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
 
-    //TODO: shutdown this host if no clients connect within a time limit
+    if(host->m_clients.size() == 0) // TODO: this is probably a race condition (if last player is leaving just as next player is joining)
+        host->m_channel.putMessage(e_GameShutdown, 0);
 }
 
 void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
