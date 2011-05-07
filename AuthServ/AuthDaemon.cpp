@@ -423,30 +423,31 @@ void dm_auth_findAge(Auth_GameAge* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
-void dm_auth_get_public(Auth_PubAgeRequest* msg) {
-    PostgresStrings<4> parms;
+void dm_auth_get_public(Auth_PubAgeRequest* msg)
+{
+    PostgresStrings<1> parms;
     parms.set(0, msg->m_agename);
     PGresult* result = PQexecParams(s_postgres,
                                     "SELECT idx, \"AgeUuid\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\" FROM game.\"PublicAges\""
                                     "    WHERE \"AgeFilename\"=$1",
                                     1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-      fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-              __FILE__, __LINE__, PQerrorMessage(s_postgres));
-      PQclear(result);
-      SEND_REPLY(msg, DS::e_NetInternalError);
-      return;
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
     }
     for (int i = 0; i < PQntuples(result); i++) {
-      Auth_PubAgeRequest::pnNetAgeInfo ai;
-      ai.m_instance = DS::Uuid(PQgetvalue(result, 0, 1));
-      ai.m_instancename = PQgetvalue(result, 0, 2);
-      ai.m_username = PQgetvalue(result, 0, 3);
-      ai.m_description = PQgetvalue(result, 0, 4);
-      ai.m_sequence = strtoul(PQgetvalue(result, 0, 5), 0, 10);
-      ai.m_language = strtoul(PQgetvalue(result, 0, 6), 0, 10);
-      ai.m_population = strtoul(PQgetvalue(result, 0, 7), 0, 10);
-      msg->m_ages.push_back(ai);
+        Auth_PubAgeRequest::NetAgeInfo ai;
+        ai.m_instance = DS::Uuid(PQgetvalue(result, 0, 1));
+        ai.m_instancename = PQgetvalue(result, 0, 2);
+        ai.m_username = PQgetvalue(result, 0, 3);
+        ai.m_description = PQgetvalue(result, 0, 4);
+        ai.m_sequence = strtoul(PQgetvalue(result, 0, 5), 0, 10);
+        ai.m_language = strtoul(PQgetvalue(result, 0, 6), 0, 10);
+        ai.m_population = strtoul(PQgetvalue(result, 0, 7), 0, 10);
+        msg->m_ages.push_back(ai);
     }
     PQclear(result);
     SEND_REPLY(msg, DS::e_NetSuccess);
@@ -509,7 +510,7 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
 
 uint32_t dm_auth_set_public(uint32_t nodeid)
 {
-    PostgresStrings<8> parms;
+    PostgresStrings<7> parms;
     parms.set(0, nodeid);
     parms.set(1, DS::Vault::e_NodeAgeInfo);
     PGresult* result = PQexecParams(s_postgres,

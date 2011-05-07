@@ -130,7 +130,7 @@ struct Auth_GameAge : public Auth_ClientMessage
 
 struct Auth_PubAgeRequest : public Auth_ClientMessage
 {
-    struct pnNetAgeInfo
+    struct NetAgeInfo
     {
         enum { Stride = 0x9A0 };
 
@@ -140,7 +140,7 @@ struct Auth_PubAgeRequest : public Auth_ClientMessage
     };
 
     DS::String m_agename;
-    std::vector<pnNetAgeInfo> m_ages;
+    std::vector<NetAgeInfo> m_ages;
 };
 
 struct Auth_SetPublic : public Auth_ClientMessage

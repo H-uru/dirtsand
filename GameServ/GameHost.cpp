@@ -157,7 +157,10 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
         fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
 
-    if(host->m_clients.size() == 0) // TODO: this is probably a race condition (if last player is leaving just as next player is joining)
+    // TODO: This should probably respect the age's LingerTime
+    //       As it is, there might be a race condition if another player is
+    //       joining just as the last player is leaving.
+    if (host->m_clients.size() == 0)
         host->m_channel.putMessage(e_GameShutdown, 0);
 }
 

@@ -648,7 +648,8 @@ void cb_getPublicAges(AuthServer_Private& client)
     START_REPLY(e_AuthToCli_PublicAgeList);
 
     // Trans ID
-    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
 
     Auth_PubAgeRequest msg;
     msg.m_client = &client;
@@ -657,9 +658,9 @@ void cb_getPublicAges(AuthServer_Private& client)
 
     DS::FifoMessage reply = client.m_channel.getMessage();
     client.m_buffer.write<uint32_t>(reply.m_messageType);
-    if (reply.m_messageType != DS::e_NetSuccess)
+    if (reply.m_messageType != DS::e_NetSuccess) {
         client.m_buffer.write<uint32_t>(0);
-    else {
+    } else {
         client.m_buffer.write<uint32_t>(msg.m_ages.size());
         for (size_t i = 0; i < msg.m_ages.size(); i++) {
             client.m_buffer.writeBytes(msg.m_ages[i].m_instance.m_bytes, sizeof(client.m_acctUuid.m_bytes));
@@ -694,7 +695,7 @@ void cb_getPublicAges(AuthServer_Private& client)
 
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_sequence);
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_language);
-            client.m_buffer.write<uint32_t>(0);
+            client.m_buffer.write<uint32_t>(0);  // TODO: Owner population
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_population);
         }
     }
