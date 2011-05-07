@@ -643,6 +643,77 @@ void cb_scoreGetScores(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_getPublicAges(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_PublicAgeList);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_PubAgeRequest msg;
+    msg.m_client = &client;
+    msg.m_agename = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthGetPublic, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess)
+        client.m_buffer.write<uint32_t>(0);
+    else {
+        client.m_buffer.write<uint32_t>(msg.m_ages.size());
+        for (size_t i = 0; i < msg.m_ages.size(); i++) {
+            client.m_buffer.writeBytes(msg.m_ages[i].m_instance.m_bytes, sizeof(client.m_acctUuid.m_bytes));
+
+            chr16_t strbuffer[2048];
+            DS::StringBuffer<chr16_t> buf;
+            uint32_t copylen;
+
+            buf = msg.m_agename.toUtf16();
+            copylen = buf.length() < 64 ? buf.length() : 63;
+            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            strbuffer[copylen] = 0;
+            client.m_buffer.writeBytes(strbuffer, 128);
+
+            buf = msg.m_ages[i].m_instancename.toUtf16();
+            copylen = buf.length() < 64 ? buf.length() : 63;
+            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            strbuffer[copylen] = 0;
+            client.m_buffer.writeBytes(strbuffer, 128);
+
+            buf = msg.m_ages[i].m_username.toUtf16();
+            copylen = buf.length() < 64 ? buf.length() : 63;
+            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            strbuffer[copylen] = 0;
+            client.m_buffer.writeBytes(strbuffer, 128);
+
+            buf = msg.m_ages[i].m_description.toUtf16();
+            copylen = buf.length() < 1024 ? buf.length() : 1023;
+            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            strbuffer[copylen] = 0;
+            client.m_buffer.writeBytes(strbuffer, 2048);
+
+            client.m_buffer.write<uint32_t>(msg.m_ages[i].m_sequence);
+            client.m_buffer.write<uint32_t>(msg.m_ages[i].m_language);
+            client.m_buffer.write<uint32_t>(0);
+            client.m_buffer.write<uint32_t>(msg.m_ages[i].m_population);
+        }
+    }
+
+    SEND_REPLY();
+}
+
+void cb_setAgePublic(AuthServer_Private& client)
+{
+    Auth_SetPublic msg;
+    msg.m_client = &client;
+    msg.m_node = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_public = DS::CryptRecvValue<uint8_t>(client.m_sock, client.m_crypt);
+
+    s_authChannel.putMessage(e_AuthSetPublic, reinterpret_cast<void*>(&msg));
+
+    client.m_channel.getMessage(); // wait for daemon to finish
+}
+
 void* wk_authWorker(void* sockp)
 {
     AuthServer_Private client;
@@ -729,6 +800,12 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_ScoreGetScores:
                 cb_scoreGetScores(client);
+                break;
+            case e_CliToAuth_GetPublicAgeList:
+                cb_getPublicAges(client);
+                break;
+            case e_CliToAuth_SetAgePublic:
+                cb_setAgePublic(client);
                 break;
             case e_CliToAuth_ClientSetCCRLevel:
             case e_CliToAuth_AcctSetRolesRequest:

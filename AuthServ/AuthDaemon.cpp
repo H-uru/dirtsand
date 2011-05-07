@@ -423,6 +423,35 @@ void dm_auth_findAge(Auth_GameAge* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_get_public(Auth_PubAgeRequest* msg) {
+    PostgresStrings<4> parms;
+    parms.set(0, msg->m_agename);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT idx, \"AgeUuid\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\" FROM game.\"PublicAges\""
+                                    "    WHERE \"AgeFilename\"=$1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+      fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+              __FILE__, __LINE__, PQerrorMessage(s_postgres));
+      PQclear(result);
+      SEND_REPLY(msg, DS::e_NetInternalError);
+      return;
+    }
+    for (int i = 0; i < PQntuples(result); i++) {
+      Auth_PubAgeRequest::pnNetAgeInfo ai;
+      ai.m_instance = DS::Uuid(PQgetvalue(result, 0, 1));
+      ai.m_instancename = PQgetvalue(result, 0, 2);
+      ai.m_username = PQgetvalue(result, 0, 3);
+      ai.m_description = PQgetvalue(result, 0, 4);
+      ai.m_sequence = strtoul(PQgetvalue(result, 0, 5), 0, 10);
+      ai.m_language = strtoul(PQgetvalue(result, 0, 6), 0, 10);
+      ai.m_population = strtoul(PQgetvalue(result, 0, 7), 0, 10);
+      msg->m_ages.push_back(ai);
+    }
+    PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
 {
     uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
@@ -476,6 +505,125 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
         }
     }
     pthread_mutex_unlock(&s_authClientMutex);
+}
+
+uint32_t dm_auth_set_public(uint32_t nodeid)
+{
+    PostgresStrings<8> parms;
+    parms.set(0, nodeid);
+    parms.set(1, DS::Vault::e_NodeAgeInfo);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT \"Uuid_1\", \"String64_2\", \"String64_3\", \"String64_4\", \"Text_1\", \"Int32_1\", \"Int32_3\" FROM vault.\"Nodes\""
+                                    "    WHERE idx=$1 AND \"NodeType\"=$2",
+                                    2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return DS::e_NetInternalError;
+    }
+    if (PQntuples(result) == 0) {
+        // the requested age wasn't public, so we throw an error
+        PQclear(result);
+        return DS::e_NetInvalidParameter;
+    }
+    parms.set(0, PQgetvalue(result, 0, 0));
+    parms.set(1, PQgetvalue(result, 0, 1));
+    parms.set(2, PQgetvalue(result, 0, 2));
+    parms.set(3, PQgetvalue(result, 0, 3));
+    parms.set(4, PQgetvalue(result, 0, 4));
+    parms.set(5, PQgetvalue(result, 0, 5));
+    parms.set(6, PQgetvalue(result, 0, 6));
+
+    PQclear(result);
+    result = PQexecParams(s_postgres,
+                          "INSERT INTO game.\"PublicAges\" (\"AgeUuid\", \"AgeFilename\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\")"
+                          "    VALUES ( $1, $2, $3, $4, $5, $6, $7, 0 )",
+                          7, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return DS::e_NetInternalError;
+    }
+
+    parms.set(0, DS::Vault::e_NodeAgeInfo);
+    parms.set(1, nodeid);
+    result = PQexecParams(s_postgres,
+                          "UPDATE vault.\"Nodes\" SET"
+                          "    \"Int32_2\"=1"
+                          "    WHERE \"NodeType\"=$1 AND idx=$2",
+                          2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+      // This doesn't block continuing...
+    } else {
+        dm_auth_bcast_node(nodeid, gen_uuid());
+    }
+
+    return DS::e_NetSuccess;
+}
+
+uint32_t dm_auth_set_private(uint32_t nodeid)
+{
+    PostgresStrings<4> parms;
+    parms.set(0, nodeid);
+    parms.set(1, DS::Vault::e_NodeAgeInfo);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT \"Uuid_1\" FROM vault.\"Nodes\" WHERE idx=$1 AND \"NodeType\"=$2",
+                                    2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return DS::e_NetInternalError;
+    }
+    if (PQntuples(result) == 0) {
+        fprintf(stderr, "%s:%d:\n    No such ageinfo node: %d\n",
+                __FILE__, __LINE__, nodeid);
+        // the requested age doesn't exist
+        PQclear(result);
+        return DS::e_NetInvalidParameter;
+    }
+
+    parms.set(0, PQgetvalue(result, 0, 0));
+    result = PQexecParams(s_postgres,
+                          "DELETE FROM game.\"PublicAges\" WHERE \"AgeUuid\"=$1",
+                          1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres DELETE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return DS::e_NetInternalError;
+    }
+
+    parms.set(0, DS::Vault::e_NodeAgeInfo);
+    parms.set(1, nodeid);
+    result = PQexecParams(s_postgres,
+                          "UPDATE vault.\"Nodes\" SET"
+                          "    \"Int32_2\"=0"
+                          "    WHERE \"NodeType\"=$1 AND idx=$2",
+                          2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
+         // This doesn't block continuing...
+    } else {
+        dm_auth_bcast_node(nodeid, gen_uuid());
+    }
+
+    return DS::e_NetSuccess;
+}
+
+void dm_auth_set_pub_priv(Auth_SetPublic* msg)
+{
+    uint32_t result;
+    if (msg->m_public)
+        result = dm_auth_set_public(msg->m_node);
+    else
+        result = dm_auth_set_private(msg->m_node);
+    SEND_REPLY(msg, result);
 }
 
 void* dm_authDaemon(void*)
@@ -600,6 +748,12 @@ void* dm_authDaemon(void*)
                 break;
             case e_AuthAddAcct:
                 dm_auth_addacct(reinterpret_cast<Auth_AccountInfo*>(msg.m_payload));
+                break;
+            case e_AuthGetPublic:
+                dm_auth_get_public(reinterpret_cast<Auth_PubAgeRequest*>(msg.m_payload));
+                break;
+            case e_AuthSetPublic:
+                dm_auth_set_pub_priv(reinterpret_cast<Auth_SetPublic*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
