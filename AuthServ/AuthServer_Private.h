@@ -112,7 +112,6 @@ DS::Uuid gen_uuid();
 enum AgeFlags
 {
     e_AgePublic  = (1<<0),
-    e_AgeIsRelto = (1<<1),
 };
 
 std::pair<uint32_t, uint32_t>

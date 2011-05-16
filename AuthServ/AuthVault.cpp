@@ -456,20 +456,6 @@ v_create_age(const AuthServer_AgeInfo& age, uint32_t flags)
     if (!v_ref_node(ageInfoNode, childAges, 0))
         return std::make_pair(0, 0);
 
-    if (flags & e_AgeIsRelto) {
-        node.clear();
-        node.set_NodeType(DS::Vault::e_NodeAgeInfoList);
-        node.set_CreatorUuid(age.m_ageId);
-        node.set_CreatorIdx(ageNode);
-        node.set_Int32_1(DS::Vault::e_AgesIOwnFolder);
-        uint32_t ownedAges = v_create_node(node);
-        if (ownedAges == 0)
-            return std::make_pair(0, 0);
-
-        if (!v_ref_node(ageNode, ownedAges, 0))
-            return std::make_pair(0, 0);
-    }
-
     // Register with the server database
     {
         DS::String agedesc = !age.m_description.isEmpty() ? age.m_description
@@ -685,7 +671,7 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     relto.m_instName = "Relto";
     relto.m_userName = player.m_playerName + "'s";
     relto.m_description = relto.m_userName + " " + relto.m_instName;
-    std::pair<uint32_t, uint32_t> reltoAge = v_create_age(relto, e_AgeIsRelto);
+    std::pair<uint32_t, uint32_t> reltoAge = v_create_age(relto, 0);
     if (reltoAge.first == 0)
         return std::make_pair(0, 0);
 
@@ -716,68 +702,6 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     uint32_t cityAge = find_public_age_1("city");
     if (cityAge == 0)
         return std::make_pair(0, 0);
-
-    {
-        PostgresStrings<2> parms;
-        parms.set(0, reltoAge.first);
-        parms.set(1, DS::Vault::e_AgesIOwnFolder);
-        PGresult* result = PQexecParams(s_postgres,
-                "SELECT idx FROM vault.find_folder($1, $2);",
-                2, 0, parms.m_values, 0, 0, 0);
-        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
-            PQclear(result);
-            return std::make_pair(0, 0);
-        }
-        DS_DASSERT(PQntuples(result) == 1);
-        uint32_t bookshelfFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
-        PQclear(result);
-
-        link = DS::Blob(reinterpret_cast<const uint8_t*>("Default:LinkInPointDefault:;"),
-                        strlen("Default:LinkInPointDefault:;"));
-        node.clear();
-        node.set_NodeType(DS::Vault::e_NodeAgeLink);
-        node.set_CreatorUuid(acctId);
-        node.set_CreatorIdx(playerIdx);
-        node.set_Blob_1(link);
-        uint32_t reltoLinkBookshelf = v_create_node(node);
-        if (reltoLinkBookshelf == 0)
-            return std::make_pair(0, 0);
-
-        node.clear();
-        node.set_NodeType(DS::Vault::e_NodeAgeLink);
-        node.set_CreatorUuid(acctId);
-        node.set_CreatorIdx(playerIdx);
-        node.set_Blob_1(link);
-        uint32_t hoodLinkBookshelf = v_create_node(node);
-        if (hoodLinkBookshelf == 0)
-            return std::make_pair(0, 0);
-
-        link = DS::Blob(reinterpret_cast<const uint8_t*>("Ferry Terminal:LinkInPointFerry:;"),
-                        strlen("Ferry Terminal:LinkInPointFerry:;"));
-        node.clear();
-        node.set_NodeType(DS::Vault::e_NodeAgeLink);
-        node.set_CreatorUuid(acctId);
-        node.set_CreatorIdx(playerIdx);
-        node.set_Blob_1(link);
-        uint32_t cityLinkBookshelf = v_create_node(node);
-        if (cityLinkBookshelf == 0)
-            return std::make_pair(0, 0);
-
-        if (!v_ref_node(bookshelfFolder, reltoLinkBookshelf, 0))
-            return std::make_pair(0, 0);
-        if (!v_ref_node(bookshelfFolder, hoodLinkBookshelf, 0))
-            return std::make_pair(0, 0);
-        if (!v_ref_node(bookshelfFolder, cityLinkBookshelf, 0))
-            return std::make_pair(0, 0);
-        if (!v_ref_node(reltoLinkBookshelf, reltoAge.second, 0))
-            return std::make_pair(0, 0);
-        if (!v_ref_node(hoodLinkBookshelf, hoodAge, 0))
-            return std::make_pair(0, 0);
-        if (!v_ref_node(cityLinkBookshelf, cityAge, 0))
-            return std::make_pair(0, 0);
-    }
 
     if (!v_ref_node(playerIdx, s_systemNode, 0))
         return std::make_pair(0, 0);
@@ -816,6 +740,8 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     if (!v_ref_node(hoodLink, hoodAge, 0))
         return std::make_pair(0, 0);
     if (!v_ref_node(cityLink, cityAge, 0))
+        return std::make_pair(0, 0);
+    if (!v_ref_node(reltoAge.first, agesNode, 0))
         return std::make_pair(0, 0);
 
     return std::make_pair(playerIdx, playerInfoNode);
