@@ -448,7 +448,7 @@ void cb_nodeSend(AuthServer_Private& client)
 {
     uint32_t nodeId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     uint32_t playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    v_send_node(nodeId, playerId);
+    v_send_node(nodeId, playerId, client.m_player.m_playerId);
 }
 
 void cb_ageRequest(AuthServer_Private& client, bool ext)

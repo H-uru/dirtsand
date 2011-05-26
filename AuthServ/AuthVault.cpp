@@ -1226,7 +1226,7 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     return true;
 }
 
-bool v_send_node(uint32_t nodeId, uint32_t playerId)
+bool v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t senderId)
 {
     PostgresStrings<2> parms;
     parms.set(0, playerId);
@@ -1244,7 +1244,7 @@ bool v_send_node(uint32_t nodeId, uint32_t playerId)
     uint32_t inbox = strtoul(PQgetvalue(result, 0, 0), 0, 10);
     PQclear(result);
 
-    if (!v_ref_node(inbox, nodeId, 0))
+    if (!v_ref_node(inbox, nodeId, senderId))
         return false;
     return true;
 }
