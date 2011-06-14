@@ -708,6 +708,18 @@ void* dm_authDaemon(void*)
                     }
                 }
                 break;
+            case e_VaultSendNode:
+                {
+                    Auth_NodeSend* info = reinterpret_cast<Auth_NodeSend*>(msg.m_payload);
+                    DS::Vault::NodeRef ref = v_send_node(info->m_nodeIdx, info->m_playerIdx, info->m_senderIdx);
+                    if (ref.m_child || ref.m_owner || ref.m_parent)
+                        dm_auth_bcast_ref(ref);
+                    // There's no way to indicate success or failure to the client. Whether or not it gets a NodeRef
+                    // message is the only way the client knows if all went well here.
+                    // This reply is purely for synchronization purposes.
+                    SEND_REPLY(info, 0);
+                }
+                break;
             case e_VaultUnrefNode:
                 {
                     Auth_NodeRef* info = reinterpret_cast<Auth_NodeRef*>(msg.m_payload);
