@@ -57,9 +57,9 @@ enum AuthDaemonMessages
 {
     e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
     e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
-    e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode, e_VaultInitAge,
-    e_AuthFindGameServer, e_AuthDisconnect, e_AuthAddAcct, e_AuthGetPublic,
-    e_AuthSetPublic
+    e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode, e_VaultSendNode,
+    e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect, e_AuthAddAcct,
+    e_AuthGetPublic, e_AuthSetPublic
 };
 
 struct Auth_AccountInfo
@@ -104,6 +104,13 @@ struct Auth_NodeInfo : public Auth_ClientMessage
 struct Auth_NodeRef : public Auth_ClientMessage
 {
     DS::Vault::NodeRef m_ref;
+};
+
+struct Auth_NodeSend : public Auth_ClientMessage
+{
+    uint32_t m_nodeIdx;
+    uint32_t m_playerIdx;
+    uint32_t m_senderIdx;
 };
 
 struct Auth_NodeRefList : public Auth_ClientMessage

@@ -1226,8 +1226,10 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     return true;
 }
 
-bool v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t senderId)
+DS::Vault::NodeRef v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t senderId)
 {
+    DS::Vault::NodeRef ref;
+    ref.m_child = ref.m_owner = ref.m_parent = 0;
     PostgresStrings<2> parms;
     parms.set(0, playerId);
     parms.set(1, DS::Vault::e_InboxFolder);
@@ -1238,13 +1240,16 @@ bool v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t senderId)
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         PQclear(result);
-        return false;
+        return ref;
     }
     DS_DASSERT(PQntuples(result) == 1);
     uint32_t inbox = strtoul(PQgetvalue(result, 0, 0), 0, 10);
     PQclear(result);
 
-    if (!v_ref_node(inbox, nodeId, senderId))
-        return false;
-    return true;
+    if (v_ref_node(inbox, nodeId, senderId)) {
+        ref.m_child = nodeId;
+        ref.m_owner = senderId;
+        ref.m_parent = inbox;
+    }
+    return ref;
 }

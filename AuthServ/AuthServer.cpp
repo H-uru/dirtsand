@@ -446,9 +446,13 @@ void cb_nodeFind(AuthServer_Private& client)
 
 void cb_nodeSend(AuthServer_Private& client)
 {
-    uint32_t nodeId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    uint32_t playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    v_send_node(nodeId, playerId, client.m_player.m_playerId);
+    Auth_NodeSend msg;
+    msg.m_client = &client;
+    msg.m_senderIdx = client.m_player.m_playerId;
+    msg.m_nodeIdx = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_playerIdx = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_VaultSendNode, reinterpret_cast<void*>(&msg));
+    client.m_channel.getMessage(); // wait for the vault operation to complete before returning
 }
 
 void cb_ageRequest(AuthServer_Private& client, bool ext)
