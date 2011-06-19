@@ -23,6 +23,13 @@ include_directories("${CMAKE_SOURCE_DIR}"
                     "${READLINE_INCLUDE_DIR}"
                     "${ZLIB_INCLUDE_DIR}")
 
+try_compile(HAVE_ATOMIC ${dirtsand_BINARY_DIR}
+            ${dirtsand_SOURCE_DIR}/cmake/CheckAtomic.cpp
+            OUTPUT_VARIABLE OUTPUT)
+if(HAVE_ATOMIC)
+    add_definitions(-DHAVE_ATOMIC)
+endif()
+
 set(PlasMOUL_SOURCES
     PlasMOUL/Key.cpp
     PlasMOUL/Avatar/AnimStage.cpp

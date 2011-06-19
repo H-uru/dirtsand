@@ -24,7 +24,11 @@
 #include <cstdarg>
 #include <unordered_map>
 #include <string>
-#include <stdatomic.h>
+#ifdef HAVE_ATOMIC
+  #include <atomic>
+#else
+  #include <stdatomic.h>
+#endif
 
 /* Important note:  Strings passed in as raw character constants (e.g. "blah")
  * are assumed to be in UTF-8 format, for the sake of minimal conversion
