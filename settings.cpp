@@ -35,6 +35,7 @@ static struct
 
     /* Host configuration */
     DS::String m_lobbyAddr, m_lobbyPort;
+    DS::String m_statusAddr, m_statusPort;
 
     /* Data locations */
     DS::String m_fileRoot, m_authRoot;
@@ -109,6 +110,10 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_lobbyAddr = params[1];
             } else if (params[0] == "Lobby.Port") {
                 s_settings.m_lobbyPort = params[1];
+            } else if (params[0] == "Status.Addr") {
+                s_settings.m_statusAddr = params[1];
+            } else if (params[0] == "Status.Port") {
+                s_settings.m_statusPort = params[1];
             } else if (params[0] == "File.Root") {
                 s_settings.m_fileRoot = params[1];
                 if (s_settings.m_fileRoot.right(1) != "/")
@@ -154,6 +159,7 @@ void DS::Settings::UseDefaults()
     s_settings.m_fileServ = String("localhost").toUtf16();
     s_settings.m_gameServ = "localhost";
     s_settings.m_lobbyPort = "14617";
+    s_settings.m_statusPort = "8080";
 
     s_settings.m_fileRoot = "./data";
     s_settings.m_authRoot = "./authdata";
@@ -201,6 +207,16 @@ const char* DS::Settings::LobbyAddress()
 const char* DS::Settings::LobbyPort()
 {
     return s_settings.m_lobbyPort.c_str();
+}
+
+const char* DS::Settings::StatusAddress()
+{
+    return s_settings.m_statusAddr.isEmpty() ? 0 : s_settings.m_statusAddr.c_str();
+}
+
+const char* DS::Settings::StatusPort()
+{
+    return s_settings.m_statusPort.c_str();
 }
 
 DS::String DS::Settings::FileRoot()

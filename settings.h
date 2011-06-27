@@ -52,6 +52,9 @@ namespace DS
         const char* LobbyAddress();
         const char* LobbyPort();
 
+        const char* StatusAddress();
+        const char* StatusPort();
+
         DS::String FileRoot();
         DS::String AuthRoot();
         const char* SdlPath();

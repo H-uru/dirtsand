@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "NetIO/Lobby.h"
+#include "NetIO/Status.h"
 #include "NetIO/CryptIO.h"
 #include "GateKeeper/GateServ.h"
 #include "FileServ/FileServer.h"
@@ -59,7 +60,7 @@ static char** console_completer(const char* text, int start, int end)
         /* Commands */
         "addacct", "clients", "commdebug", "help", "keygen", "quit", "restart",
         /* Services */
-        "auth", "lobby",
+        "auth", "lobby", "status",
     };
 
     rl_attempted_completion_over = true;
@@ -126,6 +127,7 @@ int main(int argc, char* argv[])
     DS::GameServer_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
+    DS::StartStatusHTTP();
 
     char rl_prompt[32];
     snprintf(rl_prompt, 32, "ds-%u> ", CLIENT_BUILD_ID);
@@ -163,6 +165,9 @@ int main(int argc, char* argv[])
                     DS::AuthServer_Shutdown();
                     DS::AuthServer_Init();
                     printf("Auth server restarted\n");
+                } else if (*svc == "status") {
+                    DS::StopStatusHTTP();
+                    DS::StartStatusHTTP();
                 } else {
                     fprintf(stderr, "Error: Service %s cannot be restarted\n", svc->c_str());
                 }
@@ -253,6 +258,7 @@ int main(int argc, char* argv[])
         }
     }
 
+    DS::StopStatusHTTP();
     DS::StopLobby();
     DS::GateKeeper_Shutdown();
     DS::GameServer_Shutdown();

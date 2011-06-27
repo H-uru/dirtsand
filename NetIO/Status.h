@@ -15,46 +15,13 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_SOCKIO_H
-#define _DS_SOCKIO_H
-
-#include "streams.h"
-#include <exception>
+#ifndef _DS_STATUS_H
+#define _DS_STATUS_H
 
 namespace DS
 {
-    typedef void* SocketHandle;
-
-    SocketHandle BindSocket(const char* address, const char* port);
-    void ListenSock(const SocketHandle sock, int backlog = 10);
-    SocketHandle AcceptSock(const SocketHandle sock);
-    void CloseSock(SocketHandle sock);
-    void FreeSock(SocketHandle sock);
-
-    String SockIpAddress(const SocketHandle sock);
-    uint32_t GetAddress4(const char* lookup);
-
-    void SendBuffer(const SocketHandle sock, const void* buffer, size_t size);
-    void RecvBuffer(const SocketHandle sock, void* buffer, size_t size);
-    size_t PeekSize(const SocketHandle sock);
-
-    template <typename tp>
-    inline tp RecvValue(const SocketHandle sock)
-    {
-        tp value;
-        RecvBuffer(sock, &value, sizeof(value));
-        return value;
-    }
-
-    class SockHup : public std::exception
-    {
-    public:
-        SockHup() throw() { }
-        virtual ~SockHup() throw() { }
-
-        virtual const char* what() const throw()
-        { return "Socket closed"; }
-    };
+    void StartStatusHTTP();
+    void StopStatusHTTP();
 }
 
 #endif

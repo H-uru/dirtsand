@@ -201,19 +201,17 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
     }
 }
 
-/*
-DS::Blob DS::RecvBlob(DS::SocketHandle sock)
+size_t DS::PeekSize(const SocketHandle sock)
 {
-    uint8_t peekbuf[32];
-    int sockfd = reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd;
-    ssize_t bytes = recv(sockfd, peekbuf, 32, MSG_PEEK);
+    uint8_t buffer[256];
+    ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
+                         buffer, 256, MSG_PEEK | MSG_TRUNC);
 
-    if (!bytes) {
-        return Blob();
-    } else {
-        uint8_t* buffer = new uint8_t[bytes];
-        recv(sockfd, buffer, bytes, 0);
-        return Blob::Steal(buffer, bytes);
-    }
+    if (bytes < 0 && errno == ECONNRESET)
+        throw DS::SockHup();
+    else if (bytes == 0)
+        throw DS::SockHup();
+    DS_PASSERT(bytes > 0);
+
+    return static_cast<size_t>(bytes);
 }
-*/
