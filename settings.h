@@ -66,6 +66,9 @@ namespace DS
         const char* DbPassword();
         const char* DbDbaseName();
 
+        DS::String WelcomeMsg();
+        void SetWelcomeMsg(const DS::String& welcome);
+
         bool LoadFrom(const char* filename);
         void UseDefaults();
     }

@@ -112,7 +112,10 @@ void* dm_htserv(void*)
             }
 
             if (path == "/status") {
-                DS::String json = "{\"online\":true";
+                DS::String json = "{'online':true";
+                DS::String welcome = DS::Settings::WelcomeMsg();
+                welcome.replace("\"", "\\\"");
+                json += DS::String::Format(",'welcome':\"%s\"", welcome.c_str());
                 json += "}\r\n";
                 // TODO: Add more status fields (players/ages, etc)
 
@@ -125,6 +128,20 @@ void* dm_htserv(void*)
                 SEND_RAW(client, "Content-Type: application/json\r\n");
                 SEND_RAW(client, "\r\n");
                 DS::SendBuffer(client, json.c_str(), json.length());
+                DS::FreeSock(client);
+            } else if (path == "/welcome") {
+                DS::String welcome = DS::Settings::WelcomeMsg();
+                welcome.replace("\\n", "\r\n");
+
+                SEND_RAW(client, "HTTP/1.1 200 OK\r\n");
+                SEND_RAW(client, "Server: Dirtsand\r\n");
+                SEND_RAW(client, "Connection: close\r\n");
+                SEND_RAW(client, "Accept-Ranges: bytes\r\n");
+                DS::String lengthParam = DS::String::Format("Content-Length: %u\r\n", welcome.length());
+                DS::SendBuffer(client, lengthParam.c_str(), lengthParam.length());
+                SEND_RAW(client, "Content-Type: text/plain\r\n");
+                SEND_RAW(client, "\r\n");
+                DS::SendBuffer(client, welcome.c_str(), welcome.length());
                 DS::FreeSock(client);
             } else {
                 DS::String content = DS::String::Format("No page found at %s\r\n", path.c_str());

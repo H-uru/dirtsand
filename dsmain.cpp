@@ -59,6 +59,7 @@ static char** console_completer(const char* text, int start, int end)
     static const char* completions[] = {
         /* Commands */
         "addacct", "clients", "commdebug", "help", "keygen", "quit", "restart",
+        "welcome",
         /* Services */
         "auth", "lobby", "status",
     };
@@ -243,6 +244,8 @@ int main(int argc, char* argv[])
             if (args.size() != 3)
                 printf("Usage: addacct <user> <password>\n");
             DS::AuthServer_AddAcct(args[1], args[2]);
+        } else if (args[0] == "welcome") {
+            DS::Settings::SetWelcomeMsg(cmdbuf + strlen("welcome "));
         } else if (args[0] == "help") {
             printf("DirtSand v1.0 Console supported commands:\n"
                    "    addacct <user> <password>\n"
@@ -251,7 +254,8 @@ int main(int argc, char* argv[])
                    "    help\n"
                    "    keygen <new|show>\n"
                    "    quit\n"
-                   "    restart <auth|lobby> [...]\n"
+                   "    restart <auth|lobby|status> [...]\n"
+                   "    welcome <message>\n"
                   );
         } else {
             fprintf(stderr, "Error: Unrecognized command: %s\n", args[0].c_str());

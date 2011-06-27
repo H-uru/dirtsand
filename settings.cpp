@@ -43,6 +43,9 @@ static struct
 
     /* Database */
     DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
+
+    /* Misc */
+    DS::String m_welcome;
 } s_settings;
 
 #define DS_LOADBLOB(outbuffer, fixedsize, input) \
@@ -136,6 +139,8 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_dbPassword = params[1];
             } else if (params[0] == "Db.Database") {
                 s_settings.m_dbDbase = params[1];
+            } else if (params[0] == "Welcome.Msg") {
+                s_settings.m_welcome = params[1];
             } else {
                 fprintf(stderr, "Warning: Unknown setting '%s' ignored\n",
                         params[0].c_str());
@@ -262,4 +267,14 @@ const char* DS::Settings::DbPassword()
 const char* DS::Settings::DbDbaseName()
 {
     return s_settings.m_dbDbase.c_str();
+}
+
+DS::String DS::Settings::WelcomeMsg()
+{
+    return s_settings.m_welcome;
+}
+
+void DS::Settings::SetWelcomeMsg(const DS::String& welcome)
+{
+    s_settings.m_welcome = welcome;
 }
