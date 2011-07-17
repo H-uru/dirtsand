@@ -99,7 +99,18 @@ the server settings as described in the "configure dirtsand" step.
    $ sudo -u postgres psql -d dirtsand < db/dbinit.sql
    $ sudo -u postgres psql -d dirtsand < db/functions.sql
 
-   If there were no errors, your database should be ready for DIRTSAND
+   NOTE:  If you see the message 'ERROR: language "plpgsql" does not exist'
+   while importing functions.sql, you will also need to create the plpgsql
+   language in the database:
+
+   $ sudo -u postgres psql -d dirtsand
+   dirtsand=# CREATE LANGUAGE plpgsql;
+   dirtsand=# \q
+
+   After this, you should re-import the functions.sql file to properly create
+   the necessary dirtsand functions.
+
+   If there were no other errors, your database should be ready for DIRTSAND
 
 
 4) Configure dirtsand:
