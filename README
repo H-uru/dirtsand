@@ -131,8 +131,8 @@ the server settings as described in the "configure dirtsand" step.
    within the dirtsand interactive console:
 
    $ bin/dirtsand
-   ds> keygen new       (This one will take a little while)
-   ds> quit
+   ds-902> keygen new       (This one will take a little while)
+   ds-902> quit
 
    Any errors that dirtsand spits out about config files and postgres
    passwords can be ignored, since you haven't provided a configuration

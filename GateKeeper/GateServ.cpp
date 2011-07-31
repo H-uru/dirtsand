@@ -116,7 +116,7 @@ void cb_fileServIpAddress(GateKeeper_Private& client)
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
-    // Unknown byte (ignored)
+    // From Patcher? (ignored)
     DS::CryptRecvValue<uint8_t>(client.m_sock, client.m_crypt);
 
     // Address
