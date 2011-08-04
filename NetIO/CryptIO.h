@@ -24,8 +24,8 @@
 
 #define BYTE_SWAP_BUFFER(buffer, size) \
     { \
-        for (size_t i=0; i<(size/2); ++i) \
-            std::swap(buffer[i], buffer[size-1-i]); \
+        for (size_t i=0; i<((size)/2); ++i) \
+            std::swap(buffer[i], buffer[(size)-1-i]); \
     }
 
 namespace DS
