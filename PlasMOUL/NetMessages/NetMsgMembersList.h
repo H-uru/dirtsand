@@ -55,7 +55,7 @@ namespace MOUL
         CLI_FIELD(uint32_t, PlayerId)
         CLI_FIELD(DS::String, PlayerName)
         CLI_FIELD(uint8_t, CCRLevel)
-        CLI_FIELD(uint8_t, ProtectedLogin)
+        CLI_FIELD(bool, ProtectedLogin)
         CLI_FIELD(uint8_t, BuildType)
         CLI_FIELD(uint32_t, SrcAddr)
         CLI_FIELD(uint16_t, SrcPort)

@@ -27,7 +27,7 @@ namespace MOUL
     {
         FACTORY_CREATABLE(NetMsgPlayerPage)
 
-        uint8_t m_unload;
+        bool m_unload;
         MOUL::Uoid m_uoid;
 
         virtual void read(DS::Stream* stream);
