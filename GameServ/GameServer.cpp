@@ -171,6 +171,7 @@ void* wk_gameWorker(void* sockp)
     GameClient_Private client;
     client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);
     client.m_host = 0;
+    client.m_crypt = 0;
 
     try {
         game_client_init(client);

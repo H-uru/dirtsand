@@ -148,8 +148,10 @@ DS::CryptState DS::CryptStateInit(const uint8_t* key, size_t size)
 void DS::CryptStateFree(DS::CryptState state)
 {
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(state);
-    pthread_mutex_destroy(&statep->m_mutex);
-    delete statep;
+    if (statep) {
+        pthread_mutex_destroy(&statep->m_mutex);
+        delete statep;
+    }
 }
 
 void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,

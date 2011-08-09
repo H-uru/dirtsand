@@ -145,6 +145,7 @@ void cb_authServIpAddress(GateKeeper_Private& client)
 void* wk_gateKeeper(void* sockp)
 {
     GateKeeper_Private client;
+    client.m_crypt = 0;
 
     pthread_mutex_lock(&s_clientMutex);
     client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);

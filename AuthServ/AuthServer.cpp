@@ -722,6 +722,7 @@ void cb_setAgePublic(AuthServer_Private& client)
 void* wk_authWorker(void* sockp)
 {
     AuthServer_Private client;
+    client.m_crypt = 0;
 
     pthread_mutex_lock(&s_authClientMutex);
     client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);
