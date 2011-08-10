@@ -112,8 +112,8 @@ CREATE TABLE "Nodes" (
     "IString64_2" character varying(64),
     "Text_1" character varying(1024),
     "Text_2" character varying(1024),
-    "Blob_1" bytea,
-    "Blob_2" bytea
+    "Blob_1" text,
+    "Blob_2" text
 );
 ALTER TABLE vault."Nodes" OWNER TO dirtsand;
 CREATE SEQUENCE "Nodes_idx_seq"
@@ -181,8 +181,8 @@ CREATE TABLE "AgeStates" (
     idx integer NOT NULL,
     "ServerIdx" integer NOT NULL,
     "Descriptor" character varying(64) NOT NULL,
-    "ObjectKey" bytea NOT NULL,
-    "SdlBlob" bytea NOT NULL
+    "ObjectKey" text NOT NULL,
+    "SdlBlob" text NOT NULL
 );
 ALTER TABLE game."AgeStates" OWNER TO dirtsand;
 CREATE SEQUENCE "AgeStates_idx_seq"

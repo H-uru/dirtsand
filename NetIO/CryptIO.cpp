@@ -111,6 +111,7 @@ void DS::CryptEstablish(uint8_t* seed, uint8_t* key, const uint8_t* N,
     BN_bin2bn(reinterpret_cast<const unsigned char*>(Y), 64, bn_Y);
     BN_bin2bn(reinterpret_cast<const unsigned char*>(N), 64, bn_N);
     BN_bin2bn(reinterpret_cast<const unsigned char*>(K), 64, bn_K);
+    DS_PASSERT(!BN_is_zero(bn_N));
     BN_mod_exp(bn_seed, bn_Y, bn_K, bn_N, ctx);
 
     /* Apply server seed for establishing crypt state with client */
@@ -147,9 +148,14 @@ DS::CryptState DS::CryptStateInit(const uint8_t* key, size_t size)
 
 void DS::CryptStateFree(DS::CryptState state)
 {
+    if (!state)
+        return;
+
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(state);
-    pthread_mutex_destroy(&statep->m_mutex);
-    delete statep;
+    if (statep) {
+        pthread_mutex_destroy(&statep->m_mutex);
+        delete statep;
+    }
 }
 
 void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
@@ -172,7 +178,9 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
 #endif
 
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);
-    if (size > 4096) {
+    if (!statep) {
+        DS::SendBuffer(sock, buffer, size);
+    } else if (size > 4096) {
         unsigned char* cryptbuf = new unsigned char[size];
         pthread_mutex_lock(&statep->m_mutex);
         RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), cryptbuf);
@@ -192,7 +200,9 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
                          void* buffer, size_t size)
 {
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(crypt);
-    if (size > 4096) {
+    if (!statep) {
+        DS::RecvBuffer(sock, buffer, size);
+    } else if (size > 4096) {
         unsigned char* cryptbuf = new unsigned char[size];
         DS::RecvBuffer(sock, cryptbuf, size);
         RC4(&statep->m_readKey, size, cryptbuf, reinterpret_cast<unsigned char*>(buffer));

@@ -43,28 +43,37 @@ void auth_init(AuthServer_Private& client)
     DS::Uuid uuid;
     DS::RecvBuffer(client.m_sock, uuid.m_bytes, sizeof(uuid.m_bytes));
 
-    /* Establish encryption */
+    /* Reply header */
+    client.m_buffer.truncate();
+    client.m_buffer.write<uint8_t>(DS::e_ServToCliEncrypt);
+
+    /* Establish encryption, and write reply body */
     uint8_t msgId = DS::RecvValue<uint8_t>(client.m_sock);
     DS_PASSERT(msgId == DS::e_CliToServConnect);
     uint8_t msgSize = DS::RecvValue<uint8_t>(client.m_sock);
-    DS_PASSERT(msgSize == 66);
+    if (msgSize == 2) {
+        // no seed... client wishes unencrypted connection (that's okay, nobody
+        // else can "fake" us as nobody has the private key, so if the client
+        // actually wants encryption it will only work with the correct peer)
+        client.m_buffer.write<uint8_t>(2); // reply with an empty seed as well
+    } else {
+        uint8_t Y[64];
+        DS_PASSERT(msgSize == 66);
+        DS::RecvBuffer(client.m_sock, Y, 64);
+        BYTE_SWAP_BUFFER(Y, 64);
 
-    uint8_t Y[64];
-    DS::RecvBuffer(client.m_sock, Y, 64);
-    BYTE_SWAP_BUFFER(Y, 64);
+        uint8_t serverSeed[7];
+        uint8_t sharedKey[7];
+        DS::CryptEstablish(serverSeed, sharedKey, DS::Settings::CryptKey(DS::e_KeyAuth_N),
+                           DS::Settings::CryptKey(DS::e_KeyAuth_K), Y);
+        client.m_crypt = DS::CryptStateInit(sharedKey, 7);
 
-    uint8_t serverSeed[7];
-    uint8_t sharedKey[7];
-    DS::CryptEstablish(serverSeed, sharedKey, DS::Settings::CryptKey(DS::e_KeyAuth_N),
-                       DS::Settings::CryptKey(DS::e_KeyAuth_K), Y);
+        client.m_buffer.write<uint8_t>(9);
+        client.m_buffer.writeBytes(serverSeed, 7);
+    }
 
-    client.m_buffer.truncate();
-    client.m_buffer.write<uint8_t>(DS::e_ServToCliEncrypt);
-    client.m_buffer.write<uint8_t>(9);
-    client.m_buffer.writeBytes(serverSeed, 7);
+    /* send reply */
     DS::SendBuffer(client.m_sock, client.m_buffer.buffer(), client.m_buffer.size());
-
-    client.m_crypt = DS::CryptStateInit(sharedKey, 7);
 }
 
 void cb_ping(AuthServer_Private& client)
@@ -722,6 +731,7 @@ void cb_setAgePublic(AuthServer_Private& client)
 void* wk_authWorker(void* sockp)
 {
     AuthServer_Private client;
+    client.m_crypt = 0;
 
     pthread_mutex_lock(&s_authClientMutex);
     client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);

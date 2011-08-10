@@ -108,6 +108,12 @@ static void exception_filter()
 
 int main(int argc, char* argv[])
 {
+    // refuse to run as root
+    if (geteuid() == 0) {
+        fprintf(stderr, "You must NOT run this server as root!\n");
+        return 1;
+    }
+    
     if (argc == 1) {
         fprintf(stderr, "Warning: No config file specified. Using defaults...\n");
         DS::Settings::UseDefaults();

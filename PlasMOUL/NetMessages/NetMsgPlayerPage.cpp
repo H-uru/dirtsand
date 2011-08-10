@@ -20,13 +20,13 @@
 void MOUL::NetMsgPlayerPage::read(DS::Stream* stream)
 {
     MOUL::NetMessage::read(stream);
-    m_unload = stream->read<uint8_t>();
+    m_unload = stream->read<bool>();
     m_uoid.read(stream);
 }
 
 void MOUL::NetMsgPlayerPage::write(DS::Stream* stream)
 {
     MOUL::NetMessage::write(stream);
-    stream->write<uint8_t>(m_unload);
+    stream->write<bool>(m_unload);
     m_uoid.write(stream);
 }

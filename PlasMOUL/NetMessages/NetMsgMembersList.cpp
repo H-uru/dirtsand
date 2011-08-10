@@ -30,7 +30,7 @@ void MOUL::ClientGuid::read(DS::Stream* stream)
     if (m_flags & e_HasCCRLevel)
         m_CCRLevel = stream->read<uint8_t>();
     if (m_flags & e_HasProtectedLogin)
-        m_ProtectedLogin = stream->read<uint8_t>();
+        m_ProtectedLogin = stream->read<bool>();
     if (m_flags & e_HasBuildType)
         m_BuildType = stream->read<uint8_t>();
     if (m_flags & e_HasSrcAddr)
@@ -59,7 +59,7 @@ void MOUL::ClientGuid::write(DS::Stream* stream)
     if (m_flags & e_HasCCRLevel)
         stream->write<uint8_t>(m_CCRLevel);
     if (m_flags & e_HasProtectedLogin)
-        stream->write<uint8_t>(m_ProtectedLogin);
+        stream->write<bool>(m_ProtectedLogin);
     if (m_flags & e_HasBuildType)
         stream->write<uint8_t>(m_BuildType);
     if (m_flags & e_HasSrcAddr)

@@ -99,7 +99,7 @@ the server settings as described in the "configure dirtsand" step.
    $ sudo -u postgres psql -d dirtsand < db/dbinit.sql
    $ sudo -u postgres psql -d dirtsand < db/functions.sql
 
-   If there were no errors, your database should be ready for DIRTSAND
+   If there were no other errors, your database should be ready for DIRTSAND
 
 
 4) Configure dirtsand:
@@ -120,8 +120,8 @@ the server settings as described in the "configure dirtsand" step.
    within the dirtsand interactive console:
 
    $ bin/dirtsand
-   ds> keygen new       (This one will take a little while)
-   ds> quit
+   ds-902> keygen new       (This one will take a little while)
+   ds-902> quit
 
    Any errors that dirtsand spits out about config files and postgres
    passwords can be ignored, since you haven't provided a configuration
