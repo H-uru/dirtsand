@@ -49,10 +49,12 @@ void game_client_init(GameClient_Private& client)
     uint8_t msgId = DS::RecvValue<uint8_t>(client.m_sock);
     DS_PASSERT(msgId == DS::e_CliToServConnect);
     uint8_t msgSize = DS::RecvValue<uint8_t>(client.m_sock);
-    if (msgSize == 2) { // no seed... client wishes unencrypted connection (that's okay, nobody else can "fake" us as nobody has the private key, so if the client actually wants encryption it will only work with the correct peer)
+    if (msgSize == 2) {
+        // no seed... client wishes unencrypted connection (that's okay, nobody
+        // else can "fake" us as nobody has the private key, so if the client
+        // actually wants encryption it will only work with the correct peer)
         client.m_buffer.write<uint8_t>(2); // reply with an empty seed as well
-    }
-    else {
+    } else {
         uint8_t Y[64];
         DS_PASSERT(msgSize == 66);
         DS::RecvBuffer(client.m_sock, Y, 64);
@@ -61,13 +63,13 @@ void game_client_init(GameClient_Private& client)
         uint8_t serverSeed[7];
         uint8_t sharedKey[7];
         DS::CryptEstablish(serverSeed, sharedKey, DS::Settings::CryptKey(DS::e_KeyGame_N),
-                        DS::Settings::CryptKey(DS::e_KeyGame_K), Y);
+                           DS::Settings::CryptKey(DS::e_KeyGame_K), Y);
         client.m_crypt = DS::CryptStateInit(sharedKey, 7);
 
         client.m_buffer.write<uint8_t>(9);
         client.m_buffer.writeBytes(serverSeed, 7);
     }
-    
+
     /* send reply */
     DS::SendBuffer(client.m_sock, client.m_buffer.buffer(), client.m_buffer.size());
 }

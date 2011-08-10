@@ -148,7 +148,9 @@ DS::CryptState DS::CryptStateInit(const uint8_t* key, size_t size)
 
 void DS::CryptStateFree(DS::CryptState state)
 {
-    if (state == NULL) return;
+    if (!state)
+        return;
+
     CryptState_Private* statep = reinterpret_cast<CryptState_Private*>(state);
     if (statep) {
         pthread_mutex_destroy(&statep->m_mutex);
