@@ -440,13 +440,13 @@ void dm_auth_get_public(Auth_PubAgeRequest* msg)
     }
     for (int i = 0; i < PQntuples(result); i++) {
         Auth_PubAgeRequest::NetAgeInfo ai;
-        ai.m_instance = DS::Uuid(PQgetvalue(result, 0, 1));
-        ai.m_instancename = PQgetvalue(result, 0, 2);
-        ai.m_username = PQgetvalue(result, 0, 3);
-        ai.m_description = PQgetvalue(result, 0, 4);
-        ai.m_sequence = strtoul(PQgetvalue(result, 0, 5), 0, 10);
-        ai.m_language = strtoul(PQgetvalue(result, 0, 6), 0, 10);
-        ai.m_population = strtoul(PQgetvalue(result, 0, 7), 0, 10);
+        ai.m_instance = DS::Uuid(PQgetvalue(result, i, 1));
+        ai.m_instancename = PQgetvalue(result, i, 2);
+        ai.m_username = PQgetvalue(result, i, 3);
+        ai.m_description = PQgetvalue(result, i, 4);
+        ai.m_sequence = strtoul(PQgetvalue(result, i, 5), 0, 10);
+        ai.m_language = strtoul(PQgetvalue(result, i, 6), 0, 10);
+        ai.m_population = strtoul(PQgetvalue(result, i, 7), 0, 10);
         msg->m_ages.push_back(ai);
     }
     PQclear(result);
