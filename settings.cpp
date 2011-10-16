@@ -35,6 +35,7 @@ static struct
 
     /* Host configuration */
     DS::String m_lobbyAddr, m_lobbyPort;
+    DS::String m_statusAddr, m_statusPort;
 
     /* Data locations */
     DS::String m_fileRoot, m_authRoot;
@@ -42,6 +43,9 @@ static struct
 
     /* Database */
     DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
+
+    /* Misc */
+    DS::String m_welcome;
 } s_settings;
 
 #define DS_LOADBLOB(outbuffer, fixedsize, input) \
@@ -109,6 +113,10 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_lobbyAddr = params[1];
             } else if (params[0] == "Lobby.Port") {
                 s_settings.m_lobbyPort = params[1];
+            } else if (params[0] == "Status.Addr") {
+                s_settings.m_statusAddr = params[1];
+            } else if (params[0] == "Status.Port") {
+                s_settings.m_statusPort = params[1];
             } else if (params[0] == "File.Root") {
                 s_settings.m_fileRoot = params[1];
                 if (s_settings.m_fileRoot.right(1) != "/")
@@ -131,6 +139,8 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_dbPassword = params[1];
             } else if (params[0] == "Db.Database") {
                 s_settings.m_dbDbase = params[1];
+            } else if (params[0] == "Welcome.Msg") {
+                s_settings.m_welcome = params[1];
             } else {
                 fprintf(stderr, "Warning: Unknown setting '%s' ignored\n",
                         params[0].c_str());
@@ -154,6 +164,7 @@ void DS::Settings::UseDefaults()
     s_settings.m_fileServ = String("localhost").toUtf16();
     s_settings.m_gameServ = "localhost";
     s_settings.m_lobbyPort = "14617";
+    s_settings.m_statusPort = "8080";
 
     s_settings.m_fileRoot = "./data";
     s_settings.m_authRoot = "./authdata";
@@ -203,6 +214,16 @@ const char* DS::Settings::LobbyPort()
     return s_settings.m_lobbyPort.c_str();
 }
 
+const char* DS::Settings::StatusAddress()
+{
+    return s_settings.m_statusAddr.isEmpty() ? 0 : s_settings.m_statusAddr.c_str();
+}
+
+const char* DS::Settings::StatusPort()
+{
+    return s_settings.m_statusPort.c_str();
+}
+
 DS::String DS::Settings::FileRoot()
 {
     return s_settings.m_fileRoot;
@@ -246,4 +267,14 @@ const char* DS::Settings::DbPassword()
 const char* DS::Settings::DbDbaseName()
 {
     return s_settings.m_dbDbase.c_str();
+}
+
+DS::String DS::Settings::WelcomeMsg()
+{
+    return s_settings.m_welcome;
+}
+
+void DS::Settings::SetWelcomeMsg(const DS::String& welcome)
+{
+    s_settings.m_welcome = welcome;
 }

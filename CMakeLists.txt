@@ -81,6 +81,7 @@ set(dirtsand_SOURCES
     NetIO/SockIO.cpp
     NetIO/CryptIO.cpp
     NetIO/Lobby.cpp
+    NetIO/Status.cpp
     GateKeeper/GateServ.cpp
     FileServ/FileManifest.cpp
     FileServ/FileServer.cpp

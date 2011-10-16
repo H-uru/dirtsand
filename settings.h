@@ -52,6 +52,9 @@ namespace DS
         const char* LobbyAddress();
         const char* LobbyPort();
 
+        const char* StatusAddress();
+        const char* StatusPort();
+
         DS::String FileRoot();
         DS::String AuthRoot();
         const char* SdlPath();
@@ -62,6 +65,9 @@ namespace DS
         const char* DbUsername();
         const char* DbPassword();
         const char* DbDbaseName();
+
+        DS::String WelcomeMsg();
+        void SetWelcomeMsg(const DS::String& welcome);
 
         bool LoadFrom(const char* filename);
         void UseDefaults();
