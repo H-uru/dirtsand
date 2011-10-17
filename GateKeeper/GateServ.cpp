@@ -21,9 +21,10 @@
 #include "settings.h"
 #include "streams.h"
 #include "errors.h"
-#include <pthread.h>
 #include <unistd.h>
 #include <list>
+#include <thread>
+#include <mutex>
 
 extern bool s_commdebug;
 
@@ -35,7 +36,7 @@ struct GateKeeper_Private
 };
 
 static std::list<GateKeeper_Private*> s_clients;
-static pthread_mutex_t s_clientMutex;
+static std::mutex s_clientMutex;
 
 enum GateKeeper_MsgIds
 {
@@ -151,15 +152,15 @@ void cb_authServIpAddress(GateKeeper_Private& client)
     SEND_REPLY();
 }
 
-void* wk_gateKeeper(void* sockp)
+void wk_gateKeeper(DS::SocketHandle sockp)
 {
     GateKeeper_Private client;
     client.m_crypt = 0;
 
-    pthread_mutex_lock(&s_clientMutex);
-    client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);
+    s_clientMutex.lock();
+    client.m_sock = sockp;
     s_clients.push_back(&client);
-    pthread_mutex_unlock(&s_clientMutex);
+    s_clientMutex.lock();
 
     try {
         gate_init(client);
@@ -191,7 +192,7 @@ void* wk_gateKeeper(void* sockp)
         // Socket closed...
     }
 
-    pthread_mutex_lock(&s_clientMutex);
+    s_clientMutex.lock();
     auto client_iter = s_clients.begin();
     while (client_iter != s_clients.end()) {
         if (*client_iter == &client)
@@ -199,17 +200,14 @@ void* wk_gateKeeper(void* sockp)
         else
             ++client_iter;
     }
-    pthread_mutex_unlock(&s_clientMutex);
+    s_clientMutex.unlock();
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
-    return 0;
 }
 
 void DS::GateKeeper_Init()
-{
-    pthread_mutex_init(&s_clientMutex, 0);
-}
+{ }
 
 void DS::GateKeeper_Add(DS::SocketHandle client)
 {
@@ -218,38 +216,36 @@ void DS::GateKeeper_Add(DS::SocketHandle client)
         printf("Connecting GATE on %s\n", DS::SockIpAddress(client).c_str());
 #endif
 
-    pthread_t threadh;
-    pthread_create(&threadh, 0, &wk_gateKeeper, reinterpret_cast<void*>(client));
-    pthread_detach(threadh);
+    std::thread threadh(&wk_gateKeeper, client);
+    threadh.detach();
 }
 
 void DS::GateKeeper_Shutdown()
 {
-    pthread_mutex_lock(&s_clientMutex);
+    s_clientMutex.lock();
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         DS::CloseSock((*client_iter)->m_sock);
-    pthread_mutex_unlock(&s_clientMutex);
+    s_clientMutex.unlock();
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
-        pthread_mutex_lock(&s_clientMutex);
+        s_clientMutex.lock();
         size_t alive = s_clients.size();
-        pthread_mutex_unlock(&s_clientMutex);
+        s_clientMutex.unlock();
         if (alive == 0)
             complete = true;
         usleep(100000);
     }
     if (!complete)
         fprintf(stderr, "[GateKeeper] Clients didn't die after 5 seconds!\n");
-    pthread_mutex_destroy(&s_clientMutex);
 }
 
 void DS::GateKeeper_DisplayClients()
 {
-    pthread_mutex_lock(&s_clientMutex);
+    s_clientMutex.lock();
     if (s_clients.size())
         printf("Gate Keeper:\n");
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
-    pthread_mutex_unlock(&s_clientMutex);
+    s_clientMutex.unlock();
 }

@@ -76,12 +76,12 @@ void game_client_init(GameClient_Private& client)
 
 GameHost_Private* find_game_host(uint32_t ageMcpId)
 {
-    pthread_mutex_lock(&s_gameHostMutex);
+    s_gameHostMutex.lock();
     hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
     GameHost_Private* host = 0;
     if (host_iter != s_gameHosts.end())
         host = host_iter->second;
-    pthread_mutex_unlock(&s_gameHostMutex);
+    s_gameHostMutex.unlock();
     return host ? host : start_game_host(ageMcpId);
 }
 
@@ -138,9 +138,9 @@ void cb_join(GameClient_Private& client)
 
     SEND_REPLY();
 
-    pthread_mutex_lock(&client.m_host->m_clientMutex);
+    client.m_host->m_clientMutex.lock();
     client.m_host->m_clients[client.m_clientInfo.m_PlayerId] = &client;
-    pthread_mutex_unlock(&client.m_host->m_clientMutex);
+    client.m_host->m_clientMutex.unlock();
 }
 
 void cb_netmsg(GameClient_Private& client)
@@ -175,10 +175,10 @@ void cb_gameMgrMsg(GameClient_Private& client)
     delete[] buffer;
 }
 
-void* wk_gameWorker(void* sockp)
+void wk_gameWorker(DS::SocketHandle sockp)
 {
     GameClient_Private client;
-    client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);
+    client.m_sock = sockp;
     client.m_host = 0;
     client.m_crypt = 0;
 
@@ -187,10 +187,10 @@ void* wk_gameWorker(void* sockp)
     } catch (DS::AssertException ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
-        return 0;
+        return;
     } catch (DS::SockHup) {
         // Socket closed...
-        return 0;
+        return;
     }
 
     try {
@@ -227,9 +227,9 @@ void* wk_gameWorker(void* sockp)
     }
 
     if (client.m_host) {
-        pthread_mutex_lock(&client.m_host->m_clientMutex);
+        client.m_host->m_clientMutex.lock();
         client.m_host->m_clients.erase(client.m_clientInfo.m_PlayerId);
-        pthread_mutex_unlock(&client.m_host->m_clientMutex);
+        client.m_host->m_clientMutex.unlock();
         Game_ClientMessage msg;
         msg.m_client = &client;
         client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
@@ -238,7 +238,6 @@ void* wk_gameWorker(void* sockp)
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
-    return 0;
 }
 
 static int sel_age(const dirent* de)
@@ -312,8 +311,6 @@ void DS::GameServer_Init()
         }
         free(dirls);
     }
-
-    pthread_mutex_init(&s_gameHostMutex, 0);
 }
 
 void DS::GameServer_Add(DS::SocketHandle client)
@@ -323,36 +320,34 @@ void DS::GameServer_Add(DS::SocketHandle client)
         printf("Connecting GAME on %s\n", DS::SockIpAddress(client).c_str());
 #endif
 
-    pthread_t threadh;
-    pthread_create(&threadh, 0, &wk_gameWorker, reinterpret_cast<void*>(client));
-    pthread_detach(threadh);
+    std::thread threadh(&wk_gameWorker, client);
+    threadh.detach();
 }
 
 void DS::GameServer_Shutdown()
 {
-    pthread_mutex_lock(&s_gameHostMutex);
+    s_gameHostMutex.lock();
     hostmap_t::iterator host_iter;
     for (host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter)
         host_iter->second->m_channel.putMessage(e_GameShutdown);
-    pthread_mutex_unlock(&s_gameHostMutex);
+    s_gameHostMutex.unlock();
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
-        pthread_mutex_lock(&s_gameHostMutex);
+        s_gameHostMutex.lock();
         size_t alive = s_gameHosts.size();
-        pthread_mutex_unlock(&s_gameHostMutex);
+        s_gameHostMutex.unlock();
         if (alive == 0)
             complete = true;
         usleep(100000);
     }
     if (!complete)
         fprintf(stderr, "[Game] Servers didn't die after 5 seconds!\n");
-    pthread_mutex_destroy(&s_gameHostMutex);
 }
 
 void DS::GameServer_DisplayClients()
 {
-    pthread_mutex_lock(&s_gameHostMutex);
+    s_gameHostMutex.lock();
     if (s_gameHosts.size())
         printf("Game Servers:\n");
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
@@ -364,5 +359,5 @@ void DS::GameServer_DisplayClients()
                    client_iter->second->m_clientInfo.m_PlayerName.c_str(),
                    client_iter->second->m_clientInfo.m_PlayerId);
     }
-    pthread_mutex_unlock(&s_gameHostMutex);
+    s_gameHostMutex.unlock();
 }

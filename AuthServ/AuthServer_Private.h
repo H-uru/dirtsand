@@ -19,10 +19,11 @@
 #include "AuthClient.h"
 #include "db/pqaccess.h"
 #include "streams.h"
-#include <pthread.h>
 #include <vector>
 #include <list>
 #include <map>
+#include <thread>
+#include <mutex>
 
 enum AuthServer_MsgIds
 {
@@ -101,10 +102,10 @@ struct AuthServer_Private : public AuthClient_Private
 };
 
 extern std::list<AuthServer_Private*> s_authClients;
-extern pthread_mutex_t s_authClientMutex;
-extern pthread_t s_authDaemonThread;
+extern std::mutex s_authClientMutex;
+extern std::thread s_authDaemonThread;
 
-void* dm_authDaemon(void*);
+void dm_authDaemon();
 bool dm_vault_init();
 
 DS::Uuid gen_uuid();

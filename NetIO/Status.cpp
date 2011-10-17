@@ -20,17 +20,17 @@
 #include "errors.h"
 #include "settings.h"
 #include "strings.h"
-#include <pthread.h>
 #include <cstdio>
 #include <list>
+#include <thread>
 
-static pthread_t s_httpThread;
+static std::thread s_httpThread;
 static DS::SocketHandle s_listenSock;
 
 #define SEND_RAW(sock, str) \
     DS::SendBuffer((sock), static_cast<const void*>(str), strlen(str))
 
-void* dm_htserv(void*)
+void dm_htserv()
 {
     printf("[Status] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
     try {
@@ -164,7 +164,6 @@ void* dm_htserv(void*)
     }
 
     DS::FreeSock(s_listenSock);
-    return 0;
 }
 
 void DS::StartStatusHTTP()
@@ -172,11 +171,11 @@ void DS::StartStatusHTTP()
     s_listenSock = DS::BindSocket(DS::Settings::StatusAddress(),
                                   DS::Settings::StatusPort());
     DS::ListenSock(s_listenSock);
-    pthread_create(&s_httpThread, 0, &dm_htserv, 0);
+    s_httpThread = std::thread(&dm_htserv);
 }
 
 void DS::StopStatusHTTP()
 {
     DS::CloseSock(s_listenSock);
-    pthread_join(s_httpThread, 0);
+    s_httpThread.join();
 }

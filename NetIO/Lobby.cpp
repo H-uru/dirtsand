@@ -24,7 +24,7 @@
 #include "SockIO.h"
 #include "errors.h"
 #include "settings.h"
-#include <pthread.h>
+#include <thread>
 #include <cstdio>
 
 enum ConnType
@@ -44,10 +44,10 @@ struct ConnectionHeader
     DS::Uuid m_productId;
 };
 
-static pthread_t s_lobbyThread;
+static std::thread s_lobbyThread;
 static DS::SocketHandle s_listenSock;
 
-void* dm_lobby(void*)
+void dm_lobby()
 {
     printf("[Lobby] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
     try {
@@ -96,7 +96,6 @@ void* dm_lobby(void*)
     }
 
     DS::FreeSock(s_listenSock);
-    return 0;
 }
 
 void DS::StartLobby()
@@ -104,11 +103,11 @@ void DS::StartLobby()
     s_listenSock = DS::BindSocket(DS::Settings::LobbyAddress(),
                                   DS::Settings::LobbyPort());
     DS::ListenSock(s_listenSock);
-    pthread_create(&s_lobbyThread, 0, &dm_lobby, 0);
+    s_lobbyThread = std::thread(&dm_lobby);
 }
 
 void DS::StopLobby()
 {
     DS::CloseSock(s_listenSock);
-    pthread_join(s_lobbyThread, 0);
+    s_lobbyThread.join();
 }

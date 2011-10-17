@@ -21,7 +21,7 @@
 #include "errors.h"
 #include <unistd.h>
 
-pthread_t s_authDaemonThread;
+std::thread s_authDaemonThread;
 DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
 
@@ -62,16 +62,16 @@ void dm_auth_addacct(Auth_AccountInfo* info)
 
 void dm_auth_shutdown()
 {
-    pthread_mutex_lock(&s_authClientMutex);
+    s_authClientMutex.lock();
     for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter)
         DS::CloseSock((*client_iter)->m_sock);
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
-        pthread_mutex_lock(&s_authClientMutex);
+        s_authClientMutex.lock();
         size_t alive = s_authClients.size();
-        pthread_mutex_unlock(&s_authClientMutex);
+        s_authClientMutex.unlock();
         if (alive == 0)
             complete = true;
         usleep(100000);
@@ -79,7 +79,6 @@ void dm_auth_shutdown()
     if (!complete)
         fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!\n");
 
-    pthread_mutex_destroy(&s_authClientMutex);
     PQfinish(s_postgres);
 }
 
@@ -252,7 +251,7 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
     }
 #endif
 
-    pthread_mutex_lock(&s_authClientMutex);
+    s_authClientMutex.lock();
     for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         if (client != *client_iter && (*client_iter)->m_player.m_playerId == client->m_player.m_playerId) {
             printf("[Auth] {%s} requested already-active player (%u)\n",
@@ -261,11 +260,11 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
             PQclear(result);
             client->m_player.m_playerId = 0;
             SEND_REPLY(msg, DS::e_NetLoggedInElsewhere);
-            pthread_mutex_unlock(&s_authClientMutex);
+            s_authClientMutex.unlock();
             return;
         }
     }
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 
     client->m_player.m_playerName = PQgetvalue(result, 0, 0);
     client->m_player.m_avatarModel = PQgetvalue(result, 0, 1);
@@ -460,7 +459,7 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
     *reinterpret_cast<uint32_t*>(buffer + 2) = nodeIdx;
     *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
 
-    pthread_mutex_lock(&s_authClientMutex);
+    s_authClientMutex.lock();
     for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
@@ -468,7 +467,7 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
             // Client ignored us.  Return the favor
         }
     }
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 }
 
 void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
@@ -479,7 +478,7 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer +  6) = ref.m_child;
     *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
 
-    pthread_mutex_lock(&s_authClientMutex);
+    s_authClientMutex.lock();
     for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
@@ -487,7 +486,7 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
             // Client ignored us.  Return the favor
         }
     }
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 }
 
 void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
@@ -497,7 +496,7 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer + 2) = ref.m_parent;
     *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
 
-    pthread_mutex_lock(&s_authClientMutex);
+    s_authClientMutex.lock();
     for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         try {
             DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
@@ -505,7 +504,7 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
             // Client ignored us.  Return the favor
         }
     }
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 }
 
 uint32_t dm_auth_set_public(uint32_t nodeid)
@@ -627,7 +626,7 @@ void dm_auth_set_pub_priv(Auth_SetPublic* msg)
     SEND_REPLY(msg, result);
 }
 
-void* dm_authDaemon(void*)
+void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
                     "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
@@ -638,12 +637,12 @@ void* dm_authDaemon(void*)
         fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(s_postgres));
         PQfinish(s_postgres);
         s_postgres = 0;
-        return 0;
+        return;
     }
 
     if (!dm_vault_init()) {
         fprintf(stderr, "[Auth] Vault failed to initialize\n");
-        return 0;
+        return;
     }
 
     for ( ;; ) {
@@ -652,7 +651,7 @@ void* dm_authDaemon(void*)
             switch (msg.m_messageType) {
             case e_AuthShutdown:
                 dm_auth_shutdown();
-                return 0;
+                return;
             case e_AuthClientLogin:
                 dm_auth_login(reinterpret_cast<Auth_LoginInfo*>(msg.m_payload));
                 break;
@@ -785,5 +784,4 @@ void* dm_authDaemon(void*)
     }
 
     dm_auth_shutdown();
-    return 0;
 }

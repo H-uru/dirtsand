@@ -10,7 +10,6 @@ set(CMAKE_C_FLAGS_DEBUG "-DDEBUG ${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-find_package(Threads REQUIRED)
 find_package(Postgres REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)

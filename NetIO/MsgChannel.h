@@ -19,8 +19,8 @@
 #define _DS_MSGCHANNEL_H
 
 #include <semaphore.h>
-#include <pthread.h>
 #include <queue>
+#include <mutex>
 
 namespace DS
 {
@@ -41,7 +41,7 @@ namespace DS
 
     private:
         sem_t m_semaphore;
-        pthread_mutex_t m_queueMutex;
+        std::mutex m_queueMutex;
         std::queue<FifoMessage> m_queue;
     };
 }

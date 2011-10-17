@@ -25,7 +25,7 @@
 extern bool s_commdebug;
 
 std::list<AuthServer_Private*> s_authClients;
-pthread_mutex_t s_authClientMutex;
+std::mutex s_authClientMutex;
 
 #define START_REPLY(msgId) \
     client.m_buffer.truncate(); \
@@ -728,15 +728,15 @@ void cb_setAgePublic(AuthServer_Private& client)
     client.m_channel.getMessage(); // wait for daemon to finish
 }
 
-void* wk_authWorker(void* sockp)
+void wk_authWorker(DS::SocketHandle sockp)
 {
     AuthServer_Private client;
     client.m_crypt = 0;
 
-    pthread_mutex_lock(&s_authClientMutex);
-    client.m_sock = reinterpret_cast<DS::SocketHandle>(sockp);
+    s_authClientMutex.lock();
+    client.m_sock = sockp;
     s_authClients.push_back(&client);
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 
     try {
         auth_init(client);
@@ -855,7 +855,7 @@ void* wk_authWorker(void* sockp)
     s_authChannel.putMessage(e_AuthDisconnect, reinterpret_cast<void*>(&disconMsg));
     client.m_channel.getMessage();
 
-    pthread_mutex_lock(&s_authClientMutex);
+    s_authClientMutex.lock();
     auto client_iter = s_authClients.begin();
     while (client_iter != s_authClients.end()) {
         if (*client_iter == &client)
@@ -863,17 +863,15 @@ void* wk_authWorker(void* sockp)
         else
             ++client_iter;
     }
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);
-    return 0;
 }
 
 void DS::AuthServer_Init()
 {
-    pthread_mutex_init(&s_authClientMutex, 0);
-    pthread_create(&s_authDaemonThread, 0, &dm_authDaemon, 0);
+    s_authDaemonThread = std::thread(&dm_authDaemon);
 }
 
 void DS::AuthServer_Add(DS::SocketHandle client)
@@ -883,27 +881,26 @@ void DS::AuthServer_Add(DS::SocketHandle client)
         printf("Connecting AUTH on %s\n", DS::SockIpAddress(client).c_str());
 #endif
 
-    pthread_t threadh;
-    pthread_create(&threadh, 0, &wk_authWorker, reinterpret_cast<void*>(client));
-    pthread_detach(threadh);
+    std::thread threadh(&wk_authWorker, client);
+    threadh.detach();
 }
 
 void DS::AuthServer_Shutdown()
 {
     s_authChannel.putMessage(e_AuthShutdown);
-    pthread_join(s_authDaemonThread, 0);
+    s_authDaemonThread.join();
 }
 
 void DS::AuthServer_DisplayClients()
 {
-    pthread_mutex_lock(&s_authClientMutex);
+    s_authClientMutex.lock();
     if (s_authClients.size())
         printf("Auth Server:\n");
     for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         printf("  * %s {%s}\n", DS::SockIpAddress((*client_iter)->m_sock).c_str(),
                (*client_iter)->m_acctUuid.toString().c_str());
     }
-    pthread_mutex_unlock(&s_authClientMutex);
+    s_authClientMutex.unlock();
 }
 
 void DS::AuthServer_AddAcct(DS::String acctName, DS::String password)

@@ -22,8 +22,6 @@ DS::MsgChannel::MsgChannel()
 {
     int result;
 
-    result = pthread_mutex_init(&m_queueMutex, 0);
-    DS_PASSERT(result == 0);
     result = sem_init(&m_semaphore, 0, 0);
     DS_PASSERT(result == 0);
 }
@@ -34,27 +32,25 @@ DS::MsgChannel::~MsgChannel()
 
     result = sem_destroy(&m_semaphore);
     DS_PASSERT(result == 0);
-    result = pthread_mutex_destroy(&m_queueMutex);
-    DS_PASSERT(result == 0);
 }
 
 void DS::MsgChannel::putMessage(int type, void* payload)
 {
-    pthread_mutex_lock(&m_queueMutex);
+    m_queueMutex.lock();
     FifoMessage msg;
     msg.m_messageType = type;
     msg.m_payload = payload;
     m_queue.push(msg);
-    pthread_mutex_unlock(&m_queueMutex);
+    m_queueMutex.unlock();
     sem_post(&m_semaphore);
 }
 
 DS::FifoMessage DS::MsgChannel::getMessage()
 {
     sem_wait(&m_semaphore);
-    pthread_mutex_lock(&m_queueMutex);
+    m_queueMutex.lock();
     FifoMessage msg = m_queue.front();
     m_queue.pop();
-    pthread_mutex_unlock(&m_queueMutex);
+    m_queueMutex.unlock();
     return msg;
 }

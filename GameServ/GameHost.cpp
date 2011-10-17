@@ -31,7 +31,7 @@
 #include "encodings.h"
 
 hostmap_t s_gameHosts;
-pthread_mutex_t s_gameHostMutex;
+std::mutex s_gameHostMutex;
 agemap_t s_ages;
 
 #define SEND_REPLY(msg, result) \
@@ -55,16 +55,16 @@ static inline void check_postgres(GameHost_Private* host)
 
 void dm_game_shutdown(GameHost_Private* host)
 {
-    pthread_mutex_lock(&host->m_clientMutex);
+    host->m_clientMutex.lock();
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter)
         DS::CloseSock(client_iter->second->m_sock);
-    pthread_mutex_unlock(&host->m_clientMutex);
+    host->m_clientMutex.unlock();
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
-        pthread_mutex_lock(&host->m_clientMutex);
+        host->m_clientMutex.lock();
         size_t alive = host->m_clients.size();
-        pthread_mutex_unlock(&host->m_clientMutex);
+        host->m_clientMutex.unlock();
         if (alive == 0)
             complete = true;
         usleep(100000);
@@ -72,7 +72,7 @@ void dm_game_shutdown(GameHost_Private* host)
     if (!complete)
         fprintf(stderr, "[Game] Clients didn't die after 5 seconds!\n");
 
-    pthread_mutex_lock(&s_gameHostMutex);
+    s_gameHostMutex.lock();
     hostmap_t::iterator host_iter = s_gameHosts.begin();
     while (host_iter != s_gameHosts.end()) {
         if (host_iter->second == host)
@@ -80,9 +80,8 @@ void dm_game_shutdown(GameHost_Private* host)
         else
             ++host_iter;
     }
-    pthread_mutex_unlock(&s_gameHostMutex);
+    s_gameHostMutex.unlock();
 
-    pthread_mutex_destroy(&host->m_clientMutex);
     PQfinish(host->m_postgres);
     delete host;
 }
@@ -91,7 +90,7 @@ void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
 {
     DM_WRITEMSG(host, msg);
 
-    pthread_mutex_lock(&host->m_clientMutex);
+    host->m_clientMutex.lock();
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId == sender
             && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
@@ -105,7 +104,7 @@ void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
             // of the client list if one hung up
         }
     }
-    pthread_mutex_unlock(&host->m_clientMutex);
+    host->m_clientMutex.unlock();
 }
 
 void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
@@ -113,7 +112,7 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
 {
     DM_WRITEMSG(host, msg);
 
-    pthread_mutex_lock(&host->m_clientMutex);
+    host->m_clientMutex.lock();
     for (auto rcvr_iter = receivers.begin(); rcvr_iter != receivers.end(); ++rcvr_iter) {
         for (hostmap_t::iterator recv_host = s_gameHosts.begin(); recv_host != s_gameHosts.end(); ++recv_host) {
             auto client = recv_host->second->m_clients.find(*rcvr_iter);
@@ -129,7 +128,7 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
             }
         }
     }
-    pthread_mutex_unlock(&host->m_clientMutex);
+    host->m_clientMutex.unlock();
 }
 
 void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
@@ -352,7 +351,7 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
     reply->m_receivers.push_back(msg->m_object);
     reply->m_bcastFlags = MOUL::Message::e_LocalPropagate;
 
-    pthread_mutex_lock(&host->m_lockMutex);
+    host->m_lockMutex.lock();
     if (msg->m_lockRequest) {
         if (host->m_locks.find(msg->m_object) == host->m_locks.end()) {
             reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
@@ -369,7 +368,7 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
             reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
         }
     }
-    pthread_mutex_unlock(&host->m_lockMutex);
+    host->m_lockMutex.unlock();
 
     MOUL::NetMsgGameMessage* netReply = MOUL::NetMsgGameMessage::Create();
     netReply->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
@@ -393,7 +392,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     members->m_timestamp.setNow();
     members->m_playerId = client->m_clientInfo.m_PlayerId;
 
-    pthread_mutex_lock(&host->m_clientMutex);
+    host->m_clientMutex.lock();
     members->m_members.reserve(host->m_clients.size() - 1);
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId != client->m_clientInfo.m_PlayerId
@@ -404,7 +403,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
             members->m_members.push_back(info);
         }
     }
-    pthread_mutex_unlock(&host->m_clientMutex);
+    host->m_clientMutex.unlock();
 
     DM_WRITEMSG(host, members);
     DS::CryptSendBuffer(client->m_sock, client->m_crypt,
@@ -431,7 +430,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     avatarMsg->m_isPlayer = true;
     cloneMsg->m_message = avatarMsg;
 
-    pthread_mutex_lock(&host->m_clientMutex);
+    host->m_clientMutex.lock();
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId != client->m_clientInfo.m_PlayerId
             && !client->m_clientKey.isNull()) {
@@ -444,7 +443,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
 
         }
     }
-    pthread_mutex_unlock(&host->m_clientMutex);
+    host->m_clientMutex.unlock();
     cloneMsg->unref();
 }
 
@@ -518,9 +517,9 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             //TODO: Filter messages by client's requested relevance regions
             break;
         case MOUL::ID_NetMsgLoadClone:
-            pthread_mutex_lock(&host->m_clientMutex);
+            host->m_clientMutex.lock();
             msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
-            pthread_mutex_unlock(&host->m_clientMutex);
+            host->m_clientMutex.unlock();
             dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgPlayerPage:
@@ -538,17 +537,15 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
-void* dm_gameHost(void* hostp)
+void dm_gameHost(GameHost_Private* host)
 {
-    GameHost_Private* host = reinterpret_cast<GameHost_Private*>(hostp);
-
     for ( ;; ) {
         DS::FifoMessage msg = host->m_channel.getMessage();
         try {
             switch (msg.m_messageType) {
             case e_GameShutdown:
                 dm_game_shutdown(host);
-                return 0;
+                return;
             case e_GameDisconnect:
                 dm_game_disconnect(host, reinterpret_cast<Game_ClientMessage*>(msg.m_payload));
                 break;
@@ -575,7 +572,6 @@ void* dm_gameHost(void* hostp)
     }
 
     dm_game_shutdown(host);
-    return 0;
 }
 
 GameHost_Private* start_game_host(uint32_t ageMcpId)
@@ -613,7 +609,6 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         DS_DASSERT(PQntuples(result) == 1);
 
         GameHost_Private* host = new GameHost_Private();
-        pthread_mutex_init(&host->m_clientMutex, 0);
         host->m_instanceId = PQgetvalue(result, 0, 0);
         host->m_ageFilename = PQgetvalue(result, 0, 1);
         host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
@@ -642,9 +637,9 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                     host->m_ageFilename.c_str());
         }
 
-        pthread_mutex_lock(&s_gameHostMutex);
+        s_gameHostMutex.lock();
         s_gameHosts[ageMcpId] = host;
-        pthread_mutex_unlock(&s_gameHostMutex);
+        s_gameHostMutex.unlock();
         PQclear(result);
 
         // Fetch initial server state
@@ -675,9 +670,8 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         }
         PQclear(result);
 
-        pthread_t threadh;
-        pthread_create(&threadh, 0, &dm_gameHost, reinterpret_cast<void*>(host));
-        pthread_detach(threadh);
+        std::thread threadh(&dm_gameHost, host);
+        threadh.detach();
         return host;
     }
 }

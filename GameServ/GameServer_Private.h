@@ -27,6 +27,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <list>
+#include <thread>
+#include <mutex>
 
 enum GameServer_MsgIds
 {
@@ -59,8 +61,8 @@ struct GameHost_Private
 
     std::unordered_map<uint32_t, GameClient_Private*> m_clients;
     uoidset_t m_locks;
-    pthread_mutex_t m_clientMutex;
-    pthread_mutex_t m_lockMutex;
+    std::mutex m_clientMutex;
+    std::mutex m_lockMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
 
@@ -72,7 +74,7 @@ struct GameHost_Private
 
 typedef std::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
 extern hostmap_t s_gameHosts;
-extern pthread_mutex_t s_gameHostMutex;
+extern std::mutex s_gameHostMutex;
 
 struct Game_AgeInfo
 {
