@@ -69,9 +69,9 @@ namespace SDL
         static StateDescriptor* FindDescriptor(DS::String name, int version);
 
     private:
-        DescriptorDb() { }
-        DescriptorDb(const DescriptorDb&) { }
-        ~DescriptorDb() { }
+        DescriptorDb() = delete;
+        DescriptorDb(const DescriptorDb&) = delete;
+        ~DescriptorDb() = delete;
 
         typedef std::unordered_map<int, StateDescriptor> versionmap_t;
         typedef std::unordered_map<DS::String, versionmap_t, DS::StringHash> descmap_t;

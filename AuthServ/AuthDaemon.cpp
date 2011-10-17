@@ -326,7 +326,7 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     PQclear(result);
 
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
-    msg->m_player.m_playerId = v_create_player(client->m_acctUuid, msg->m_player).first;
+    msg->m_player.m_playerId = std::get<0>(v_create_player(client->m_acctUuid, msg->m_player));
     if (msg->m_player.m_playerId == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
@@ -356,12 +356,12 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
 
 void dm_auth_createAge(Auth_AgeCreate* msg)
 {
-    std::pair<uint32_t, uint32_t> ageNodes = v_create_age(msg->m_age, 0);
-    if (ageNodes.first == 0)
+    std::tuple<uint32_t, uint32_t> ageNodes = v_create_age(msg->m_age, 0);
+    if (std::get<0>(ageNodes) == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
-    msg->m_ageIdx = ageNodes.first;
-    msg->m_infoIdx = ageNodes.second;
+    msg->m_ageIdx = std::get<0>(ageNodes);
+    msg->m_infoIdx = std::get<1>(ageNodes);
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 

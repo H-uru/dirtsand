@@ -115,10 +115,10 @@ enum AgeFlags
     e_AgePublic  = (1<<0),
 };
 
-std::pair<uint32_t, uint32_t>
+std::tuple<uint32_t, uint32_t>
 v_create_age(const AuthServer_AgeInfo& age, uint32_t flags);
 
-std::pair<uint32_t, uint32_t>
+std::tuple<uint32_t, uint32_t>
 v_create_player(DS::Uuid accountId, const AuthServer_PlayerInfo& player);
 
 uint32_t v_create_node(const DS::Vault::Node& node);

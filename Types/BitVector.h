@@ -33,6 +33,9 @@ namespace DS
             memcpy(m_bits, copy.m_bits, m_words);
         }
 
+        BitVector(const BitVector&& move)
+            : m_bits(move.m_bits), m_words(move.m_words) { }
+
         ~BitVector() { delete[] m_bits; }
 
         bool get(size_t idx) const
@@ -49,6 +52,14 @@ namespace DS
             m_words = copy.m_words;
             m_bits = new uint32_t[m_words];
             memcpy(m_bits, copy.m_bits, m_words);
+            return *this;
+        }
+
+        BitVector& operator=(const BitVector&& move)
+        {
+            delete[] m_bits;
+            m_bits = move.m_bits;
+            m_words = move.m_words;
             return *this;
         }
 
