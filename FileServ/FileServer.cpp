@@ -19,11 +19,11 @@
 #include "FileManifest.h"
 #include "settings.h"
 #include "errors.h"
-#include <unistd.h>
 #include <list>
 #include <map>
 #include <thread>
 #include <mutex>
+#include <chrono>
 
 struct FileServer_Private
 {
@@ -358,7 +358,7 @@ void DS::FileServer_Shutdown()
         s_clientMutex.unlock();
         if (alive == 0)
             complete = true;
-        usleep(100000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
         fprintf(stderr, "[File] Clients didn't die after 5 seconds!\n");

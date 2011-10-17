@@ -99,9 +99,8 @@ set(dirtsand_SOURCES
 )
 
 add_executable(dirtsand ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
-target_link_libraries(dirtsand ${CMAKE_THREAD_LIBS_INIT} ${POSTGRES_LIBRARY}
-                               ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY}
-                               ${ZLIB_LIBRARY})
+target_link_libraries(dirtsand ${POSTGRES_LIBRARY} ${ZLIB_LIBRARY}
+                               ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY})
 set_target_properties(dirtsand PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin")
 

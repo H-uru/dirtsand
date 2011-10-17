@@ -19,7 +19,7 @@
 #include "encodings.h"
 #include "settings.h"
 #include "errors.h"
-#include <unistd.h>
+#include <chrono>
 
 std::thread s_authDaemonThread;
 DS::MsgChannel s_authChannel;
@@ -74,7 +74,7 @@ void dm_auth_shutdown()
         s_authClientMutex.unlock();
         if (alive == 0)
             complete = true;
-        usleep(100000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
         fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!\n");

@@ -67,7 +67,7 @@ void dm_game_shutdown(GameHost_Private* host)
         host->m_clientMutex.unlock();
         if (alive == 0)
             complete = true;
-        usleep(100000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
         fprintf(stderr, "[Game] Clients didn't die after 5 seconds!\n");

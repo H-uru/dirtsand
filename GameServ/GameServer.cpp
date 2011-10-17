@@ -18,9 +18,9 @@
 #include "GameServer_Private.h"
 #include "settings.h"
 #include "errors.h"
-#include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <chrono>
 
 extern bool s_commdebug;
 
@@ -339,7 +339,7 @@ void DS::GameServer_Shutdown()
         s_gameHostMutex.unlock();
         if (alive == 0)
             complete = true;
-        usleep(100000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
         fprintf(stderr, "[Game] Servers didn't die after 5 seconds!\n");
