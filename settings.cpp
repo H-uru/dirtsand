@@ -40,6 +40,7 @@ static struct
     /* Data locations */
     DS::String m_fileRoot, m_authRoot;
     DS::String m_sdlPath, m_agePath;
+    DS::String m_settingsPath;
 
     /* Database */
     DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
@@ -61,6 +62,13 @@ static struct
 bool DS::Settings::LoadFrom(const char* filename)
 {
     UseDefaults();
+
+    s_settings.m_settingsPath = filename;
+    ssize_t slash = s_settings.m_settingsPath.rfind("/");
+    if (slash >= 0)
+        s_settings.m_settingsPath = s_settings.m_settingsPath.left(slash);
+    else
+        s_settings.m_settingsPath = ".";
 
     FILE* cfgfile = fopen(filename, "r");
     if (!cfgfile) {
@@ -242,6 +250,11 @@ const char* DS::Settings::SdlPath()
 const char* DS::Settings::AgePath()
 {
     return s_settings.m_agePath.c_str();
+}
+
+DS::String DS::Settings::SettingsPath()
+{
+    return s_settings.m_settingsPath;
 }
 
 const char* DS::Settings::DbHostname()

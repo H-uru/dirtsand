@@ -110,3 +110,5 @@ install(TARGETS dirtsand
         RUNTIME DESTINATION "bin")
 install(PROGRAMS ${CMAKE_SOURCE_DIR}/bin/dsData.sh
         DESTINATION "bin")
+install(FILES static_ages.ini
+        DESTINATION ".")

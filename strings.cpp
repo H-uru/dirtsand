@@ -542,6 +542,22 @@ ssize_t DS::String::find(const char* substr, ssize_t start)
     return -1;
 }
 
+ssize_t DS::String::rfind(const char* substr, ssize_t start)
+{
+    DS_DASSERT(substr);
+    size_t sublen = strlen(substr);
+    if (start < 0)
+        start = length() - sublen;
+    DS_DASSERT(start <= (length() - sublen));
+
+    while (start >= 0) {
+        if (strncmp(reinterpret_cast<const char*>(m_data.data()) + start, substr, sublen) == 0)
+            return start;
+        --start;
+    }
+    return -1;
+}
+
 void DS::String::replace(const char* from, const char* to)
 {
     ssize_t start = 0;
