@@ -108,8 +108,8 @@ static uint32_t find_a_friendly_neighborhood_for_our_new_visitor(uint32_t player
         age.m_ageId = gen_uuid();
         age.m_filename = "Neighborhood";
         age.m_instName = "Neighborhood";
-        age.m_userName = "DS";
-        age.m_description = "DS Neighborhood";
+        age.m_userName = "GoW";
+        age.m_description = "GoW Neighborhood";
         age.m_seqNumber = -1;   // Auto-generate
         ageNode = v_create_age(age, e_AgePublic);
         if (ageNode.second == 0)
