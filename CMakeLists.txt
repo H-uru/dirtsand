@@ -50,6 +50,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/AvatarMsg.cpp
     PlasMOUL/Messages/AvTaskMsg.cpp
     PlasMOUL/Messages/AvSeekMsg.cpp
+    PlasMOUL/Messages/EnableMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
