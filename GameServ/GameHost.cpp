@@ -360,16 +360,15 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
         } else {
             reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
         }
+        pthread_mutex_unlock(&host->m_lockMutex);
     } else {
         uoidset_t::iterator it = host->m_locks.find(msg->m_object);
         if (it != host->m_locks.end()) {
             host->m_locks.erase(it);
-            reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
-        } else {
-            reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
         }
+        pthread_mutex_unlock(&host->m_lockMutex);
+        return;
     }
-    pthread_mutex_unlock(&host->m_lockMutex);
 
     MOUL::NetMsgGameMessage* netReply = MOUL::NetMsgGameMessage::Create();
     netReply->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
