@@ -28,6 +28,7 @@
 #include "Messages/LinkEffectsTriggerMsg.h"
 #include "Messages/KIMessage.h"
 #include "Messages/AvSeekMsg.h"
+#include "Messages/EnableMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
