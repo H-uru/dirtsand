@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     DS::GameServer_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
-    DS::StartStatusHTTP();
+//    DS::StartStatusHTTP();
 
     char rl_prompt[32];
     snprintf(rl_prompt, 32, "ds-%u> ", CLIENT_BUILD_ID);
