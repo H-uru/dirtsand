@@ -330,19 +330,8 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         }
     }
 
-    if (bcast) {
-        MOUL::NetMsgSDLState* bcastState = MOUL::NetMsgSDLState::Create();
-        bcastState->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                                   | MOUL::NetMessage::e_NeedsReliableSend;
-        bcastState->m_timestamp.setNow();
-        bcastState->m_isInitial = false;
-        bcastState->m_persistOnServer = state->m_persistOnServer;
-        bcastState->m_isAvatar = state->m_isAvatar;
-        bcastState->m_object = state->m_object;
-        bcastState->m_sdlBlob = state->m_sdlBlob;
-        dm_propagate(host, bcastState, client->m_clientInfo.m_PlayerId);
-        bcastState->unref();
-    }
+    if (bcast)
+        dm_propagate(host, state, client->m_clientInfo.m_PlayerId);
 }
 
 void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
