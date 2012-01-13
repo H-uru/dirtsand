@@ -822,7 +822,7 @@ void SDL::State::read(DS::Stream* stream)
     }
 }
 
-void SDL::State::write(DS::Stream* stream)
+void SDL::State::write(DS::Stream* stream) const
 {
     if (!m_data)
         return;
