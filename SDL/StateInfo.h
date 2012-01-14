@@ -192,13 +192,7 @@ namespace SDL
 
         static State Create(DS::Stream* stream);
 
-        DS::Blob toBlob() const
-        {
-            DS::BufferStream buffer;
-            write(&buffer);
-            return DS::Blob(buffer.buffer(), buffer.size());
-        }
-
+        DS::Blob toBlob() const;
         static State FromBlob(const DS::Blob& blob)
         {
             if (!blob.size())
