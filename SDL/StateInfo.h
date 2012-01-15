@@ -179,7 +179,7 @@ namespace SDL
         }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
         void add(const State& state);
 
 #ifdef DEBUG
@@ -192,13 +192,7 @@ namespace SDL
 
         static State Create(DS::Stream* stream);
 
-        DS::Blob toBlob()
-        {
-            DS::BufferStream buffer;
-            write(&buffer);
-            return DS::Blob(buffer.buffer(), buffer.size());
-        }
-
+        DS::Blob toBlob() const;
         static State FromBlob(const DS::Blob& blob)
         {
             if (!blob.size())

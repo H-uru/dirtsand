@@ -373,10 +373,11 @@ void SDL::Variable::read(DS::Stream* stream)
             DS_DASSERT(count < 10000);
             m_data->resize(count);
         }
-        size_t count = stupidLengthRead(stream, m_data->m_size);
+        size_t stupid = m_data->m_desc->m_size == -1 ? 0 : m_data->m_size;
+        size_t count = stupidLengthRead(stream, stupid);
         bool useIndices = (count != m_data->m_size);
         for (size_t i=0; i<count; ++i) {
-            size_t idx = useIndices ? stupidLengthRead(stream, m_data->m_size) : i;
+            size_t idx = useIndices ? stupidLengthRead(stream, stupid) : i;
             DS_PASSERT(idx < m_data->m_size);
             m_data->m_child[idx].read(stream);
         }
@@ -406,7 +407,9 @@ void SDL::Variable::write(DS::Stream* stream)
         stream->write<uint8_t>(0);
         stream->writeSafeString(m_data->m_notificationHint);
     }
-
+    
+    if (isDefault())
+        m_data->m_flags |= e_SameAsDefault;
     stream->write<uint8_t>(m_data->m_flags & 0xFF);
     if (m_data->m_desc->m_type == e_VarStateDesc) {
         if (m_data->m_desc->m_size == -1)
@@ -418,12 +421,13 @@ void SDL::Variable::write(DS::Stream* stream)
             dirty.set(i, m_data->m_child[i].isDirty());
             ++count;
         }
-        stupidLengthWrite(stream, m_data->m_size, count);
+        size_t stupid = m_data->m_desc->m_size == -1 ? 0 : m_data->m_size;
+        stupidLengthWrite(stream, stupid, count);
         bool useIndices = (count != m_data->m_size);
         for (size_t i=0; i<m_data->m_size; ++i) {
             if (dirty.get(i)) {
                 if (useIndices)
-                    stupidLengthWrite(stream, m_data->m_size, i);
+                    stupidLengthWrite(stream, stupid, i);
                 m_data->m_child[i].write(stream);
             }
         }
@@ -431,8 +435,6 @@ void SDL::Variable::write(DS::Stream* stream)
         if (m_data->m_flags & e_HasTimeStamp)
             m_data->m_timestamp.write(stream);
 
-        if (isDefault())
-            m_data->m_flags |= e_SameAsDefault;
         if (!(m_data->m_flags & e_SameAsDefault)) {
             if (m_data->m_desc->m_size == -1)
                 stream->write<uint32_t>(m_data->m_size);
@@ -638,6 +640,11 @@ void SDL::Variable::setDefault()
 bool SDL::Variable::isDefault() const
 {
     DS_DASSERT(m_data != 0);
+    
+    // Don't assume any one default is the same thing that the client
+    // will provide if the default is missing from the SDL file
+    if (!m_data->m_desc->m_default.m_valid)
+        return false;
 
     for (size_t i=0; i<m_data->m_size; ++i) {
         switch (m_data->m_desc->m_type) {
@@ -645,17 +652,11 @@ bool SDL::Variable::isDefault() const
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_int[i] != m_data->m_desc->m_default.m_int)
                     return false;
-            } else {
-                if (m_data->m_int[i] != 0)
-                    return false;
             }
             break;
         case e_VarFloat:
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_float[i] != m_data->m_desc->m_default.m_float)
-                    return false;
-            } else {
-                if (m_data->m_float[i] != 0)
                     return false;
             }
             break;
@@ -663,17 +664,11 @@ bool SDL::Variable::isDefault() const
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_bool[i] != m_data->m_desc->m_default.m_bool)
                     return false;
-            } else {
-                if (m_data->m_bool[i])
-                    return false;
             }
             break;
         case e_VarString:
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_string[i] != m_data->m_desc->m_default.m_string)
-                    return false;
-            } else {
-                if (!m_data->m_string[i].isNull())
                     return false;
             }
             break;
@@ -689,17 +684,11 @@ bool SDL::Variable::isDefault() const
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_double[i] != m_data->m_desc->m_default.m_double)
                     return false;
-            } else {
-                if (m_data->m_double[i] != 0)
-                    return false;
             }
             break;
         case e_VarTime:
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_time[i] != m_data->m_desc->m_default.m_time)
-                    return false;
-            } else {
-                if (!m_data->m_time[i].isNull())
                     return false;
             }
             break;
@@ -707,17 +696,11 @@ bool SDL::Variable::isDefault() const
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_byte[i] != m_data->m_desc->m_default.m_int)
                     return false;
-            } else {
-                if (m_data->m_byte[i] != 0)
-                    return false;
             }
             break;
         case e_VarShort:
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_short[i] != m_data->m_desc->m_default.m_int)
-                    return false;
-            } else {
-                if (m_data->m_short[i] != 0)
                     return false;
             }
             break;
@@ -726,19 +709,11 @@ bool SDL::Variable::isDefault() const
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_vector[i] != m_data->m_desc->m_default.m_vector)
                     return false;
-            } else {
-                if (m_data->m_vector[i].m_X != 0 || m_data->m_vector[i].m_Y != 0
-                    || m_data->m_vector[i].m_Z != 0)
-                    return false;
             }
             break;
         case e_VarQuaternion:
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_quat[i] != m_data->m_desc->m_default.m_quat)
-                    return false;
-            } else {
-                if (m_data->m_quat[i].m_X != 0 || m_data->m_quat[i].m_Y != 0
-                    || m_data->m_quat[i].m_Z != 0 || m_data->m_quat[i].m_W != 0)
                     return false;
             }
             break;
@@ -747,20 +722,12 @@ bool SDL::Variable::isDefault() const
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_color[i] != m_data->m_desc->m_default.m_color)
                     return false;
-            } else {
-                if (m_data->m_color[i].m_R != 0 || m_data->m_color[i].m_G != 0
-                    || m_data->m_color[i].m_B != 0 || m_data->m_color[i].m_A != 1)
-                    return false;
             }
             break;
         case e_VarRgb8:
         case e_VarRgba8:
             if (m_data->m_desc->m_default.m_valid) {
                 if (m_data->m_color8[i] != m_data->m_desc->m_default.m_color8)
-                    return false;
-            } else {
-                if (m_data->m_color8[i].m_R != 0 || m_data->m_color8[i].m_G != 0
-                    || m_data->m_color8[i].m_B != 0 || m_data->m_color8[i].m_A != 255)
                     return false;
             }
             break;
@@ -822,22 +789,8 @@ void SDL::State::read(DS::Stream* stream)
     }
 }
 
-void SDL::State::write(DS::Stream* stream)
+void SDL::State::write(DS::Stream* stream) const
 {
-    if (!m_data)
-        return;
-
-    // Stream header (see ::Create)
-    uint16_t hflags = 0x8000;
-    if (!m_data->m_object.isNull())
-        hflags |= e_HFlagVolatile;
-    stream->write<uint16_t>(hflags);
-    stream->writeSafeString(m_data->m_desc->m_name);
-    stream->write<int16_t>(m_data->m_desc->m_version);
-
-    if (!m_data->m_object.isNull())
-        m_data->m_object.write(stream);
-
     // State data
     stream->write<uint16_t>(m_data->m_flags);
     stream->write<uint8_t>(SDL_IOVERSION);
@@ -947,4 +900,24 @@ SDL::State SDL::State::Create(DS::Stream* stream)
     if (state.m_data && (flags & e_HFlagVolatile) != 0)
         state.m_data->m_object.read(stream);
     return state;
+}
+
+DS::Blob SDL::State::toBlob() const 
+{
+    if (!m_data)
+        return DS::Blob();
+    DS::BufferStream buffer;
+    
+    // Stream header (see ::Create)
+    uint16_t hflags = 0x8000;
+    if (!m_data->m_object.isNull())
+        hflags |= e_HFlagVolatile;
+    buffer.write<uint16_t>(hflags);
+    buffer.writeSafeString(m_data->m_desc->m_name);
+    buffer.write<int16_t>(m_data->m_desc->m_version);
+
+    if (!m_data->m_object.isNull())
+        m_data->m_object.write(&buffer);
+    write(&buffer);
+    return DS::Blob(buffer.buffer(), buffer.size());
 }
