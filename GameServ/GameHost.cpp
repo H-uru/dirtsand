@@ -272,12 +272,16 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
     if (state->m_object.m_name == "AgeSDLHook") {
         host->m_vaultState.add(update);
     } else if (state->m_isAvatar) {
-        // We can update states for other avatars...
-        GameClient_Private* player = host->m_clients[state->m_object.m_clonePlayerId];
-        if (player->m_states.find(update.descriptor()->m_name) == player->m_states.end())
-            player->m_states[update.descriptor()->m_name] = update;
+        // TODO: Kick the cheater. Ignoring state updates can be dangerous...
+        if (client->m_clientInfo.m_PlayerId != state->m_object.m_clonePlayerId) {
+            fprintf(stderr, "[Game] %s tried to molest someone else's avatar state\n",
+                    client->m_clientInfo.m_PlayerName.c_str());
+            return;
+        }
+        if (client->m_states.find(update.descriptor()->m_name) == client->m_states.end())
+            client->m_states[update.descriptor()->m_name] = update;
         else
-            player->m_states[update.descriptor()->m_name].add(update);
+            client->m_states[update.descriptor()->m_name].add(update);
     } else if (state->m_persistOnServer) {
         sdlstatemap_t::iterator fobj = host->m_states.find(state->m_object);
         if (fobj == host->m_states.end() || fobj->second.find(update.descriptor()->m_name) == fobj->second.end())
