@@ -62,9 +62,7 @@ DS::Blob gen_default_sdl(const DS::String& filename)
     }
 
     SDL::State state(desc);
-    DS::BufferStream stream;
-    state.write(&stream);
-    return DS::Blob(stream.buffer(), stream.size());
+    return state.toBlob();
 }
 
 static uint32_t find_a_friendly_neighborhood_for_our_new_visitor(uint32_t playerInfoId)
