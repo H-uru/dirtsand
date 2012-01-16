@@ -416,9 +416,9 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[2].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[2].m_type, parser);
         } else {
-            var->m_default.m_color8.m_R = static_cast<uint8_t>(strtof(values[0].m_value.c_str(), 0) * 255);
-            var->m_default.m_color8.m_G = static_cast<uint8_t>(strtof(values[1].m_value.c_str(), 0) * 255);
-            var->m_default.m_color8.m_B = static_cast<uint8_t>(strtof(values[2].m_value.c_str(), 0) * 255);
+            var->m_default.m_color8.m_R = strtoul(values[0].m_value.c_str(), 0, 0);
+            var->m_default.m_color8.m_G = strtoul(values[1].m_value.c_str(), 0, 0);
+            var->m_default.m_color8.m_B = strtoul(values[2].m_value.c_str(), 0, 0);
             var->m_default.m_color8.m_A = 255;
         }
         break;
@@ -433,10 +433,10 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[3].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[3].m_type, parser);
         } else {
-            var->m_default.m_color8.m_R = static_cast<uint8_t>(strtof(values[0].m_value.c_str(), 0) * 255);
-            var->m_default.m_color8.m_G = static_cast<uint8_t>(strtof(values[1].m_value.c_str(), 0) * 255);
-            var->m_default.m_color8.m_B = static_cast<uint8_t>(strtof(values[2].m_value.c_str(), 0) * 255);
-            var->m_default.m_color8.m_A = static_cast<uint8_t>(strtof(values[3].m_value.c_str(), 0) * 255);
+            var->m_default.m_color8.m_R = strtoul(values[0].m_value.c_str(), 0, 0);
+            var->m_default.m_color8.m_G = strtoul(values[1].m_value.c_str(), 0, 0);
+            var->m_default.m_color8.m_B = strtoul(values[2].m_value.c_str(), 0, 0);
+            var->m_default.m_color8.m_A = strtoul(values[3].m_value.c_str(), 0, 0);
         }
         break;
     case SDL::e_VarKey:

@@ -271,6 +271,17 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
 #endif
     if (state->m_object.m_name == "AgeSDLHook") {
         host->m_vaultState.add(update);
+    } else if (state->m_isAvatar) {
+        // TODO: Kick the cheater. Ignoring state updates can be dangerous...
+        if (client->m_clientInfo.m_PlayerId != state->m_object.m_clonePlayerId) {
+            fprintf(stderr, "[Game] %s tried to molest someone else's avatar state\n",
+                    client->m_clientInfo.m_PlayerName.c_str());
+            return;
+        }
+        if (client->m_states.find(update.descriptor()->m_name) == client->m_states.end())
+            client->m_states[update.descriptor()->m_name] = update;
+        else
+            client->m_states[update.descriptor()->m_name].add(update);
     } else if (state->m_persistOnServer) {
         sdlstatemap_t::iterator fobj = host->m_states.find(state->m_object);
         if (fobj == host->m_states.end() || fobj->second.find(update.descriptor()->m_name) == fobj->second.end())
@@ -330,19 +341,8 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         }
     }
 
-    if (bcast) {
-        MOUL::NetMsgSDLState* bcastState = MOUL::NetMsgSDLState::Create();
-        bcastState->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                                   | MOUL::NetMessage::e_NeedsReliableSend;
-        bcastState->m_timestamp.setNow();
-        bcastState->m_isInitial = false;
-        bcastState->m_persistOnServer = state->m_persistOnServer;
-        bcastState->m_isAvatar = state->m_isAvatar;
-        bcastState->m_object = state->m_object;
-        bcastState->m_sdlBlob = state->m_sdlBlob;
-        dm_propagate(host, bcastState, client->m_clientInfo.m_PlayerId);
-        bcastState->unref();
-    }
+    if (bcast)
+        dm_propagate(host, state, client->m_clientInfo.m_PlayerId);
 }
 
 void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
@@ -441,6 +441,22 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
             DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                                 host->m_buffer.buffer(), host->m_buffer.size());
 
+            MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
+            state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                                  | MOUL::NetMessage::e_NeedsReliableSend;
+            state->m_timestamp.setNow();
+            // Blame Cyan for these odd flags
+            state->m_isInitial = true;
+            state->m_persistOnServer = true;
+            state->m_isAvatar = false;
+            state->m_object = client_iter->second->m_clientKey;
+            for (auto sdl_iter = client_iter->second->m_states.begin(); sdl_iter != client_iter->second->m_states.end(); ++sdl_iter) {
+                state->m_sdlBlob = sdl_iter->second.toBlob();
+                DM_WRITEMSG(host, state);
+                DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                                    host->m_buffer.buffer(), host->m_buffer.size());
+            }
+            state->unref();
         }
     }
     pthread_mutex_unlock(&host->m_clientMutex);
