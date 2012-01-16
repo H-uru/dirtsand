@@ -30,6 +30,7 @@
 #include "Messages/AvSeekMsg.h"
 #include "Messages/EnableMsg.h"
 #include "Messages/BulletMsg.h"
+#include "Messages/SimulationMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
