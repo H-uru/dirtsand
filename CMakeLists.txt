@@ -49,6 +49,10 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/AvatarMsg.cpp
     PlasMOUL/Messages/AvTaskMsg.cpp
     PlasMOUL/Messages/AvSeekMsg.cpp
+    PlasMOUL/Messages/EnableMsg.cpp
+    PlasMOUL/Messages/BulletMsg.cpp
+    PlasMOUL/Messages/SimulationMsg.cpp
+    PlasMOUL/Messages/MessageWithCallbacks.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
@@ -108,3 +112,5 @@ install(TARGETS dirtsand
         RUNTIME DESTINATION "bin")
 install(PROGRAMS ${CMAKE_SOURCE_DIR}/bin/dsData.sh
         DESTINATION "bin")
+install(FILES static_ages.ini
+        DESTINATION ".")

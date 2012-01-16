@@ -20,6 +20,7 @@
 #include "SDL/DescriptorDb.h"
 #include "encodings.h"
 #include "errors.h"
+#include "settings.h"
 #include <ctime>
 
 static uint32_t s_systemNode = 0;
@@ -61,9 +62,7 @@ DS::Blob gen_default_sdl(const DS::String& filename)
     }
 
     SDL::State state(desc);
-    DS::BufferStream stream;
-    state.write(&stream);
-    return DS::Blob(stream.buffer(), stream.size());
+    return state.toBlob();
 }
 
 static uint32_t find_a_friendly_neighborhood_for_our_new_visitor(uint32_t playerInfoId)
@@ -205,6 +204,70 @@ static uint32_t find_public_age_1(const DS::String& filename)
     return ageInfoNode;
 }
 
+std::list<AuthServer_AgeInfo> configure_static_ages()
+{
+    AuthServer_AgeInfo age;
+    std::list<AuthServer_AgeInfo> configs;
+
+    DS::String filename = DS::Settings::SettingsPath() + "/static_ages.ini";
+    FILE* cfgfile = fopen(filename.c_str(), "r");
+    if (!cfgfile) {
+        fprintf(stderr, "Cannot open %s for reading\n", filename.c_str());
+        return configs;
+    }
+
+    try {
+        char buffer[4096];
+        bool haveAge = false;
+        while (fgets(buffer, 4096, cfgfile)) {
+            DS::String line = DS::String(buffer).strip('#');
+            if (line.isEmpty())
+                continue;
+
+            if (line.strip().c_str()[0] == '[') {
+                if (haveAge)
+                    configs.push_back(age);
+                age.clear();
+                age.m_ageId = DS::Uuid(line.strip().mid(1, 36).c_str());
+                haveAge = true;
+                continue;
+            }
+
+            std::vector<DS::String> params = line.split('=', 1);
+            if (params.size() != 2) {
+                fprintf(stderr, "Warning: Invalid config line: %s\n", line.c_str());
+                continue;
+            }
+
+            // Clean any whitespace around the '='
+            params[0] = params[0].strip();
+            params[1] = params[1].strip();
+
+            if (params[0] == "Filename") {
+                age.m_filename = params[1];
+            } else if (params[0] == "Instance") {
+                age.m_instName = params[1];
+            } else if (params[0] == "UserName") {
+                age.m_userName = params[1];
+            } else {
+                fprintf(stderr, "Warning: Unknown setting '%s' ignored\n",
+                        params[0].c_str());
+            }
+        }
+
+        if (haveAge)
+            configs.push_back(age);
+    } catch (DS::AssertException ex) {
+        fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
+                ex.m_file, ex.m_line, ex.m_cond);
+        fclose(cfgfile);
+        return configs;
+    }
+
+    fclose(cfgfile);
+    return configs;
+}
+
 bool dm_vault_init()
 {
     PostgresStrings<1> sparm;
@@ -242,60 +305,11 @@ bool dm_vault_init()
         if (!v_ref_node(s_systemNode, globalInbox, 0))
             return false;
 
-        AuthServer_AgeInfo age;
-        age.m_ageId = gen_uuid();
-        age.m_filename = "city";
-        age.m_instName = "Ae'gura";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "Neighborhood02";
-        age.m_instName = "Kirel";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "Kveer";
-        age.m_instName = "K'veer";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "GreatTreePub";
-        age.m_instName = "The Watcher's Pub";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "GuildPub-Cartographers";
-        age.m_instName = "The Cartographers' Guild Pub";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "GuildPub-Greeters";
-        age.m_instName = "The Greeters' Guild Pub";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "GuildPub-Maintainers";
-        age.m_instName = "The Maintainers' Guild Pub";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "GuildPub-Messengers";
-        age.m_instName = "The Messengers' Guild Pub";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
-
-        age.m_ageId = gen_uuid();
-        age.m_filename = "GuildPub-Writers";
-        age.m_instName = "The Writers' Guild Pub";
-        if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
-            return false;
+        std::list<AuthServer_AgeInfo> ages = configure_static_ages();
+        for (auto iter = ages.begin(); iter != ages.end(); ++iter) {
+            if (std::get<0>(v_create_age(*iter, e_AgePublic)) == 0)
+                return false;
+        }
     } else {
         DS_DASSERT(count == 1);
         s_systemNode = strtoul(PQgetvalue(result, 0, 0), 0, 10);

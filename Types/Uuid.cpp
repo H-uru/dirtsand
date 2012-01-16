@@ -22,8 +22,8 @@
 DS::Uuid::Uuid(const char* struuid)
 {
     char hexbuf[9];
-    DS_DASSERT(strlen(struuid) == 36);
-    DS_DASSERT(struuid[8] == '-' && struuid[13] == '-' && struuid[18] == '-'
+    DS_PASSERT(strlen(struuid) == 36);
+    DS_PASSERT(struuid[8] == '-' && struuid[13] == '-' && struuid[18] == '-'
                && struuid[23] == '-');
 
     /* First segment */

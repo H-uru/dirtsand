@@ -48,6 +48,18 @@ struct AuthServer_AgeInfo
     int m_seqNumber, m_language;
 
     AuthServer_AgeInfo() : m_seqNumber(0), m_language(-1) { }
+
+    void clear()
+    {
+        m_ageId = DS::Uuid();
+        m_parentId = DS::Uuid();
+        m_filename = DS::String();
+        m_instName = DS::String();
+        m_userName = DS::String();
+        m_description = DS::String();
+        m_seqNumber = 0;
+        m_language = -1;
+    }
 };
 
 
