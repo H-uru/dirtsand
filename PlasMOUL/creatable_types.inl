@@ -15,6 +15,7 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
+CREATABLE_TYPE(0x0206, AnimCmdMsg)
 CREATABLE_TYPE(0x0218, NetMsgPagingRoom)
 CREATABLE_TYPE(0x0253, LoadCloneMsg)
 CREATABLE_TYPE(0x0254, EnableMsg)
@@ -24,6 +25,7 @@ CREATABLE_TYPE(0x026B, NetMsgGameMessage)
 CREATABLE_TYPE(0x026F, ServerReplyMsg)
 CREATABLE_TYPE(0x0279, NetMsgVoice)
 CREATABLE_TYPE(0x027D, NetMsgTestAndSet)
+CREATABLE_TYPE(0x0283, MessageWithCallbacks)
 CREATABLE_TYPE(0x0298, AvTaskMsg)
 CREATABLE_TYPE(0x0299, AvSeekMsg)
 CREATABLE_TYPE(0x029A, AvOneShotMsg)

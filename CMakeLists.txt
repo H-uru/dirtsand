@@ -53,6 +53,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/EnableMsg.cpp
     PlasMOUL/Messages/BulletMsg.cpp
     PlasMOUL/Messages/SimulationMsg.cpp
+    PlasMOUL/Messages/MessageWithCallbacks.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp

@@ -31,6 +31,7 @@
 #include "Messages/EnableMsg.h"
 #include "Messages/BulletMsg.h"
 #include "Messages/SimulationMsg.h"
+#include "Messages/MessageWithCallbacks.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
