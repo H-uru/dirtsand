@@ -29,6 +29,7 @@
 #include "Messages/KIMessage.h"
 #include "Messages/AvSeekMsg.h"
 #include "Messages/EnableMsg.h"
+#include "Messages/BulletMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
