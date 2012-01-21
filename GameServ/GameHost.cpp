@@ -147,6 +147,17 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     memberMsg->unref();
     SEND_REPLY(msg, DS::e_NetSuccess);
 
+    // Release any stale locks
+    pthread_mutex_lock(&host->m_lockMutex);
+    for (auto it = host->m_locks.begin(); it != host->m_locks.end();)
+    {
+        if (it->second == msg->m_client->m_clientInfo.m_PlayerId)
+            it = host->m_locks.erase(it);
+        else
+            ++it;
+    }
+    pthread_mutex_unlock(&host->m_lockMutex);
+
     // Good time to write this back to the vault
     Auth_NodeInfo sdlNode;
     AuthClient_Private fakeClient;
@@ -356,14 +367,14 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
     if (msg->m_lockRequest) {
         if (host->m_locks.find(msg->m_object) == host->m_locks.end()) {
             reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
-            host->m_locks.insert(msg->m_object);
+            host->m_locks[msg->m_object] = client->m_clientInfo.m_PlayerId;
         } else {
             reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
         }
         pthread_mutex_unlock(&host->m_lockMutex);
     } else {
-        uoidset_t::iterator it = host->m_locks.find(msg->m_object);
-        if (it != host->m_locks.end()) {
+        auto it = host->m_locks.find(msg->m_object);
+        if (it != host->m_locks.end() && it->second == client->m_clientInfo.m_PlayerId) {
             host->m_locks.erase(it);
         }
         pthread_mutex_unlock(&host->m_lockMutex);

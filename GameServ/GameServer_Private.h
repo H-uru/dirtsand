@@ -39,7 +39,7 @@ enum GameServer_MsgIds
 
 typedef std::unordered_map<DS::String, SDL::State, DS::StringHash> sdlnamemap_t;
 typedef std::unordered_map<MOUL::Uoid, sdlnamemap_t, MOUL::UoidHash> sdlstatemap_t;
-typedef std::unordered_set<MOUL::Uoid, MOUL::UoidHash> uoidset_t;
+typedef std::unordered_map<MOUL::Uoid, uint32_t, MOUL::UoidHash> lockmap_t;
 
 struct GameClient_Private : public AuthClient_Private
 {
@@ -59,7 +59,7 @@ struct GameHost_Private
     uint32_t m_ageIdx, m_serverIdx;
 
     std::unordered_map<uint32_t, GameClient_Private*> m_clients;
-    uoidset_t m_locks;
+    lockmap_t m_locks;
     pthread_mutex_t m_clientMutex;
     pthread_mutex_t m_lockMutex;
     DS::MsgChannel m_channel;
