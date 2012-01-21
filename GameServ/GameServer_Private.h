@@ -50,6 +50,7 @@ struct GameClient_Private : public AuthClient_Private
     MOUL::ClientGuid m_clientInfo;
     MOUL::Uoid m_clientKey;
     sdlnamemap_t m_states;
+    bool m_isLoaded;
 };
 
 struct GameHost_Private

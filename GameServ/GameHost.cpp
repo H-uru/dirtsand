@@ -134,6 +134,34 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
 
 void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 {
+    // Unload the avatar clone if the client committed hara-kiri
+    if (msg->m_client->m_isLoaded && !msg->m_client->m_clientKey.isNull())
+    {
+        MOUL::LoadCloneMsg* cloneMsg = MOUL::LoadCloneMsg::Create();
+        cloneMsg->m_bcastFlags = MOUL::Message::e_NetPropagate
+                               | MOUL::Message::e_LocalPropagate;
+        cloneMsg->m_receivers.push_back(MOUL::Key::NetClientMgrKey);
+        cloneMsg->m_cloneKey = msg->m_client->m_clientKey;
+        cloneMsg->m_requestorKey = MOUL::Key::AvatarMgrKey;
+        cloneMsg->m_userData = 0;
+        cloneMsg->m_originPlayerId = msg->m_client->m_clientInfo.m_PlayerId;
+        cloneMsg->m_validMsg = true;
+        cloneMsg->m_isLoading = false;
+        
+        MOUL::NetMsgLoadClone* netMsg = MOUL::NetMsgLoadClone::Create();
+        netMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                               | MOUL::NetMessage::e_NeedsReliableSend;
+        netMsg->m_timestamp.setNow();
+        netMsg->m_isPlayer = true;
+        netMsg->m_isLoading = false;
+        netMsg->m_isInitialState = false;
+        netMsg->m_message = cloneMsg;
+        netMsg->m_object = msg->m_client->m_clientKey;
+        
+        dm_propagate(host, netMsg, msg->m_client->m_clientInfo.m_PlayerId);
+        netMsg->unref();
+    }
+    
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
     memberMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                               | MOUL::NetMessage::e_IsSystemMessage
@@ -474,6 +502,20 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     cloneMsg->unref();
 }
 
+void dm_load_clone(GameHost_Private* host, GameClient_Private* client, MOUL::NetMsgLoadClone* netmsg)
+{
+    MOUL::LoadCloneMsg* msg = netmsg->m_message->Cast<MOUL::LoadCloneMsg>();
+    if (msg->makeSafeForNet())
+    {
+        pthread_mutex_lock(&host->m_clientMutex);
+        client->m_clientKey = netmsg->m_object;
+        if (netmsg->m_isPlayer)
+            client->m_isLoaded = netmsg->m_isLoading;
+        pthread_mutex_unlock(&host->m_clientMutex);
+        dm_propagate(host, netmsg, client->m_clientInfo.m_PlayerId);
+    }
+}
+
 void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
 {
     DS::BlobStream stream(msg->m_message);
@@ -544,10 +586,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             //TODO: Filter messages by client's requested relevance regions
             break;
         case MOUL::ID_NetMsgLoadClone:
-            pthread_mutex_lock(&host->m_clientMutex);
-            msg->m_client->m_clientKey = netmsg->Cast<MOUL::NetMsgLoadClone>()->m_object;
-            pthread_mutex_unlock(&host->m_clientMutex);
-            dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
+            dm_load_clone(host, msg->m_client, netmsg->Cast<MOUL::NetMsgLoadClone>());
             break;
         case MOUL::ID_NetMsgPlayerPage:
             //TODO: Whatever the client is expecting us to do
