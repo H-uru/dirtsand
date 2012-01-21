@@ -228,7 +228,16 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
                 if (haveAge)
                     configs.push_back(age);
                 age.clear();
-                age.m_ageId = DS::Uuid(line.strip().mid(1, 36).c_str());
+
+                DS::String header = line.strip();
+                header.replace("[","");
+                header.replace("]","");
+
+                if (header == "auto")
+                    age.m_ageId = gen_uuid();
+                else
+                    age.m_ageId = DS::Uuid(header.c_str());
+
                 haveAge = true;
                 continue;
             }
