@@ -181,6 +181,7 @@ void wk_gameWorker(DS::SocketHandle sockp)
     client.m_sock = sockp;
     client.m_host = 0;
     client.m_crypt = 0;
+    client.m_isLoaded = false;
 
     try {
         game_client_init(client);
