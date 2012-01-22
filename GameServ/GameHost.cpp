@@ -146,7 +146,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
         cloneMsg->m_originPlayerId = msg->m_client->m_clientInfo.m_PlayerId;
         cloneMsg->m_validMsg = true;
         cloneMsg->m_isLoading = false;
-        
+
         MOUL::NetMsgLoadClone* netMsg = MOUL::NetMsgLoadClone::Create();
         netMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                                | MOUL::NetMessage::e_NeedsReliableSend;
@@ -156,11 +156,11 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
         netMsg->m_isInitialState = false;
         netMsg->m_message = cloneMsg;
         netMsg->m_object = msg->m_client->m_clientKey;
-        
+
         dm_propagate(host, netMsg, msg->m_client->m_clientInfo.m_PlayerId);
         netMsg->unref();
     }
-    
+
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
     memberMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                               | MOUL::NetMessage::e_IsSystemMessage
@@ -175,7 +175,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 
     // Release any stale locks
-    pthread_mutex_lock(&host->m_lockMutex);
+    host->m_lockMutex.lock();
     for (auto it = host->m_locks.begin(); it != host->m_locks.end();)
     {
         if (it->second == msg->m_client->m_clientInfo.m_PlayerId)
@@ -183,7 +183,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
         else
             ++it;
     }
-    pthread_mutex_unlock(&host->m_lockMutex);
+    host->m_lockMutex.unlock();
 
     // Good time to write this back to the vault
     Auth_NodeInfo sdlNode;
