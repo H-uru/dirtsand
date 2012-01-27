@@ -231,6 +231,29 @@ void cb_playerCreate(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_playerDelete(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_PlayerDeleteReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_PlayerDelete msg;
+    msg.m_client = &client;
+    msg.m_playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthDeletePlayer, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);   // Player ID
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_playerId);
+    }
+
+    SEND_REPLY();
+}
+
 void cb_ageCreate(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_VaultInitAgeReply);
@@ -759,6 +782,9 @@ void* wk_authWorker(void* sockp)
                 break;
             case e_CliToAuth_PlayerCreateRequest:
                 cb_playerCreate(client);
+                break;
+            case e_CliToAuth_PlayerDeleteRequest:
+                cb_playerDelete(client);
                 break;
             case e_CliToAuth_VaultNodeCreate:
                 cb_nodeCreate(client);
