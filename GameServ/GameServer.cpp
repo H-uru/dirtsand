@@ -56,8 +56,9 @@ void game_client_init(GameClient_Private& client)
         client.m_buffer.write<uint8_t>(2); // reply with an empty seed as well
     } else {
         uint8_t Y[64];
-        DS_PASSERT(msgSize == 66);
-        DS::RecvBuffer(client.m_sock, Y, 64);
+        memset(Y, 0, sizeof(Y));
+        DS_PASSERT(msgSize <= 66);
+        DS::RecvBuffer(client.m_sock, Y, 64 - (66 - msgSize));
         BYTE_SWAP_BUFFER(Y, 64);
 
         uint8_t serverSeed[7];
