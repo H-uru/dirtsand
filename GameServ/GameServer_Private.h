@@ -70,6 +70,8 @@ struct GameHost_Private
     uint32_t m_sdlIdx;
     SDL::State m_vaultState;
     sdlstatemap_t m_states;
+
+    bool m_temp;
 };
 
 typedef std::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
