@@ -442,19 +442,27 @@ void dm_auth_findAge(Auth_GameAge* msg)
     }
     DS::String ageDesc;
     if (PQntuples(result) == 0) {
-        fprintf(stderr, "[Auth] %s Requested age {%s} %s not found\n",
-                DS::SockIpAddress(msg->m_client->m_sock).c_str(),
-                msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
-        SEND_REPLY(msg, DS::e_NetAgeNotFound);
         PQclear(result);
-        return;
-    } else {
-        DS_DASSERT(PQntuples(result) == 1);
-        msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), 0, 10);
-        msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
-        msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress().c_str());
-        ageDesc = PQgetvalue(result, 0, 2);
+        parms.set(0, msg->m_instanceId.toString());
+        parms.set(1, msg->m_name);
+        result = PQexecParams(s_postgres,
+                "INSERT INTO game.\"Servers\""
+                "    (\"AgeUuid\", \"AgeFilename\", \"DisplayName\", \"AgeIdx\", \"SdlIdx\", \"Temporary\")"
+                "    VALUES ($1, $2, $2, 0, 0, 't')"
+                "    RETURNING idx, \"AgeIdx\", \"DisplayName\"",
+                2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQclear(result);
+            return;
+        }
     }
+    DS_DASSERT(PQntuples(result) == 1);
+    msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), 0, 10);
+    msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress().c_str());
+    ageDesc = PQgetvalue(result, 0, 2);
     PQclear(result);
 
     // Update the player info to show up in the age

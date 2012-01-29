@@ -83,6 +83,14 @@ void dm_game_shutdown(GameHost_Private* host)
     pthread_mutex_unlock(&s_gameHostMutex);
 
     pthread_mutex_destroy(&host->m_clientMutex);
+    if (host->m_temp) {
+        PostgresStrings<1> params;
+        params.set(0, host->m_serverIdx);
+        PQexecParams(host->m_postgres,
+                "DELETE FROM game.\"Servers\" "
+                "    WHERE \"idx\"=$1;",
+                1, 0, params.m_values, 0, 0, 0);
+    }
     PQfinish(host->m_postgres);
     delete host;
 }
@@ -659,7 +667,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
     PostgresStrings<1> parms;
     parms.set(0, ageMcpId);
     PGresult* result = PQexecParams(postgres,
-            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\", \"SdlIdx\""
+            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\", \"SdlIdx\", \"Temporary\""
             "    FROM game.\"Servers\" WHERE idx=$1",
             1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -684,27 +692,33 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
         host->m_serverIdx = ageMcpId;
         host->m_postgres = postgres;
+        host->m_temp = strcmp("t", PQgetvalue(result, 0, 4)) == 0;
 
         // Fetch the vault's SDL blob
-        Auth_NodeInfo sdlFind;
-        AuthClient_Private fakeClient;
-        sdlFind.m_client = &fakeClient;
-        sdlFind.m_node.set_NodeIdx(strtoul(PQgetvalue(result, 0, 3), 0, 10));
-        s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&sdlFind));
-        DS::FifoMessage reply = fakeClient.m_channel.getMessage();
-        if (reply.m_messageType != DS::e_NetSuccess) {
-            fprintf(stderr, "[Game] Error fetching Age SDL\n");
-            PQclear(result);
-            PQfinish(postgres);
-            delete host;
-            return 0;
-        }
-        host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
-        try {
-            host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
-        } catch (DS::EofException) {
-            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
-                    host->m_ageFilename.c_str());
+        unsigned long sdlidx = strtoul(PQgetvalue(result, 0, 3), 0, 10);
+        if (sdlidx) {
+            Auth_NodeInfo sdlFind;
+            AuthClient_Private fakeClient;
+            sdlFind.m_client = &fakeClient;
+            sdlFind.m_node.set_NodeIdx(sdlidx);
+            s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&sdlFind));
+            DS::FifoMessage reply = fakeClient.m_channel.getMessage();
+            if (reply.m_messageType != DS::e_NetSuccess) {
+                fprintf(stderr, "[Game] Error fetching Age SDL\n");
+                PQclear(result);
+                PQfinish(postgres);
+                delete host;
+                return 0;
+            }
+            host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
+            try {
+                host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
+            } catch (DS::EofException) {
+                fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
+                        host->m_ageFilename.c_str());
+            }
+        } else {
+            host->m_vaultState = SDL::State::FromBlob(gen_default_sdl(host->m_ageFilename));
         }
 
         pthread_mutex_lock(&s_gameHostMutex);

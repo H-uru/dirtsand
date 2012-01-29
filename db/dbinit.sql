@@ -133,7 +133,8 @@ CREATE TABLE "Servers" (
     "AgeFilename" character varying(64) NOT NULL,
     "DisplayName" character varying(1024) NOT NULL,
     "AgeIdx" integer NOT NULL,
-    "SdlIdx" integer NOT NULL
+    "SdlIdx" integer NOT NULL,
+    "Temporary" boolean DEFAULT 'f' NOT NULL
 );
 ALTER TABLE game."Servers" OWNER TO dirtsand;
 CREATE SEQUENCE "Servers_idx_seq"
