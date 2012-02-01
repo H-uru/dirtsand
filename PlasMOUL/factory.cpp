@@ -18,7 +18,9 @@
 #include "factory.h"
 #include "errors.h"
 
+#include "Avatar/AvBrainCoop.h"
 #include "Avatar/AvBrainGeneric.h"
+#include "Avatar/CoopCoordinator.h"
 #include "Messages/LoadAvatarMsg.h"
 #include "Messages/AvatarInputStateMsg.h"
 #include "Messages/ServerReplyMsg.h"

@@ -16,6 +16,8 @@
  ******************************************************************************/
 
 #include "AvatarMsg.h"
+#include "Avatar/CoopCoordinator.h"
+#include "factory.h"
 
 void MOUL::AvBrainGenericMsg::read(DS::Stream* stream)
 {
@@ -41,6 +43,43 @@ void MOUL::AvBrainGenericMsg::write(DS::Stream* stream)
     stream->writeBool(m_setDirection);
     stream->writeBool(m_newDirection);
     stream->write<float>(m_transitionTime);
+}
+
+MOUL::AvCoopMsg::~AvCoopMsg()
+{
+    if (m_coordinator)
+        m_coordinator->unref();
+}
+
+void MOUL::AvCoopMsg::read(DS::Stream* s)
+{
+    Message::read(s);
+    
+    if (s->read<bool>())
+        m_coordinator = Factory::Read<CoopCoordinator>(s);
+    m_initiatorId = s->read<uint32_t>();
+    m_initiatorSerial = s->read<uint16_t>();
+    m_command = (Command)s->read<uint16_t>();
+}
+
+void MOUL::AvCoopMsg::write(DS::Stream* s)
+{
+    Message::write(s);
+    
+    s->write<bool>(m_coordinator);
+    if (m_coordinator)
+        Factory::WriteCreatable(s, m_coordinator);
+    s->write<uint32_t>(m_initiatorId);
+    s->write<uint16_t>(m_initiatorSerial);
+    s->write<uint16_t>(m_command);
+}
+
+bool MOUL::AvCoopMsg::makeSafeForNet()
+{
+    if (m_coordinator)
+        if (m_coordinator->m_acceptMsg)
+            return m_coordinator->m_acceptMsg->makeSafeForNet();
+    return true;
 }
 
 void MOUL::AvTaskSeekDoneMsg::read(DS::Stream* stream)

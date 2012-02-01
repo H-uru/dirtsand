@@ -34,8 +34,10 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Key.cpp
     PlasMOUL/Avatar/AnimStage.cpp
     PlasMOUL/Avatar/ArmatureBrain.cpp
+    PlasMOUL/Avatar/AvBrainCoop.cpp
     PlasMOUL/Avatar/AvBrainGeneric.cpp
     PlasMOUL/Avatar/AvTask.cpp
+    PlasMOUL/Avatar/CoopCoordinator.cpp
     PlasMOUL/Messages/EventData.cpp
     PlasMOUL/Messages/Message.cpp
     PlasMOUL/Messages/LoadCloneMsg.cpp

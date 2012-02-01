@@ -15,6 +15,7 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
+CREATABLE_TYPE(0x011B, CoopCoordinator)
 CREATABLE_TYPE(0x0206, AnimCmdMsg)
 CREATABLE_TYPE(0x0218, NetMsgPagingRoom)
 CREATABLE_TYPE(0x0253, LoadCloneMsg)
@@ -64,5 +65,7 @@ CREATABLE_TYPE(0x03B4, NetMsgPlayerPage)
 CREATABLE_TYPE(0x03BF, SubWorldMsg)
 CREATABLE_TYPE(0x042D, AvBrainSwim)
 CREATABLE_TYPE(0x0453, AvBrainClimb)
+CREATABLE_TYPE(0x045E, AvCoopMsg)
+CREATABLE_TYPE(0x045F, AvBrainCoop)
 CREATABLE_TYPE(0x0488, AvOneShotLinkTask)
 CREATABLE_TYPE(0x049E, AvBrainRideAnimatedPhysical)
