@@ -352,6 +352,23 @@ void DS::GameServer_Shutdown()
     pthread_mutex_destroy(&s_gameHostMutex);
 }
 
+bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId)
+{
+    pthread_mutex_lock(&s_gameHostMutex);
+    hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
+    GameHost_Private* host = 0;
+    if (host_iter != s_gameHosts.end())
+        host = host_iter->second;
+    pthread_mutex_unlock(&s_gameHostMutex);
+    if (host) {
+        Game_SdlMessage* msg = new Game_SdlMessage;
+        msg->m_node = node;
+        host->m_channel.putMessage(e_GameSdlUpdate, msg);
+        return true;
+    }
+    return false;
+}
+
 void DS::GameServer_DisplayClients()
 {
     pthread_mutex_lock(&s_gameHostMutex);

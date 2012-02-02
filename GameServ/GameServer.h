@@ -23,9 +23,15 @@
 
 namespace DS
 {
+    namespace Vault {
+        class Node;
+    }
+
     void GameServer_Init();
     void GameServer_Add(SocketHandle client);
     void GameServer_Shutdown();
+
+    bool GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId);
 
     void GameServer_DisplayClients();
 }
