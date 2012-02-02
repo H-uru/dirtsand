@@ -27,9 +27,10 @@ namespace MOUL
     {
         FACTORY_CREATABLE(LinkToAgeMsg)
         
-        // TODO: Find a sane way to implement makeSafeForNet
         virtual void read(DS::Stream* s);
         virtual void write(DS::Stream* s);
+        
+        virtual bool makeSafeForNet();
         
     public:
         AgeLinkStruct* m_ageLink;

@@ -42,3 +42,11 @@ void MOUL::LinkToAgeMsg::write(DS::Stream* s)
     m_ageLink->write(s);
     s->writeSafeString(m_linkInAnim);
 }
+
+bool MOUL::LinkToAgeMsg::makeSafeForNet()
+{
+    // The only time this msg should ever come over the wire is
+    // as a field inside an AvBrainCoop's CoopCoordinator. So, if we get
+    // here, then this is obviously a hack.
+    return false;
+}
