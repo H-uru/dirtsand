@@ -15,37 +15,31 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "AvTaskMsg.h"
-#include "factory.h"
+#ifndef _MOUL_LINKTOAGEMSG_H
+#define _MOUL_LINKTOAGEMSG_H
 
-void MOUL::AvTaskMsg::read(DS::Stream* stream)
+#include "AgeLinkStruct.h"
+#include "Message.h"
+
+namespace MOUL
 {
-    Message::read(stream);
+    class LinkToAgeMsg : public Message
+    {
+        FACTORY_CREATABLE(LinkToAgeMsg)
+        
+        virtual void read(DS::Stream* s);
+        virtual void write(DS::Stream* s);
+        
+        virtual bool makeSafeForNet();
+        
+    public:
+        AgeLinkStruct* m_ageLink;
+        DS::String m_linkInAnim;
+        
+    protected:
+        LinkToAgeMsg(uint16_t type) : Message(type), m_ageLink(AgeLinkStruct::Create()) { }
+        ~LinkToAgeMsg();
+    };
+};
 
-    if (stream->read<bool>())
-        m_task = Factory::Read<AvTask>(stream);
-}
-
-void MOUL::AvTaskMsg::write(DS::Stream* stream)
-{
-    Message::write(stream);
-
-    if (m_task) {
-        stream->write<bool>(true);
-        Factory::WriteCreatable(stream, m_task);
-    } else {
-        stream->write<bool>(false);
-    }
-}
-
-void MOUL::AvPushBrainMsg::read(DS::Stream* stream)
-{
-    AvTaskMsg::read(stream);
-    m_brain = Factory::Read<ArmatureBrain>(stream);
-}
-
-void MOUL::AvPushBrainMsg::write(DS::Stream* stream)
-{
-    AvTaskMsg::write(stream);
-    Factory::WriteCreatable(stream, m_brain);
-}
+#endif // _MOUL_LINKTOAGEMSG_H

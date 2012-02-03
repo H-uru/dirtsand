@@ -22,7 +22,7 @@ void MOUL::LinkEffectsTriggerMsg::read(DS::Stream* stream)
     Message::read(stream);
 
     m_invisLevel = stream->read<uint32_t>();
-    m_leaving = stream->readBool();
+    m_leaving = stream->read<bool>();
     m_linkKey.read(stream);
     m_effects = stream->read<uint32_t>();
     m_animKey.read(stream);
@@ -33,7 +33,7 @@ void MOUL::LinkEffectsTriggerMsg::write(DS::Stream* stream)
     Message::write(stream);
 
     stream->write<uint32_t>(m_invisLevel);
-    stream->writeBool(m_leaving);
+    stream->write<bool>(m_leaving);
     m_linkKey.write(stream);
     stream->write<uint32_t>(m_effects);
     m_animKey.write(stream);

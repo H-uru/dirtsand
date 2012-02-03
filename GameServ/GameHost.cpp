@@ -318,6 +318,15 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
 #endif
     if (state->m_object.m_name == "AgeSDLHook") {
         host->m_vaultState.add(update);
+        Auth_NodeInfo sdlNode;
+        AuthClient_Private fakeClient;
+        sdlNode.m_client = &fakeClient;
+        sdlNode.m_node.set_NodeIdx(host->m_sdlIdx);
+        sdlNode.m_node.set_Blob_1(host->m_vaultState.toBlob());
+        sdlNode.m_revision = DS::Uuid();
+        s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
+        if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
+            fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
     } else if (state->m_isAvatar) {
         // TODO: Kick the cheater. Ignoring state updates can be dangerous...
         if (client->m_clientInfo.m_PlayerId != state->m_object.m_clonePlayerId) {
@@ -611,6 +620,52 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
+    SDL::State vaultState = SDL::State::FromBlob(msg->m_node.m_Blob_1);
+    host->m_vaultState.merge(vaultState);
+    msg->m_node.m_Blob_1 = host->m_vaultState.toBlob();
+
+    Auth_NodeInfo sdlNode;
+    AuthClient_Private fakeClient;
+    sdlNode.m_client = &fakeClient;
+    sdlNode.m_node = msg->m_node;
+    sdlNode.m_revision = DS::Uuid();
+    s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
+    if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
+        fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
+
+    Game_AgeInfo info = s_ages[host->m_ageFilename];
+
+    MOUL::NetMsgSDLStateBCast* bcast = MOUL::NetMsgSDLStateBCast::Create(); //MOUL::Factory::Create(MOUL::ID_NetMsgSDLStateBCast);
+    bcast->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                            | MOUL::NetMessage::e_NeedsReliableSend;
+    bcast->m_timestamp.setNow();
+    bcast->m_isInitial = true;
+    bcast->m_persistOnServer = true;
+    bcast->m_isAvatar = false;
+    bcast->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
+    bcast->m_object.m_name = "AgeSDLHook";
+    bcast->m_object.m_type = 1;  // SceneObject
+    bcast->m_object.m_id = 1;
+    bcast->m_sdlBlob = msg->m_node.m_Blob_1;
+
+    pthread_mutex_lock(&host->m_clientMutex);
+    for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+        try {
+            DM_WRITEMSG(host, bcast);
+            DS::CryptSendBuffer(client_iter->second->m_sock, client_iter->second->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+        } catch (DS::SockHup) {
+            // This is handled below too, but we don't want to skip the rest
+            // of the client list if one hung up
+        }
+    }
+    pthread_mutex_unlock(&host->m_clientMutex);
+
+    delete bcast;
+    delete msg;
+}
+
 void* dm_gameHost(void* hostp)
 {
     GameHost_Private* host = reinterpret_cast<GameHost_Private*>(hostp);
@@ -630,6 +685,9 @@ void* dm_gameHost(void* hostp)
                 break;
             case e_GamePropagate:
                 dm_game_message(host, reinterpret_cast<Game_PropagateMessage*>(msg.m_payload));
+                break;
+            case e_GameSdlUpdate:
+                dm_sdl_update(host, reinterpret_cast<Game_SdlMessage*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

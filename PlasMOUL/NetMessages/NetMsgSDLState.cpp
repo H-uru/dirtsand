@@ -28,9 +28,9 @@ void MOUL::NetMsgSDLState::read(DS::Stream* stream)
     memcpy(sdl, blobStream.m_stream.buffer(), blobStream.m_stream.size());
     m_sdlBlob = DS::Blob::Steal(sdl, blobStream.m_stream.size());
 
-    m_isInitial = stream->readBool();
-    m_persistOnServer = stream->readBool();
-    m_isAvatar = stream->readBool();
+    m_isInitial = stream->read<bool>();
+    m_persistOnServer = stream->read<bool>();
+    m_isAvatar = stream->read<bool>();
 }
 
 void MOUL::NetMsgSDLState::write(DS::Stream* stream)
@@ -41,7 +41,7 @@ void MOUL::NetMsgSDLState::write(DS::Stream* stream)
     blobStream.m_stream.writeBytes(m_sdlBlob.buffer(), m_sdlBlob.size());
     blobStream.write(stream);
 
-    stream->writeBool(m_isInitial);
-    stream->writeBool(m_persistOnServer);
-    stream->writeBool(m_isAvatar);
+    stream->write<bool>(m_isInitial);
+    stream->write<bool>(m_persistOnServer);
+    stream->write<bool>(m_isAvatar);
 }

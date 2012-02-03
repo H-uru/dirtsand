@@ -22,7 +22,7 @@ void MOUL::ArmatureBrain::read(DS::Stream* stream)
 {
     // Pointless waste of bytes
     stream->read<uint32_t>();
-    if (stream->readBool()) {
+    if (stream->read<bool>()) {
         Key justPretendThisIsntHere;
         justPretendThisIsntHere.read(stream);
     }
@@ -34,7 +34,7 @@ void MOUL::ArmatureBrain::read(DS::Stream* stream)
 void MOUL::ArmatureBrain::write(DS::Stream* stream)
 {
     stream->write<uint32_t>(0);
-    stream->writeBool(false);
+    stream->write<bool>(false);
     stream->write<uint32_t>(0);
     stream->write<float>(0);
     stream->write<double>(0);
@@ -43,11 +43,11 @@ void MOUL::ArmatureBrain::write(DS::Stream* stream)
 void MOUL::AvBrainHuman::read(DS::Stream* stream)
 {
     ArmatureBrain::read(stream);
-    m_isCustomAvatar = stream->readBool();
+    m_isCustomAvatar = stream->read<bool>();
 }
 
 void MOUL::AvBrainHuman::write(DS::Stream* stream)
 {
     ArmatureBrain::write(stream);
-    stream->writeBool(m_isCustomAvatar);
+    stream->write<bool>(m_isCustomAvatar);
 }

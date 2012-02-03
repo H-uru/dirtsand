@@ -39,6 +39,17 @@ namespace DS
         }
         bool operator!=(const UnifiedTime& other) const { return !operator==(other); }
 
+        bool operator>(const UnifiedTime& other) const
+        {
+            if (m_secs > other.m_secs) {
+                return true;
+            } else if (m_secs == other.m_secs) {
+                return m_micros > other.m_micros;
+            } else {
+                return false;
+            }
+        }
+
         void setNow();
 
     public:

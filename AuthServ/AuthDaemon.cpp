@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "AuthServer_Private.h"
+#include "GameServ/GameServer.h"
 #include "encodings.h"
 #include "settings.h"
 #include "errors.h"
@@ -751,6 +752,32 @@ void* dm_authDaemon(void*)
             case e_VaultUpdateNode:
                 {
                     Auth_NodeInfo* info = reinterpret_cast<Auth_NodeInfo*>(msg.m_payload);
+                    if (!info->m_revision.isNull() && info->m_node.m_NodeType == DS::Vault::e_NodeSDL) {
+                        // This is an SDL update. It needs to be passed off to the gameserver
+                        PostgresStrings<1> parms;
+                        parms.set(0, info->m_node.m_NodeIdx);
+                        PGresult* result = PQexecParams(s_postgres,
+                                                        "SELECT \"idx\" FROM game.\"Servers\" WHERE \"SdlIdx\"=$1",
+                                                        1, 0, parms.m_values, 0, 0, 0);
+                        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+                            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+                            PQclear(result);
+                            SEND_REPLY(info, DS::e_NetInternalError);
+                            break;
+                        }
+                        if (PQntuples(result) != 0) {
+                            uint32_t ageMcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+                            PQclear(result);
+                            if (DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId)) {
+                                SEND_REPLY(info, DS::e_NetSuccess);
+                                break;
+                            }
+                        }
+                    }
+                    if (info->m_revision.isNull()) {
+                        info->m_revision = gen_uuid();
+                    }
                     if (v_update_node(info->m_node)) {
                         // Broadcast the change
                         dm_auth_bcast_node(info->m_node.m_NodeIdx, info->m_revision);

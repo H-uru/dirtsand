@@ -194,7 +194,7 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
             m_float[i] = stream->read<float>();
             break;
         case e_VarBool:
-            m_bool[i] = stream->readBool();
+            m_bool[i] = stream->read<bool>();
             break;
         case e_VarString:
             {
@@ -280,7 +280,7 @@ void SDL::Variable::_ref::write(DS::Stream* stream)
             stream->write<float>(m_float[i]);
             break;
         case e_VarBool:
-            stream->writeBool(m_bool[i]);
+            stream->write<bool>(m_bool[i]);
             break;
         case e_VarString:
             {
@@ -384,6 +384,8 @@ void SDL::Variable::read(DS::Stream* stream)
     } else {
         if (m_data->m_flags & e_HasTimeStamp)
             m_data->m_timestamp.read(stream);
+        if (m_data->m_timestamp.isNull())
+            m_data->m_timestamp.setNow();
 
         if (!(m_data->m_flags & e_SameAsDefault)) {
             if (m_data->m_desc->m_size == -1) {
@@ -850,6 +852,18 @@ void SDL::State::add(const SDL::State& state)
     DS_DASSERT(state.m_data->m_desc == m_data->m_desc);
     for (size_t i=0; i<m_data->m_vars.size(); ++i) {
         if (state.m_data->m_vars[i].data()->m_flags & Variable::e_XIsDirty)
+            m_data->m_vars[i] = state.m_data->m_vars[i];
+    }
+}
+
+void SDL::State::merge(const SDL::State& state)
+{
+    if (!m_data)
+        return;
+
+    DS_DASSERT(state.m_data->m_desc == m_data->m_desc);
+    for (size_t i=0; i < m_data->m_vars.size(); ++i) {
+        if (state.m_data->m_vars[i].data()->m_timestamp > m_data->m_vars[i].data()->m_timestamp)
             m_data->m_vars[i] = state.m_data->m_vars[i];
     }
 }

@@ -15,37 +15,52 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "AvTaskMsg.h"
+#include "CoopCoordinator.h"
+#include "AvBrainCoop.h"
 #include "factory.h"
+#include "Messages/Message.h"
 
-void MOUL::AvTaskMsg::read(DS::Stream* stream)
+MOUL::CoopCoordinator::~CoopCoordinator()
 {
-    Message::read(stream);
-
-    if (stream->read<bool>())
-        m_task = Factory::Read<AvTask>(stream);
+    if (m_hostBrain)
+        m_hostBrain->unref();
+    if (m_guestBrain)
+        m_guestBrain->unref();
+    if (m_acceptMsg)
+        m_acceptMsg->unref();
 }
 
-void MOUL::AvTaskMsg::write(DS::Stream* stream)
+void MOUL::CoopCoordinator::read(DS::Stream* s)
 {
-    Message::write(stream);
-
-    if (m_task) {
-        stream->write<bool>(true);
-        Factory::WriteCreatable(stream, m_task);
-    } else {
-        stream->write<bool>(false);
-    }
+    m_hostKey.read(s);
+    m_guestKey.read(s);
+    
+    m_hostBrain = Factory::Read<AvBrainCoop>(s);
+    m_guestBrain = Factory::Read<AvBrainCoop>(s);
+    
+    m_hostOfferStage = s->read<uint8_t>();
+    m_guestAcceptStage = s->read<bool>();
+    
+    if (s->read<bool>())
+        m_acceptMsg = Factory::Read<Message>(s);
+    m_synchBone = s->readSafeString();
+    m_autoStartGuest = s->read<bool>();
 }
 
-void MOUL::AvPushBrainMsg::read(DS::Stream* stream)
+void MOUL::CoopCoordinator::write(DS::Stream* s)
 {
-    AvTaskMsg::read(stream);
-    m_brain = Factory::Read<ArmatureBrain>(stream);
-}
-
-void MOUL::AvPushBrainMsg::write(DS::Stream* stream)
-{
-    AvTaskMsg::write(stream);
-    Factory::WriteCreatable(stream, m_brain);
+    m_hostKey.write(s);
+    m_guestKey.write(s);
+    
+    Factory::WriteCreatable(s, m_hostBrain);
+    Factory::WriteCreatable(s, m_guestBrain);
+    
+    s->write<uint8_t>(m_hostOfferStage);
+    s->write<bool>(m_guestAcceptStage);
+    
+    s->write<bool>(m_acceptMsg);
+    if (m_acceptMsg)
+        Factory::WriteCreatable(s, m_acceptMsg);
+    s->writeSafeString(m_synchBone);
+    s->write<bool>(m_autoStartGuest);
 }

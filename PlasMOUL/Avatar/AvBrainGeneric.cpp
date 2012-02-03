@@ -43,16 +43,16 @@ void MOUL::AvBrainGeneric::read(DS::Stream* stream)
     m_type = stream->read<uint32_t>();
     m_exitFlags = stream->read<uint32_t>();
     m_mode = stream->read<uint8_t>();
-    m_forward = stream->readBool();
+    m_forward = stream->read<bool>();
 
     m_startMessage->unref();
-    if (stream->readBool())
+    if (stream->read<bool>())
         m_startMessage = Factory::Read<Message>(stream);
     else
         m_startMessage = 0;
 
     m_endMessage->unref();
-    if (stream->readBool())
+    if (stream->read<bool>())
         m_endMessage = Factory::Read<Message>(stream);
     else
         m_endMessage = 0;
@@ -78,7 +78,7 @@ void MOUL::AvBrainGeneric::write(DS::Stream* stream)
     stream->write<uint32_t>(m_type);
     stream->write<uint32_t>(m_exitFlags);
     stream->write<uint8_t>(m_mode);
-    stream->writeBool(m_forward);
+    stream->write<bool>(m_forward);
 
     Factory::WriteCreatable(stream, m_startMessage);
     Factory::WriteCreatable(stream, m_endMessage);

@@ -15,37 +15,38 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "AvTaskMsg.h"
-#include "factory.h"
+#include "LinkToAgeMsg.h"
+#include "errors.h"
 
-void MOUL::AvTaskMsg::read(DS::Stream* stream)
+static uint8_t kLinkToAgeVersion = 0;
+
+MOUL::LinkToAgeMsg::~LinkToAgeMsg()
 {
-    Message::read(stream);
-
-    if (stream->read<bool>())
-        m_task = Factory::Read<AvTask>(stream);
+    m_ageLink->unref();
 }
 
-void MOUL::AvTaskMsg::write(DS::Stream* stream)
+void MOUL::LinkToAgeMsg::read(DS::Stream* s)
 {
-    Message::write(stream);
-
-    if (m_task) {
-        stream->write<bool>(true);
-        Factory::WriteCreatable(stream, m_task);
-    } else {
-        stream->write<bool>(false);
-    }
+    Message::read(s);
+    
+    DS_PASSERT(s->read<uint8_t>() == kLinkToAgeVersion);
+    m_ageLink->read(s);
+    m_linkInAnim = s->readSafeString();
 }
 
-void MOUL::AvPushBrainMsg::read(DS::Stream* stream)
+void MOUL::LinkToAgeMsg::write(DS::Stream* s)
 {
-    AvTaskMsg::read(stream);
-    m_brain = Factory::Read<ArmatureBrain>(stream);
+    Message::write(s);
+    
+    s->write<uint8_t>(kLinkToAgeVersion);
+    m_ageLink->write(s);
+    s->writeSafeString(m_linkInAnim);
 }
 
-void MOUL::AvPushBrainMsg::write(DS::Stream* stream)
+bool MOUL::LinkToAgeMsg::makeSafeForNet()
 {
-    AvTaskMsg::write(stream);
-    Factory::WriteCreatable(stream, m_brain);
+    // The only time this msg should ever come over the wire is
+    // as a field inside an AvBrainCoop's CoopCoordinator. So, if we get
+    // here, then this is obviously a hack.
+    return false;
 }
