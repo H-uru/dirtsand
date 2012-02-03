@@ -687,6 +687,18 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     uint32_t cityLink = v_create_node(node);
     if (hoodLink == 0)
         return std::make_pair(0, 0);
+    
+    link = DS::Blob(reinterpret_cast<const uint8_t*>("Great Zero Observation:LinkInPointDefault:;"),
+                    strlen("Great Zero Observation:LinkInPointDefault:;"));
+    node.clear();
+    node.clear();
+    node.set_NodeType(DS::Vault::e_NodeAgeLink);
+    node.set_CreatorUuid(acctId);
+    node.set_CreatorIdx(playerIdx);
+    node.set_Blob_1(link);
+    uint32_t gzLink = v_create_node(node);
+    if (gzLink == 0)
+        return std::make_pair(0, 0);
 
     AuthServer_AgeInfo relto;
     relto.m_ageId = gen_uuid();
@@ -725,6 +737,9 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     uint32_t cityAge = find_public_age_1("city");
     if (cityAge == 0)
         return std::make_pair(0, 0);
+    uint32_t gzAge = find_public_age_1("GreatZero");
+    if (gzAge == 0)
+        return std::make_pair(0, 0);
 
     if (!v_ref_node(playerIdx, s_systemNode, 0))
         return std::make_pair(0, 0);
@@ -758,11 +773,15 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
         return std::make_pair(0, 0);
     if (!v_ref_node(agesNode, cityLink, 0))
         return std::make_pair(0, 0);
+    if (!v_ref_node(agesNode, gzLink, 0))
+        return std::make_pair(0, 0);
     if (!v_ref_node(reltoLink, reltoAge.second, 0))
         return std::make_pair(0, 0);
     if (!v_ref_node(hoodLink, hoodAge, 0))
         return std::make_pair(0, 0);
     if (!v_ref_node(cityLink, cityAge, 0))
+        return std::make_pair(0, 0);
+    if (!v_ref_node(gzLink, gzAge, 0))
         return std::make_pair(0, 0);
     if (!v_ref_node(reltoAge.first, agesNode, 0))
         return std::make_pair(0, 0);
