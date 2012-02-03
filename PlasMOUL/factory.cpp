@@ -18,7 +18,10 @@
 #include "factory.h"
 #include "errors.h"
 
+#include "AgeLinkStruct.h"
+#include "Avatar/AvBrainCoop.h"
 #include "Avatar/AvBrainGeneric.h"
+#include "Avatar/CoopCoordinator.h"
 #include "Messages/LoadAvatarMsg.h"
 #include "Messages/AvatarInputStateMsg.h"
 #include "Messages/ServerReplyMsg.h"
@@ -32,6 +35,7 @@
 #include "Messages/BulletMsg.h"
 #include "Messages/SimulationMsg.h"
 #include "Messages/MessageWithCallbacks.h"
+#include "Messages/LinkToAgeMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
