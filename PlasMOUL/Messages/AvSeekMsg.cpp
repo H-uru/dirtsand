@@ -27,10 +27,10 @@ void MOUL::AvSeekMsg::read(DS::Stream* stream)
         m_targetLook = stream->read<DS::Vector3>();
     }
     m_duration = stream->read<float>();
-    m_smartSeek = stream->readBool();
+    m_smartSeek = stream->read<bool>();
     m_animName = stream->readSafeString();
     m_alignType = stream->read<uint16_t>();
-    m_noSeek = stream->readBool();
+    m_noSeek = stream->read<bool>();
     m_flags = stream->read<uint8_t>();
     m_finishKey.read(stream);
 }
@@ -45,10 +45,10 @@ void MOUL::AvSeekMsg::write(DS::Stream* stream)
         stream->write<DS::Vector3>(m_targetLook);
     }
     stream->write<float>(m_duration);
-    stream->writeBool(m_smartSeek);
+    stream->write<bool>(m_smartSeek);
     stream->writeSafeString(m_animName);
     stream->write<uint16_t>(m_alignType);
-    stream->writeBool(m_noSeek);
+    stream->write<bool>(m_noSeek);
     stream->write<uint8_t>(m_flags);
     m_finishKey.write(stream);
 }
@@ -58,8 +58,8 @@ void MOUL::AvOneShotMsg::read(DS::Stream* stream)
     AvSeekMsg::read(stream);
 
     m_oneShotAnimName = stream->readSafeString();
-    m_drivable = stream->readBool();
-    m_reversible = stream->readBool();
+    m_drivable = stream->read<bool>();
+    m_reversible = stream->read<bool>();
 }
 
 void MOUL::AvOneShotMsg::write(DS::Stream* stream)
@@ -67,6 +67,6 @@ void MOUL::AvOneShotMsg::write(DS::Stream* stream)
     AvSeekMsg::write(stream);
 
     stream->writeSafeString(m_oneShotAnimName);
-    stream->writeBool(m_drivable);
-    stream->writeBool(m_reversible);
+    stream->write<bool>(m_drivable);
+    stream->write<bool>(m_reversible);
 }

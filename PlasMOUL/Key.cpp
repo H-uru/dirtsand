@@ -94,7 +94,7 @@ void MOUL::Uoid::write(DS::Stream* stream)
 
 void MOUL::Key::read(DS::Stream* stream)
 {
-    if (stream->readBool()) {
+    if (stream->read<bool>()) {
         Uoid data;
         data.read(stream);
         operator=(data);
@@ -105,7 +105,7 @@ void MOUL::Key::read(DS::Stream* stream)
 
 void MOUL::Key::write(DS::Stream* stream)
 {
-    stream->writeBool(!isNull());
+    stream->write<bool>(!isNull());
     if (!isNull())
         m_data->m_uoid.write(stream);
 }

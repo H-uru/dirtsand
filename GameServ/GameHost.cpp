@@ -82,6 +82,14 @@ void dm_game_shutdown(GameHost_Private* host)
     }
     s_gameHostMutex.unlock();
 
+    if (host->m_temp) {
+        PostgresStrings<1> params;
+        params.set(0, host->m_serverIdx);
+        PQexecParams(host->m_postgres,
+                "DELETE FROM game.\"Servers\" "
+                "    WHERE \"idx\"=$1;",
+                1, 0, params.m_values, 0, 0, 0);
+    }
     PQfinish(host->m_postgres);
     delete host;
 }
@@ -309,6 +317,15 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
 #endif
     if (state->m_object.m_name == "AgeSDLHook") {
         host->m_vaultState.add(update);
+        Auth_NodeInfo sdlNode;
+        AuthClient_Private fakeClient;
+        sdlNode.m_client = &fakeClient;
+        sdlNode.m_node.set_NodeIdx(host->m_sdlIdx);
+        sdlNode.m_node.set_Blob_1(host->m_vaultState.toBlob());
+        sdlNode.m_revision = DS::Uuid();
+        s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
+        if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
+            fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
     } else if (state->m_isAvatar) {
         // TODO: Kick the cheater. Ignoring state updates can be dangerous...
         if (client->m_clientInfo.m_PlayerId != state->m_object.m_clonePlayerId) {
@@ -603,6 +620,52 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
+    SDL::State vaultState = SDL::State::FromBlob(msg->m_node.m_Blob_1);
+    host->m_vaultState.merge(vaultState);
+    msg->m_node.m_Blob_1 = host->m_vaultState.toBlob();
+
+    Auth_NodeInfo sdlNode;
+    AuthClient_Private fakeClient;
+    sdlNode.m_client = &fakeClient;
+    sdlNode.m_node = msg->m_node;
+    sdlNode.m_revision = DS::Uuid();
+    s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
+    if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
+        fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
+
+    Game_AgeInfo info = s_ages[host->m_ageFilename];
+
+    MOUL::NetMsgSDLStateBCast* bcast = MOUL::NetMsgSDLStateBCast::Create(); //MOUL::Factory::Create(MOUL::ID_NetMsgSDLStateBCast);
+    bcast->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                            | MOUL::NetMessage::e_NeedsReliableSend;
+    bcast->m_timestamp.setNow();
+    bcast->m_isInitial = true;
+    bcast->m_persistOnServer = true;
+    bcast->m_isAvatar = false;
+    bcast->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
+    bcast->m_object.m_name = "AgeSDLHook";
+    bcast->m_object.m_type = 1;  // SceneObject
+    bcast->m_object.m_id = 1;
+    bcast->m_sdlBlob = msg->m_node.m_Blob_1;
+
+    host->m_clientMutex.lock();
+    for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+        try {
+            DM_WRITEMSG(host, bcast);
+            DS::CryptSendBuffer(client_iter->second->m_sock, client_iter->second->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+        } catch (DS::SockHup) {
+            // This is handled below too, but we don't want to skip the rest
+            // of the client list if one hung up
+        }
+    }
+    host->m_clientMutex.unlock();
+
+    delete bcast;
+    delete msg;
+}
+
 void dm_gameHost(GameHost_Private* host)
 {
     for ( ;; ) {
@@ -620,6 +683,9 @@ void dm_gameHost(GameHost_Private* host)
                 break;
             case e_GamePropagate:
                 dm_game_message(host, reinterpret_cast<Game_PropagateMessage*>(msg.m_payload));
+                break;
+            case e_GameSdlUpdate:
+                dm_sdl_update(host, reinterpret_cast<Game_SdlMessage*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
@@ -656,7 +722,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
     PostgresStrings<1> parms;
     parms.set(0, ageMcpId);
     PGresult* result = PQexecParams(postgres,
-            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\", \"SdlIdx\""
+            "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\", \"SdlIdx\", \"Temporary\""
             "    FROM game.\"Servers\" WHERE idx=$1",
             1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -680,27 +746,33 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
         host->m_serverIdx = ageMcpId;
         host->m_postgres = postgres;
+        host->m_temp = strcmp("t", PQgetvalue(result, 0, 4)) == 0;
 
         // Fetch the vault's SDL blob
-        Auth_NodeInfo sdlFind;
-        AuthClient_Private fakeClient;
-        sdlFind.m_client = &fakeClient;
-        sdlFind.m_node.set_NodeIdx(strtoul(PQgetvalue(result, 0, 3), 0, 10));
-        s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&sdlFind));
-        DS::FifoMessage reply = fakeClient.m_channel.getMessage();
-        if (reply.m_messageType != DS::e_NetSuccess) {
-            fprintf(stderr, "[Game] Error fetching Age SDL\n");
-            PQclear(result);
-            PQfinish(postgres);
-            delete host;
-            return 0;
-        }
-        host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
-        try {
-            host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
-        } catch (DS::EofException) {
-            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
-                    host->m_ageFilename.c_str());
+        unsigned long sdlidx = strtoul(PQgetvalue(result, 0, 3), 0, 10);
+        if (sdlidx) {
+            Auth_NodeInfo sdlFind;
+            AuthClient_Private fakeClient;
+            sdlFind.m_client = &fakeClient;
+            sdlFind.m_node.set_NodeIdx(sdlidx);
+            s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&sdlFind));
+            DS::FifoMessage reply = fakeClient.m_channel.getMessage();
+            if (reply.m_messageType != DS::e_NetSuccess) {
+                fprintf(stderr, "[Game] Error fetching Age SDL\n");
+                PQclear(result);
+                PQfinish(postgres);
+                delete host;
+                return 0;
+            }
+            host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
+            try {
+                host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
+            } catch (DS::EofException) {
+                fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
+                        host->m_ageFilename.c_str());
+            }
+        } else {
+            host->m_vaultState = SDL::State::FromBlob(gen_default_sdl(host->m_ageFilename));
         }
 
         s_gameHostMutex.lock();

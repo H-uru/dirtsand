@@ -35,7 +35,7 @@ void MOUL::GenericType::read(DS::Stream* stream)
         m_float = stream->read<float>();
         break;
     case e_TypeBool:
-        m_bool = stream->readBool();
+        m_bool = stream->read<bool>();
         break;
     case e_TypeByte:
         m_byte = stream->read<uint8_t>();
@@ -63,7 +63,7 @@ void MOUL::GenericType::write(DS::Stream* stream)
         stream->write<float>(m_float);
         break;
     case e_TypeBool:
-        stream->writeBool(m_bool);
+        stream->write<bool>(m_bool);
         break;
     case e_TypeByte:
         stream->write<uint8_t>(m_byte);
@@ -98,7 +98,7 @@ void MOUL::NetMsgSharedState::read(DS::Stream* stream)
     uint16_t nameLen = msgStream.m_stream.read<uint16_t>();
     m_stateName = msgStream.m_stream.readString(nameLen, DS::e_StringUTF8);
     m_vars.resize(msgStream.m_stream.read<uint32_t>());
-    m_serverMayDelete = msgStream.m_stream.readBool();
+    m_serverMayDelete = msgStream.m_stream.read<bool>();
 
     for (size_t i=0; i<m_vars.size(); ++i)
         m_vars[i].read(&msgStream.m_stream);
@@ -119,7 +119,7 @@ void MOUL::NetMsgSharedState::write(DS::Stream* stream)
     msgStream.m_stream.write<uint16_t>(name.length());
     msgStream.m_stream.writeBytes(name.data(), name.length());
     msgStream.m_stream.write<uint32_t>(m_vars.size());
-    msgStream.m_stream.writeBool(m_serverMayDelete);
+    msgStream.m_stream.write<bool>(m_serverMayDelete);
 
     for (size_t i=0; i<m_vars.size(); ++i)
         m_vars[i].write(&msgStream.m_stream);

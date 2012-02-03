@@ -68,10 +68,10 @@ extern DS::MsgChannel s_authChannel;
 enum AuthDaemonMessages
 {
     e_AuthShutdown, e_AuthClientLogin, e_AuthSetPlayer, e_AuthCreatePlayer,
-    e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode, e_VaultRefNode,
-    e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode, e_VaultSendNode,
-    e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect, e_AuthAddAcct,
-    e_AuthGetPublic, e_AuthSetPublic
+    e_AuthDeletePlayer, e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode,
+    e_VaultRefNode, e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode,
+    e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
+    e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic
 };
 
 struct Auth_AccountInfo
@@ -99,6 +99,11 @@ struct Auth_LoginInfo : public Auth_ClientMessage
 struct Auth_PlayerCreate : public Auth_ClientMessage
 {
     AuthServer_PlayerInfo m_player;
+};
+
+struct Auth_PlayerDelete : public Auth_ClientMessage
+{
+    uint32_t m_playerId;
 };
 
 struct Auth_AgeCreate : public Auth_ClientMessage

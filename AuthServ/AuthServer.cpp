@@ -58,8 +58,9 @@ void auth_init(AuthServer_Private& client)
         client.m_buffer.write<uint8_t>(2); // reply with an empty seed as well
     } else {
         uint8_t Y[64];
-        DS_PASSERT(msgSize == 66);
-        DS::RecvBuffer(client.m_sock, Y, 64);
+        memset(Y, 0, sizeof(Y));
+        DS_PASSERT(msgSize <= 66);
+        DS::RecvBuffer(client.m_sock, Y, 64 - (66 - msgSize));
         BYTE_SWAP_BUFFER(Y, 64);
 
         uint8_t serverSeed[7];
@@ -231,6 +232,29 @@ void cb_playerCreate(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_playerDelete(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_PlayerDeleteReply);
+
+    // Trans ID
+    client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
+
+    Auth_PlayerDelete msg;
+    msg.m_client = &client;
+    msg.m_playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthDeletePlayer, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0);   // Player ID
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_playerId);
+    }
+
+    SEND_REPLY();
+}
+
 void cb_ageCreate(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_VaultInitAgeReply);
@@ -250,6 +274,8 @@ void cb_ageCreate(AuthServer_Private& client)
     msg.m_age.m_description = DS::CryptRecvString(client.m_sock, client.m_crypt);
     msg.m_age.m_seqNumber = DS::CryptRecvValue<int32_t>(client.m_sock, client.m_crypt);
     msg.m_age.m_language = DS::CryptRecvValue<int32_t>(client.m_sock, client.m_crypt);
+    if (msg.m_age.m_ageId.isNull())
+        msg.m_age.m_ageId = gen_uuid();
     s_authChannel.putMessage(e_VaultInitAge, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();
@@ -759,6 +785,9 @@ void wk_authWorker(DS::SocketHandle sockp)
                 break;
             case e_CliToAuth_PlayerCreateRequest:
                 cb_playerCreate(client);
+                break;
+            case e_CliToAuth_PlayerDeleteRequest:
+                cb_playerDelete(client);
                 break;
             case e_CliToAuth_VaultNodeCreate:
                 cb_nodeCreate(client);

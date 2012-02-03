@@ -22,10 +22,10 @@ void MOUL::LoadAvatarMsg::read(DS::Stream* stream)
 {
     LoadCloneMsg::read(stream);
 
-    m_isPlayer = stream->readBool();
+    m_isPlayer = stream->read<bool>();
     m_spawnPoint.read(stream);
     m_initTask->unref();
-    if (stream->readBool())
+    if (stream->read<bool>())
         m_initTask = Factory::Read<AvTask>(stream);
     else
         m_initTask = 0;
@@ -36,13 +36,13 @@ void MOUL::LoadAvatarMsg::write(DS::Stream* stream)
 {
     LoadCloneMsg::write(stream);
 
-    stream->writeBool(m_isPlayer);
+    stream->write<bool>(m_isPlayer);
     m_spawnPoint.write(stream);
     if (m_initTask) {
-        stream->writeBool(true);
+        stream->write<bool>(true);
         Factory::WriteCreatable(stream, m_initTask);
     } else {
-        stream->writeBool(false);
+        stream->write<bool>(false);
     }
     stream->writeSafeString(m_userString);
 }

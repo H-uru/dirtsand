@@ -72,6 +72,8 @@ struct GameHost_Private
     uint32_t m_sdlIdx;
     SDL::State m_vaultState;
     sdlstatemap_t m_states;
+
+    bool m_temp;
 };
 
 typedef std::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
@@ -95,6 +97,7 @@ extern agemap_t s_ages;
 enum GameHostMessages
 {
     e_GameShutdown, e_GameDisconnect, e_GameJoinAge, e_GamePropagate,
+    e_GameSdlUpdate,
 };
 
 struct Game_ClientMessage
@@ -106,6 +109,11 @@ struct Game_PropagateMessage : public Game_ClientMessage
 {
     uint32_t m_messageType;
     DS::Blob m_message;
+};
+
+struct Game_SdlMessage
+{
+    DS::Vault::Node m_node;
 };
 
 GameHost_Private* start_game_host(uint32_t ageMcpId);

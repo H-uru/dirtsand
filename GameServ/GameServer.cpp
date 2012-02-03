@@ -56,8 +56,9 @@ void game_client_init(GameClient_Private& client)
         client.m_buffer.write<uint8_t>(2); // reply with an empty seed as well
     } else {
         uint8_t Y[64];
-        DS_PASSERT(msgSize == 66);
-        DS::RecvBuffer(client.m_sock, Y, 64);
+        memset(Y, 0, sizeof(Y));
+        DS_PASSERT(msgSize <= 66);
+        DS::RecvBuffer(client.m_sock, Y, 64 - (66 - msgSize));
         BYTE_SWAP_BUFFER(Y, 64);
 
         uint8_t serverSeed[7];
@@ -344,6 +345,23 @@ void DS::GameServer_Shutdown()
     }
     if (!complete)
         fprintf(stderr, "[Game] Servers didn't die after 5 seconds!\n");
+}
+
+bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId)
+{
+    s_gameHostMutex.lock();
+    hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
+    GameHost_Private* host = 0;
+    if (host_iter != s_gameHosts.end())
+        host = host_iter->second;
+    s_gameHostMutex.unlock();
+    if (host) {
+        Game_SdlMessage* msg = new Game_SdlMessage;
+        msg->m_node = node;
+        host->m_channel.putMessage(e_GameSdlUpdate, msg);
+        return true;
+    }
+    return false;
 }
 
 void DS::GameServer_DisplayClients()

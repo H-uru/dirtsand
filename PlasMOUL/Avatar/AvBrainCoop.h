@@ -15,37 +15,34 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "AvTaskMsg.h"
-#include "factory.h"
+#ifndef _MOUL_AVBRAINCOOP_H
+#define _MOUL_AVBRAINCOOP_H
 
-void MOUL::AvTaskMsg::read(DS::Stream* stream)
+#include "AvBrainGeneric.h"
+#include "Key.h"
+#include <vector>
+
+namespace MOUL
 {
-    Message::read(stream);
+    class AvBrainCoop : public AvBrainGeneric
+    {
+        FACTORY_CREATABLE(AvBrainCoop)
 
-    if (stream->read<bool>())
-        m_task = Factory::Read<AvTask>(stream);
-}
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
 
-void MOUL::AvTaskMsg::write(DS::Stream* stream)
-{
-    Message::write(stream);
+    public:
+        uint32_t m_initiatorId;
+        uint16_t m_initiatorSerial;
+        Key m_host, m_guest;
+        bool m_waitingForClick;
+        std::vector<Key> m_recipients;
+        
+    protected:
+        AvBrainCoop(uint16_t type)
+            : AvBrainGeneric(type), m_initiatorId(0), m_initiatorSerial(0),
+              m_waitingForClick(false) { }
+    };
+};
 
-    if (m_task) {
-        stream->write<bool>(true);
-        Factory::WriteCreatable(stream, m_task);
-    } else {
-        stream->write<bool>(false);
-    }
-}
-
-void MOUL::AvPushBrainMsg::read(DS::Stream* stream)
-{
-    AvTaskMsg::read(stream);
-    m_brain = Factory::Read<ArmatureBrain>(stream);
-}
-
-void MOUL::AvPushBrainMsg::write(DS::Stream* stream)
-{
-    AvTaskMsg::write(stream);
-    Factory::WriteCreatable(stream, m_brain);
-}
+#endif // _MOUL_AVBRAINCOOP_H

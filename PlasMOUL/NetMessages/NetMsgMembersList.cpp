@@ -112,7 +112,7 @@ void MOUL::NetMsgMemberUpdate::read(DS::Stream* stream)
     NetMessage::read(stream);
 
     m_member.read(stream);
-    m_addMember = stream->readBool();
+    m_addMember = stream->read<bool>();
 }
 
 void MOUL::NetMsgMemberUpdate::write(DS::Stream* stream)
@@ -120,5 +120,5 @@ void MOUL::NetMsgMemberUpdate::write(DS::Stream* stream)
     NetMessage::write(stream);
 
     m_member.write(stream);
-    stream->writeBool(m_addMember);
+    stream->write<bool>(m_addMember);
 }
