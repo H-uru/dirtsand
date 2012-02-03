@@ -89,13 +89,13 @@ void MOUL::AgeLinkStruct::read(DS::Stream* s)
     m_flags = s->read<uint16_t>();
     DS_PASSERT(!(m_flags & e_HasSpawnPtInline)); // Trolololololololo
     DS_PASSERT(!(m_flags & e_HasSpawnPtLegacy)); // Ahahahahahahahaha
-    
+
     if (m_flags & e_HasAgeInfo)
-        ageInfo()->read(s);
+        ensureAgeInfo()->read(s);
     if (m_flags & e_HasLinkingRules)
         m_linkingRules = s->read<uint8_t>();
     if (m_flags & e_HasSpawnPt)
-        spawnPt()->read(s);
+        ensureSpawnPt()->read(s);
     if (m_flags & e_HasAmCCR)
         m_amCcr = s->read<bool>();
     if (m_flags & e_HasParentAgeFilename)
@@ -107,13 +107,13 @@ void MOUL::AgeLinkStruct::write(DS::Stream* s)
     DS_PASSERT(!(m_flags & e_HasSpawnPtInline)); // Trolololololololo
     DS_PASSERT(!(m_flags & e_HasSpawnPtLegacy)); // Ahahahahahahahaha
     s->write<uint16_t>(m_flags);
-    
+
     if (m_flags & e_HasAgeInfo)
-        ageInfo()->write(s);
+        ensureAgeInfo()->write(s);
     if (m_flags & e_HasLinkingRules)
         s->write<uint8_t>(m_linkingRules);
     if (m_flags & e_HasSpawnPt)
-        spawnPt()->write(s);
+        ensureSpawnPt()->write(s);
     if (m_flags & e_HasAmCCR)
         s->write<bool>(m_amCcr);
     if (m_flags & e_HasParentAgeFilename)

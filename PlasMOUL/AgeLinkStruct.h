@@ -38,93 +38,93 @@ namespace MOUL
         {
             e_HasTitle, e_HasName, e_HasCameraStack
         };
-        
+
         void read(DS::Stream* s);
         void write(DS::Stream* s);
-        
+
         DS::String title() const { return m_title; }
-        void title(DS::String title)
+        void setTitle(const DS::String& title)
         {
             m_title = title;
             m_flags.set(e_HasTitle, !title.isEmpty());
         }
-        
+
         DS::String name() const { return m_spawnPt; }
-        void name(DS::String name)
+        void setName(const DS::String& name)
         {
             m_spawnPt = name;
             m_flags.set(e_HasName, !name.isEmpty());
         }
-        
+
         DS::String cameraStack() const { return m_cameraStack; }
-        void cameraStack(DS::String stack)
+        void setCameraStack(const DS::String& stack)
         {
             m_cameraStack = stack;
             m_flags.set(e_HasCameraStack, !stack.isEmpty());
         }
-        
+
     protected:
         DS::BitVector m_flags;
         DS::String m_title, m_spawnPt, m_cameraStack;
     };
-    
+
     class AgeInfoStruct : public Creatable
     {
         FACTORY_CREATABLE(AgeInfoStruct)
-        
+
         virtual void read(DS::Stream* s);
         virtual void write(DS::Stream* s);
-        
+
     public:
         DS::String filename() const { return m_ageFilename; }
-        void filename(DS::String filename)
+        void setFilename(const DS::String& filename)
         {
             m_ageFilename = filename;
             UPDATEFLAG(e_HasAgeFilename, !filename.isEmpty());
         }
-        
+
         DS::String instanceName() const { return m_ageInstanceName; }
-        void instanceName(DS::String name)
+        void setInstanceName(const DS::String& name)
         {
             m_ageInstanceName = name;
             UPDATEFLAG(e_HasAgeInstanceName, !name.isEmpty());
         }
-        
+
         DS::Uuid instanceUuid() const { return m_ageInstanceUuid; }
-        void instanceUuid(DS::Uuid uuid)
+        void setInstanceUuid(const DS::Uuid& uuid)
         {
             m_ageInstanceUuid = uuid;
             UPDATEFLAG(e_HasAgeInstanceUuid, !uuid.isNull());
         }
-        
+
         DS::String userDefinedName() const { return m_ageUserDefinedName; }
-        void userDefinedName(DS::String name)
+        void setUserDefinedName(const DS::String& name)
         {
             m_ageUserDefinedName = name;
             UPDATEFLAG(e_HasAgeUserDefinedName, !name.isEmpty());
         }
-        
+
         int32_t sequenceNumber() const { return m_ageSequenceNumber; }
-        void sequenceNumber(int32_t seq)
+        void setSequenceNumber(int32_t seq)
         {
             m_ageSequenceNumber = seq;
             UPDATEFLAG(e_HasAgeSequenceNumber, seq != 0);
         }
-        
+
         DS::String description() const { return m_ageDescription; }
-        void description(DS::String description)
+        void setDescription(const DS::String& description)
         {
             m_ageDescription = description;
             UPDATEFLAG(e_HasAgeDescription, !description.isEmpty());
         }
-        
+
         int32_t language() const { return m_ageLanguage; }
-        void language(int32_t language)
+        void setLanguage(int32_t language)
         {
             m_ageLanguage = language;
             UPDATEFLAG(e_HasAgeLanguage, language >= 0);
         }
-        
+
     protected:
         enum
         {
@@ -136,7 +136,7 @@ namespace MOUL
             e_HasAgeDescription = 1<<5,
             e_HasAgeLanguage = 1<<6
         };
-        
+
         uint8_t m_flags;
         DS::String m_ageFilename, m_ageInstanceName;
         DS::Uuid m_ageInstanceUuid;
@@ -144,19 +144,21 @@ namespace MOUL
         int32_t m_ageSequenceNumber;
         DS::String m_ageDescription;
         int32_t m_ageLanguage;
-        
-        AgeInfoStruct(uint16_t type) : Creatable(type), m_flags(0), m_ageSequenceNumber(0), m_ageLanguage(-1) { }
+
+        AgeInfoStruct(uint16_t type)
+            : Creatable(type), m_flags(0), m_ageSequenceNumber(0),
+              m_ageLanguage(-1) { }
     };
-    
+
     class AgeLinkStruct : public Creatable
     {
         FACTORY_CREATABLE(AgeLinkStruct)
-        
+
         virtual void read(DS::Stream* s);
         virtual void write(DS::Stream* s);
-        
+
     public:
-        SpawnPointInfo* spawnPt()
+        SpawnPointInfo* ensureSpawnPt()
         {
             if (!m_spawnPt) {
                 m_spawnPt = new SpawnPointInfo;
@@ -164,8 +166,8 @@ namespace MOUL
             }
             return m_spawnPt;
         }
-        
-        AgeInfoStruct* ageInfo()
+
+        AgeInfoStruct* ensureAgeInfo()
         {
             if (!m_ageInfo) {
                 m_ageInfo = AgeInfoStruct::Create();
@@ -173,28 +175,28 @@ namespace MOUL
             }
             return m_ageInfo;
         }
-        
+
         uint8_t linkingRules() const { return m_linkingRules; }
-        void linkingRules(uint8_t rules)
+        void setLinkingRules(uint8_t rules)
         {
             m_linkingRules = rules;
             m_flags |= e_HasLinkingRules;
         }
-        
+
         bool amCCR() const { return m_amCcr; }
-        void amCCR(bool ccr)
+        void setAmCCR(bool ccr)
         {
             m_amCcr = ccr;
             m_flags |= e_HasAmCCR;
         }
-        
+
         DS::String parentAgeFilename() const { return m_parentAgeFilename; }
-        void parentAgeFilename(DS::String filename)
+        void setParentAgeFilename(const DS::String& filename)
         {
             m_parentAgeFilename = filename;
             UPDATEFLAG(e_HasParentAgeFilename, !filename.isEmpty());
         }
-        
+
     protected:
         enum
         {
@@ -206,14 +208,14 @@ namespace MOUL
             e_HasSpawnPt = 1<<5,
             e_HasParentAgeFilename = 1<<6
         };
-        
+
         uint16_t m_flags;
         AgeInfoStruct* m_ageInfo;
         uint8_t m_linkingRules;
         SpawnPointInfo* m_spawnPt;
         bool m_amCcr;
         DS::String m_parentAgeFilename;
-        
+
         AgeLinkStruct(uint16_t type) : Creatable(type), m_flags(e_HasSpawnPt), m_ageInfo(0), m_linkingRules(0), m_amCcr(false) { }
         ~AgeLinkStruct();
     };

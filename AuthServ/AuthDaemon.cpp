@@ -769,13 +769,13 @@ void* dm_authDaemon(void*)
                         if (PQntuples(result) != 0) {
                             uint32_t ageMcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
                             PQclear(result);
-                            if(DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId)) {
+                            if (DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId)) {
                                 SEND_REPLY(info, DS::e_NetSuccess);
                                 break;
                             }
                         }
                     }
-                    if(info->m_revision.isNull()) {
+                    if (info->m_revision.isNull()) {
                         info->m_revision = gen_uuid();
                     }
                     if (v_update_node(info->m_node)) {

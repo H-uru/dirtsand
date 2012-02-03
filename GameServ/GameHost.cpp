@@ -648,7 +648,7 @@ void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
     bcast->m_object.m_type = 1;  // SceneObject
     bcast->m_object.m_id = 1;
     bcast->m_sdlBlob = msg->m_node.m_Blob_1;
-    
+
     pthread_mutex_lock(&host->m_clientMutex);
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         try {
@@ -657,7 +657,7 @@ void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
                                 host->m_buffer.buffer(), host->m_buffer.size());
         } catch (DS::SockHup) {
             // This is handled below too, but we don't want to skip the rest
-                        // of the client list if one hung up
+            // of the client list if one hung up
         }
     }
     pthread_mutex_unlock(&host->m_clientMutex);
