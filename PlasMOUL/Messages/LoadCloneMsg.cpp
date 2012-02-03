@@ -26,8 +26,8 @@ void MOUL::LoadCloneMsg::read(DS::Stream* stream)
     m_requestorKey.read(stream);
     m_originPlayerId = stream->read<uint32_t>();
     m_userData = stream->read<uint32_t>();
-    m_validMsg = stream->readBool();
-    m_isLoading = stream->readBool();
+    m_validMsg = stream->read<bool>();
+    m_isLoading = stream->read<bool>();
     m_triggerMsg->unref();
     m_triggerMsg = Factory::Read<Message>(stream);
 }
@@ -40,7 +40,7 @@ void MOUL::LoadCloneMsg::write(DS::Stream* stream)
     m_requestorKey.write(stream);
     stream->write<uint32_t>(m_originPlayerId);
     stream->write<uint32_t>(m_userData);
-    stream->writeBool(m_validMsg);
-    stream->writeBool(m_isLoading);
+    stream->write<bool>(m_validMsg);
+    stream->write<bool>(m_isLoading);
     Factory::WriteCreatable(stream, m_triggerMsg);
 }

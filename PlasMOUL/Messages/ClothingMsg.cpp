@@ -22,7 +22,7 @@ void MOUL::ClothingMsg::read(DS::Stream* stream)
     Message::read(stream);
 
     m_commands = stream->read<uint32_t>();
-    if (stream->readBool())
+    if (stream->read<bool>())
         m_item.read(stream);
     m_color.m_R = stream->read<float>();
     m_color.m_G = stream->read<float>();
@@ -39,10 +39,10 @@ void MOUL::ClothingMsg::write(DS::Stream* stream)
 
     stream->write<uint32_t>(m_commands);
     if (!m_item.isNull()) {
-        stream->writeBool(true);
+        stream->write<bool>(true);
         m_item.write(stream);
     } else {
-        stream->writeBool(false);
+        stream->write<bool>(false);
     }
     stream->write<float>(m_color.m_R);
     stream->write<float>(m_color.m_G);

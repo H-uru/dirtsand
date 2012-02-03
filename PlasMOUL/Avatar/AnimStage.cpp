@@ -26,9 +26,9 @@ void MOUL::AnimStage::read(DS::Stream* stream)
     m_advanceType = stream->read<uint32_t>();
     m_regressType = stream->read<uint32_t>();
     m_loops = stream->read<uint32_t>();
-    m_doAdvance = stream->readBool();
+    m_doAdvance = stream->read<bool>();
     m_advanceTo = stream->read<uint32_t>();
-    m_doRegress = stream->readBool();
+    m_doRegress = stream->read<bool>();
     m_regressTo = stream->read<uint32_t>();
 }
 
@@ -41,9 +41,9 @@ void MOUL::AnimStage::write(DS::Stream* stream)
     stream->write<uint32_t>(m_advanceType);
     stream->write<uint32_t>(m_regressType);
     stream->write<uint32_t>(m_loops);
-    stream->writeBool(m_doAdvance);
+    stream->write<bool>(m_doAdvance);
     stream->write<uint32_t>(m_advanceTo);
-    stream->writeBool(m_doRegress);
+    stream->write<bool>(m_doRegress);
     stream->write<uint32_t>(m_regressTo);
 }
 
@@ -52,7 +52,7 @@ void MOUL::AnimStage::readAux(DS::Stream* stream)
     m_localTime = stream->read<float>();
     m_length = stream->read<float>();
     m_curLoop = stream->read<int32_t>();
-    m_attached = stream->readBool();
+    m_attached = stream->read<bool>();
 }
 
 void MOUL::AnimStage::writeAux(DS::Stream* stream)
@@ -60,5 +60,5 @@ void MOUL::AnimStage::writeAux(DS::Stream* stream)
     stream->write<float>(m_localTime);
     stream->write<float>(m_length);
     stream->write<int32_t>(m_curLoop);
-    stream->writeBool(m_attached);
+    stream->write<bool>(m_attached);
 }

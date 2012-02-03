@@ -194,7 +194,7 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
             m_float[i] = stream->read<float>();
             break;
         case e_VarBool:
-            m_bool[i] = stream->readBool();
+            m_bool[i] = stream->read<bool>();
             break;
         case e_VarString:
             {
@@ -280,7 +280,7 @@ void SDL::Variable::_ref::write(DS::Stream* stream)
             stream->write<float>(m_float[i]);
             break;
         case e_VarBool:
-            stream->writeBool(m_bool[i]);
+            stream->write<bool>(m_bool[i]);
             break;
         case e_VarString:
             {

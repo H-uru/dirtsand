@@ -25,9 +25,9 @@ void MOUL::AvAnimTask::read(DS::Stream* stream)
     m_targetBlend = stream->read<float>();
     m_fadeSpeed = stream->read<float>();
     m_setTime = stream->read<float>();
-    m_start = stream->readBool();
-    m_loop = stream->readBool();
-    m_attach = stream->readBool();
+    m_start = stream->read<bool>();
+    m_loop = stream->read<bool>();
+    m_attach = stream->read<bool>();
 }
 
 void MOUL::AvAnimTask::write(DS::Stream* stream)
@@ -37,9 +37,9 @@ void MOUL::AvAnimTask::write(DS::Stream* stream)
     stream->write<float>(m_targetBlend);
     stream->write<float>(m_fadeSpeed);
     stream->write<float>(m_setTime);
-    stream->writeBool(m_start);
-    stream->writeBool(m_loop);
-    stream->writeBool(m_attach);
+    stream->write<bool>(m_start);
+    stream->write<bool>(m_loop);
+    stream->write<bool>(m_attach);
 }
 
 void MOUL::AvOneShotLinkTask::read(DS::Stream* stream)

@@ -67,7 +67,6 @@ namespace DS
 
         String readString(size_t length, DS::StringType format = e_StringRAW8);
         String readSafeString(DS::StringType format = e_StringRAW8);
-        bool readBool() { return read<uint8_t>() != 0; }
 
         template <typename tp> void write(tp value)
         { writeBytes(&value, sizeof(value)); }
@@ -96,7 +95,6 @@ namespace DS
 
         void writeString(const String& value, DS::StringType format = e_StringRAW8);
         void writeSafeString(const String& value, DS::StringType format = e_StringRAW8);
-        void writeBool(bool value) { write<uint8_t>(value ? 1 : 0); }
 
         virtual uint32_t tell() = 0;
         virtual void seek(int32_t offset, int whence) = 0;
@@ -104,6 +102,14 @@ namespace DS
         virtual bool atEof() = 0;
         virtual void flush() = 0;
     };
+
+    // Special cases for bool
+    template <> inline bool Stream::read<bool>()
+    { return read<uint8_t>() != 0; }
+
+    template <> inline void Stream::write<bool>(bool value)
+    { write<uint8_t>(value ? 1 : 0); }
+
 
     /* Stream for reading/writing regular files */
     class FileStream : public Stream

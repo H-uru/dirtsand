@@ -91,14 +91,14 @@ void MOUL::EventData::Write(DS::Stream* stream, MOUL::EventData* data)
 
 void MOUL::CollisionEventData::read(DS::Stream* stream)
 {
-    m_enter = stream->readBool();
+    m_enter = stream->read<bool>();
     m_hitter.read(stream);
     m_hittee.read(stream);
 }
 
 void MOUL::CollisionEventData::write(DS::Stream* stream)
 {
-    stream->writeBool(m_enter);
+    stream->write<bool>(m_enter);
     m_hitter.write(stream);
     m_hittee.write(stream);
 }
@@ -107,7 +107,7 @@ void MOUL::PickedEventData::read(DS::Stream* stream)
 {
     m_picker.read(stream);
     m_picked.read(stream);
-    m_enabled = stream->readBool();
+    m_enabled = stream->read<bool>();
     m_hitPoint = stream->read<DS::Vector3>();
 }
 
@@ -115,20 +115,20 @@ void MOUL::PickedEventData::write(DS::Stream* stream)
 {
     m_picker.write(stream);
     m_picked.write(stream);
-    stream->writeBool(m_enabled);
+    stream->write<bool>(m_enabled);
     stream->write<DS::Vector3>(m_hitPoint);
 }
 
 void MOUL::ControlKeyEventData::read(DS::Stream* stream)
 {
     m_controlKey = stream->read<int32_t>();
-    m_down = stream->readBool();
+    m_down = stream->read<bool>();
 }
 
 void MOUL::ControlKeyEventData::write(DS::Stream* stream)
 {
     stream->write<int32_t>(m_controlKey);
-    stream->writeBool(m_down);
+    stream->write<bool>(m_down);
 }
 
 void MOUL::VariableEventData::read(DS::Stream* stream)
@@ -152,7 +152,7 @@ void MOUL::FacingEventData::read(DS::Stream* stream)
     m_facer.read(stream);
     m_facee.read(stream);
     m_dot = stream->read<float>();
-    m_enabled = stream->readBool();
+    m_enabled = stream->read<bool>();
 }
 
 void MOUL::FacingEventData::write(DS::Stream* stream)
@@ -160,33 +160,33 @@ void MOUL::FacingEventData::write(DS::Stream* stream)
     m_facer.write(stream);
     m_facee.write(stream);
     stream->write<float>(m_dot);
-    stream->writeBool(m_enabled);
+    stream->write<bool>(m_enabled);
 }
 
 void MOUL::ContainedEventData::read(DS::Stream* stream)
 {
     m_contained.read(stream);
     m_container.read(stream);
-    m_entering = stream->readBool();
+    m_entering = stream->read<bool>();
 }
 
 void MOUL::ContainedEventData::write(DS::Stream* stream)
 {
     m_contained.write(stream);
     m_container.write(stream);
-    stream->writeBool(m_entering);
+    stream->write<bool>(m_entering);
 }
 
 void MOUL::ActivateEventData::read(DS::Stream* stream)
 {
-    m_active = stream->readBool();
-    m_activate = stream->readBool();
+    m_active = stream->read<bool>();
+    m_activate = stream->read<bool>();
 }
 
 void MOUL::ActivateEventData::write(DS::Stream* stream)
 {
-    stream->writeBool(m_active);
-    stream->writeBool(m_activate);
+    stream->write<bool>(m_active);
+    stream->write<bool>(m_activate);
 }
 
 void MOUL::CallbackEventData::read(DS::Stream* stream)

@@ -22,9 +22,9 @@ void MOUL::NetMsgLoadClone::read(DS::Stream* stream)
     NetMsgGameMessage::read(stream);
 
     m_object.read(stream);
-    m_isPlayer = stream->readBool();
-    m_isLoading = stream->readBool();
-    m_isInitialState = stream->readBool();
+    m_isPlayer = stream->read<bool>();
+    m_isLoading = stream->read<bool>();
+    m_isInitialState = stream->read<bool>();
 }
 
 void MOUL::NetMsgLoadClone::write(DS::Stream* stream)
@@ -32,7 +32,7 @@ void MOUL::NetMsgLoadClone::write(DS::Stream* stream)
     NetMsgGameMessage::write(stream);
 
     m_object.write(stream);
-    stream->writeBool(m_isPlayer);
-    stream->writeBool(m_isLoading);
-    stream->writeBool(m_isInitialState);
+    stream->write<bool>(m_isPlayer);
+    stream->write<bool>(m_isLoading);
+    stream->write<bool>(m_isInitialState);
 }

@@ -22,7 +22,7 @@ void MOUL::AvTaskMsg::read(DS::Stream* stream)
 {
     Message::read(stream);
 
-    if (stream->readBool())
+    if (stream->read<bool>())
         m_task = Factory::Read<AvTask>(stream);
 }
 
@@ -31,10 +31,10 @@ void MOUL::AvTaskMsg::write(DS::Stream* stream)
     Message::write(stream);
 
     if (m_task) {
-        stream->writeBool(true);
+        stream->write<bool>(true);
         Factory::WriteCreatable(stream, m_task);
     } else {
-        stream->writeBool(false);
+        stream->write<bool>(false);
     }
 }
 

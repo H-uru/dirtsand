@@ -23,10 +23,10 @@ void MOUL::AvBrainGenericMsg::read(DS::Stream* stream)
 
     m_type = static_cast<Type>(stream->read<uint32_t>());
     m_stage = stream->read<int32_t>();
-    m_setTime = stream->readBool();
+    m_setTime = stream->read<bool>();
     m_newTime = stream->read<float>();
-    m_setDirection = stream->readBool();
-    m_newDirection = stream->readBool();
+    m_setDirection = stream->read<bool>();
+    m_newDirection = stream->read<bool>();
     m_transitionTime = stream->read<float>();
 }
 
@@ -36,21 +36,21 @@ void MOUL::AvBrainGenericMsg::write(DS::Stream* stream)
 
     stream->write<uint32_t>(m_type);
     stream->write<int32_t>(m_stage);
-    stream->writeBool(m_setTime);
+    stream->write<bool>(m_setTime);
     stream->write<float>(m_newTime);
-    stream->writeBool(m_setDirection);
-    stream->writeBool(m_newDirection);
+    stream->write<bool>(m_setDirection);
+    stream->write<bool>(m_newDirection);
     stream->write<float>(m_transitionTime);
 }
 
 void MOUL::AvTaskSeekDoneMsg::read(DS::Stream* stream)
 {
     Message::read(stream);
-    m_aborted = stream->readBool();
+    m_aborted = stream->read<bool>();
 }
 
 void MOUL::AvTaskSeekDoneMsg::write(DS::Stream* stream)
 {
     Message::write(stream);
-    stream->writeBool(m_aborted);
+    stream->write<bool>(m_aborted);
 }

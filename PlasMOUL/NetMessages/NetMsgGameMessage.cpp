@@ -28,7 +28,7 @@ void MOUL::NetMsgGameMessage::read(DS::Stream* stream)
     m_message->unref();
     m_message = Factory::Read<Message>(&msgStream.m_stream);
 
-    if (stream->readBool())
+    if (stream->read<bool>())
         m_deliveryTime.read(stream);
 }
 
@@ -41,10 +41,10 @@ void MOUL::NetMsgGameMessage::write(DS::Stream* stream)
     msgStream.write(stream);
 
     if (!m_deliveryTime.isNull()) {
-        stream->writeBool(true);
+        stream->write<bool>(true);
         m_deliveryTime.write(stream);
     } else {
-        stream->writeBool(false);
+        stream->write<bool>(false);
     }
 }
 
