@@ -181,6 +181,7 @@ namespace SDL
         void read(DS::Stream* stream);
         void write(DS::Stream* stream) const;
         void add(const State& state);
+        void merge(const State& state);
 
 #ifdef DEBUG
         void debug();
