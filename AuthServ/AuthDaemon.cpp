@@ -411,7 +411,45 @@ void dm_auth_deletePlayer(Auth_PlayerDelete* msg)
 
 void dm_auth_createAge(Auth_AgeCreate* msg)
 {
-    std::pair<uint32_t, uint32_t> ageNodes = v_create_age(msg->m_age, 0);
+    std::pair<uint32_t, uint32_t> ageNodes;
+    PostgresStrings<2> params;
+    params.set(0, msg->m_age.m_ageId.toString());
+    PGresult* result = PQexecParams(s_postgres,
+            "SELECT idx FROM vault.\"Nodes\""
+            "   WHERE \"Uuid_1\"=$1 AND \"NodeType\"='3'",
+            1, 0, params.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) == 1) {
+        ageNodes.first = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        PQclear(result);
+        PGresult* result = PQexecParams(s_postgres,
+                "SELECT idx FROM vault.\"Nodes\""
+                "   WHERE \"Uuid_1\"=$1 AND \"NodeType\"='33'",
+                1, 0, params.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+            fprintf(stderr, "%s:%d\n    Postgres SELECT error: %s\n",
+            __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+        if (PQntuples(result) == 1) {
+            ageNodes.second = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+            PQclear(result);
+        } else {
+            fprintf(stderr, "%s:%d\n    Got age but not age info? WTF?\n",
+            __FILE__, __LINE__);
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+    }
+    else {
+        ageNodes = v_create_age(msg->m_age, 0);
+    }
     if (ageNodes.first == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
