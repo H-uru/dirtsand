@@ -746,6 +746,21 @@ void* dm_authDaemon(void*)
         return 0;
     }
 
+    // Mark all player info nodes offline
+    PostgresStrings<1> parms;
+    parms.set(0, DS::Vault::e_NodePlayerInfo);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "UPDATE vault.\"Nodes\" SET"
+                                    "    \"Int32_1\" = 0"
+                                    "    WHERE \"NodeType\" = $1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        // This doesn't block continuing...
+        DS_DASSERT(false);
+    }
+
     for ( ;; ) {
         DS::FifoMessage msg = s_authChannel.getMessage();
         try {
