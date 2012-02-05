@@ -122,11 +122,14 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     client->m_sockfd = accept(sockp->m_sockfd, &client->m_addr, &client->m_addrLen);
     if (client->m_sockfd < 0) {
         delete client;
-        if (errno != EINVAL && errno != ECONNABORTED) {
+        if (errno == EINVAL) {
+            throw DS::SockHup();
+        } else if (errno == ECONNABORTED) {
+            return 0;
+        } else {
             fprintf(stderr, "Socket closed: %s\n", strerror(errno));
             DS_DASSERT(0);
         }
-        return 0;
     }
     return reinterpret_cast<SocketHandle>(client);
 }
