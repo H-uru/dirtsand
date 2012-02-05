@@ -35,9 +35,15 @@ void* dm_htserv(void*)
     printf("[Status] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
     try {
         for ( ;; ) {
-            DS::SocketHandle client = DS::AcceptSock(s_listenSock);
-            if (!client)
+            DS::SocketHandle client;
+            try {
+                client = DS::AcceptSock(s_listenSock);
+            } catch (DS::SockHup) {
                 break;
+            }
+
+            if (!client)
+                continue;
 
             std::list<DS::String> lines;
             for ( ;; ) {

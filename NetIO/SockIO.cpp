@@ -137,6 +137,7 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
 void DS::CloseSock(DS::SocketHandle sock)
 {
     DS_DASSERT(sock);
+    shutdown(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, SHUT_RDWR);
     close(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd);
 }
 
