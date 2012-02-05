@@ -106,6 +106,11 @@ static void exception_filter()
     abort();
 }
 
+static void sigh_term(int)
+{
+    fclose(stdin);
+}
+
 int main(int argc, char* argv[])
 {
     // refuse to run as root
@@ -124,6 +129,7 @@ int main(int argc, char* argv[])
     // Show a stackdump in case we crash
     std::set_terminate(&exception_filter);
     signal(SIGSEGV, &sigh_segv);
+    signal(SIGTERM, &sigh_term);
 
     // Ignore sigpipe and force send() to return EPIPE
     signal(SIGPIPE, SIG_IGN);
