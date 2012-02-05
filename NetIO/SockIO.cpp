@@ -122,7 +122,7 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     client->m_sockfd = accept(sockp->m_sockfd, &client->m_addr, &client->m_addrLen);
     if (client->m_sockfd < 0) {
         delete client;
-        if (errno != EINVAL) {
+        if (errno != EINVAL && errno != ECONNABORTED) {
             fprintf(stderr, "Socket closed: %s\n", strerror(errno));
             DS_DASSERT(0);
         }
@@ -134,7 +134,7 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
 void DS::CloseSock(DS::SocketHandle sock)
 {
     DS_DASSERT(sock);
-    shutdown(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, SHUT_RDWR);
+    close(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd);
 }
 
 void DS::FreeSock(DS::SocketHandle sock)
