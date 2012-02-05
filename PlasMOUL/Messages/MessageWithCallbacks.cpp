@@ -27,16 +27,19 @@ MOUL::MessageWithCallbacks::~MessageWithCallbacks()
 void MOUL::MessageWithCallbacks::read(DS::Stream* stream)
 {
     Message::read(stream);
-    
-    m_callbacks.reserve(stream->read<uint32_t>());
+
+    for (auto it = m_callbacks.begin(); it != m_callbacks.end(); ++it)
+        (*it)->unref();
+
+    m_callbacks.resize(stream->read<uint32_t>());
     for (size_t i = 0; i < m_callbacks.capacity(); ++i)
-        m_callbacks.push_back(MOUL::Factory::Read<MOUL::Message>(stream));
+        m_callbacks[i] = MOUL::Factory::Read<MOUL::Message>(stream);
 }
 
 void MOUL::MessageWithCallbacks::write(DS::Stream* stream)
 {
     Message::write(stream);
-    
+
     stream->write<uint32_t>(m_callbacks.size());
     for (size_t i = 0; i < m_callbacks.size(); ++i)
         MOUL::Factory::WriteCreatable(stream, m_callbacks[i]);
@@ -44,16 +47,17 @@ void MOUL::MessageWithCallbacks::write(DS::Stream* stream)
 
 bool MOUL::MessageWithCallbacks::makeSafeForNet()
 {
-    for (auto it = m_callbacks.begin(); it != m_callbacks.end(); ++it)
+    for (auto it = m_callbacks.begin(); it != m_callbacks.end(); ++it) {
         if (!(*it)->makeSafeForNet())
             return false;
+    }
     return true;
 }
 
 void MOUL::AnimCmdMsg::read(DS::Stream* stream)
 {
     MessageWithCallbacks::read(stream);
-    
+
     m_cmd.read(stream);
     m_begin = stream->read<float>();
     m_end = stream->read<float>();
@@ -69,7 +73,7 @@ void MOUL::AnimCmdMsg::read(DS::Stream* stream)
 void MOUL::AnimCmdMsg::write(DS::Stream* stream)
 {
     MessageWithCallbacks::write(stream);
-    
+
     m_cmd.write(stream);
     stream->write<float>(m_begin);
     stream->write<float>(m_end);

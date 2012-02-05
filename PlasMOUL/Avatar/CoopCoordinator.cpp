@@ -22,27 +22,29 @@
 
 MOUL::CoopCoordinator::~CoopCoordinator()
 {
-    if (m_hostBrain)
-        m_hostBrain->unref();
-    if (m_guestBrain)
-        m_guestBrain->unref();
-    if (m_acceptMsg)
-        m_acceptMsg->unref();
+    m_hostBrain->unref();
+    m_guestBrain->unref();
+    m_acceptMsg->unref();
 }
 
 void MOUL::CoopCoordinator::read(DS::Stream* s)
 {
     m_hostKey.read(s);
     m_guestKey.read(s);
-    
+
+    m_hostBrain->unref();
+    m_guestBrain->unref();
     m_hostBrain = Factory::Read<AvBrainCoop>(s);
     m_guestBrain = Factory::Read<AvBrainCoop>(s);
-    
+
     m_hostOfferStage = s->read<uint8_t>();
     m_guestAcceptStage = s->read<bool>();
-    
+
+    m_acceptMsg->unref();
     if (s->read<bool>())
         m_acceptMsg = Factory::Read<Message>(s);
+    else
+        m_acceptMsg = 0;
     m_synchBone = s->readSafeString();
     m_autoStartGuest = s->read<bool>();
 }
@@ -51,13 +53,13 @@ void MOUL::CoopCoordinator::write(DS::Stream* s)
 {
     m_hostKey.write(s);
     m_guestKey.write(s);
-    
+
     Factory::WriteCreatable(s, m_hostBrain);
     Factory::WriteCreatable(s, m_guestBrain);
-    
+
     s->write<uint8_t>(m_hostOfferStage);
     s->write<bool>(m_guestAcceptStage);
-    
+
     s->write<bool>(m_acceptMsg);
     if (m_acceptMsg)
         Factory::WriteCreatable(s, m_acceptMsg);

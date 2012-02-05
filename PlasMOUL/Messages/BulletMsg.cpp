@@ -20,7 +20,7 @@
 void MOUL::BulletMsg::read(DS::Stream* stream)
 {
     Message::read(stream);
-    
+
     m_cmd = stream->read<uint8_t>();
     m_from = stream->read<DS::Vector3>();
     m_direction = stream->read<DS::Vector3>();
@@ -32,7 +32,7 @@ void MOUL::BulletMsg::read(DS::Stream* stream)
 void MOUL::BulletMsg::write(DS::Stream* stream)
 {
     Message::write(stream);
-    
+
     stream->write<uint8_t>(m_cmd);
     stream->write<DS::Vector3>(m_from);
     stream->write<DS::Vector3>(m_direction);

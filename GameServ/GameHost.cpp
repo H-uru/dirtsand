@@ -155,7 +155,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
         cloneMsg->m_originPlayerId = msg->m_client->m_clientInfo.m_PlayerId;
         cloneMsg->m_validMsg = true;
         cloneMsg->m_isLoading = false;
-        
+
         MOUL::NetMsgLoadClone* netMsg = MOUL::NetMsgLoadClone::Create();
         netMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                                | MOUL::NetMessage::e_NeedsReliableSend;
@@ -165,11 +165,11 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
         netMsg->m_isInitialState = false;
         netMsg->m_message = cloneMsg;
         netMsg->m_object = msg->m_client->m_clientKey;
-        
+
         dm_propagate(host, netMsg, msg->m_client->m_clientInfo.m_PlayerId);
         netMsg->unref();
     }
-    
+
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
     memberMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                               | MOUL::NetMessage::e_IsSystemMessage

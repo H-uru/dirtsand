@@ -26,19 +26,24 @@ namespace MOUL
     class LinkToAgeMsg : public Message
     {
         FACTORY_CREATABLE(LinkToAgeMsg)
-        
+
         virtual void read(DS::Stream* s);
         virtual void write(DS::Stream* s);
-        
+
         virtual bool makeSafeForNet();
-        
+
     public:
         AgeLinkStruct* m_ageLink;
         DS::String m_linkInAnim;
-        
+
     protected:
-        LinkToAgeMsg(uint16_t type) : Message(type), m_ageLink(AgeLinkStruct::Create()) { }
-        ~LinkToAgeMsg();
+        LinkToAgeMsg(uint16_t type)
+            : Message(type), m_ageLink(AgeLinkStruct::Create()) { }
+
+        virtual ~LinkToAgeMsg()
+        {
+            m_ageLink->unref();
+        }
     };
 };
 

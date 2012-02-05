@@ -32,17 +32,16 @@ namespace MOUL
             kDisable, kEnable, kDrawable,
             kPhysical, kAudible, kAll, kByType
         };
-        
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
-        
+
     public:
         DS::BitVector m_cmd;
         DS::BitVector m_types;
-        
+
     protected:
-        EnableMsg(uint16_t type)
-            : Message(type) { }
+        EnableMsg(uint16_t type) : Message(type) { }
     };
 }
 

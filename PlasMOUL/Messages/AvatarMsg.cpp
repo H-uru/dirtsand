@@ -45,18 +45,15 @@ void MOUL::AvBrainGenericMsg::write(DS::Stream* stream)
     stream->write<float>(m_transitionTime);
 }
 
-MOUL::AvCoopMsg::~AvCoopMsg()
-{
-    if (m_coordinator)
-        m_coordinator->unref();
-}
-
 void MOUL::AvCoopMsg::read(DS::Stream* s)
 {
     Message::read(s);
-    
+
+    m_coordinator->unref();
     if (s->read<bool>())
         m_coordinator = Factory::Read<CoopCoordinator>(s);
+    else
+        m_coordinator = 0;
     m_initiatorId = s->read<uint32_t>();
     m_initiatorSerial = s->read<uint16_t>();
     m_command = (Command)s->read<uint16_t>();
@@ -65,7 +62,7 @@ void MOUL::AvCoopMsg::read(DS::Stream* s)
 void MOUL::AvCoopMsg::write(DS::Stream* s)
 {
     Message::write(s);
-    
+
     s->write<bool>(m_coordinator);
     if (m_coordinator)
         Factory::WriteCreatable(s, m_coordinator);

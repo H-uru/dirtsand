@@ -18,18 +18,16 @@
 #include "LinkToAgeMsg.h"
 #include "errors.h"
 
-static uint8_t kLinkToAgeVersion = 0;
-
-MOUL::LinkToAgeMsg::~LinkToAgeMsg()
-{
-    m_ageLink->unref();
-}
+enum {
+    kLinkToAgeVersion = 0
+};
 
 void MOUL::LinkToAgeMsg::read(DS::Stream* s)
 {
     Message::read(s);
-    
+
     DS_PASSERT(s->read<uint8_t>() == kLinkToAgeVersion);
+    m_ageLink->unref();
     m_ageLink->read(s);
     m_linkInAnim = s->readSafeString();
 }
@@ -37,7 +35,7 @@ void MOUL::LinkToAgeMsg::read(DS::Stream* s)
 void MOUL::LinkToAgeMsg::write(DS::Stream* s)
 {
     Message::write(s);
-    
+
     s->write<uint8_t>(kLinkToAgeVersion);
     m_ageLink->write(s);
     s->writeSafeString(m_linkInAnim);

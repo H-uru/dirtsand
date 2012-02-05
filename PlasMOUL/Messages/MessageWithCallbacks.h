@@ -27,28 +27,29 @@ namespace MOUL
     class MessageWithCallbacks : public Message
     {
         FACTORY_CREATABLE(MessageWithCallbacks)
-        
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
-        
+
         virtual bool makeSafeForNet();
-        
+
     public:
         std::vector<Message*> m_callbacks;
-        
+
     protected:
         MessageWithCallbacks(uint16_t type)
             : Message(type) { }
+
         virtual ~MessageWithCallbacks();
     };
-    
+
     class AnimCmdMsg : public MessageWithCallbacks
     {
         FACTORY_CREATABLE(AnimCmdMsg)
-        
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
-        
+
     public:
         enum
         {
@@ -60,11 +61,11 @@ namespace MOUL
             e_RunForward, e_RunBackward, e_PlayToTime, e_PlayToPercentage, 
             e_FastForward, e_GoToPercent
         };
-        
+
         DS::BitVector m_cmd;
         float m_begin, m_end, m_loopEnd, m_loopBegin, m_speed, m_speedChangeRate, m_time;
         DS::String m_animName, m_loopName;
-        
+
     protected:
         AnimCmdMsg(uint16_t type)
             : MessageWithCallbacks(type), m_begin(0.0), m_end(0.0),
