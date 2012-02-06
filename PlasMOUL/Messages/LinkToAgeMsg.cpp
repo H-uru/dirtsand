@@ -27,7 +27,6 @@ void MOUL::LinkToAgeMsg::read(DS::Stream* s)
     Message::read(s);
 
     DS_PASSERT(s->read<uint8_t>() == kLinkToAgeVersion);
-    m_ageLink->unref();
     m_ageLink->read(s);
     m_linkInAnim = s->readSafeString();
 }
