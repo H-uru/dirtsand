@@ -45,5 +45,7 @@ bool MOUL::LinkToAgeMsg::makeSafeForNet()
     // The only time this msg should ever come over the wire is
     // as a field inside an AvBrainCoop's CoopCoordinator. So, if we get
     // here, then this is obviously a hack.
-    return false;
+    // Except Cyan sucks and uses this directly in book sharing. We pass
+    // it along for now.
+    return true;
 }
