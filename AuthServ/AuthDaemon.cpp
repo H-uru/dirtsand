@@ -189,6 +189,61 @@ void dm_auth_login(Auth_LoginInfo* info)
     SEND_REPLY(info, DS::e_NetSuccess);
 }
 
+void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
+{
+    uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
+    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeChanged;
+    *reinterpret_cast<uint32_t*>(buffer + 2) = nodeIdx;
+    *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
+    
+    pthread_mutex_lock(&s_authClientMutex);
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
+        }
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
+}
+
+void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
+{
+    uint8_t buffer[14];  // Msg ID, Parent, Child, Owner
+    *reinterpret_cast<uint16_t*>(buffer     ) = e_AuthToCli_VaultNodeAdded;
+    *reinterpret_cast<uint32_t*>(buffer +  2) = ref.m_parent;
+    *reinterpret_cast<uint32_t*>(buffer +  6) = ref.m_child;
+    *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
+    
+    pthread_mutex_lock(&s_authClientMutex);
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
+        }
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
+}
+
+void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
+{
+    uint8_t buffer[10];  // Msg ID, Parent, Child
+    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeRemoved;
+    *reinterpret_cast<uint32_t*>(buffer + 2) = ref.m_parent;
+    *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
+    
+    pthread_mutex_lock(&s_authClientMutex);
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
+        }
+    }
+    pthread_mutex_unlock(&s_authClientMutex);
+}
+
 void dm_auth_disconnect(Auth_ClientMessage* msg)
 {
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
@@ -202,12 +257,21 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
                 "UPDATE vault.\"Nodes\" SET"
                 "    \"Int32_1\"=0, \"String64_1\"='',"
                 "    \"Uuid_1\"='00000000-0000-0000-0000-000000000000'"
-                "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2",
+                "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2"
+                "    RETURNING idx",
                 2, 0, parms.m_values, 0, 0, 0);
-        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
             fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                     __FILE__, __LINE__, PQerrorMessage(s_postgres));
             // This doesn't block continuing...
+        }
+        if (PQntuples(result) == 1) {
+            uint32_t nodeid = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+            dm_auth_bcast_node(nodeid, gen_uuid());
+        } else {
+            fprintf(stderr, "%s:%d:\n    Could not get PlayerInfoNode idx on disconnect",
+                    __FILE__, __LINE__);
+            // This doesn't block continuing
         }
         PQclear(result);
     }
@@ -280,12 +344,21 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
             "UPDATE vault.\"Nodes\" SET"
             "    \"Int32_1\"=1, \"String64_1\"='Lobby',"
             "    \"Uuid_1\"='00000000-0000-0000-0000-000000000000'"
-            "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2",
+            "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2"
+            "    RETURNING idx",
             2, 0, parms.m_values, 0, 0, 0);
-    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         // This doesn't block continuing...
+    }
+    if (PQntuples(result) == 1) {
+        uint32_t nodeid = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        dm_auth_bcast_node(nodeid, gen_uuid());
+    } else {
+        fprintf(stderr, "%s:%d:\n    Could not get PlayerInfoNode idx on setPlayer",
+                __FILE__, __LINE__);
+        // This doesn't block continuing
     }
     PQclear(result);
 
@@ -545,12 +618,21 @@ void dm_auth_findAge(Auth_GameAge* msg)
     result = PQexecParams(s_postgres,
             "UPDATE vault.\"Nodes\" SET"
             "    \"String64_1\"=$3, \"Uuid_1\"=$4"
-            "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2",
+            "    WHERE \"NodeType\"=$1 AND \"Uint32_1\"=$2"
+            "    RETURNING idx",
             4, 0, parms.m_values, 0, 0, 0);
-    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         // This doesn't block continuing...
+    }
+    if (PQntuples(result) == 1) {
+        uint32_t nodeid = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        dm_auth_bcast_node(nodeid, gen_uuid());
+    } else {
+        fprintf(stderr, "%s:%d:\n    Could not get PlayerInfoNode idx on findAge",
+                __FILE__, __LINE__);
+        // This doesn't block continuing
     }
     PQclear(result);
     SEND_REPLY(msg, DS::e_NetSuccess);
@@ -585,61 +667,6 @@ void dm_auth_get_public(Auth_PubAgeRequest* msg)
     }
     PQclear(result);
     SEND_REPLY(msg, DS::e_NetSuccess);
-}
-
-void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
-{
-    uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
-    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeChanged;
-    *reinterpret_cast<uint32_t*>(buffer + 2) = nodeIdx;
-    *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
-
-    pthread_mutex_lock(&s_authClientMutex);
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
-        } catch (DS::SockHup) {
-            // Client ignored us.  Return the favor
-        }
-    }
-    pthread_mutex_unlock(&s_authClientMutex);
-}
-
-void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
-{
-    uint8_t buffer[14];  // Msg ID, Parent, Child, Owner
-    *reinterpret_cast<uint16_t*>(buffer     ) = e_AuthToCli_VaultNodeAdded;
-    *reinterpret_cast<uint32_t*>(buffer +  2) = ref.m_parent;
-    *reinterpret_cast<uint32_t*>(buffer +  6) = ref.m_child;
-    *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
-
-    pthread_mutex_lock(&s_authClientMutex);
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
-        } catch (DS::SockHup) {
-            // Client ignored us.  Return the favor
-        }
-    }
-    pthread_mutex_unlock(&s_authClientMutex);
-}
-
-void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
-{
-    uint8_t buffer[10];  // Msg ID, Parent, Child
-    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeRemoved;
-    *reinterpret_cast<uint32_t*>(buffer + 2) = ref.m_parent;
-    *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
-
-    pthread_mutex_lock(&s_authClientMutex);
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
-        } catch (DS::SockHup) {
-            // Client ignored us.  Return the favor
-        }
-    }
-    pthread_mutex_unlock(&s_authClientMutex);
 }
 
 uint32_t dm_auth_set_public(uint32_t nodeid)
