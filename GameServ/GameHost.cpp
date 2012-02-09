@@ -799,6 +799,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             host->m_sdlIdx = sdlFind.m_node.m_NodeIdx;
             try {
                 host->m_vaultState = SDL::State::FromBlob(sdlFind.m_node.m_Blob_1);
+                host->m_vaultState.update();
             } catch (DS::EofException) {
                 fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
                         host->m_ageFilename.c_str());
@@ -831,7 +832,9 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                 MOUL::Uoid key;
                 key.read(&bsObject);
                 try {
-                    host->m_states[key][PQgetvalue(result, i, 0)] = SDL::State::FromBlob(sdlblob);
+                    SDL::State state = SDL::State::FromBlob(sdlblob);
+                    state.update();
+                    host->m_states[key][PQgetvalue(result, i, 0)] = state;
                 } catch (DS::EofException) {
                     fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s\n",
                             PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str());

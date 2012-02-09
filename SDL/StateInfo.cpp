@@ -445,6 +445,81 @@ void SDL::Variable::write(DS::Stream* stream)
     }
 }
 
+void SDL::Variable::copy(const SDL::Variable& rhs) {
+    // TODO: Should we support certain type conversions?
+    DS_PASSERT(m_data->m_desc->m_type == rhs.m_data->m_desc->m_type);
+
+    size_t minsize;
+    if (m_data->m_desc->m_size == -1) {
+        m_data->resize(rhs.m_data->m_size);
+        minsize = m_data->m_size;
+    } else if (m_data->m_size < rhs.m_data->m_size) {
+        minsize = m_data->m_size;
+    } else {
+        minsize = rhs.m_data->m_size;
+    }
+
+    switch (m_data->m_desc->m_type) {
+    case e_VarInt:
+        memcpy(m_data->m_int, rhs.m_data->m_int, sizeof(int)*minsize);
+        break;
+    case e_VarFloat:
+        memcpy(m_data->m_float, rhs.m_data->m_float, sizeof(float)*minsize);
+        break;
+    case e_VarBool:
+        memcpy(m_data->m_bool, rhs.m_data->m_bool, sizeof(bool)*minsize);
+        break;
+    case e_VarString:
+        for (size_t i = 0; i < minsize; ++i)
+            m_data->m_string[i] = rhs.m_data->m_string[i];
+        break;
+    case e_VarKey:
+        for (size_t i = 0; i < minsize; ++i)
+            m_data->m_key[i] = rhs.m_data->m_key[i];
+        break;
+    case e_VarCreatable:
+        for (size_t i = 0; i < minsize; ++i) {
+            rhs.m_data->m_creatable[i]->ref();
+            m_data->m_creatable[i]->unref();
+            m_data->m_creatable[i] = rhs.m_data->m_creatable[i];
+        }
+        break;
+    case e_VarDouble:
+        memcpy(m_data->m_double, rhs.m_data->m_double, sizeof(double)*minsize);
+        break;
+    case e_VarTime:
+        memcpy(m_data->m_time, rhs.m_data->m_time, sizeof(DS::UnifiedTime)*minsize);
+        break;
+    case e_VarByte:
+        memcpy(m_data->m_byte, rhs.m_data->m_byte, sizeof(int8_t)*minsize);
+        break;
+    case e_VarShort:
+        memcpy(m_data->m_short, rhs.m_data->m_short, sizeof(int16_t)*minsize);
+        break;
+    case e_VarVector3:
+    case e_VarPoint3:
+        memcpy(m_data->m_vector, rhs.m_data->m_vector, sizeof(DS::Vector3)*minsize);
+        break;
+    case e_VarQuaternion:
+        memcpy(m_data->m_quat, rhs.m_data->m_quat, sizeof(DS::Quaternion)*minsize);
+        break;
+    case e_VarRgb:
+    case e_VarRgba:
+        memcpy(m_data->m_color, rhs.m_data->m_color, sizeof(DS::ColorRgba)*minsize);
+        break;
+    case e_VarRgb8:
+    case e_VarRgba8:
+        memcpy(m_data->m_color, rhs.m_data->m_color, sizeof(DS::ColorRgba8)*minsize);
+        break;
+    case e_VarStateDesc:
+        for (size_t i = 0; i < minsize; ++i) {
+            m_data->m_child[i] = rhs.m_data->m_child[i];
+            m_data->m_child[i].update();
+        }
+        break;
+    }
+}
+
 #ifdef DEBUG
 void SDL::Variable::debug()
 {
@@ -866,6 +941,28 @@ void SDL::State::merge(const SDL::State& state)
         if (state.m_data->m_vars[i].data()->m_timestamp > m_data->m_vars[i].data()->m_timestamp)
             m_data->m_vars[i] = state.m_data->m_vars[i];
     }
+}
+
+void SDL::State::update()
+{
+    if (!m_data)
+        return;
+
+    StateDescriptor* newdesc = DescriptorDb::FindLatestDescriptor(m_data->m_desc->m_name);
+    if (newdesc == m_data->m_desc)
+        return;
+
+    SDL::State newstate(newdesc);
+    for (size_t i=0; i < newstate.m_data->m_vars.size(); ++i) {
+        VarDescriptor* newdesc = newstate.m_data->m_vars[i].descriptor();
+        StateDescriptor::varmap_t::iterator vari = m_data->m_desc->m_varmap.find(newdesc->m_name);
+        if (vari == m_data->m_desc->m_varmap.end())
+            continue;
+        newstate.m_data->m_vars[i].copy(m_data->m_vars[vari->second]);
+    }
+    newstate.m_data->ref();
+    m_data->unref();
+    m_data = newstate.m_data;
 }
 
 void SDL::State::setDefault()
