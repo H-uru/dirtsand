@@ -546,6 +546,9 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
                 descriptors.push_back(descBuffer);
                 state = e_State_File;
             } else if (state == e_State_Statedesc) {
+                for (size_t i = 0; i < descBuffer.m_vars.size(); ++i) {
+                    descBuffer.m_varmap[descBuffer.m_vars[i].m_name] = i;
+                }
                 descriptors.push_back(descBuffer);
                 state = e_State_File;
             } else {
