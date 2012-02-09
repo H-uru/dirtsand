@@ -160,7 +160,7 @@ struct Auth_PubAgeRequest : public Auth_ClientMessage
 
         DS::Uuid m_instance;
         DS::String m_instancename, m_username, m_description;
-        uint32_t m_sequence, m_language, m_population;
+        uint32_t m_sequence, m_language, m_curPopulation, m_population;
     };
 
     DS::String m_agename;

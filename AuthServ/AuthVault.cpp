@@ -519,8 +519,8 @@ v_create_age(const AuthServer_AgeInfo& age, uint32_t flags)
         PGresult* result = PQexecParams(s_postgres,
                 "INSERT INTO game.\"PublicAges\""
                 "    (\"AgeUuid\", \"AgeFilename\", \"AgeInstName\", \"AgeUserName\","
-                "     \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\")"
-                "    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+                "     \"AgeDesc\", \"SeqNumber\", \"Language\", \"CurrentPopulation\", \"Population\")"
+                "    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)",
                 8, 0, parms.m_values, 0, 0, 0);
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
             fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
