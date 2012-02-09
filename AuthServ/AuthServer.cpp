@@ -885,13 +885,7 @@ void* wk_authWorker(void* sockp)
     client.m_channel.getMessage();
 
     pthread_mutex_lock(&s_authClientMutex);
-    auto client_iter = s_authClients.begin();
-    while (client_iter != s_authClients.end()) {
-        if (*client_iter == &client)
-            client_iter = s_authClients.erase(client_iter);
-        else
-            ++client_iter;
-    }
+    s_authClients.remove(&client);
     pthread_mutex_unlock(&s_authClientMutex);
 
     DS::CryptStateFree(client.m_crypt);
