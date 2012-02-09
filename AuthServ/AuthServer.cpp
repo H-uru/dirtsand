@@ -734,8 +734,8 @@ void cb_getPublicAges(AuthServer_Private& client)
 
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_sequence);
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_language);
-            client.m_buffer.write<uint32_t>(0);  // TODO: Owner population
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_population);
+            client.m_buffer.write<uint32_t>(msg.m_ages[i].m_curPopulation);
         }
     }
 

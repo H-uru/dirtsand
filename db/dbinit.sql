@@ -156,6 +156,7 @@ CREATE TABLE "PublicAges" (
     "AgeDesc" character varying(1024) NOT NULL,
     "SeqNumber" integer NOT NULL,
     "Language" integer NOT NULL,
+    "CurrentPopulation" integer NOT NULL,
     "Population" integer NOT NULL
 );
 ALTER TABLE game."PublicAges" OWNER TO dirtsand;
