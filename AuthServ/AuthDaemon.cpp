@@ -406,6 +406,39 @@ void dm_auth_deletePlayer(Auth_PlayerDelete* msg)
         return;
     }
     PQclear(result);
+
+    // Find PlayerInfo and remove all refs to it
+    sparms.set(0, msg->m_playerId);
+    sparms.set(1, DS::Vault::e_NodePlayerInfo);
+    result = PQexecParams(s_postgres,
+                          "SELECT idx FROM vault.\"Nodes\""
+                          "    WHERE \"Uint32_1\" = $1"
+                          "    AND \"NodeType\" = $2",
+                          2, 0, sparms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    DS_PASSERT(PQntuples(result) == 1);
+    uint32_t playerInfo = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+
+    dparms.set(0, playerInfo);
+    result = PQexecParams(s_postgres,
+                          "DELETE FROM vault.\"NodeRefs\""
+                          "    WHERE \"ChildIdx\" = $1",
+                          1, 0, dparms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d\n    Postgres DELETE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    PQclear(result);
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
