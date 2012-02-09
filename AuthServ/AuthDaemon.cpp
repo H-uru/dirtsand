@@ -528,7 +528,7 @@ void dm_auth_get_public(Auth_PubAgeRequest* msg)
     PostgresStrings<1> parms;
     parms.set(0, msg->m_agename);
     PGresult* result = PQexecParams(s_postgres,
-                                    "SELECT idx, \"AgeUuid\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\" FROM game.\"PublicAges\""
+                                    "SELECT idx, \"AgeUuid\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"CurrentPopulation\", \"Population\" FROM game.\"PublicAges\""
                                     "    WHERE \"AgeFilename\"=$1",
                                     1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -546,7 +546,8 @@ void dm_auth_get_public(Auth_PubAgeRequest* msg)
         ai.m_description = PQgetvalue(result, i, 4);
         ai.m_sequence = strtoul(PQgetvalue(result, i, 5), 0, 10);
         ai.m_language = strtoul(PQgetvalue(result, i, 6), 0, 10);
-        ai.m_population = strtoul(PQgetvalue(result, i, 7), 0, 10);
+        ai.m_curPopulation = strtoul(PQgetvalue(result, i, 7), 0, 10);
+        ai.m_population = strtoul(PQgetvalue(result, i, 8), 0, 10);
         msg->m_ages.push_back(ai);
     }
     PQclear(result);
@@ -610,7 +611,7 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
 
 uint32_t dm_auth_set_public(uint32_t nodeid)
 {
-    PostgresStrings<7> parms;
+    PostgresStrings<8> parms;
     parms.set(0, nodeid);
     parms.set(1, DS::Vault::e_NodeAgeInfo);
     PGresult* result = PQexecParams(s_postgres,
@@ -635,12 +636,13 @@ uint32_t dm_auth_set_public(uint32_t nodeid)
     parms.set(4, PQgetvalue(result, 0, 4));
     parms.set(5, PQgetvalue(result, 0, 5));
     parms.set(6, PQgetvalue(result, 0, 6));
+    parms.set(7, DS::GameServer_GetNumClients(DS::Uuid(PQgetvalue(result, 0, 0))));
 
     PQclear(result);
     result = PQexecParams(s_postgres,
-                          "INSERT INTO game.\"PublicAges\" (\"AgeUuid\", \"AgeFilename\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"Population\")"
-                          "    VALUES ( $1, $2, $3, $4, $5, $6, $7, 0 )",
-                          7, 0, parms.m_values, 0, 0, 0);
+                          "INSERT INTO game.\"PublicAges\" (\"AgeUuid\", \"AgeFilename\", \"AgeInstName\", \"AgeUserName\", \"AgeDesc\", \"SeqNumber\", \"Language\", \"CurrentPopulation\", \"Population\")"
+                          "    VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, 0 )",
+                          8, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
