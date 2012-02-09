@@ -198,7 +198,7 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
     while (size > 0) {
         ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                              buffer, size, 0);
-        if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN))
+        if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK))
             throw DS::SockHup();
         else if (bytes == 0)
             throw DS::SockHup();
@@ -215,7 +215,7 @@ size_t DS::PeekSize(const SocketHandle sock)
     ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, 256, MSG_PEEK | MSG_TRUNC);
 
-    if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN))
+    if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK))
         throw DS::SockHup();
     else if (bytes == 0)
         throw DS::SockHup();
