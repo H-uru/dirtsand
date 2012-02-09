@@ -131,6 +131,10 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
             DS_DASSERT(0);
         }
     }
+    timeval tv;
+    tv.tv_sec = 5*60;
+    tv.tv_usec = 0;
+    setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     return reinterpret_cast<SocketHandle>(client);
 }
 
@@ -194,7 +198,7 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
     while (size > 0) {
         ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                              buffer, size, 0);
-        if (bytes < 0 && errno == ECONNRESET)
+        if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN))
             throw DS::SockHup();
         else if (bytes == 0)
             throw DS::SockHup();
@@ -211,7 +215,7 @@ size_t DS::PeekSize(const SocketHandle sock)
     ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, 256, MSG_PEEK | MSG_TRUNC);
 
-    if (bytes < 0 && errno == ECONNRESET)
+    if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN))
         throw DS::SockHup();
     else if (bytes == 0)
         throw DS::SockHup();
