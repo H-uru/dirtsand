@@ -87,6 +87,7 @@ namespace SDL
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream);
+        void copy(const Variable&);
 
 #ifdef DEBUG
         void debug();
@@ -182,6 +183,7 @@ namespace SDL
         void write(DS::Stream* stream) const;
         void add(const State& state);
         void merge(const State& state);
+        void update();
 
 #ifdef DEBUG
         void debug();

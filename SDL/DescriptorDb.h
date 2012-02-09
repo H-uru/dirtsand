@@ -60,6 +60,8 @@ namespace SDL
         DS::String m_name;
         int m_version;
         std::vector<VarDescriptor> m_vars;
+        typedef std::unordered_map<DS::String, int, DS::StringHash> varmap_t;
+        varmap_t m_varmap;
     };
 
     class DescriptorDb
@@ -67,6 +69,7 @@ namespace SDL
     public:
         static bool LoadDescriptors(const char* sdlpath);
         static StateDescriptor* FindDescriptor(DS::String name, int version);
+        static StateDescriptor* FindLatestDescriptor(DS::String name);
 
     private:
         DescriptorDb() { }
