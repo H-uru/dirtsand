@@ -132,7 +132,9 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
         }
     }
     timeval tv;
-    tv.tv_sec = 5*60;
+    // Client pings us every 30 seconds. A timeout of 45 gives us some wiggle room
+    // so networks can suck without kicking a client off.
+    tv.tv_sec = 45;
     tv.tv_usec = 0;
     setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     return reinterpret_cast<SocketHandle>(client);
