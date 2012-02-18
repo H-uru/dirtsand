@@ -122,12 +122,21 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     client->m_sockfd = accept(sockp->m_sockfd, &client->m_addr, &client->m_addrLen);
     if (client->m_sockfd < 0) {
         delete client;
-        if (errno != EINVAL) {
+        if (errno == EINVAL) {
+            throw DS::SockHup();
+        } else if (errno == ECONNABORTED) {
+            return 0;
+        } else {
             fprintf(stderr, "Socket closed: %s\n", strerror(errno));
             DS_DASSERT(0);
         }
-        return 0;
     }
+    timeval tv;
+    // Client pings us every 30 seconds. A timeout of 45 gives us some wiggle room
+    // so networks can suck without kicking a client off.
+    tv.tv_sec = 45;
+    tv.tv_usec = 0;
+    setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     return reinterpret_cast<SocketHandle>(client);
 }
 
@@ -135,6 +144,7 @@ void DS::CloseSock(DS::SocketHandle sock)
 {
     DS_DASSERT(sock);
     shutdown(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, SHUT_RDWR);
+    close(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd);
 }
 
 void DS::FreeSock(DS::SocketHandle sock)
@@ -190,7 +200,7 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
     while (size > 0) {
         ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                              buffer, size, 0);
-        if (bytes < 0 && errno == ECONNRESET)
+        if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK))
             throw DS::SockHup();
         else if (bytes == 0)
             throw DS::SockHup();
@@ -207,7 +217,7 @@ size_t DS::PeekSize(const SocketHandle sock)
     ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, 256, MSG_PEEK | MSG_TRUNC);
 
-    if (bytes < 0 && errno == ECONNRESET)
+    if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK))
         throw DS::SockHup();
     else if (bytes == 0)
         throw DS::SockHup();

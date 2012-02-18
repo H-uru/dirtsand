@@ -15,36 +15,50 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_LINKTOAGEMSG_H
-#define _MOUL_LINKTOAGEMSG_H
+#ifndef _MOUL_PARTICLEMSG_H
+#define _MOUL_PARTICLEMSG_H
 
-#include "AgeLinkStruct.h"
 #include "Message.h"
 
 namespace MOUL
 {
-    class LinkToAgeMsg : public Message
+    class ParticleKillMsg : public Message
     {
-        FACTORY_CREATABLE(LinkToAgeMsg)
+        FACTORY_CREATABLE(ParticleKillMsg)
 
         virtual void read(DS::Stream* s);
         virtual void write(DS::Stream* s);
 
-        virtual bool makeSafeForNet();
-
     public:
-        AgeLinkStruct* m_ageLink;
-        DS::String m_linkInAnim;
+        enum
+        {
+            e_ParticleKillImmortalOnly = 1<<0,
+            e_ParticleKillPercentage = 1<<1,
+        };
+
+        uint8_t m_flags;
+        float m_numToKill, m_timeLeft;
 
     protected:
-        LinkToAgeMsg(uint16_t type)
-            : Message(type), m_ageLink(AgeLinkStruct::Create()) { }
+        ParticleKillMsg(uint16_t type)
+            : Message(type), m_flags(0), m_numToKill(0.f), m_timeLeft(0.f) { }
+    };
 
-        virtual ~LinkToAgeMsg()
-        {
-            m_ageLink->unref();
-        }
+    class ParticleTransferMsg : public Message
+    {
+        FACTORY_CREATABLE(ParticleTransferMsg)
+
+        virtual void read(DS::Stream* s);
+        virtual void write(DS::Stream* s);
+
+    public:
+        Key m_sysKey;
+        uint16_t m_transferCount;
+
+    protected:
+        ParticleTransferMsg(uint16_t type)
+            : Message(type), m_transferCount(0) { }
     };
 };
 
-#endif // _MOUL_LINKTOAGEMSG_H
+#endif // _MOUL_PARTICLEMSG_H

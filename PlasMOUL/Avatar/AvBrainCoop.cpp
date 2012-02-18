@@ -20,16 +20,16 @@
 void MOUL::AvBrainCoop::read(DS::Stream* s)
 {
     MOUL::AvBrainGeneric::read(s);
-    
+
     m_initiatorId = s->read<uint32_t>();
     m_initiatorSerial = s->read<uint16_t>();
-    
+
     if (s->read<bool>())
         m_host.read(s);
     if (s->read<bool>())
         m_guest.read(s);
     m_waitingForClick = s->read<bool>();
-    
+
     m_recipients.resize(s->read<uint16_t>());
     for (size_t i = 0; i < m_recipients.size(); ++i)
         m_recipients[i].read(s);
@@ -38,10 +38,10 @@ void MOUL::AvBrainCoop::read(DS::Stream* s)
 void MOUL::AvBrainCoop::write(DS::Stream* s)
 {
     MOUL::AvBrainGeneric::write(s);
-    
+
     s->write<uint32_t>(m_initiatorId);
     s->write<uint16_t>(m_initiatorSerial);
-    
+
     s->write<bool>(!m_host.isNull());
     if (!m_host.isNull())
         m_host.write(s);
@@ -49,7 +49,7 @@ void MOUL::AvBrainCoop::write(DS::Stream* s)
     if (!m_guest.isNull())
         m_guest.write(s);
     s->write<bool>(m_waitingForClick);
-    
+
     s->write<uint16_t>(m_recipients.size());
     for (size_t i = 0; i < m_recipients.size(); ++i)
         m_recipients[i].write(s);

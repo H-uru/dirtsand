@@ -380,3 +380,17 @@ void DS::GameServer_DisplayClients()
     }
     s_gameHostMutex.unlock();
 }
+
+uint32_t DS::GameServer_GetNumClients(Uuid instance)
+{
+    uint32_t numClients = 0;
+    s_gameHostMutex.lock();
+    for (auto it = s_gameHosts.begin(); it != s_gameHosts.end(); ++it) {
+        if (it->second->m_instanceId == instance) {
+            numClients = it->second->m_clients.size();
+            break;
+        }
+    }
+    s_gameHostMutex.unlock();
+    return numClients;
+}

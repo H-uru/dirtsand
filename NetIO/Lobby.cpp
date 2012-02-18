@@ -52,42 +52,52 @@ void dm_lobby()
     printf("[Lobby] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
     try {
         for ( ;; ) {
-            DS::SocketHandle client = DS::AcceptSock(s_listenSock);
+            DS::SocketHandle client;
+            try {
+                client = DS::AcceptSock(s_listenSock);
+            } catch (DS::SockHup) {
+                break;
+            }
+
             if (!client)
-                break;
+                continue;
 
-            ConnectionHeader header;
-            header.m_connType = DS::RecvValue<uint8_t>(client);
-            header.m_sockHeaderSize = DS::RecvValue<uint16_t>(client);
-            header.m_buildId = DS::RecvValue<uint32_t>(client);
-            header.m_buildType = DS::RecvValue<uint32_t>(client);
-            header.m_branchId = DS::RecvValue<uint32_t>(client);
-            DS::RecvBuffer(client, header.m_productId.m_bytes,
-                           sizeof(header.m_productId.m_bytes));
+            try {
+                ConnectionHeader header;
+                header.m_connType = DS::RecvValue<uint8_t>(client);
+                header.m_sockHeaderSize = DS::RecvValue<uint16_t>(client);
+                header.m_buildId = DS::RecvValue<uint32_t>(client);
+                header.m_buildType = DS::RecvValue<uint32_t>(client);
+                header.m_branchId = DS::RecvValue<uint32_t>(client);
+                DS::RecvBuffer(client, header.m_productId.m_bytes,
+                               sizeof(header.m_productId.m_bytes));
 
-            switch (header.m_connType) {
-            case e_ConnCliToGateKeeper:
-                DS::GateKeeper_Add(client);
-                break;
-            case e_ConnCliToFile:
-                DS::FileServer_Add(client);
-                break;
-            case e_ConnCliToAuth:
-                DS::AuthServer_Add(client);
-                break;
-            case e_ConnCliToGame:
-                DS::GameServer_Add(client);
-                break;
-            case e_ConnCliToCsr:
-                printf("[Lobby] %s - CSR client?  Get that mutha outta here!\n",
-                       DS::SockIpAddress(client).c_str());
+                switch (header.m_connType) {
+                case e_ConnCliToGateKeeper:
+                    DS::GateKeeper_Add(client);
+                    break;
+                case e_ConnCliToFile:
+                    DS::FileServer_Add(client);
+                    break;
+                case e_ConnCliToAuth:
+                    DS::AuthServer_Add(client);
+                    break;
+                case e_ConnCliToGame:
+                    DS::GameServer_Add(client);
+                    break;
+                case e_ConnCliToCsr:
+                    printf("[Lobby] %s - CSR client?  Get that mutha outta here!\n",
+                           DS::SockIpAddress(client).c_str());
+                    DS::FreeSock(client);
+                    break;
+                default:
+                    printf("[Lobby] %s - Unknown connection type!  Abandon ship!\n",
+                           DS::SockIpAddress(client).c_str());
+                    DS::FreeSock(client);
+                    break;
+                }
+            } catch (DS::SockHup hup) {
                 DS::FreeSock(client);
-                break;
-            default:
-                printf("[Lobby] %s - Unknown connection type!  Abandon ship!\n",
-                       DS::SockIpAddress(client).c_str());
-                DS::FreeSock(client);
-                break;
             }
         }
     } catch (DS::AssertException ex) {

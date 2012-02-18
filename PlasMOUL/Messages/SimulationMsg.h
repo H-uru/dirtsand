@@ -25,16 +25,15 @@ namespace MOUL
     class SubWorldMsg : public Message
     {
         FACTORY_CREATABLE(SubWorldMsg)
-        
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
-        
+
     public:
         Key m_world;
-        
+
     protected:
-        SubWorldMsg(uint16_t type)
-            : Message(type) { }
+        SubWorldMsg(uint16_t type) : Message(type) { }
     };
 };
 

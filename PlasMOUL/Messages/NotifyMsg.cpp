@@ -31,6 +31,9 @@ void MOUL::NotifyMsg::read(DS::Stream* stream)
     m_state = stream->read<float>();
     m_id = stream->read<int32_t>();
 
+    for (size_t i=0; i<m_events.size(); ++i)
+        delete m_events[i];
+
     m_events.resize(stream->read<uint32_t>());
     for (size_t i=0; i<m_events.size(); ++i)
         m_events[i] = EventData::Read(stream);

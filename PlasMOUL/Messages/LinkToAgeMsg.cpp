@@ -18,17 +18,14 @@
 #include "LinkToAgeMsg.h"
 #include "errors.h"
 
-static uint8_t kLinkToAgeVersion = 0;
-
-MOUL::LinkToAgeMsg::~LinkToAgeMsg()
-{
-    m_ageLink->unref();
-}
+enum {
+    kLinkToAgeVersion = 0
+};
 
 void MOUL::LinkToAgeMsg::read(DS::Stream* s)
 {
     Message::read(s);
-    
+
     DS_PASSERT(s->read<uint8_t>() == kLinkToAgeVersion);
     m_ageLink->read(s);
     m_linkInAnim = s->readSafeString();
@@ -37,7 +34,7 @@ void MOUL::LinkToAgeMsg::read(DS::Stream* s)
 void MOUL::LinkToAgeMsg::write(DS::Stream* s)
 {
     Message::write(s);
-    
+
     s->write<uint8_t>(kLinkToAgeVersion);
     m_ageLink->write(s);
     s->writeSafeString(m_linkInAnim);
@@ -48,5 +45,7 @@ bool MOUL::LinkToAgeMsg::makeSafeForNet()
     // The only time this msg should ever come over the wire is
     // as a field inside an AvBrainCoop's CoopCoordinator. So, if we get
     // here, then this is obviously a hack.
-    return false;
+    // Except Cyan sucks and uses this directly in book sharing. We pass
+    // it along for now.
+    return true;
 }

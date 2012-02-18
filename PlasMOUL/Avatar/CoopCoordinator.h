@@ -26,16 +26,16 @@ namespace MOUL
 {
     class AvBrainCoop;
     class Message;
-    
+
     // Technically a KeyedObject, but the key is never serialized, so
     // we can get away with this evil trick here
     class CoopCoordinator : public Creatable
     {
         FACTORY_CREATABLE(CoopCoordinator)
-        
+
         virtual void read(DS::Stream* s);
         virtual void write(DS::Stream* s);
-        
+
     public:
         Key m_hostKey, m_guestKey;
         AvBrainCoop* m_hostBrain;
@@ -45,11 +45,14 @@ namespace MOUL
         Message* m_acceptMsg;
         DS::String m_synchBone;
         bool m_autoStartGuest;
-        
+
     protected:
-        CoopCoordinator(uint16_t type) : Creatable(type), m_hostBrain(0), m_guestBrain(0),
-            m_hostOfferStage(0), m_guestAcceptStage(0), m_acceptMsg(0), m_autoStartGuest(false) { }
-        ~CoopCoordinator();
+        CoopCoordinator(uint16_t type)
+            : Creatable(type), m_hostBrain(0), m_guestBrain(0),
+              m_hostOfferStage(0), m_guestAcceptStage(0), m_acceptMsg(0),
+              m_autoStartGuest(false) { }
+
+        virtual ~CoopCoordinator();
     };
 };
 

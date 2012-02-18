@@ -78,24 +78,19 @@ void MOUL::AgeInfoStruct::write(DS::Stream* s)
         s->write<int32_t>(m_ageLanguage);
 }
 
-MOUL::AgeLinkStruct::~AgeLinkStruct()
-{
-    if (m_ageInfo)
-        m_ageInfo->unref();
-}
-
 void MOUL::AgeLinkStruct::read(DS::Stream* s)
 {
     m_flags = s->read<uint16_t>();
     DS_PASSERT(!(m_flags & e_HasSpawnPtInline)); // Trolololololololo
     DS_PASSERT(!(m_flags & e_HasSpawnPtLegacy)); // Ahahahahahahahaha
 
+    m_ageInfo->unref();
     if (m_flags & e_HasAgeInfo)
         ensureAgeInfo()->read(s);
     if (m_flags & e_HasLinkingRules)
         m_linkingRules = s->read<uint8_t>();
     if (m_flags & e_HasSpawnPt)
-        ensureSpawnPt()->read(s);
+        m_spawnPt.read(s);
     if (m_flags & e_HasAmCCR)
         m_amCcr = s->read<bool>();
     if (m_flags & e_HasParentAgeFilename)
@@ -113,7 +108,7 @@ void MOUL::AgeLinkStruct::write(DS::Stream* s)
     if (m_flags & e_HasLinkingRules)
         s->write<uint8_t>(m_linkingRules);
     if (m_flags & e_HasSpawnPt)
-        ensureSpawnPt()->write(s);
+        m_spawnPt.write(s);
     if (m_flags & e_HasAmCCR)
         s->write<bool>(m_amCcr);
     if (m_flags & e_HasParentAgeFilename)

@@ -19,6 +19,7 @@
 #define _DS_GAMESERVER_H
 
 #include "NetIO/SockIO.h"
+#include "Types/Uuid.h"
 #include <exception>
 
 namespace DS
@@ -34,6 +35,7 @@ namespace DS
     bool GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId);
 
     void GameServer_DisplayClients();
+    uint32_t GameServer_GetNumClients(Uuid instance);
 }
 
 #endif

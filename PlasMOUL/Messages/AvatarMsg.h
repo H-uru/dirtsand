@@ -19,6 +19,7 @@
 #define _MOUL_AVATARMSG_H
 
 #include "Message.h"
+#include "Avatar/CoopCoordinator.h"
 
 namespace MOUL
 {
@@ -50,32 +51,34 @@ namespace MOUL
     protected:
         AvBrainGenericMsg(uint16_t type) : AvatarMsg(type) { }
     };
-    
-    class CoopCoordinator;
-    
+
     class AvCoopMsg : public Message
     {
         FACTORY_CREATABLE(AvCoopMsg)
-        
+
         virtual void read(DS::Stream* s);
         virtual void write(DS::Stream* s);
         virtual bool makeSafeForNet();
-        
+
     public:
         enum Command
         {
             e_None, e_StartNew, e_GuestAccepted, e_GuestSeeked, e_GuestSeekAbort
         };
-        
+
         CoopCoordinator* m_coordinator;
         uint32_t m_initiatorId;
         uint16_t m_initiatorSerial;
         Command m_command;
-        
+
     protected:
         AvCoopMsg(uint16_t type) : Message(type), m_coordinator(0), m_initiatorId(0),
             m_initiatorSerial(0), m_command(e_None) { }
-        ~AvCoopMsg();
+
+        virtual ~AvCoopMsg()
+        {
+            m_coordinator->unref();
+        }
     };
 
     class AvTaskSeekDoneMsg : public AvatarMsg

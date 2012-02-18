@@ -37,7 +37,7 @@ namespace MOUL
         Key m_host, m_guest;
         bool m_waitingForClick;
         std::vector<Key> m_recipients;
-        
+
     protected:
         AvBrainCoop(uint16_t type)
             : AvBrainGeneric(type), m_initiatorId(0), m_initiatorSerial(0),

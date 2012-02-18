@@ -89,3 +89,21 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindDescriptor(DS::String name, int ver
 
     return &veri->second;
 }
+
+SDL::StateDescriptor* SDL::DescriptorDb::FindLatestDescriptor(DS::String name)
+{
+    descmap_t::iterator namei = s_descriptors.find(name);
+    if (namei == s_descriptors.end()) {
+        fprintf(stderr, "[SDL] Requested invalid descriptor %s\n", name.c_str());
+        return 0;
+    }
+
+    versionmap_t::iterator veri = namei->second.begin();
+    versionmap_t::iterator newi = veri;
+    for ( ; veri != namei->second.end(); ++veri) {
+        if (veri->first > newi->first)
+            newi = veri;
+    }
+
+    return &newi->second;
+}

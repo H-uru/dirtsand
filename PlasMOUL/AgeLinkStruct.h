@@ -158,14 +158,7 @@ namespace MOUL
         virtual void write(DS::Stream* s);
 
     public:
-        SpawnPointInfo* ensureSpawnPt()
-        {
-            if (!m_spawnPt) {
-                m_spawnPt = new SpawnPointInfo;
-                m_flags |= e_HasSpawnPt;
-            }
-            return m_spawnPt;
-        }
+        SpawnPointInfo& spawnPt() { return m_spawnPt; }
 
         AgeInfoStruct* ensureAgeInfo()
         {
@@ -212,12 +205,16 @@ namespace MOUL
         uint16_t m_flags;
         AgeInfoStruct* m_ageInfo;
         uint8_t m_linkingRules;
-        SpawnPointInfo* m_spawnPt;
+        SpawnPointInfo m_spawnPt;
         bool m_amCcr;
         DS::String m_parentAgeFilename;
 
         AgeLinkStruct(uint16_t type) : Creatable(type), m_flags(e_HasSpawnPt), m_ageInfo(0), m_linkingRules(0), m_amCcr(false) { }
-        ~AgeLinkStruct();
+
+        virtual ~AgeLinkStruct()
+        {
+            m_ageInfo->unref();
+        }
     };
 };
 

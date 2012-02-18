@@ -15,52 +15,38 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#include "AvTask.h"
-#include "factory.h"
+#include "ParticleMsg.h"
 
-void MOUL::AvAnimTask::read(DS::Stream* stream)
+void MOUL::ParticleKillMsg::read(DS::Stream* s)
 {
-    m_animName = stream->readSafeString();
-    m_initialBlend = stream->read<float>();
-    m_targetBlend = stream->read<float>();
-    m_fadeSpeed = stream->read<float>();
-    m_setTime = stream->read<float>();
-    m_start = stream->read<bool>();
-    m_loop = stream->read<bool>();
-    m_attach = stream->read<bool>();
+    Message::read(s);
+
+    m_numToKill = s->read<float>();
+    m_timeLeft = s->read<float>();
+    m_flags = s->read<uint8_t>();
 }
 
-void MOUL::AvAnimTask::write(DS::Stream* stream)
+void MOUL::ParticleKillMsg::write(DS::Stream* s)
 {
-    stream->writeSafeString(m_animName);
-    stream->write<float>(m_initialBlend);
-    stream->write<float>(m_targetBlend);
-    stream->write<float>(m_fadeSpeed);
-    stream->write<float>(m_setTime);
-    stream->write<bool>(m_start);
-    stream->write<bool>(m_loop);
-    stream->write<bool>(m_attach);
+    Message::write(s);
+
+    s->write<float>(m_numToKill);
+    s->write<float>(m_timeLeft);
+    s->write<uint8_t>(m_flags);
 }
 
-void MOUL::AvOneShotLinkTask::read(DS::Stream* stream)
+void MOUL::ParticleTransferMsg::read(DS::Stream* s)
 {
-    m_animName = stream->readSafeString();
-    m_markerName = stream->readSafeString();
+    Message::read(s);
+
+    m_sysKey.read(s);
+    m_transferCount = s->read<uint16_t>();
 }
 
-void MOUL::AvOneShotLinkTask::write(DS::Stream* stream)
+void MOUL::ParticleTransferMsg::write(DS::Stream* s)
 {
-    stream->writeSafeString(m_animName);
-    stream->writeSafeString(m_markerName);
-}
+    Message::write(s);
 
-void MOUL::AvTaskBrain::read(DS::Stream* stream)
-{
-    m_brain->unref();
-    m_brain = Factory::Read<ArmatureBrain>(stream);
-}
-
-void MOUL::AvTaskBrain::write(DS::Stream* stream)
-{
-    Factory::WriteCreatable(stream, m_brain);
+    m_sysKey.write(s);
+    s->write<uint16_t>(m_transferCount);
 }

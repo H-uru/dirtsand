@@ -26,17 +26,17 @@ namespace MOUL
     class BulletMsg : public Message
     {
         FACTORY_CREATABLE(BulletMsg)
-        
+
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
-        
+
     public:
         enum { e_Stop, e_Shot, e_Spray };
-    
+
         uint8_t m_cmd;
         DS::Vector3 m_from, m_direction;
         float m_range, m_radius, m_partyTime;
-        
+
     protected:
         BulletMsg(uint16_t type)
             : Message(type), m_cmd(0), m_range(0.0), 
