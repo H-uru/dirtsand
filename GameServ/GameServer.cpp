@@ -376,7 +376,8 @@ void DS::GameServer_DisplayClients()
         printf("Game Servers:\n");
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
          host_iter != s_gameHosts.end(); ++host_iter) {
-        printf("    {%s}\n", host_iter->second->m_instanceId.toString().c_str());
+        printf("    %s {%s}\n", host_iter->second->m_ageFilename.c_str(),
+               host_iter->second->m_instanceId.toString().c_str());
         for (auto client_iter = host_iter->second->m_clients.begin();
              client_iter != host_iter->second->m_clients.end(); ++ client_iter)
             printf("      * %s - %s (%u)\n", DS::SockIpAddress(client_iter->second->m_sock).c_str(),
