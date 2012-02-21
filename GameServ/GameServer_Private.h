@@ -61,8 +61,10 @@ struct GameHost_Private
 
     std::unordered_map<uint32_t, GameClient_Private*> m_clients;
     lockmap_t m_locks;
+    uint32_t m_gameMaster;
     pthread_mutex_t m_clientMutex;
     pthread_mutex_t m_lockMutex;
+    pthread_mutex_t m_gmMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
 
