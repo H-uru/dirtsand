@@ -223,6 +223,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
             }
         } else
             host->m_gameMaster = 0;
+        groupMsg->unref();
         pthread_mutex_unlock(&host->m_clientMutex);
     }
     pthread_mutex_unlock(&host->m_gmMutex);
