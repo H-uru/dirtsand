@@ -37,6 +37,7 @@
 #include "Messages/MessageWithCallbacks.h"
 #include "Messages/LinkToAgeMsg.h"
 #include "Messages/ParticleMsg.h"
+#include "Messages/MultistageMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
