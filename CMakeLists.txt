@@ -101,6 +101,7 @@ set(dirtsand_SOURCES
     AuthServ/VaultTypes.cpp
     GameServ/GameServer.cpp
     GameServ/GameHost.cpp
+    GameMgr/GameManager.cpp
     strings.cpp
     streams.cpp
     settings.cpp

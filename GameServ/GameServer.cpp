@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "GameServer_Private.h"
+#include "GameMgr/GameManager.h"
 #include "settings.h"
 #include "errors.h"
 #include <unistd.h>
@@ -163,17 +164,8 @@ void cb_gameMgrMsg(GameClient_Private& client)
     uint32_t size = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     uint8_t* buffer = new uint8_t[size];
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
-
-    printf("GAME MGR MSG");
-    for (size_t i=0; i<size; ++i) {
-        if ((i % 16) == 0)
-            printf("\n    ");
-        else if ((i % 16) == 8)
-            printf("   ");
-        printf("%02X ", buffer[i]);
-    }
-    printf("\n");
-    delete[] buffer;
+    DS::Blob msg = DS::Blob::Steal(buffer, size);
+    DS::GameManager_Message(client, msg);
 }
 
 void* wk_gameWorker(void* sockp)

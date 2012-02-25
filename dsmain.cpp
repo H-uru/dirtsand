@@ -22,6 +22,7 @@
 #include "FileServ/FileServer.h"
 #include "AuthServ/AuthServer.h"
 #include "GameServ/GameServer.h"
+#include "GameMgr/GameManager.h"
 #include "SDL/DescriptorDb.h"
 #include "strings.h"
 #include "errors.h"
@@ -138,6 +139,7 @@ int main(int argc, char* argv[])
     DS::FileServer_Init();
     DS::AuthServer_Init();
     DS::GameServer_Init();
+    DS::GameManager_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
     DS::StartStatusHTTP();
@@ -277,6 +279,7 @@ int main(int argc, char* argv[])
     DS::StopStatusHTTP();
     DS::StopLobby();
     DS::GateKeeper_Shutdown();
+    DS::GameManager_Shutdown();
     DS::GameServer_Shutdown();
     DS::AuthServer_Shutdown();
     DS::FileServer_Shutdown();
