@@ -838,6 +838,19 @@ void* dm_authDaemon(void*)
         DS_DASSERT(false);
     }
 
+    // Mark all public ages as having a current population of ZERO
+    result = PQexec(s_postgres,
+                              "UPDATE game.\"PublicAges\" SET"
+                              "    \"CurrentPopulation\" = 0");
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        // This doesn't block continuing...
+        PQclear(result);
+        DS_DASSERT(false);
+    } else
+        PQclear(result);
+
     for ( ;; ) {
         DS::FifoMessage msg = s_authChannel.getMessage();
         try {
