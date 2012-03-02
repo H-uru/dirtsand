@@ -293,8 +293,12 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     pthread_mutex_unlock(&host->m_gmMutex);
 
     DM_WRITEMSG(host, groupMsg);
-    DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
+    try {
+        DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
+                            host->m_buffer.buffer(), host->m_buffer.size());
+    } catch (DS::SockHup) {
+        // we'll just let this slide. The client thread will figure it out quickly enough.
+    }
     groupMsg->unref();
 
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
