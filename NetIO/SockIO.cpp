@@ -202,6 +202,8 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
                              buffer, size, 0);
         if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK))
             throw DS::SockHup();
+        if (bytes < 0 && errno == EINTR)
+            continue;
         else if (bytes == 0)
             throw DS::SockHup();
         DS_PASSERT(bytes > 0);
