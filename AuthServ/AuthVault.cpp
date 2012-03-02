@@ -329,8 +329,10 @@ bool dm_vault_init()
 }
 
 std::pair<uint32_t, uint32_t>
-v_create_age(const AuthServer_AgeInfo& age, uint32_t flags)
+v_create_age(AuthServer_AgeInfo age, uint32_t flags)
 {
+    if (age.m_ageId.isNull())
+        age.m_ageId = gen_uuid(); 
     int seqNumber = age.m_seqNumber;
     if (seqNumber < 0) {
         check_postgres();
