@@ -55,10 +55,11 @@ static inline void check_postgres(GameHost_Private* host)
 
 void dm_game_shutdown(GameHost_Private* host)
 {
-    host->m_clientMutex.lock();
-    for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter)
-        DS::CloseSock(client_iter->second->m_sock);
-    host->m_clientMutex.unlock();
+    {
+        std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
+        for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter)
+            DS::CloseSock(client_iter->second->m_sock);
+    }
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
@@ -98,7 +99,7 @@ void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
 {
     DM_WRITEMSG(host, msg);
 
-    host->m_clientMutex.lock();
+    std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId == sender
             && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
@@ -112,7 +113,6 @@ void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
             // of the client list if one hung up
         }
     }
-    host->m_clientMutex.unlock();
 }
 
 void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
@@ -120,7 +120,7 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
 {
     DM_WRITEMSG(host, msg);
 
-    host->m_clientMutex.lock();
+    std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
     for (auto rcvr_iter = receivers.begin(); rcvr_iter != receivers.end(); ++rcvr_iter) {
         for (hostmap_t::iterator recv_host = s_gameHosts.begin(); recv_host != s_gameHosts.end(); ++recv_host) {
             auto client = recv_host->second->m_clients.find(*rcvr_iter);
@@ -136,7 +136,6 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
             }
         }
     }
-    host->m_clientMutex.unlock();
 }
 
 void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
@@ -184,7 +183,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 
     // Release any stale locks
     host->m_lockMutex.lock();
-    for (auto it = host->m_locks.begin(); it != host->m_locks.end();)
+    for (auto it = host->m_locks.begin(); it != host->m_locks.end(); )
     {
         if (it->second == msg->m_client->m_clientInfo.m_PlayerId)
             it = host->m_locks.erase(it);
@@ -194,37 +193,37 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     host->m_lockMutex.unlock();
 
     // Reassign game-mastership if needed...
-    host->m_gmMutex.lock();
-    if (host->m_gameMaster == msg->m_client->m_clientInfo.m_PlayerId) {
-        MOUL::NetMsgGroupOwner* groupMsg = MOUL::NetMsgGroupOwner::Create();
-        groupMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                                 | MOUL::NetMessage::e_IsSystemMessage
-                                 | MOUL::NetMessage::e_NeedsReliableSend;
-        groupMsg->m_timestamp.setNow();
-        groupMsg->m_groups.resize(1);
-        groupMsg->m_groups[0].m_own = true;
-        DM_WRITEMSG(host, groupMsg);
+    {
+        std::lock_guard<std::mutex> gmGuard(host->m_gmMutex);
+        if (host->m_gameMaster == msg->m_client->m_clientInfo.m_PlayerId) {
+            MOUL::NetMsgGroupOwner* groupMsg = MOUL::NetMsgGroupOwner::Create();
+            groupMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                                    | MOUL::NetMessage::e_IsSystemMessage
+                                    | MOUL::NetMessage::e_NeedsReliableSend;
+            groupMsg->m_timestamp.setNow();
+            groupMsg->m_groups.resize(1);
+            groupMsg->m_groups[0].m_own = true;
+            DM_WRITEMSG(host, groupMsg);
 
-        // This client has already been removed from the map, so we can just
-        // pick the 0th client and call him the new owner :)
-        host->m_clientMutex.lock();
-        if (host->m_clients.size()) {
-            GameClient_Private* newOwner = host->m_clients.begin()->second;
-            host->m_gameMaster = newOwner->m_clientInfo.m_PlayerId;
-            try {
-                DS::CryptSendBuffer(newOwner->m_sock, newOwner->m_crypt,
-                                    host->m_buffer.buffer(), host->m_buffer.size());
-            } catch (...) {
-                fprintf(stderr, "[Game] Ownership transfer to %i from %i failed.",
-                        msg->m_client->m_clientInfo.m_PlayerId, newOwner->m_clientInfo.m_PlayerId);
-                DS_DASSERT(false);
-            }
-        } else
-            host->m_gameMaster = 0;
-        groupMsg->unref();
-        host->m_clientMutex.unlock();
+            // This client has already been removed from the map, so we can just
+            // pick the 0th client and call him the new owner :)
+            std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
+            if (host->m_clients.size()) {
+                GameClient_Private* newOwner = host->m_clients.begin()->second;
+                host->m_gameMaster = newOwner->m_clientInfo.m_PlayerId;
+                try {
+                    DS::CryptSendBuffer(newOwner->m_sock, newOwner->m_crypt,
+                                        host->m_buffer.buffer(), host->m_buffer.size());
+                } catch (...) {
+                    fprintf(stderr, "[Game] Ownership transfer to %i from %i failed.",
+                            msg->m_client->m_clientInfo.m_PlayerId, newOwner->m_clientInfo.m_PlayerId);
+                    DS_DASSERT(false);
+                }
+            } else
+                host->m_gameMaster = 0;
+            groupMsg->unref();
+        }
     }
-    host->m_gmMutex.unlock();
 
     // Good time to write this back to the vault
     Auth_NodeInfo sdlNode;
@@ -481,22 +480,22 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
     reply->m_receivers.push_back(msg->m_object);
     reply->m_bcastFlags = MOUL::Message::e_LocalPropagate;
 
-    host->m_lockMutex.lock();
-    if (msg->m_lockRequest) {
-        if (host->m_locks.find(msg->m_object) == host->m_locks.end()) {
-            reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
-            host->m_locks[msg->m_object] = client->m_clientInfo.m_PlayerId;
+    {
+        std::lock_guard<std::mutex> lockGuard(host->m_lockMutex);
+        if (msg->m_lockRequest) {
+            if (host->m_locks.find(msg->m_object) == host->m_locks.end()) {
+                reply->m_reply = MOUL::ServerReplyMsg::e_Affirm;
+                host->m_locks[msg->m_object] = client->m_clientInfo.m_PlayerId;
+            } else {
+                reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
+            }
         } else {
-            reply->m_reply = MOUL::ServerReplyMsg::e_Deny;
+            auto it = host->m_locks.find(msg->m_object);
+            if (it != host->m_locks.end() && it->second == client->m_clientInfo.m_PlayerId) {
+                host->m_locks.erase(it);
+            }
+            return;
         }
-        host->m_lockMutex.unlock();
-    } else {
-        auto it = host->m_locks.find(msg->m_object);
-        if (it != host->m_locks.end() && it->second == client->m_clientInfo.m_PlayerId) {
-            host->m_locks.erase(it);
-        }
-        host->m_lockMutex.unlock();
-        return;
     }
 
     MOUL::NetMsgGameMessage* netReply = MOUL::NetMsgGameMessage::Create();
@@ -559,7 +558,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     avatarMsg->m_isPlayer = true;
     cloneMsg->m_message = avatarMsg;
 
-    host->m_clientMutex.lock();
+    std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId != client->m_clientInfo.m_PlayerId
             && !client->m_clientKey.isNull()) {
@@ -588,7 +587,6 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
             state->unref();
         }
     }
-    host->m_clientMutex.unlock();
     cloneMsg->unref();
 }
 
@@ -723,7 +721,7 @@ void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
     bcast->m_object.m_id = 1;
     bcast->m_sdlBlob = msg->m_node.m_Blob_1;
 
-    host->m_clientMutex.lock();
+    std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         try {
             DM_WRITEMSG(host, bcast);
@@ -734,7 +732,6 @@ void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
             // of the client list if one hung up
         }
     }
-    host->m_clientMutex.unlock();
 
     delete bcast;
     delete msg;

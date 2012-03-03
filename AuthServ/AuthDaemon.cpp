@@ -63,10 +63,11 @@ void dm_auth_addacct(Auth_AccountInfo* info)
 
 void dm_auth_shutdown()
 {
-    s_authClientMutex.lock();
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter)
-        DS::CloseSock((*client_iter)->m_sock);
-    s_authClientMutex.unlock();
+    {
+        std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
+        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter)
+            DS::CloseSock((*client_iter)->m_sock);
+    }
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
@@ -195,20 +196,14 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
     *reinterpret_cast<uint32_t*>(buffer + 2) = nodeIdx;
     *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
 
-    s_authClientMutex.lock();
-    try {
-        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-            try {
-                DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
-            } catch (DS::SockHup) {
-                // Client ignored us.  Return the favor
-            }
+    std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
         }
-    } catch (...) {
-        s_authClientMutex.unlock();
-        throw;
     }
-    s_authClientMutex.unlock();
 }
 
 void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
@@ -219,20 +214,14 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer +  6) = ref.m_child;
     *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
 
-    s_authClientMutex.lock();
-    try {
-        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-            try {
-                DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
-            } catch (DS::SockHup) {
-                // Client ignored us.  Return the favor
-            }
+    std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
         }
-    } catch (...) {
-        s_authClientMutex.unlock();
-        throw;
     }
-    s_authClientMutex.unlock();
 }
 
 void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
@@ -242,20 +231,14 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer + 2) = ref.m_parent;
     *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
 
-    s_authClientMutex.lock();
-    try {
-        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-            try {
-                DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
-            } catch (DS::SockHup) {
-                // Client ignored us.  Return the favor
-            }
+    std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
+    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+        try {
+            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
+        } catch (DS::SockHup) {
+            // Client ignored us.  Return the favor
         }
-    } catch (...) {
-        s_authClientMutex.unlock();
-        throw;
     }
-    s_authClientMutex.unlock();
 }
 
 void dm_auth_disconnect(Auth_ClientMessage* msg)
@@ -331,20 +314,20 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
     }
 #endif
 
-    s_authClientMutex.lock();
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        if (client != *client_iter && (*client_iter)->m_player.m_playerId == client->m_player.m_playerId) {
-            printf("[Auth] {%s} requested already-active player (%u)\n",
-                   client->m_acctUuid.toString().c_str(),
-                   client->m_player.m_playerId);
-            PQclear(result);
-            client->m_player.m_playerId = 0;
-            SEND_REPLY(msg, DS::e_NetLoggedInElsewhere);
-            s_authClientMutex.unlock();
-            return;
+    {
+        std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
+        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+            if (client != *client_iter && (*client_iter)->m_player.m_playerId == client->m_player.m_playerId) {
+                printf("[Auth] {%s} requested already-active player (%u)\n",
+                    client->m_acctUuid.toString().c_str(),
+                    client->m_player.m_playerId);
+                PQclear(result);
+                client->m_player.m_playerId = 0;
+                SEND_REPLY(msg, DS::e_NetLoggedInElsewhere);
+                return;
+            }
         }
     }
-    s_authClientMutex.unlock();
 
     client->m_player.m_playerName = PQgetvalue(result, 0, 0);
     client->m_player.m_avatarModel = PQgetvalue(result, 0, 1);

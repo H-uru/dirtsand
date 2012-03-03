@@ -346,10 +346,11 @@ void DS::FileServer_Add(DS::SocketHandle client)
 
 void DS::FileServer_Shutdown()
 {
-    s_clientMutex.lock();
-    for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
-        DS::CloseSock((*client_iter)->m_sock);
-    s_clientMutex.unlock();
+    {
+        std::lock_guard<std::mutex> clientGuard(s_clientMutex);
+        for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
+            DS::CloseSock((*client_iter)->m_sock);
+    }
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
@@ -366,10 +367,9 @@ void DS::FileServer_Shutdown()
 
 void DS::FileServer_DisplayClients()
 {
-    s_clientMutex.lock();
+    std::lock_guard<std::mutex> clientGuard(s_clientMutex);
     if (s_clients.size())
         printf("File Server:\n");
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
-    s_clientMutex.unlock();
 }

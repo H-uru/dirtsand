@@ -159,7 +159,7 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
 {
 #ifdef DEBUG
     if (s_commdebug) {
-        s_commdebug_mutex.lock();
+        std::lock_guard<std::mutex> commdebugGuard(s_commdebug_mutex);
         printf("SEND TO %s", DS::SockIpAddress(sock).c_str());
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
@@ -169,7 +169,6 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
             printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
         printf("\n");
-        s_commdebug_mutex.unlock();
     }
 #endif
 
@@ -211,7 +210,7 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
 
 #ifdef DEBUG
     if (s_commdebug) {
-        s_commdebug_mutex.lock();
+        std::lock_guard<std::mutex> commdebugGuard(s_commdebug_mutex);
         printf("RECV FROM %s", DS::SockIpAddress(sock).c_str());
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
@@ -221,7 +220,6 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
             printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
         printf("\n");
-        s_commdebug_mutex.unlock();
     }
 #endif
 }

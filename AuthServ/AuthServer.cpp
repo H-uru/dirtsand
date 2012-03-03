@@ -914,14 +914,13 @@ void DS::AuthServer_Shutdown()
 
 void DS::AuthServer_DisplayClients()
 {
-    s_authClientMutex.lock();
+    std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
     if (s_authClients.size())
         printf("Auth Server:\n");
     for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
         printf("  * %s {%s}\n", DS::SockIpAddress((*client_iter)->m_sock).c_str(),
                (*client_iter)->m_acctUuid.toString().c_str());
     }
-    s_authClientMutex.unlock();
 }
 
 void DS::AuthServer_AddAcct(DS::String acctName, DS::String password)

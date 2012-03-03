@@ -77,13 +77,11 @@ void game_client_init(GameClient_Private& client)
 
 GameHost_Private* find_game_host(uint32_t ageMcpId)
 {
-    s_gameHostMutex.lock();
+    std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
     hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
-    GameHost_Private* host = 0;
     if (host_iter != s_gameHosts.end())
-        host = host_iter->second;
-    s_gameHostMutex.unlock();
-    return host ? host : start_game_host(ageMcpId);
+        return host_iter->second;
+    return start_game_host(ageMcpId);
 }
 
 void cb_ping(GameClient_Private& client)
@@ -328,11 +326,12 @@ void DS::GameServer_Add(DS::SocketHandle client)
 
 void DS::GameServer_Shutdown()
 {
-    s_gameHostMutex.lock();
-    hostmap_t::iterator host_iter;
-    for (host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter)
-        host_iter->second->m_channel.putMessage(e_GameShutdown);
-    s_gameHostMutex.unlock();
+    {
+        std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
+        hostmap_t::iterator host_iter;
+        for (host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter)
+            host_iter->second->m_channel.putMessage(e_GameShutdown);
+    }
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
@@ -355,6 +354,7 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
     if (host_iter != s_gameHosts.end())
         host = host_iter->second;
     s_gameHostMutex.unlock();
+
     if (host) {
         Game_SdlMessage* msg = new Game_SdlMessage;
         msg->m_node = node;
@@ -366,7 +366,7 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
 
 void DS::GameServer_DisplayClients()
 {
-    s_gameHostMutex.lock();
+    std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
     if (s_gameHosts.size())
         printf("Game Servers:\n");
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
@@ -379,19 +379,13 @@ void DS::GameServer_DisplayClients()
                    client_iter->second->m_clientInfo.m_PlayerName.c_str(),
                    client_iter->second->m_clientInfo.m_PlayerId);
     }
-    s_gameHostMutex.unlock();
 }
 
 uint32_t DS::GameServer_GetNumClients(Uuid instance)
 {
-    uint32_t numClients = 0;
-    s_gameHostMutex.lock();
+    std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
     for (auto it = s_gameHosts.begin(); it != s_gameHosts.end(); ++it) {
-        if (it->second->m_instanceId == instance) {
-            numClients = it->second->m_clients.size();
-            break;
-        }
+        if (it->second->m_instanceId == instance)
+            return it->second->m_clients.size();
     }
-    s_gameHostMutex.unlock();
-    return numClients;
 }
