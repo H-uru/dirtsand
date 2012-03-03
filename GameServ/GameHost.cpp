@@ -193,6 +193,39 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     }
     host->m_lockMutex.unlock();
 
+    // Reassign game-mastership if needed...
+    host->m_gmMutex.lock();
+    if (host->m_gameMaster == msg->m_client->m_clientInfo.m_PlayerId) {
+        MOUL::NetMsgGroupOwner* groupMsg = MOUL::NetMsgGroupOwner::Create();
+        groupMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                                 | MOUL::NetMessage::e_IsSystemMessage
+                                 | MOUL::NetMessage::e_NeedsReliableSend;
+        groupMsg->m_timestamp.setNow();
+        groupMsg->m_groups.resize(1);
+        groupMsg->m_groups[0].m_own = true;
+        DM_WRITEMSG(host, groupMsg);
+
+        // This client has already been removed from the map, so we can just
+        // pick the 0th client and call him the new owner :)
+        host->m_clientMutex.lock();
+        if (host->m_clients.size()) {
+            GameClient_Private* newOwner = host->m_clients.begin()->second;
+            host->m_gameMaster = newOwner->m_clientInfo.m_PlayerId;
+            try {
+                DS::CryptSendBuffer(newOwner->m_sock, newOwner->m_crypt,
+                                    host->m_buffer.buffer(), host->m_buffer.size());
+            } catch (...) {
+                fprintf(stderr, "[Game] Ownership transfer to %i from %i failed.",
+                        msg->m_client->m_clientInfo.m_PlayerId, newOwner->m_clientInfo.m_PlayerId);
+                DS_DASSERT(false);
+            }
+        } else
+            host->m_gameMaster = 0;
+        groupMsg->unref();
+        host->m_clientMutex.unlock();
+    }
+    host->m_gmMutex.unlock();
+
     // Good time to write this back to the vault
     Auth_NodeInfo sdlNode;
     AuthClient_Private fakeClient;
@@ -240,17 +273,30 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
         // This doesn't block continuing...
     }
 
+    // Simplified object ownership...
+    // In MOUL, one player owns ALL synched objects
+    // We'll call him the "game master"
     MOUL::NetMsgGroupOwner* groupMsg = MOUL::NetMsgGroupOwner::Create();
     groupMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                              | MOUL::NetMessage::e_IsSystemMessage
                              | MOUL::NetMessage::e_NeedsReliableSend;
     groupMsg->m_timestamp.setNow();
     groupMsg->m_groups.resize(1);
-    groupMsg->m_groups[0].m_own = true;
+    host->m_gmMutex.lock();
+    if (!host->m_gameMaster) {
+        groupMsg->m_groups[0].m_own = true;
+        host->m_gameMaster = msg->m_client->m_clientInfo.m_PlayerId;
+    } else
+        groupMsg->m_groups[0].m_own = false;
+    host->m_gmMutex.unlock();
 
     DM_WRITEMSG(host, groupMsg);
-    DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
+    try {
+        DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
+                            host->m_buffer.buffer(), host->m_buffer.size());
+    } catch (DS::SockHup) {
+        // we'll just let this slide. The client thread will figure it out quickly enough.
+    }
     groupMsg->unref();
 
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
@@ -772,6 +818,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         host->m_instanceId = PQgetvalue(result, 0, 0);
         host->m_ageFilename = PQgetvalue(result, 0, 1);
         host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+        host->m_gameMaster = 0;
         host->m_serverIdx = ageMcpId;
         host->m_postgres = postgres;
         host->m_temp = strcmp("t", PQgetvalue(result, 0, 4)) == 0;

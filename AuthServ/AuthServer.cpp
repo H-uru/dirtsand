@@ -274,8 +274,6 @@ void cb_ageCreate(AuthServer_Private& client)
     msg.m_age.m_description = DS::CryptRecvString(client.m_sock, client.m_crypt);
     msg.m_age.m_seqNumber = DS::CryptRecvValue<int32_t>(client.m_sock, client.m_crypt);
     msg.m_age.m_language = DS::CryptRecvValue<int32_t>(client.m_sock, client.m_crypt);
-    if (msg.m_age.m_ageId.isNull())
-        msg.m_age.m_ageId = gen_uuid();
     s_authChannel.putMessage(e_VaultInitAge, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();

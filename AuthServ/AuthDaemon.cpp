@@ -196,12 +196,17 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
     *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
 
     s_authClientMutex.lock();
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
-        } catch (DS::SockHup) {
-            // Client ignored us.  Return the favor
+    try {
+        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+            try {
+                DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
+            } catch (DS::SockHup) {
+                // Client ignored us.  Return the favor
+            }
         }
+    } catch (...) {
+        s_authClientMutex.unlock();
+        throw;
     }
     s_authClientMutex.unlock();
 }
@@ -215,12 +220,17 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
 
     s_authClientMutex.lock();
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
-        } catch (DS::SockHup) {
-            // Client ignored us.  Return the favor
+    try {
+        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+            try {
+                DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
+            } catch (DS::SockHup) {
+                // Client ignored us.  Return the favor
+            }
         }
+    } catch (...) {
+        s_authClientMutex.unlock();
+        throw;
     }
     s_authClientMutex.unlock();
 }
@@ -233,12 +243,17 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
     *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
 
     s_authClientMutex.lock();
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
-        } catch (DS::SockHup) {
-            // Client ignored us.  Return the favor
+    try {
+        for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+            try {
+                DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
+            } catch (DS::SockHup) {
+                // Client ignored us.  Return the favor
+            }
         }
+    } catch (...) {
+        s_authClientMutex.unlock();
+        throw;
     }
     s_authClientMutex.unlock();
 }
@@ -821,6 +836,19 @@ void dm_authDaemon()
         // This doesn't block continuing...
         DS_DASSERT(false);
     }
+
+    // Mark all public ages as having a current population of ZERO
+    result = PQexec(s_postgres,
+                              "UPDATE game.\"PublicAges\" SET"
+                              "    \"CurrentPopulation\" = 0");
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        // This doesn't block continuing...
+        PQclear(result);
+        DS_DASSERT(false);
+    } else
+        PQclear(result);
 
     for ( ;; ) {
         DS::FifoMessage msg = s_authChannel.getMessage();
