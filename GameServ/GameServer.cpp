@@ -388,4 +388,5 @@ uint32_t DS::GameServer_GetNumClients(Uuid instance)
         if (it->second->m_instanceId == instance)
             return it->second->m_clients.size();
     }
+    return 0;
 }
