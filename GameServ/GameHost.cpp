@@ -621,6 +621,11 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                 ex.m_file, ex.m_line, ex.m_cond);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
+    } catch (std::exception ex) {
+        fprintf(stderr, "[Game] Unknown exception reading message: %s\n",
+                ex.what());
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
     }
 #ifdef DEBUG
     if (!stream.atEof()) {
