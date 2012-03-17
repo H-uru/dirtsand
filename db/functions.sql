@@ -8,7 +8,9 @@ SET client_min_messages = warning;
 SET escape_string_warning = off;
 
 -- [Required] These functions require the plpgsql language --
-CREATE OR REPLACE LANGUAGE plpgsql;
+-- If this line fails, make sure plpgsql isn't already created in the target db
+-- (9.0 and later versions of Postgres support CREATE OR REPLACE LANGUAGE)
+CREATE LANGUAGE plpgsql;
 
 -- [Required] Fetch a complete noderef tree, for the FetchNodeRefs message --
 CREATE OR REPLACE FUNCTION vault.fetch_tree(integer)
