@@ -77,10 +77,12 @@ void game_client_init(GameClient_Private& client)
 
 GameHost_Private* find_game_host(uint32_t ageMcpId)
 {
-    std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
-    hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
-    if (host_iter != s_gameHosts.end())
-        return host_iter->second;
+    {
+        std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
+        hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
+        if (host_iter != s_gameHosts.end())
+            return host_iter->second;
+    }
     return start_game_host(ageMcpId);
 }
 

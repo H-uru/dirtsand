@@ -161,7 +161,7 @@ void wk_gateKeeper(DS::SocketHandle sockp)
     s_clientMutex.lock();
     client.m_sock = sockp;
     s_clients.push_back(&client);
-    s_clientMutex.lock();
+    s_clientMutex.unlock();
 
     try {
         gate_init(client);
