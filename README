@@ -90,8 +90,15 @@ the server settings as described in the "configure dirtsand" step.
 
    $ sudo -u postgres psql -d dirtsand < /path/to/uuid-ossp.sql
 
-   (Example for Ubuntu 10.10)
+   (Example for Ubuntu 10.10 with PostgreSQL 8.4)
    $ sudo -u postgres psql -d dirtsand < /usr/share/postgresql/8.4/contrib/uuid-ossp.sql
+
+   In PostgreSQL 9.x, UUID may be included as an extension, or it may be
+   available from a user repository.  To add it to the Dirtsand database,
+   execute the following command:
+
+   $ sudo -u postgres psql -d dirtsand
+   dirtsand=# CREATE EXTENSION "uuid-ossp";
 
 
 3) Set up the dirtsand database:
