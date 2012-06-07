@@ -22,6 +22,7 @@
 #include "Types/Uuid.h"
 #include "PlasMOUL/factory.h"
 #include "PlasMOUL/NetMessages/NetMsgMembersList.h"
+#include "PlasMOUL/NetMessages/NetMsgLoadClone.h"
 #include "SDL/StateInfo.h"
 #include "db/pqaccess.h"
 #include <unordered_map>
@@ -62,11 +63,13 @@ struct GameHost_Private
     uint32_t m_ageIdx, m_serverIdx;
 
     std::unordered_map<uint32_t, GameClient_Private*> m_clients;
+    std::unordered_map<MOUL::Uoid, MOUL::NetMsgLoadClone*, MOUL::UoidHash> m_clones;
     lockmap_t m_locks;
     uint32_t m_gameMaster;
     std::mutex m_clientMutex;
     std::mutex m_lockMutex;
     std::mutex m_gmMutex;
+    std::mutex m_cloneMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
 
