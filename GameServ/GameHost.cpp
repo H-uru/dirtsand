@@ -61,6 +61,11 @@ void dm_game_shutdown(GameHost_Private* host)
             DS::CloseSock(client_iter->second->m_sock);
     }
 
+    host->m_cloneMutex.lock();
+    for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter)
+        clone_iter->second->unref();
+    host->m_cloneMutex.unlock();
+
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
         host->m_clientMutex.lock();
@@ -400,72 +405,68 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
             fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
     } else if (state->m_isAvatar) {
-        // TODO: Kick the cheater. Ignoring state updates can be dangerous...
-        if (client->m_clientInfo.m_PlayerId != state->m_object.m_clonePlayerId) {
-            fprintf(stderr, "[Game] %s tried to molest someone else's avatar state\n",
-                    client->m_clientInfo.m_PlayerName.c_str());
-            return;
-        }
         if (client->m_states.find(update.descriptor()->m_name) == client->m_states.end())
             client->m_states[update.descriptor()->m_name] = update;
         else
             client->m_states[update.descriptor()->m_name].add(update);
-    } else if (state->m_persistOnServer) {
+    } else {
         sdlstatemap_t::iterator fobj = host->m_states.find(state->m_object);
         if (fobj == host->m_states.end() || fobj->second.find(update.descriptor()->m_name) == fobj->second.end())
             host->m_states[state->m_object][update.descriptor()->m_name] = update;
         else
             host->m_states[state->m_object][update.descriptor()->m_name].add(update);
 
-        check_postgres(host);
+        if (state->m_persistOnServer) {
+            check_postgres(host);
 
-        PostgresStrings<4> parms;
-        host->m_buffer.truncate();
-        state->m_object.write(&host->m_buffer);
-        parms.set(0, host->m_serverIdx);
-        parms.set(1, update.descriptor()->m_name);
-        parms.set(2, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
-        parms.set(3, DS::Base64Encode(state->m_sdlBlob.buffer(), state->m_sdlBlob.size()));
-        PGresult* result = PQexecParams(host->m_postgres,
-            "SELECT idx FROM game.\"AgeStates\""
-            "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
-            3, 0, parms.m_values, 0, 0, 0);
-        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-            PQclear(result);
-            return;
-        }
-        if (PQntuples(result) == 0) {
-            PQclear(result);
-            result = PQexecParams(host->m_postgres,
-                "INSERT INTO game.\"AgeStates\""
-                "    (\"ServerIdx\", \"Descriptor\", \"ObjectKey\", \"SdlBlob\")"
-                "    VALUES ($1, $2, $3, $4)",
-                4, 0, parms.m_values, 0, 0, 0);
-            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-                fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+            PostgresStrings<4> parms;
+            host->m_buffer.truncate();
+            state->m_object.write(&host->m_buffer);
+            parms.set(0, host->m_serverIdx);
+            parms.set(1, update.descriptor()->m_name);
+            parms.set(2, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
+            parms.set(3, DS::Base64Encode(state->m_sdlBlob.buffer(), state->m_sdlBlob.size()));
+            PGresult* result = PQexecParams(host->m_postgres,
+                "SELECT idx FROM game.\"AgeStates\""
+                "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
+                3, 0, parms.m_values, 0, 0, 0);
+            if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+                fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                         __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
                 PQclear(result);
                 return;
             }
-            PQclear(result);
-        } else {
-            DS_DASSERT(PQntuples(result) == 1);
-            parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
-            parms.set(1, parms.m_strings[3]);   // SDL blob
-            PQclear(result);
-            result = PQexecParams(host->m_postgres,
-                "UPDATE game.\"AgeStates\""
-                "    SET \"SdlBlob\"=$2 WHERE idx=$1",
-                2, 0, parms.m_values, 0, 0, 0);
-            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-                fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                        __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            if (PQntuples(result) == 0) {
                 PQclear(result);
-                return;
+                result = PQexecParams(host->m_postgres,
+                    "INSERT INTO game.\"AgeStates\""
+                    "    (\"ServerIdx\", \"Descriptor\", \"ObjectKey\", \"SdlBlob\")"
+                    "    VALUES ($1, $2, $3, $4)",
+                    4, 0, parms.m_values, 0, 0, 0);
+                if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                    fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                            __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+                    PQclear(result);
+                    return;
+                }
+                PQclear(result);
+            } else {
+                DS_DASSERT(PQntuples(result) == 1);
+                parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
+                parms.set(1, parms.m_strings[3]);   // SDL blob
+                PQclear(result);
+                result = PQexecParams(host->m_postgres,
+                    "UPDATE game.\"AgeStates\""
+                    "    SET \"SdlBlob\"=$2 WHERE idx=$1",
+                    2, 0, parms.m_values, 0, 0, 0);
+                if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                    fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                            __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+                    PQclear(result);
+                    return;
+                }
+                PQclear(result);
             }
-            PQclear(result);
         }
     }
 
@@ -538,6 +539,17 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
                         host->m_buffer.buffer(), host->m_buffer.size());
     members->unref();
 
+    // Load non-avatar clones (ie NPC quabs)
+    {
+        std::lock_guard<std::mutex> cloneGuard(host->m_cloneMutex);
+        for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter)
+        {
+            DM_WRITEMSG(host, clone_iter->second);
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                                host->m_buffer.buffer(), host->m_buffer.size());
+        }
+    }
+
     // Load clones for players already in the age
     MOUL::NetMsgLoadClone* cloneMsg = MOUL::NetMsgLoadClone::Create();
     cloneMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
@@ -558,33 +570,35 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     avatarMsg->m_isPlayer = true;
     cloneMsg->m_message = avatarMsg;
 
-    std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
-    for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
-        if (client_iter->second->m_clientInfo.m_PlayerId != client->m_clientInfo.m_PlayerId
-            && !client->m_clientKey.isNull()) {
-            avatarMsg->m_cloneKey = client_iter->second->m_clientKey;
-            avatarMsg->m_originPlayerId = client_iter->second->m_clientInfo.m_PlayerId;
+    {
+        std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
+        for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
+            if (client_iter->second->m_clientInfo.m_PlayerId != client->m_clientInfo.m_PlayerId
+                && !client->m_clientKey.isNull()) {
+                avatarMsg->m_cloneKey = client_iter->second->m_clientKey;
+                avatarMsg->m_originPlayerId = client_iter->second->m_clientInfo.m_PlayerId;
 
-            DM_WRITEMSG(host, cloneMsg);
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size());
-
-            MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
-            state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                                  | MOUL::NetMessage::e_NeedsReliableSend;
-            state->m_timestamp.setNow();
-            // Blame Cyan for these odd flags
-            state->m_isInitial = true;
-            state->m_persistOnServer = true;
-            state->m_isAvatar = false;
-            state->m_object = client_iter->second->m_clientKey;
-            for (auto sdl_iter = client_iter->second->m_states.begin(); sdl_iter != client_iter->second->m_states.end(); ++sdl_iter) {
-                state->m_sdlBlob = sdl_iter->second.toBlob();
-                DM_WRITEMSG(host, state);
+                DM_WRITEMSG(host, cloneMsg);
                 DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                                     host->m_buffer.buffer(), host->m_buffer.size());
+
+                MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
+                state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
+                                    | MOUL::NetMessage::e_NeedsReliableSend;
+                state->m_timestamp.setNow();
+                // Blame Cyan for these odd flags
+                state->m_isInitial = true;
+                state->m_persistOnServer = true;
+                state->m_isAvatar = false;
+                state->m_object = client_iter->second->m_clientKey;
+                for (auto sdl_iter = client_iter->second->m_states.begin(); sdl_iter != client_iter->second->m_states.end(); ++sdl_iter) {
+                    state->m_sdlBlob = sdl_iter->second.toBlob();
+                    DM_WRITEMSG(host, state);
+                    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                                        host->m_buffer.buffer(), host->m_buffer.size());
+                }
+                state->unref();
             }
-            state->unref();
         }
     }
     cloneMsg->unref();
@@ -596,11 +610,32 @@ void dm_load_clone(GameHost_Private* host, GameClient_Private* client,
     MOUL::LoadCloneMsg* msg = netmsg->m_message->Cast<MOUL::LoadCloneMsg>();
     if (msg->makeSafeForNet())
     {
-        host->m_clientMutex.lock();
-        client->m_clientKey = netmsg->m_object;
         if (netmsg->m_isPlayer)
+        {
+            host->m_clientMutex.lock();
+            client->m_clientKey = netmsg->m_object;
             client->m_isLoaded = netmsg->m_isLoading;
-        host->m_clientMutex.unlock();
+            host->m_clientMutex.unlock();
+        }
+        else
+        {
+            std::lock_guard<std::mutex> cloneGuard(host->m_cloneMutex);
+            auto it = host->m_clones.find(netmsg->m_object);
+            if (it != host->m_clones.end())
+            {
+                it->second->unref();
+                // If, for some reason, the client decides to send a dupe (it can happen...)
+                if (netmsg->m_isLoading)
+                    host->m_clones[netmsg->m_object] = netmsg;
+                else
+                    host->m_clones.erase(it);
+            }
+            else if (netmsg->m_isLoading)
+            {
+                netmsg->ref();
+                host->m_clones[netmsg->m_object] = netmsg;
+            }
+        }
         dm_propagate(host, netmsg, client->m_clientInfo.m_PlayerId);
     }
 }
