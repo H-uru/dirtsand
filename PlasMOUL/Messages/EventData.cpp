@@ -135,7 +135,16 @@ void MOUL::VariableEventData::read(DS::Stream* stream)
 {
     m_name = stream->readSafeString();
     m_dataType = stream->read<uint32_t>();
-    m_number = stream->read<float>();
+    switch(m_dataType) {
+    case e_DataFloat:
+        m_number.f = stream->read<float>();
+        break;
+    case e_DataInt:
+        m_number.i = stream->read<uint32_t>();
+        break;
+    default:
+        stream->read<uint32_t>();
+    }
     m_key.read(stream);
 }
 
@@ -143,7 +152,16 @@ void MOUL::VariableEventData::write(DS::Stream* stream)
 {
     stream->writeSafeString(m_name);
     stream->write<uint32_t>(m_dataType);
-    stream->write<float>(m_number);
+    switch(m_dataType) {
+    case e_DataFloat:
+        stream->write<float>(m_number.f);
+        break;
+    case e_DataInt:
+        stream->write<uint32_t>(m_number.i);
+        break;
+    default:
+        stream->write<uint32_t>(0);
+    }
     m_key.write(stream);
 }
 
