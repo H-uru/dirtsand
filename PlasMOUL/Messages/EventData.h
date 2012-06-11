@@ -33,7 +33,9 @@ namespace MOUL
         e_EvtClimbingBlockerHit, e_EvtNone
     };
 
-    enum EventDataType { e_DataNumber, e_DataKey, e_DataNone };
+    enum EventDataType {
+        e_DataFloat, e_DataKey, e_DataInt, e_DataNull, e_DataNone
+    };
 
     class EventData
     {
@@ -97,11 +99,14 @@ namespace MOUL
     {
     public:
         VariableEventData()
-            : EventData(e_EvtVariable), m_dataType(e_DataNone), m_number(0) { }
+            : EventData(e_EvtVariable), m_dataType(e_DataNone), m_number() { }
 
         int m_dataType;
         DS::String m_name;
-        float m_number;
+        union {
+            float f;
+            uint32_t i;
+        } m_number;
         Key m_key;
 
     protected:
