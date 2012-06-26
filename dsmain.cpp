@@ -31,6 +31,7 @@
 #include <history.h>
 #include <signal.h>
 #include <execinfo.h>
+#include <unistd.h>
 #include <cstdio>
 
 #ifdef DEBUG
@@ -118,7 +119,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "You must NOT run this server as root!\n");
         return 1;
     }
-    
+
     if (argc == 1) {
         fprintf(stderr, "Warning: No config file specified. Using defaults...\n");
         DS::Settings::UseDefaults();
