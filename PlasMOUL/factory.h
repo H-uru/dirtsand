@@ -43,7 +43,7 @@ namespace MOUL
                 cre_t* result = obj->Cast<cre_t>();
 #ifdef DEBUG
                 if (!result) {
-                    fprintf(stderr, "Error: Cast did not match expected type\n");
+                    fputs("Error: Cast did not match expected type\n", stderr);
                     fprintf(stderr, "    FROM %s ; TO %s\n",
                             typeid(*obj).name(), typeid(cre_t).name());
                 }

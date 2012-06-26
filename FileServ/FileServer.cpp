@@ -362,14 +362,14 @@ void DS::FileServer_Shutdown()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
-        fprintf(stderr, "[File] Clients didn't die after 5 seconds!\n");
+        fputs("[File] Clients didn't die after 5 seconds!\n", stderr);
 }
 
 void DS::FileServer_DisplayClients()
 {
     std::lock_guard<std::mutex> clientGuard(s_clientMutex);
     if (s_clients.size())
-        printf("File Server:\n");
+        puts("File Server:\n");
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
 }

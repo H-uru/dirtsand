@@ -79,7 +79,7 @@ void dm_auth_shutdown()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
-        fprintf(stderr, "[Auth] Clients didn't die after 5 seconds!\n");
+        fputs("[Auth] Clients didn't die after 5 seconds!\n", stderr);
 
     PQfinish(s_postgres);
 }
@@ -801,7 +801,7 @@ void dm_authDaemon()
     }
 
     if (!dm_vault_init()) {
-        fprintf(stderr, "[Auth] Vault failed to initialize\n");
+        fputs("[Auth] Vault failed to initialize\n", stderr);
         return;
     }
 

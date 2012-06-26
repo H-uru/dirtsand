@@ -57,14 +57,14 @@ void DS::GenPrimeKeys(uint8_t* K, uint8_t* N)
 
     while (BN_num_bytes(bn_key) != 64) {
         BN_generate_prime(bn_key, 512, 1, 0, 0, 0, 0);
-        printf(".");
+        putc('.', stdout);
         fflush(stdout);
     }
     BN_bn2bin(bn_key, reinterpret_cast<unsigned char*>(K));
     BN_set_word(bn_key, 0);
     while (BN_num_bytes(bn_key) != 64) {
         BN_generate_prime(bn_key, 512, 1, 0, 0, 0, 0);
-        printf(".");
+        putc('.', stdout);
         fflush(stdout);
     }
     BN_bn2bin(bn_key, reinterpret_cast<unsigned char*>(N));
@@ -163,12 +163,12 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         printf("SEND TO %s", DS::SockIpAddress(sock).c_str());
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
-                printf("\n    ");
+                puts("\n    ");
             else if ((i % 16) == 8)
-                printf("   ");
+                puts("   ");
             printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
-        printf("\n");
+        puts("\n");
     }
 #endif
 
@@ -214,12 +214,12 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         printf("RECV FROM %s", DS::SockIpAddress(sock).c_str());
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
-                printf("\n    ");
+                puts("\n    ");
             else if ((i % 16) == 8)
-                printf("   ");
+                puts("   ");
             printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
-        printf("\n");
+        puts("\n");
     }
 #endif
 }

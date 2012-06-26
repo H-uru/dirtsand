@@ -40,8 +40,8 @@ bool SDL::Parser::open(const char* filename)
     if (memcmp(sanitycheck, "whatdoyousee", 12) == 0
         || memcmp(sanitycheck, "notthedroids", 12) == 0
         || memcmp(sanitycheck, "BriceIsSmart", 12) == 0) {
-        fprintf(stderr, "[SDL] Error: DirtSand does not support encrypted SDL sources\n");
-        fprintf(stderr, "[SDL] Please decrypt your SDL files and re-start DirtSand\n");
+        fputs("[SDL] Error: DirtSand does not support encrypted SDL sources\n", stderr);
+        fputs("[SDL] Please decrypt your SDL files and re-start DirtSand\n", stderr);
         fprintf(stderr, "[SDL] Error in file: %s\n", filename);
         return false;
     }

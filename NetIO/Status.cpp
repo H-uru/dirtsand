@@ -106,7 +106,7 @@ void dm_htserv()
                 continue;
             }
             if (action.size() < 3 || action[2] != "HTTP/1.1") {
-                fprintf(stderr, "[Status] Unsupported HTTP Version\n");
+                fputs("[Status] Unsupported HTTP Version\n", stderr);
                 DS::FreeSock(client);
                 continue;
             }

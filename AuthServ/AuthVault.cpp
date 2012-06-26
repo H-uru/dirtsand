@@ -296,7 +296,7 @@ bool dm_vault_init()
     if (count == 0) {
         PQclear(result);
 
-        fprintf(stderr, "[Vault] Initializing empty DirtSand vault\n");
+        fputs("[Vault] Initializing empty DirtSand vault\n", stderr);
 
         // Create system and global inbox nodes
         DS::Vault::Node node;

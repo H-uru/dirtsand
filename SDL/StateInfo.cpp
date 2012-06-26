@@ -534,7 +534,7 @@ void SDL::Variable::debug()
             fprintf(stderr, "%f", m_data->m_float[i]);
             break;
         case e_VarBool:
-            fprintf(stderr, m_data->m_bool[i] ? "true" : "false");
+            fputs(m_data->m_bool[i] ? "true" : "false", stderr);
             break;
         case e_VarString:
             fprintf(stderr, "\"%s\"", m_data->m_string[i].c_str());
@@ -585,17 +585,17 @@ void SDL::Variable::debug()
                     m_data->m_color8[i].m_A);
             break;
         case e_VarStateDesc:
-            fprintf(stderr, "<STATEDESC>\n");
+            fputs("<STATEDESC>\n", stderr);
             m_data->m_child[i].debug();
-            fprintf(stderr, "</STATEDESC>");
+            fputs("</STATEDESC>", stderr);
             break;
         default:
             break;
         }
         if (i + 1 < m_data->m_size)
-            fprintf(stderr, ", ");
+            fputs(", ", stderr);
         else
-            fprintf(stderr, "\n");
+            fputs("\n", stderr);
     }
 }
 #endif

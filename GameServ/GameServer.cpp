@@ -164,15 +164,15 @@ void cb_gameMgrMsg(GameClient_Private& client)
     uint8_t* buffer = new uint8_t[size];
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
 
-    printf("GAME MGR MSG");
+    puts("GAME MGR MSG");
     for (size_t i=0; i<size; ++i) {
         if ((i % 16) == 0)
-            printf("\n    ");
+            puts("\n    ");
         else if ((i % 16) == 8)
-            printf("   ");
+            puts("   ");
         printf("%02X ", buffer[i]);
     }
-    printf("\n");
+    puts("\n");
     delete[] buffer;
 }
 
@@ -286,7 +286,7 @@ void DS::GameServer_Init()
     if (count < 0) {
         fprintf(stderr, "[Game] Error reading age descriptors: %s\n", strerror(errno));
     } else if (count == 0) {
-        fprintf(stderr, "[Game] Warning: No age descriptors found!\n");
+        fputs("[Game] Warning: No age descriptors found!\n", stderr);
         free(dirls);
     } else {
         for (int i=0; i<count; ++i) {
@@ -297,7 +297,7 @@ void DS::GameServer_Init()
                 fread(magic, 1, 12, ageFile);
                 if (memcmp(magic, "whatdoyousee", 12) == 0 || memcmp(magic, "notthedroids", 12) == 0
                     || memcmp(magic, "BriceIsSmart", 12) == 0) {
-                    fprintf(stderr, "[Game] Error: Please decrypt your .age files before using!\n");
+                    fputs("[Game] Error: Please decrypt your .age files before using!\n", stderr);
                     break;
                 }
                 fseek(ageFile, 0, SEEK_SET);
@@ -345,7 +345,7 @@ void DS::GameServer_Shutdown()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
-        fprintf(stderr, "[Game] Servers didn't die after 5 seconds!\n");
+        fputs("[Game] Servers didn't die after 5 seconds!\n", stderr);
 }
 
 bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId)
@@ -370,7 +370,7 @@ void DS::GameServer_DisplayClients()
 {
     std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
     if (s_gameHosts.size())
-        printf("Game Servers:\n");
+        puts("Game Servers:\n");
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
          host_iter != s_gameHosts.end(); ++host_iter) {
         printf("    %s {%s}\n", host_iter->second->m_ageFilename.c_str(),

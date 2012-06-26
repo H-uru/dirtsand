@@ -239,14 +239,14 @@ void DS::GateKeeper_Shutdown()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
-        fprintf(stderr, "[GateKeeper] Clients didn't die after 5 seconds!\n");
+        fputs("[GateKeeper] Clients didn't die after 5 seconds!\n", stderr);
 }
 
 void DS::GateKeeper_DisplayClients()
 {
     std::lock_guard<std::mutex> clientGuard(s_clientMutex);
     if (s_clients.size())
-        printf("Gate Keeper:\n");
+        puts("Gate Keeper:\n");
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
 }

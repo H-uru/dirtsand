@@ -38,7 +38,7 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
         return false;
     }
     if (count == 0) {
-        fprintf(stderr, "[SDL] Warning: No SDL descriptors found!\n");
+        fputs("[SDL] Warning: No SDL descriptors found!\n", stderr);
         free(dirls);
         return true;
     }

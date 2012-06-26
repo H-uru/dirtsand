@@ -76,7 +76,7 @@ void dm_game_shutdown(GameHost_Private* host)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     if (!complete)
-        fprintf(stderr, "[Game] Clients didn't die after 5 seconds!\n");
+        fputs("[Game] Clients didn't die after 5 seconds!\n", stderr);
 
     s_gameHostMutex.lock();
     hostmap_t::iterator host_iter = s_gameHosts.begin();
@@ -238,7 +238,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     sdlNode.m_node.set_Blob_1(host->m_vaultState.toBlob());
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
-        fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
+        fputs("[Game] Error writing SDL node back to vault\n", stderr);
 
     // Update public ages table
     PostgresStrings<1> parms;
@@ -383,7 +383,7 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
     try {
         update = SDL::State::FromBlob(state->m_sdlBlob);
     } catch (DS::EofException) {
-        fprintf(stderr, "[SDL] Error parsing state\n");
+        fputs("[SDL] Error parsing state\n", stderr);
         return;
     }
 
@@ -403,7 +403,7 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         sdlNode.m_revision = DS::Uuid();
         s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
         if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
-            fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
+            fputs("[Game] Error writing SDL node back to vault\n", stderr);
     } else if (state->m_isAvatar) {
         if (client->m_states.find(update.descriptor()->m_name) == client->m_states.end())
             client->m_states[update.descriptor()->m_name] = update;
@@ -744,7 +744,7 @@ void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
     sdlNode.m_revision = DS::Uuid();
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
-        fprintf(stderr, "[Game] Error writing SDL node back to vault\n");
+        fputs("[Game] Error writing SDL node back to vault\n", stderr);
 
     Game_AgeInfo info = s_ages[host->m_ageFilename];
 
@@ -870,7 +870,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             s_authChannel.putMessage(e_VaultFetchNode, reinterpret_cast<void*>(&sdlFind));
             DS::FifoMessage reply = fakeClient.m_channel.getMessage();
             if (reply.m_messageType != DS::e_NetSuccess) {
-                fprintf(stderr, "[Game] Error fetching Age SDL\n");
+                fputs("[Game] Error fetching Age SDL\n", stderr);
                 PQclear(result);
                 PQfinish(postgres);
                 delete host;

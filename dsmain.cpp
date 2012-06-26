@@ -116,12 +116,12 @@ int main(int argc, char* argv[])
 {
     // refuse to run as root
     if (geteuid() == 0) {
-        fprintf(stderr, "You must NOT run this server as root!\n");
+        fputs("Do not run this server as root!\n", stderr);
         return 1;
     }
 
     if (argc == 1) {
-        fprintf(stderr, "Warning: No config file specified. Using defaults...\n");
+        fputs("Warning: No config file specified. Using defaults...\n", stderr);
         DS::Settings::UseDefaults();
     } else if (!DS::Settings::LoadFrom(argv[1])) {
         return 1;
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
         cmdbuf = readline(rl_prompt);
         if (!cmdbuf) {
             // Get us out of the prompt
-            printf("\n");
+            puts("\n");
             break;
         }
 
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
             break;
         } else if (args[0] == "restart") {
             if (args.size() < 2) {
-                fprintf(stderr, "Error: No services specified\n");
+                fputs("Error: No services specified\n", stderr);
                 continue;
             }
             for (auto svc = args.begin() + 1; svc != args.end(); ++svc) {
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
                 } else if (*svc == "auth") {
                     DS::AuthServer_Shutdown();
                     DS::AuthServer_Init();
-                    printf("Auth server restarted\n");
+                    puts("Auth server restarted\n");
                 } else if (*svc == "status") {
                     DS::StopStatusHTTP();
                     DS::StartStatusHTTP();
@@ -189,16 +189,16 @@ int main(int argc, char* argv[])
         } else if (args[0] == "keygen") {
             uint8_t xbuffer[64];
             if (args.size() != 2) {
-                fprintf(stderr, "Usage:  keygen <new|show>\n");
+                fputs("Usage:  keygen <new|show>\n", stderr);
             } else if (args[1] == "new") {
                 uint8_t nbuffer[3][64], kbuffer[3][64];
-                printf("Generating new server keys...  This will take a while.");
+                puts("Generating new server keys...  This will take a while.");
                 fflush(stdout);
                 for (size_t i=0; i<3; ++i)
                     DS::GenPrimeKeys(nbuffer[i], kbuffer[i]);
 
-                printf("\n--------------------\n");
-                printf("Server keys: (dirtsand.ini)\n");
+                puts("\n--------------------\n");
+                puts("Server keys: (dirtsand.ini)\n");
                 printf("Key.Auth.N = %s\n", DS::Base64Encode(nbuffer[0], 64).c_str());
                 printf("Key.Auth.K = %s\n", DS::Base64Encode(kbuffer[0], 64).c_str());
                 printf("Key.Game.N = %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
@@ -206,8 +206,8 @@ int main(int argc, char* argv[])
                 printf("Key.Gate.N = %s\n", DS::Base64Encode(nbuffer[2], 64).c_str());
                 printf("Key.Gate.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
 
-                printf("--------------------\n");
-                printf("Client keys: (server.ini)\n");
+                puts("--------------------\n");
+                puts("Client keys: (server.ini)\n");
                 DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
                 printf("Server.Auth.N \"%s\"\n", DS::Base64Encode(nbuffer[0], 64).c_str());
                 printf("Server.Auth.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
                 DS::CryptCalcX(xbuffer, nbuffer[2], kbuffer[2], CRYPT_BASE_GATE);
                 printf("Server.Gate.N \"%s\"\n", DS::Base64Encode(nbuffer[2], 64).c_str());
                 printf("Server.Gate.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
-                printf("--------------------\n");
+                puts("--------------------\n");
             } else if (args[1] == "show") {
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
                                DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
                 printf("Server.Gate.N \"%s\"\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyGate_N), 64).c_str());
                 printf("Server.Gate.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
             } else {
-                fprintf(stderr, "Error: keygen parameter should be 'new' or 'show'\n");
+                fputs("Error: keygen parameter should be 'new' or 'show'\n", stderr);
                 continue;
             }
         } else if (args[0] == "clients") {
@@ -249,27 +249,27 @@ int main(int argc, char* argv[])
             else if (args[1] == "off")
                 s_commdebug = false;
             else
-                fprintf(stderr, "Error: must specify on or off\n");
+                fputs("Error: must specify on or off\n", stderr);
 #else
-            fprintf(stderr, "Error: COMM debugging is only enabled in debug builds\n");
+            fputs("Error: COMM debugging is only enabled in debug builds\n", stderr);
 #endif
         } else if (args[0] == "addacct") {
             if (args.size() != 3)
-                printf("Usage: addacct <user> <password>\n");
+                puts("Usage: addacct <user> <password>\n");
             DS::AuthServer_AddAcct(args[1], args[2]);
         } else if (args[0] == "welcome") {
             DS::Settings::SetWelcomeMsg(cmdbuf + strlen("welcome "));
         } else if (args[0] == "help") {
-            printf("DirtSand v1.0 Console supported commands:\n"
-                   "    addacct <user> <password>\n"
-                   "    clients\n"
-                   "    commdebug <on|off>\n"
-                   "    help\n"
-                   "    keygen <new|show>\n"
-                   "    quit\n"
-                   "    restart <auth|lobby|status> [...]\n"
-                   "    welcome <message>\n"
-                  );
+            puts("DirtSand v1.0 Console supported commands:\n"
+                 "    addacct <user> <password>\n"
+                 "    clients\n"
+                 "    commdebug <on|off>\n"
+                 "    help\n"
+                 "    keygen <new|show>\n"
+                 "    quit\n"
+                 "    restart <auth|lobby|status> [...]\n"
+                 "    welcome <message>\n"
+                 );
         } else {
             fprintf(stderr, "Error: Unrecognized command: %s\n", args[0].c_str());
         }
