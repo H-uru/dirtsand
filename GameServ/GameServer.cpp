@@ -164,15 +164,15 @@ void cb_gameMgrMsg(GameClient_Private& client)
     uint8_t* buffer = new uint8_t[size];
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
 
-    puts("GAME MGR MSG");
+    fputs("GAME MGR MSG", stdout);
     for (size_t i=0; i<size; ++i) {
         if ((i % 16) == 0)
-            puts("\n    ");
+            fputs("\n    ", stdout);
         else if ((i % 16) == 8)
-            puts("   ");
+            fputs("   ", stdout);
         printf("%02X ", buffer[i]);
     }
-    puts("\n");
+    fputc('\n', stdout);
     delete[] buffer;
 }
 
@@ -370,7 +370,7 @@ void DS::GameServer_DisplayClients()
 {
     std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
     if (s_gameHosts.size())
-        puts("Game Servers:\n");
+        fputs("Game Servers:\n", stdout);
     for (hostmap_t::iterator host_iter = s_gameHosts.begin();
          host_iter != s_gameHosts.end(); ++host_iter) {
         printf("    %s {%s}\n", host_iter->second->m_ageFilename.c_str(),

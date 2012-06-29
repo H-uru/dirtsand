@@ -369,7 +369,7 @@ void DS::FileServer_DisplayClients()
 {
     std::lock_guard<std::mutex> clientGuard(s_clientMutex);
     if (s_clients.size())
-        puts("File Server:\n");
+        fputs("File Server:\n", stdout);
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
 }

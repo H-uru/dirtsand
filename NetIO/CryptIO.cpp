@@ -163,12 +163,12 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         printf("SEND TO %s", DS::SockIpAddress(sock).c_str());
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
-                puts("\n    ");
+                fputs("\n    ", stdout);
             else if ((i % 16) == 8)
-                puts("   ");
+                fputs("   ", stdout);
             printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
-        puts("\n");
+        fputc('\n', stdout);
     }
 #endif
 
@@ -214,12 +214,12 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         printf("RECV FROM %s", DS::SockIpAddress(sock).c_str());
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
-                puts("\n    ");
+                fputs("\n    ", stdout);
             else if ((i % 16) == 8)
-                puts("   ");
+                fputs("   ", stdout);
             printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
-        puts("\n");
+        fputc('\n', stdout);
     }
 #endif
 }

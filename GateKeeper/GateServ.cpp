@@ -246,7 +246,7 @@ void DS::GateKeeper_DisplayClients()
 {
     std::lock_guard<std::mutex> clientGuard(s_clientMutex);
     if (s_clients.size())
-        puts("Gate Keeper:\n");
+        fputs("Gate Keeper:\n", stdout);
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
         printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
 }
