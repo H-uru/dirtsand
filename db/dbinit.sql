@@ -131,6 +131,7 @@ CREATE TABLE "Nodes" (
     "Blob_2" text
 );
 ALTER TABLE vault."Nodes" OWNER TO dirtsand;
+CREATE INDEX PublicAgeList ON vault."Nodes" ("NodeType", "Int32_2", "String64_2");
 CREATE SEQUENCE "Nodes_idx_seq"
     INCREMENT BY 1
     NO MAXVALUE
@@ -161,29 +162,6 @@ CREATE SEQUENCE "Servers_idx_seq"
 ALTER TABLE game."Servers_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Servers_idx_seq" OWNED BY "Servers".idx;
 SELECT pg_catalog.setval('"Servers_idx_seq"', 1, false);
-
-CREATE TABLE "PublicAges" (
-    idx integer NOT NULL,
-    "AgeUuid" uuid NOT NULL,
-    "AgeFilename" character varying(64) NOT NULL,
-    "AgeInstName" character varying(64) NOT NULL,
-    "AgeUserName" character varying(64) NOT NULL,
-    "AgeDesc" character varying(1024) NOT NULL,
-    "SeqNumber" integer NOT NULL,
-    "Language" integer NOT NULL,
-    "CurrentPopulation" integer NOT NULL,
-    "Population" integer NOT NULL
-);
-ALTER TABLE game."PublicAges" OWNER TO dirtsand;
-CREATE SEQUENCE "PublicAges_idx_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MAXVALUE
-    NO MINVALUE
-    CACHE 1;
-ALTER TABLE game."PublicAges_idx_seq" OWNER TO dirtsand;
-ALTER SEQUENCE "PublicAges_idx_seq" OWNED BY "PublicAges".idx;
-SELECT pg_catalog.setval('"PublicAges_idx_seq"', 1, false);
 
 CREATE SEQUENCE "AgeSeqNumber"
     START WITH 1
@@ -235,13 +213,10 @@ ALTER TABLE ONLY "Nodes"
 
 SET search_path = game, pg_catalog;
 ALTER TABLE "Servers" ALTER COLUMN idx SET DEFAULT nextval('"Servers_idx_seq"'::regclass);
-ALTER TABLE "PublicAges" ALTER COLUMN idx SET DEFAULT nextval('"PublicAges_idx_seq"'::regclass);
 ALTER TABLE "AgeStates" ALTER COLUMN idx SET DEFAULT nextval('"AgeStates_idx_seq"'::regclass);
 
 ALTER TABLE ONLY "Servers"
     ADD CONSTRAINT "Servers_pkey" PRIMARY KEY (idx);
-ALTER TABLE ONLY "PublicAges"
-    ADD CONSTRAINT "PublicAges_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "AgeStates"
     ADD CONSTRAINT "AgeStates_pkey" PRIMARY KEY (idx);
 

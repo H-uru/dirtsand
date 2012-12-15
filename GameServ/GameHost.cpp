@@ -240,20 +240,6 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
         fputs("[Game] Error writing SDL node back to vault\n", stderr);
 
-    // Update public ages table
-    PostgresStrings<1> parms;
-    parms.set(0, host->m_instanceId.toString());
-    PGresult* result = PQexecParams(host->m_postgres,
-                                    "UPDATE game.\"PublicAges\" SET"
-                                    "    \"CurrentPopulation\" = \"CurrentPopulation\" - 1"
-                                    "    WHERE \"AgeUuid\" = $1",
-                                    1, 0, parms.m_values, 0, 0, 0);
-    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-        // This doesn't block continuing...
-    }
-
     // TODO: This should probably respect the age's LingerTime
     //       As it is, there might be a race condition if another player is
     //       joining just as the last player is leaving.
@@ -263,20 +249,6 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 
 void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
 {
-    // Update public ages table
-    PostgresStrings<1> parms;
-    parms.set(0, host->m_instanceId.toString());
-    PGresult* result = PQexecParams(host->m_postgres,
-                                    "UPDATE game.\"PublicAges\" SET"
-                                    "    \"CurrentPopulation\" = \"CurrentPopulation\" + 1"
-                                    "    WHERE \"AgeUuid\" = $1",
-                                    1, 0, parms.m_values, 0, 0, 0);
-    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-        // This doesn't block continuing...
-    }
-
     // Simplified object ownership...
     // In MOUL, one player owns ALL synched objects
     // We'll call him the "game master"

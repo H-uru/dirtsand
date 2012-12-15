@@ -77,14 +77,12 @@ $BODY$
 SELECT setval('vault."Nodes_idx_seq"', 10001, false);
 SELECT setval('vault."NodeRefs_idx_seq"', 1, false);
 SELECT setval('game."Servers_idx_seq"', 1, false);
-SELECT setval('game."PublicAges_idx_seq"', 1, false);
 SELECT setval('game."AgeSeqNumber"', 1, false);
 SELECT setval('game."AgeStates_idx_seq"', 1, false);
 SELECT setval('auth."Players_idx_seq"', 1, false);
 DELETE FROM vault."Nodes";
 DELETE FROM vault."NodeRefs";
 DELETE FROM game."Servers";
-DELETE FROM game."PublicAges";
 DELETE FROM game."AgeStates";
 DELETE FROM auth."Players";
 $BODY$
