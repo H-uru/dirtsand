@@ -841,6 +841,51 @@ void dm_auth_getScores(Auth_GetScores* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_addScorePoints(Auth_UpdateScore* msg)
+{
+    PostgresStrings<3> parms;
+    parms.set(0, msg->m_scoreId);
+    PGresult* result = PQexecParams(s_postgres,
+                                   "SELECT \"Type\" FROM auth.\"Scores\" WHERE idx=$1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) != 1) {
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
+        return;
+    }
+    uint32_t scoreType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+    if (scoreType == Auth_UpdateScore::e_Fixed) {
+        SEND_REPLY(msg, DS::e_NetScoreWrongType);
+        return;
+    }
+
+    // Passed all sanity checks, update score.
+    parms.set(1, msg->m_points);
+    parms.set(2, (uint32_t)(scoreType == Auth_UpdateScore::e_Golf));
+    result = PQexecParams(s_postgres,
+                          "SELECT auth.add_score_points($1, $2, $3);",
+                          3, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+    } else {
+        // the prepared statement returns a result, but the op always succeeds
+        // to some degree, so let's pretend everything is hunky-dory
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetSuccess);
+    }
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -1044,6 +1089,9 @@ void dm_authDaemon()
                 break;
             case e_AuthGetScores:
                 dm_auth_getScores(reinterpret_cast<Auth_GetScores*>(msg.m_payload));
+                break;
+            case e_AuthAddScorePoints:
+                dm_auth_addScorePoints(reinterpret_cast<Auth_UpdateScore*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

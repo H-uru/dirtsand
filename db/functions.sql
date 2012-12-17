@@ -95,6 +95,32 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION auth.create_score(IN integer, IN integer, IN character varying, IN integer) OWNER TO dirtsand;
 
+-- [Required] Adds points to a score--
+-- This is necessary because some scores must be constrained to positive values --
+-- Please note that you are responsible for ensuring the score exists! --
+CREATE OR REPLACE FUNCTION auth.add_score_points(integer, integer, boolean)
+RETURNS boolean AS
+$BODY$
+DECLARE
+    scoreId ALIAS FOR $1;
+    points ALIAS FOR $2;
+    allowNegative ALIAS FOR $3;
+
+    dbPoints integer DEFAULT 0;
+BEGIN
+    SELECT "Points" FROM auth."Scores" WHERE idx = scoreId LIMIT 1 FOR UPDATE INTO dbPoints;
+    IF (dbPoints + points >= 0) OR allowNegative THEN
+        UPDATE auth."Scores" SET "Points"="Points"+points WHERE idx=scoreId;
+        RETURN TRUE;
+    ELSE
+        UPDATE auth."Scores" SET "Points"=0 idx=scoreId;
+        RETURN FALSE; /* Indicates that we ran out of points */
+    END IF;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+ALTER FUNCTION auth.add_score_points_score(IN integer, IN integer, IN boolean) OWNER TO dirtsand;
+
 
 -- [Optional] Utility to clear an entire vault --
 CREATE OR REPLACE FUNCTION clear_vault() RETURNS void AS

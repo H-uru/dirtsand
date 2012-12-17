@@ -72,7 +72,7 @@ enum AuthDaemonMessages
     e_VaultRefNode, e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode,
     e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
     e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic, e_AuthCreateScore,
-    e_AuthGetScores
+    e_AuthGetScores, e_AuthAddScorePoints
 };
 
 struct Auth_AccountInfo
@@ -176,8 +176,6 @@ struct Auth_SetPublic : public Auth_ClientMessage
 
 struct Auth_CreateScore : public Auth_ClientMessage
 {
-    enum { e_Fixed, e_Football, e_Golf };
-
     uint32_t m_scoreId;
     uint32_t m_owner;
     DS::String m_name;
@@ -202,6 +200,13 @@ struct Auth_GetScores : public Auth_ClientMessage
     uint32_t m_owner;
     DS::String m_name;
     std::vector<GameScore> m_scores; // there should only ever be one in DS
+};
+
+struct Auth_UpdateScore : public Auth_ClientMessage
+{
+    enum { e_Fixed, e_Football, e_Golf };
+    uint32_t m_scoreId;
+    int32_t m_points;
 };
 
 DS::Blob gen_default_sdl(const DS::String& filename);
