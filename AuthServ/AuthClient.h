@@ -71,7 +71,8 @@ enum AuthDaemonMessages
     e_AuthDeletePlayer, e_VaultCreateNode, e_VaultFetchNode, e_VaultUpdateNode,
     e_VaultRefNode, e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode,
     e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
-    e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic
+    e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic, e_AuthCreateScore,
+    e_AuthGetScores
 };
 
 struct Auth_AccountInfo
@@ -171,6 +172,36 @@ struct Auth_SetPublic : public Auth_ClientMessage
 {
     uint32_t m_node;
     uint8_t m_public;
+};
+
+struct Auth_CreateScore : public Auth_ClientMessage
+{
+    enum { e_Fixed, e_Football, e_Golf };
+
+    uint32_t m_scoreId;
+    uint32_t m_owner;
+    DS::String m_name;
+    uint32_t m_type;
+    int32_t m_points;
+};
+
+struct Auth_GetScores : public Auth_ClientMessage
+{
+    struct GameScore
+    {
+        // Plus number of bytes in the name!
+        enum { BaseStride = 0x18 };
+
+        uint32_t m_scoreId;
+        uint32_t m_owner;
+        uint32_t m_createTime;
+        uint32_t m_type;
+        int32_t m_points;
+    };
+
+    uint32_t m_owner;
+    DS::String m_name;
+    std::vector<GameScore> m_scores; // there should only ever be one in DS
 };
 
 DS::Blob gen_default_sdl(const DS::String& filename);

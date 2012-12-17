@@ -71,6 +71,31 @@ LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION vault.find_folder(IN integer, IN integer) OWNER TO dirtsand;
 
 
+-- [Required] Create a new score--
+-- This prevents score creation race conditions --
+CREATE OR REPLACE FUNCTION auth.create_score(integer, integer, character varying, integer)
+RETURNS integer AS
+$BODY$
+DECLARE
+    ownerId ALIAS FOR $1;
+    type ALIAS FOR $2;
+    name ALIAS FOR $3;
+    points ALIAS FOR $4;
+
+    scoreId integer DEFAULT -1;
+BEGIN
+    IF (SELECT COUNT(*) FROM auth."Scores" WHERE "OwnerIdx"=ownerId AND "Name"=name) < 1 THEN
+        INSERT INTO auth."Scores" ("OwnerIdx", "CreateTime", "Type", "Name", "Points")
+        VALUES (ownerId, EXTRACT(EPOCH FROM NOW()), type, name, points)
+        RETURNING idx INTO scoreId;
+    END IF;
+    RETURN scoreId;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+ALTER FUNCTION auth.create_score(IN integer, IN integer, IN character varying, IN integer) OWNER TO dirtsand;
+
+
 -- [Optional] Utility to clear an entire vault --
 CREATE OR REPLACE FUNCTION clear_vault() RETURNS void AS
 $BODY$
@@ -81,12 +106,14 @@ SELECT setval('game."PublicAges_idx_seq"', 1, false);
 SELECT setval('game."AgeSeqNumber"', 1, false);
 SELECT setval('game."AgeStates_idx_seq"', 1, false);
 SELECT setval('auth."Players_idx_seq"', 1, false);
+SELECT setval('auth."Scores_idx_seq"', 1, false);
 DELETE FROM vault."Nodes";
 DELETE FROM vault."NodeRefs";
 DELETE FROM game."Servers";
 DELETE FROM game."PublicAges";
 DELETE FROM game."AgeStates";
 DELETE FROM auth."Players";
+DELETE FROM auth."Scores";
 $BODY$
 LANGUAGE 'sql' VOLATILE;
 ALTER FUNCTION clear_vault() OWNER TO dirtsand;
