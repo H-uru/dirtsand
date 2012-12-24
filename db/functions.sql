@@ -122,6 +122,32 @@ LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION auth.add_score_points_score(IN integer, IN integer, IN boolean) OWNER TO dirtsand;
 
 
+--- [Required] Transfers points from one score to another ---
+CREATE OR REPLACE FUNCTION auth.transfer_score_points(integer, integer, integer, boolean)
+RETURNS boolean AS
+$BODY$
+DECLARE
+    srcScoreId ALIAS FOR $1;
+    dstScoreId ALIAS FOR $2;
+    numPoints ALIAS FOR $3;
+    allowNegative ALIAS FOR $4;
+
+    dbPoints integer DEFAULT 0;
+BEGIN
+    SELECT "Points" FROM auth."Scores" WHERE idx = srcScoreId LIMIT 1 FOR UPDATE INTO dbPoints;
+    IF (dbPoints - numPoints >= 0) OR allowNegative THEN
+        UPDATE auth."Scores" SET "Points"="Points"-numPoints WHERE idx=srcScoreId;
+        UPDATE auth."Scores" SET "Points"="Points"+numPoints WHERE idx=dstScoreId;
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+ALTER FUNCTION auth.transfer_score_points(IN integer, IN integer, IN integer, IN boolean) OWNER TO dirtsand;
+
+
 -- [Optional] Utility to clear an entire vault --
 CREATE OR REPLACE FUNCTION clear_vault() RETURNS void AS
 $BODY$

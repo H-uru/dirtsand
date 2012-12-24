@@ -751,6 +751,24 @@ void cb_scoreAddPoints(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_scoreTransferPoints(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_ScoreAddPointsReply);
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+
+    Auth_TransferScore msg;
+    msg.m_client = &client;
+    msg.m_srcScoreId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_dstScoreId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_points = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthTransferScorePoints, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    SEND_REPLY();
+}
+
 void cb_getPublicAges(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_PublicAgeList);
@@ -919,6 +937,9 @@ void wk_authWorker(DS::SocketHandle sockp)
                 break;
             case e_CliToAuth_ScoreAddPoints:
                 cb_scoreAddPoints(client);
+                break;
+            case e_CliToAuth_ScoreTransferPoints:
+                cb_scoreTransferPoints(client);
                 break;
             case e_CliToAuth_GetPublicAgeList:
                 cb_getPublicAges(client);

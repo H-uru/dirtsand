@@ -886,6 +886,54 @@ void dm_auth_addScorePoints(Auth_UpdateScore* msg)
     }
 }
 
+void dm_auth_transferScorePoints(Auth_TransferScore* msg)
+{
+    PostgresStrings<4> parms;
+    parms.set(0, msg->m_srcScoreId);
+    parms.set(1, msg->m_dstScoreId);
+    PGresult* result = PQexecParams(s_postgres,
+                       "SELECT \"Type\" FROM auth.\"Scores\""
+                       "    WHERE idx=$1 OR idx=$2",
+                       2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    } else if (PQntuples(result) != 2) {
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
+        return;
+    }
+    uint32_t srcType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t dstType = strtoul(PQgetvalue(result, 1, 0), 0, 10);
+    bool allowNegative = false;
+    PQclear(result);
+    if (srcType == Auth_UpdateScore::e_Fixed || dstType == Auth_UpdateScore::e_Fixed) {
+        SEND_REPLY(msg, DS::e_NetScoreWrongType);
+        return;
+    }
+    if (srcType == Auth_UpdateScore::e_Golf && dstType == Auth_UpdateScore::e_Golf) {
+        allowNegative = true;
+    }
+    parms.set(2, msg->m_points);
+    parms.set(3, static_cast<uint32_t>(allowNegative));
+    result = PQexecParams(s_postgres,
+             "SELECT auth.transfer_score_points($1, $2, $3, $4)",
+             4, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    uint32_t status = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+    SEND_REPLY(msg, (status != 0) ? DS::e_NetSuccess : DS::e_NetScoreNotEnoughPoints);
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -1092,6 +1140,9 @@ void dm_authDaemon()
                 break;
             case e_AuthAddScorePoints:
                 dm_auth_addScorePoints(reinterpret_cast<Auth_UpdateScore*>(msg.m_payload));
+                break;
+            case e_AuthTransferScorePoints:
+                dm_auth_transferScorePoints(reinterpret_cast<Auth_TransferScore*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
