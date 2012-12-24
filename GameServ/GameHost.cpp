@@ -657,8 +657,21 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     } catch (std::exception ex) {
-        fprintf(stderr, "[Game] Unknown exception reading message: %s\n",
-                ex.what());
+        // magickal code to print out the name of the offending plMessage
+        MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
+        if (gameMsg && gameMsg->m_message) {
+            switch (gameMsg->m_message->type()) {
+#define CREATABLE_TYPE(id, name) \
+            case id: \
+                fprintf(stderr, "[Game] Unknown exception reading " #name ": %s\n", ex.what()); \
+                break;
+#include "creatable_types.inl"
+#undef CREATABLE_TYPE
+            }
+        } else {
+            fprintf(stderr, "[Game] Unknown exception reading net message: %s\n",
+                    ex.what());
+        }
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
