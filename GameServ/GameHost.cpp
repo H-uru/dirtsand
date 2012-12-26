@@ -646,17 +646,17 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     MOUL::NetMessage* netmsg = 0;
     try {
         netmsg = MOUL::Factory::Read<MOUL::NetMessage>(&stream);
-    } catch (MOUL::FactoryException) {
+    } catch (const MOUL::FactoryException&) {
         fprintf(stderr, "[Game] Warning: Ignoring message: %04X\n",
                 msg->m_messageType);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
-    } catch (std::exception ex) {
+    } catch (const std::exception& ex) {
         // magickal code to print out the name of the offending plMessage
         MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
         if (gameMsg && gameMsg->m_message) {
