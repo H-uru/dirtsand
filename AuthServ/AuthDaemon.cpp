@@ -703,6 +703,154 @@ void dm_auth_set_pub_priv(Auth_SetPublic* msg)
     SEND_REPLY(msg, result);
 }
 
+void dm_auth_createScore(Auth_CreateScore* msg)
+{
+    PostgresStrings<4> parms;
+    parms.set(0, msg->m_owner);
+    parms.set(1, msg->m_type);
+    parms.set(2, msg->m_name);
+    parms.set(3, msg->m_points);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT auth.create_score($1, $2, $3, $4);",
+                                    4, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    msg->m_scoreId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+    if (msg->m_scoreId == static_cast<uint32_t>(-1))
+        SEND_REPLY(msg, DS::e_NetScoreAlreadyExists);
+    else
+        SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
+void dm_auth_getScores(Auth_GetScores* msg)
+{
+    PostgresStrings<2> parms;
+    parms.set(0, msg->m_owner);
+    parms.set(1, msg->m_name);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT idx, \"CreateTime\", \"Type\", \"Points\""
+                                    "    FROM auth.\"Scores\" WHERE \"OwnerIdx\"=$1 AND"
+                                    "    \"Name\"=$2",
+                                    2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    msg->m_scores.reserve(PQntuples(result));
+    for (int i = 0; i < PQntuples(result); ++i) {
+        Auth_GetScores::GameScore score;
+        score.m_scoreId = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        score.m_createTime = strtoul(PQgetvalue(result, i, 1), 0, 10);
+        score.m_type = strtoul(PQgetvalue(result, i, 2), 0, 10);
+        score.m_points = strtoul(PQgetvalue(result, i, 3), 0, 10);
+        msg->m_scores.push_back(score);
+    }
+    PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
+void dm_auth_addScorePoints(Auth_UpdateScore* msg)
+{
+    PostgresStrings<3> parms;
+    parms.set(0, msg->m_scoreId);
+    PGresult* result = PQexecParams(s_postgres,
+                                   "SELECT \"Type\" FROM auth.\"Scores\" WHERE idx=$1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) != 1) {
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
+        return;
+    }
+    uint32_t scoreType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+    if (scoreType == Auth_UpdateScore::e_Fixed) {
+        SEND_REPLY(msg, DS::e_NetScoreWrongType);
+        return;
+    }
+
+    // Passed all sanity checks, update score.
+    parms.set(1, msg->m_points);
+    parms.set(2, (uint32_t)(scoreType == Auth_UpdateScore::e_Golf));
+    result = PQexecParams(s_postgres,
+                          "SELECT auth.add_score_points($1, $2, $3);",
+                          3, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+    } else {
+        // the prepared statement returns a result, but the op always succeeds
+        // to some degree, so let's pretend everything is hunky-dory
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetSuccess);
+    }
+}
+
+void dm_auth_transferScorePoints(Auth_TransferScore* msg)
+{
+    PostgresStrings<4> parms;
+    parms.set(0, msg->m_srcScoreId);
+    parms.set(1, msg->m_dstScoreId);
+    PGresult* result = PQexecParams(s_postgres,
+                       "SELECT \"Type\" FROM auth.\"Scores\""
+                       "    WHERE idx=$1 OR idx=$2",
+                       2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    } else if (PQntuples(result) != 2) {
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
+        return;
+    }
+    uint32_t srcType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t dstType = strtoul(PQgetvalue(result, 1, 0), 0, 10);
+    bool allowNegative = false;
+    PQclear(result);
+    if (srcType == Auth_UpdateScore::e_Fixed || dstType == Auth_UpdateScore::e_Fixed) {
+        SEND_REPLY(msg, DS::e_NetScoreWrongType);
+        return;
+    }
+    if (srcType == Auth_UpdateScore::e_Golf && dstType == Auth_UpdateScore::e_Golf) {
+        allowNegative = true;
+    }
+    parms.set(2, msg->m_points);
+    parms.set(3, static_cast<uint32_t>(allowNegative));
+    result = PQexecParams(s_postgres,
+             "SELECT auth.transfer_score_points($1, $2, $3, $4)",
+             4, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    uint32_t status = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+    SEND_REPLY(msg, (status != 0) ? DS::e_NetSuccess : DS::e_NetScoreNotEnoughPoints);
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -887,6 +1035,18 @@ void dm_authDaemon()
                 break;
             case e_AuthSetPublic:
                 dm_auth_set_pub_priv(reinterpret_cast<Auth_SetPublic*>(msg.m_payload));
+                break;
+            case e_AuthCreateScore:
+                dm_auth_createScore(reinterpret_cast<Auth_CreateScore*>(msg.m_payload));
+                break;
+            case e_AuthGetScores:
+                dm_auth_getScores(reinterpret_cast<Auth_GetScores*>(msg.m_payload));
+                break;
+            case e_AuthAddScorePoints:
+                dm_auth_addScorePoints(reinterpret_cast<Auth_UpdateScore*>(msg.m_payload));
+                break;
+            case e_AuthTransferScorePoints:
+                dm_auth_transferScorePoints(reinterpret_cast<Auth_TransferScore*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

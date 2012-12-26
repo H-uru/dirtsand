@@ -76,6 +76,27 @@ ALTER TABLE auth."Players_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Players_idx_seq" OWNED BY "Players".idx;
 SELECT pg_catalog.setval('"Players_idx_seq"', 1, false);
 
+CREATE TABLE "Scores" (
+    idx integer NOT NULL,
+    "CreateTime" integer DEFAULT 0 NOT NULL,
+    "OwnerIdx" integer NOT NULL,
+    "Type" integer DEFAULT 1 NOT NULL,
+    "Name" character varying(64) NOT NULL,
+    "Points" integer DEFAULT 0 NOT NULL
+);
+ALTER TABLE auth."Scores" OWNER TO dirtsand;
+CREATE INDEX ON auth."Scores" ("OwnerIdx", "Name");
+
+CREATE SEQUENCE "Scores_idx_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+ALTER TABLE auth."Scores_idx_seq" OWNER TO dirtsand;
+ALTER SEQUENCE "Scores_idx_seq" OWNED BY "Scores".idx;
+SELECT pg_catalog.setval('"Scores_idx_seq"', 1, false);
+
 SET search_path = vault, pg_catalog;
 
 CREATE TABLE "NodeRefs" (
@@ -193,6 +214,7 @@ SELECT pg_catalog.setval('"AgeStates_idx_seq"', 1, false);
 SET search_path = auth, pg_catalog;
 ALTER TABLE "Accounts" ALTER COLUMN idx SET DEFAULT nextval('"Accounts_idx_seq"'::regclass);
 ALTER TABLE "Players" ALTER COLUMN idx SET DEFAULT nextval('"Players_idx_seq"'::regclass);
+ALTER TABLE "Scores" ALTER COLUMN idx SET DEFAULT nextval('"Scores_idx_seq"'::regclass);
 
 ALTER TABLE ONLY "Accounts"
     ADD CONSTRAINT "Accounts_Login_key" UNIQUE ("Login");
@@ -200,6 +222,8 @@ ALTER TABLE ONLY "Accounts"
     ADD CONSTRAINT "Accounts_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "Players"
     ADD CONSTRAINT "Players_pkey" PRIMARY KEY (idx);
+ALTER TABLE ONLY "Scores"
+    ADD CONSTRAINT "Scores_pkey" PRIMARY KEY (idx);
 CREATE INDEX "Login_Index" ON "Accounts" USING hash ("Login");
 
 SET search_path = vault, pg_catalog;

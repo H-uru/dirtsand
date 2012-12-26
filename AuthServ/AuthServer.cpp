@@ -666,17 +666,106 @@ void cb_downloadNext(AuthServer_Private& client)
     SEND_REPLY();
 }
 
-// TODO: Actually retreive scores. This is a STUB
+void cb_scoreCreate(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_ScoreCreateReply);
+
+    // Trans ID
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+
+    Auth_CreateScore msg;
+    msg.m_client = &client;
+    msg.m_owner = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_name = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    msg.m_type = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_points = DS::CryptRecvValue<int32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthCreateScore, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0); // Score ID
+        client.m_buffer.write<uint32_t>(0); // Create Time
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_scoreId);
+        client.m_buffer.write<uint32_t>((uint32_t)time(0)); // close enough.
+    }
+    SEND_REPLY();
+}
+
 void cb_scoreGetScores(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_ScoreGetScoresReply);
     uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     client.m_buffer.write<uint32_t>(transId);
-    uint32_t playerId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    DS::String gamename = DS::CryptRecvString(client.m_sock, client.m_crypt);
-    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
-    client.m_buffer.write<uint32_t>(0);
-    client.m_buffer.write<uint32_t>(0);
+
+    Auth_GetScores msg;
+    msg.m_client = &client;
+    msg.m_owner = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_name = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthGetScores, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    if (reply.m_messageType != DS::e_NetSuccess) {
+        client.m_buffer.write<uint32_t>(0); // Score Count
+        client.m_buffer.write<uint32_t>(0); // Buffer Size
+    } else {
+        client.m_buffer.write<uint32_t>(msg.m_scores.size());
+        // eap sucks -- need utf16 string length in bytes
+        DS::StringBuffer<chr16_t> name = msg.m_name.toUtf16();
+        uint32_t bufsz = msg.m_scores.size() *
+                        (Auth_GetScores::GameScore::BaseStride +
+                        ((name.length() + 1) * sizeof(chr16_t)));
+        client.m_buffer.write<uint32_t>(bufsz);
+        for (auto score : msg.m_scores) {
+            client.m_buffer.write<uint32_t>(score.m_scoreId);
+            client.m_buffer.write<uint32_t>(msg.m_owner);
+            client.m_buffer.write<uint32_t>(score.m_createTime);
+            client.m_buffer.write<uint32_t>(score.m_type);
+            client.m_buffer.write<uint32_t>(score.m_points);
+            // evil string shit
+            client.m_buffer.write<uint32_t>((name.length() + 1) * sizeof(chr16_t));
+            client.m_buffer.writeBytes(name.data(), name.length() * sizeof(chr16_t));
+            client.m_buffer.write<chr16_t>(0);
+        }
+    }
+    SEND_REPLY();
+}
+
+void cb_scoreAddPoints(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_ScoreAddPointsReply);
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+
+    Auth_UpdateScore msg;
+    msg.m_client = &client;
+    msg.m_scoreId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_points = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthAddScorePoints, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    SEND_REPLY();
+}
+
+void cb_scoreTransferPoints(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_ScoreAddPointsReply);
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+
+    Auth_TransferScore msg;
+    msg.m_client = &client;
+    msg.m_srcScoreId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_dstScoreId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_points = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthTransferScorePoints, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
     SEND_REPLY();
 }
 
@@ -840,8 +929,17 @@ void wk_authWorker(DS::SocketHandle sockp)
             case e_CliToAuth_LogClientDebuggerConnect:
                 // Nobody cares
                 break;
+            case e_CliToAuth_ScoreCreate:
+                cb_scoreCreate(client);
+                break;
             case e_CliToAuth_ScoreGetScores:
                 cb_scoreGetScores(client);
+                break;
+            case e_CliToAuth_ScoreAddPoints:
+                cb_scoreAddPoints(client);
+                break;
+            case e_CliToAuth_ScoreTransferPoints:
+                cb_scoreTransferPoints(client);
                 break;
             case e_CliToAuth_GetPublicAgeList:
                 cb_getPublicAges(client);
