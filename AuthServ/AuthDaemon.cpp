@@ -786,7 +786,7 @@ void dm_auth_addScorePoints(Auth_UpdateScore* msg)
 
     // Passed all sanity checks, update score.
     parms.set(1, msg->m_points);
-    parms.set(2, (uint32_t)(scoreType == Auth_UpdateScore::e_Golf));
+    parms.set(2, static_cast<uint32_t>(scoreType == Auth_UpdateScore::e_Golf));
     result = PQexecParams(s_postgres,
                           "SELECT auth.add_score_points($1, $2, $3);",
                           3, 0, parms.m_values, 0, 0, 0);
