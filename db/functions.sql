@@ -113,7 +113,7 @@ BEGIN
         UPDATE auth."Scores" SET "Points"="Points"+points WHERE idx=scoreId;
         RETURN TRUE;
     ELSE
-        UPDATE auth."Scores" SET "Points"=0 idx=scoreId;
+        UPDATE auth."Scores" SET "Points"=0 WHERE idx=scoreId;
         RETURN FALSE; /* Indicates that we ran out of points */
     END IF;
 END;
