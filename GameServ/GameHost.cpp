@@ -618,19 +618,32 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     MOUL::NetMessage* netmsg = 0;
     try {
         netmsg = MOUL::Factory::Read<MOUL::NetMessage>(&stream);
-    } catch (MOUL::FactoryException) {
+    } catch (const MOUL::FactoryException&) {
         fprintf(stderr, "[Game] Warning: Ignoring message: %04X\n",
                 msg->m_messageType);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
-    } catch (std::exception ex) {
-        fprintf(stderr, "[Game] Unknown exception reading message: %s\n",
-                ex.what());
+    } catch (const std::exception& ex) {
+        // magickal code to print out the name of the offending plMessage
+        MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
+        if (gameMsg && gameMsg->m_message) {
+            switch (gameMsg->m_message->type()) {
+#define CREATABLE_TYPE(id, name) \
+            case id: \
+                fprintf(stderr, "[Game] Unknown exception reading " #name ": %s\n", ex.what()); \
+                break;
+#include "creatable_types.inl"
+#undef CREATABLE_TYPE
+            }
+        } else {
+            fprintf(stderr, "[Game] Unknown exception reading net message: %s\n",
+                    ex.what());
+        }
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
