@@ -118,7 +118,7 @@ enum AgeFlags
 std::tuple<uint32_t, uint32_t>
 v_create_age(AuthServer_AgeInfo age, uint32_t flags);
 
-std::tuple<uint32_t, uint32_t>
+std::tuple<uint32_t, uint32_t, uint32_t> // playerId, playerInfoId, hoodAgeOwnersFolderId
 v_create_player(DS::Uuid accountId, const AuthServer_PlayerInfo& player);
 
 uint32_t v_create_node(const DS::Vault::Node& node);
@@ -129,3 +129,6 @@ bool v_unref_node(uint32_t parentIdx, uint32_t childIdx);
 bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs);
 bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& nodes);
 DS::Vault::NodeRef v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t senderId);
+
+uint32_t v_count_age_owners(uint32_t ageInfoId);
+bool v_find_public_ages(const DS::String& ageFilename, std::vector<Auth_PubAgeRequest::NetAgeInfo>& ages);
