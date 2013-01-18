@@ -137,6 +137,8 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     tv.tv_sec = 45;
     tv.tv_usec = 0;
     setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    // eap-tastic protocols require Nagle's algo be disabled
+    setsockopt(client->m_sockfd, IPPROTO_TCP, TCP_NODELAY, &SOCK_YES, sizeof(SOCK_YES));
     return reinterpret_cast<SocketHandle>(client);
 }
 
