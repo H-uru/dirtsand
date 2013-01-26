@@ -35,6 +35,7 @@ namespace MOUL
     public:
         AgeLinkStruct* m_ageLink;
         DS::String m_linkInAnim;
+        uint8_t m_flags;
 
     protected:
         LinkToAgeMsg(uint16_t type)
