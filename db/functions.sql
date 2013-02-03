@@ -119,7 +119,7 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql VOLATILE;
-ALTER FUNCTION auth.add_score_points_score(IN integer, IN integer, IN boolean) OWNER TO dirtsand;
+ALTER FUNCTION auth.add_score_points(IN integer, IN integer, IN boolean) OWNER TO dirtsand;
 
 
 --- [Required] Transfers points from one score to another ---
