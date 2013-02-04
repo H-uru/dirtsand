@@ -845,15 +845,16 @@ void wk_authWorker(DS::SocketHandle sockp)
 {
     AuthServer_Private client;
     client.m_crypt = 0;
-
-    s_authClientMutex.lock();
     client.m_sock = sockp;
-    s_authClients.push_back(&client);
-    s_authClientMutex.unlock();
 
     try {
         auth_init(client);
         client.m_player.m_playerId = 0;
+
+        // Now that we're encrypted, we can add the client to our list
+        s_authClientMutex.lock();
+        s_authClients.push_back(&client);
+        s_authClientMutex.unlock();
 
         for ( ;; ) {
             uint16_t msgId = DS::CryptRecvValue<uint16_t>(client.m_sock, client.m_crypt);
