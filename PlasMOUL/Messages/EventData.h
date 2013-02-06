@@ -34,7 +34,7 @@ namespace MOUL
     };
 
     enum EventDataType {
-        e_DataFloat, e_DataKey, e_DataInt, e_DataNull, e_DataNone
+        e_DataFloat = 1, e_DataKey, e_DataInt, e_DataNull, e_DataNone
     };
 
     class EventData
