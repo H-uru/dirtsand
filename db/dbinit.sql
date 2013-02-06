@@ -107,6 +107,7 @@ CREATE TABLE "NodeRefs" (
     "Seen" integer DEFAULT 0 NOT NULL
 );
 ALTER TABLE vault."NodeRefs" OWNER TO dirtsand;
+CREATE INDEX RefParent ON vault."NodeRefs" ("ParentIdx");
 CREATE SEQUENCE "NodeRefs_idx_seq"
     START WITH 1
     INCREMENT BY 1

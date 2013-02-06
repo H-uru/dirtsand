@@ -249,6 +249,22 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 
 void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
 {
+    // This does a few things for us...
+    //   1. We get proper age node subscriptions (vault downloaded after we reply to this req)
+    //   2. We ensure that the player is logged in and is supposed to be coming here.
+    AuthClient_Private fakeClient;
+    Auth_UpdateAgeSrv authReq;
+    authReq.m_client = &fakeClient;
+    authReq.m_ageNodeId = host->m_ageIdx;
+    authReq.m_playerId = msg->m_client->m_clientInfo.m_PlayerId;
+    s_authChannel.putMessage(e_AuthUpdateAgeSrv, reinterpret_cast<void*>(&authReq));
+
+    DS::FifoMessage authReply = fakeClient.m_channel.getMessage();
+    if (authReply.m_messageType != DS::e_NetSuccess) {
+        SEND_REPLY(msg, authReply.m_messageType);
+        return;
+    }
+
     // Simplified object ownership...
     // In MOUL, one player owns ALL synched objects
     // We'll call him the "game master"

@@ -72,7 +72,8 @@ enum AuthDaemonMessages
     e_VaultRefNode, e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode,
     e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
     e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic, e_AuthCreateScore,
-    e_AuthGetScores, e_AuthAddScorePoints, e_AuthTransferScorePoints
+    e_AuthGetScores, e_AuthAddScorePoints, e_AuthTransferScorePoints,
+    e_AuthUpdateAgeSrv
 };
 
 struct Auth_AccountInfo
@@ -213,6 +214,12 @@ struct Auth_TransferScore : public Auth_ClientMessage
 {
     uint32_t m_srcScoreId, m_dstScoreId;
     uint32_t m_points;
+};
+
+struct Auth_UpdateAgeSrv : public Auth_ClientMessage
+{
+    uint32_t m_playerId;
+    uint32_t m_ageNodeId;
 };
 
 DS::Blob gen_default_sdl(const DS::String& filename);

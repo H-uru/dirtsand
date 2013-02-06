@@ -71,6 +71,30 @@ LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION vault.find_folder(IN integer, IN integer) OWNER TO dirtsand;
 
 
+-- [Required] Checks to see if a node is in another node's tree --
+CREATE OR REPLACE FUNCTION vault.has_node(integer, integer)
+RETURNS BOOLEAN AS
+$BODY$
+DECLARE
+    parentId ALIAS FOR $1;
+    childId ALIAS FOR $2;
+    curNode vault."NodeRefs";
+BEGIN
+    FOR curNode IN SELECT * FROM vault."NodeRefs" WHERE "ParentIdx"=parentId
+    LOOP
+        IF curNode."ChildIdx" = childId THEN
+            return true;
+        ELSEIF vault.has_node(curNode."ChildIdx", childId) THEN
+            return true;
+        END IF;
+    END LOOP;
+    return false;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+ALTER FUNCTION vault.has_node(IN integer, IN integer) OWNER TO dirtsand;
+
+
 -- [Required] Create a new score--
 -- This prevents score creation race conditions --
 CREATE OR REPLACE FUNCTION auth.create_score(integer, integer, character varying, integer)

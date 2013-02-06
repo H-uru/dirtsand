@@ -89,6 +89,7 @@ struct AuthServer_Private : public AuthClient_Private
     uint32_t m_serverChallenge;
     DS::Uuid m_acctUuid;
     AuthServer_PlayerInfo m_player;
+    uint32_t m_ageNodeId;
     std::map<uint32_t, DS::Stream*> m_downloads;
 
     ~AuthServer_Private()
@@ -124,6 +125,7 @@ v_create_player(DS::Uuid accountId, const AuthServer_PlayerInfo& player);
 uint32_t v_create_node(const DS::Vault::Node& node);
 bool v_update_node(const DS::Vault::Node& node);
 DS::Vault::Node v_fetch_node(uint32_t nodeIdx);
+bool v_has_node(uint32_t parentId, uint32_t childId);
 bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx);
 bool v_unref_node(uint32_t parentIdx, uint32_t childIdx);
 bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs);
