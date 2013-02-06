@@ -791,6 +791,33 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     return idx;
 }
 
+bool v_has_node(uint32_t parentId, uint32_t childId)
+{
+    if (parentId == 0)
+        return false;
+    if (parentId == childId)
+        return true;
+
+    PostgresStrings<2> parms;
+    parms.set(0, parentId);
+    parms.set(1, childId);
+
+    check_postgres();
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT vault.has_node($1, $2)",
+                                    2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+    DS_DASSERT(PQntuples(result) == 1);
+    bool retval = (*PQgetvalue(result, 0, 0) == 't');
+    PQclear(result);
+    return retval != 0;
+}
+
 bool v_update_node(const DS::Vault::Node& node)
 {
     /* This should be plenty to store everything we need without a bunch
