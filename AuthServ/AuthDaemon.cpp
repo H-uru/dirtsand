@@ -191,16 +191,24 @@ void dm_auth_login(Auth_LoginInfo* info)
 
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
 {
+    // Make a copy of the auth clients list to not block new connections
+    s_authClientMutex.lock();
+    std::list<AuthServer_Private*> copy(s_authClients);
+    s_authClientMutex.unlock();
+
     uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
     *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeChanged;
     *reinterpret_cast<uint32_t*>(buffer + 2) = nodeIdx;
     *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
 
-    std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto it = copy.begin(); it != copy.end(); ++it)
+    {
+        AuthServer_Private* client = *it;
+        if (!(v_has_node(client->m_ageNodeId, nodeIdx) || v_has_node(client->m_player.m_playerId, nodeIdx)))
+            continue;
         try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 22);
-        } catch (DS::SockHup) {
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 22);
+        } catch (DS::SockHup&) {
             // Client ignored us.  Return the favor
         }
     }
@@ -208,17 +216,25 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
 
 void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
 {
+    // Make a copy of the auth clients list to not block new connections
+    s_authClientMutex.lock();
+    std::list<AuthServer_Private*> copy(s_authClients);
+    s_authClientMutex.unlock();
+
     uint8_t buffer[14];  // Msg ID, Parent, Child, Owner
     *reinterpret_cast<uint16_t*>(buffer     ) = e_AuthToCli_VaultNodeAdded;
     *reinterpret_cast<uint32_t*>(buffer +  2) = ref.m_parent;
     *reinterpret_cast<uint32_t*>(buffer +  6) = ref.m_child;
     *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
 
-    std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto it = copy.begin(); it != copy.end(); ++it)
+    {
+        AuthServer_Private* client = *it;
+        if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
+            continue;
         try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 14);
-        } catch (DS::SockHup) {
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 14);
+        } catch (DS::SockHup&) {
             // Client ignored us.  Return the favor
         }
     }
@@ -226,16 +242,24 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
 
 void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
 {
+    // Make a copy of the auth clients list to not block new connections
+    s_authClientMutex.lock();
+    std::list<AuthServer_Private*> copy(s_authClients);
+    s_authClientMutex.unlock();
+
     uint8_t buffer[10];  // Msg ID, Parent, Child
     *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeRemoved;
     *reinterpret_cast<uint32_t*>(buffer + 2) = ref.m_parent;
     *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
 
-    std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
+    for (auto it = copy.begin(); it != copy.end(); ++it)
+    {
+        AuthServer_Private* client = *it;
+        if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
+            continue;
         try {
-            DS::CryptSendBuffer((*client_iter)->m_sock, (*client_iter)->m_crypt, buffer, 10);
-        } catch (DS::SockHup) {
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 10);
+        } catch (DS::SockHup&) {
             // Client ignored us.  Return the favor
         }
     }
@@ -851,6 +875,23 @@ void dm_auth_transferScorePoints(Auth_TransferScore* msg)
     SEND_REPLY(msg, (status != 0) ? DS::e_NetSuccess : DS::e_NetScoreNotEnoughPoints);
 }
 
+void dm_auth_updateAgeSrv(Auth_UpdateAgeSrv* msg)
+{
+    AuthServer_Private* client = nullptr;
+    s_authClientMutex.lock();
+    for (auto it = s_authClients.begin(); it != s_authClients.end(); ++it) {
+        if ((*it)->m_player.m_playerId == msg->m_playerId) {
+            client = *it;
+            break;
+        }
+    }
+    s_authClientMutex.unlock();
+
+    if (client)
+        client->m_ageNodeId = msg->m_ageNodeId;
+    SEND_REPLY(msg, client ? DS::e_NetSuccess : DS::e_NetPlayerNotFound);
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -1047,6 +1088,9 @@ void dm_authDaemon()
                 break;
             case e_AuthTransferScorePoints:
                 dm_auth_transferScorePoints(reinterpret_cast<Auth_TransferScore*>(msg.m_payload));
+                break;
+            case e_AuthUpdateAgeSrv:
+                dm_auth_updateAgeSrv(reinterpret_cast<Auth_UpdateAgeSrv*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
