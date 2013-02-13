@@ -92,6 +92,8 @@ struct AuthServer_Private : public AuthClient_Private
     uint32_t m_ageNodeId;
     std::map<uint32_t, DS::Stream*> m_downloads;
 
+    AuthServer_Private() : m_serverChallenge(0), m_ageNodeId(0) { }
+
     ~AuthServer_Private()
     {
         while (!m_downloads.empty()) {
