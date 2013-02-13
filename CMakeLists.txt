@@ -65,6 +65,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/LinkToAgeMsg.cpp
     PlasMOUL/Messages/ParticleMsg.cpp
     PlasMOUL/Messages/MultistageMsg.cpp
+    PlasMOUL/Messages/SetNetGroupIdMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
