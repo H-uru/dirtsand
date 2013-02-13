@@ -23,6 +23,14 @@
 
 namespace DS
 {
+    enum SendFlag
+    {
+        e_SendBlocking,
+        e_SendNonblocking,
+        e_SendNonblockingRecoverable,
+        e_SendMax
+    };
+
     typedef void* SocketHandle;
 
     SocketHandle BindSocket(const char* address, const char* port);
@@ -34,7 +42,8 @@ namespace DS
     String SockIpAddress(const SocketHandle sock);
     uint32_t GetAddress4(const char* lookup);
 
-    void SendBuffer(const SocketHandle sock, const void* buffer, size_t size);
+    void SendBuffer(const SocketHandle sock, const void* buffer,
+                    size_t size, SendFlag mode=e_SendBlocking);
     void RecvBuffer(const SocketHandle sock, void* buffer, size_t size);
     size_t PeekSize(const SocketHandle sock);
 

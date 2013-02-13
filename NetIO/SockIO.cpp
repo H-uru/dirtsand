@@ -181,19 +181,36 @@ uint32_t DS::GetAddress4(const char* lookup)
     return ntohl(addr);
 }
 
-void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size)
+void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size, SendFlag mode)
 {
-    while (size > 0) {
+    DS_DASSERT(mode < e_SendMax);
+    if (mode == DS::e_SendBlocking) {
+        while (size > 0) {
+            ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
+                                buffer, size, 0);
+            if (bytes < 0 && (errno == EPIPE || errno == ECONNRESET))
+                throw DS::SockHup();
+            else if (bytes == 0)
+                throw DS::SockHup();
+            DS_PASSERT(bytes > 0);
+
+            size -= bytes;
+            buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
+        }
+    } else {
         ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
-                            buffer, size, 0);
+                             buffer, size, MSG_DONTWAIT);
         if (bytes < 0 && (errno == EPIPE || errno == ECONNRESET))
             throw DS::SockHup();
-        else if (bytes == 0)
+        if (bytes == 0)
             throw DS::SockHup();
-        DS_PASSERT(bytes > 0);
-
-        size -= bytes;
-        buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
+        if (mode != DS::e_SendNonblockingRecoverable) {
+            if (bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                close(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd);
+                throw DS::SockHup();
+            }
+        }
+        DS_DASSERT(bytes == size);
     }
 }
 
