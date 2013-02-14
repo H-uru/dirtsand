@@ -155,7 +155,7 @@ void DS::CryptStateFree(DS::CryptState state)
 }
 
 void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
-                         const void* buffer, size_t size)
+                         const void* buffer, size_t size, SendFlag mode)
 {
 #ifdef DEBUG
     if (s_commdebug) {
@@ -180,14 +180,14 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         statep->m_mutex.lock();
         RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), cryptbuf);
         statep->m_mutex.unlock();
-        DS::SendBuffer(sock, cryptbuf, size);
+        DS::SendBuffer(sock, cryptbuf, size, mode);
         delete[] cryptbuf;
     } else {
         unsigned char stack[4096];
         statep->m_mutex.lock();
         RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), stack);
         statep->m_mutex.unlock();
-        DS::SendBuffer(sock, stack, size);
+        DS::SendBuffer(sock, stack, size, mode);
     }
 }
 
