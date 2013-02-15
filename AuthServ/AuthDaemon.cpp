@@ -155,12 +155,18 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
 
     client->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));
-    info->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+    client->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), 0, 10);
     info->m_billingType = strtoul(PQgetvalue(result, 0, 3), 0, 10);
     printf("[Auth] %s logged in as %s {%s}\n",
            DS::SockIpAddress(info->m_client->m_sock).c_str(),
            info->m_acctName.c_str(), client->m_acctUuid.toString().c_str());
     PQclear(result);
+
+    // Avoid fetching the players for banned dudes
+    if (client->m_acctFlags & DS::e_AcctBanned) {
+        SEND_REPLY(info, DS::e_NetAccountBanned);
+        return;
+    }
 
     // Get list of players
     DS::String uuidString = client->m_acctUuid.toString();
@@ -875,8 +881,10 @@ void dm_auth_updateAgeSrv(Auth_UpdateAgeSrv* msg)
     }
     s_authClientMutex.unlock();
 
-    if (client)
+    if (client) {
         client->m_ageNodeId = msg->m_ageNodeId;
+        msg->m_isAdmin = (client->m_acctFlags & DS::e_AcctAdmin);
+    }
     SEND_REPLY(msg, client ? DS::e_NetSuccess : DS::e_NetPlayerNotFound);
 }
 

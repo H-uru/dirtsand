@@ -168,7 +168,7 @@ void cb_login(AuthServer_Private& client)
     client.m_buffer.write<uint32_t>(transId);
     client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
     client.m_buffer.writeBytes(client.m_acctUuid.m_bytes, sizeof(client.m_acctUuid.m_bytes));
-    client.m_buffer.write<uint32_t>(msg.m_acctFlags);
+    client.m_buffer.write<uint32_t>(client.m_acctFlags);
     client.m_buffer.write<uint32_t>(msg.m_billingType);
     client.m_buffer.writeBytes(DS::Settings::DroidKey(), 4 * sizeof(uint32_t));
     SEND_REPLY();

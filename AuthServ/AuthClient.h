@@ -94,7 +94,7 @@ struct Auth_LoginInfo : public Auth_ClientMessage
     DS::ShaHash m_passHash;
     DS::String m_token, m_os;
 
-    uint32_t m_acctFlags, m_billingType;
+    uint32_t m_billingType;
     std::vector<AuthServer_PlayerInfo> m_players;
 };
 
@@ -220,6 +220,7 @@ struct Auth_UpdateAgeSrv : public Auth_ClientMessage
 {
     uint32_t m_playerId;
     uint32_t m_ageNodeId;
+    bool m_isAdmin;
 };
 
 DS::Blob gen_default_sdl(const DS::String& filename);

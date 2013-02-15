@@ -26,6 +26,13 @@ typedef unsigned short  chr16_t;
 
 namespace DS
 {
+    enum AccountFlags
+    {
+        e_AcctAdmin = (1<<0),
+        e_AcctBetaTester = (1<<2),
+        e_AcctBanned = (1<<16)
+    };
+
     enum NetResultCode
     {
         e_NetPending = -1,
