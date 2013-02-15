@@ -30,6 +30,7 @@ namespace DS
     void AuthServer_DisplayClients();
 
     void AuthServer_AddAcct(DS::String, DS::String);
+    uint32_t AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags);
 
     class DbException : public std::exception
     {

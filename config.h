@@ -30,7 +30,8 @@ namespace DS
     {
         e_AcctAdmin = (1<<0),
         e_AcctBetaTester = (1<<2),
-        e_AcctBanned = (1<<16)
+        e_AcctBanned = (1<<16),
+        e_AcctMask = (e_AcctAdmin | e_AcctBanned | e_AcctBetaTester)
     };
 
     enum NetResultCode

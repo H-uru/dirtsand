@@ -59,8 +59,8 @@ static char** console_completer(const char* text, int start, int end)
 {
     static const char* completions[] = {
         /* Commands */
-        "addacct", "clients", "commdebug", "help", "keygen", "quit", "restart",
-        "welcome",
+        "addacct", "clients", "commdebug", "help", "keygen", "modacct", "quit",
+        "restart", "welcome",
         /* Services */
         "auth", "lobby", "status",
     };
@@ -254,9 +254,42 @@ int main(int argc, char* argv[])
             fputs("Error: COMM debugging is only enabled in debug builds\n", stderr);
 #endif
         } else if (args[0] == "addacct") {
-            if (args.size() != 3)
+            if (args.size() != 3) {
                 fputs("Usage: addacct <user> <password>\n", stdout);
+                continue;
+            }
             DS::AuthServer_AddAcct(args[1], args[2]);
+        } else if (args[0] == "modacct") {
+            if (args.size() < 2) {
+                fputs("Usage: modacct <user> [flag]\n", stdout);
+                continue;
+            }
+            uint32_t flags = 0;
+            for (size_t i = 2; i < args.size(); ++i) {
+                if (args[i] == "admin")
+                    flags |= DS::e_AcctAdmin;
+                else if (args[i] == "banned")
+                    flags |= DS::e_AcctBanned;
+                else if (args[i] == "beta")
+                    flags |= DS::e_AcctBetaTester;
+                else
+                    fprintf(stderr, "Warning: Unrecognized account flag \"%s\"\n", args[i].c_str());
+            }
+            flags = DS::AuthServer_AcctFlags(args[1], flags);
+            if (flags == static_cast<uint32_t>(-1)) {
+                fprintf(stderr, "Error: Failed to set account flags for %s\n", args[1].c_str());
+                continue;
+            }
+            fprintf(stdout, "%s:", args[1].c_str());
+            if (flags & DS::e_AcctAdmin)
+                fputs(" [admin]", stdout);
+            if (flags & DS::e_AcctBanned)
+                fputs(" [banned]", stdout);
+            if (flags & DS::e_AcctBetaTester)
+                fputs(" [beta]", stdout);
+            if (!(flags & DS::e_AcctMask))
+                fputs(" [none]", stdout);
+            fputs("\n", stdout);
         } else if (args[0] == "welcome") {
             DS::Settings::SetWelcomeMsg(cmdbuf + strlen("welcome "));
         } else if (args[0] == "help") {
@@ -266,6 +299,7 @@ int main(int argc, char* argv[])
                   "    commdebug <on|off>\n"
                   "    help\n"
                   "    keygen <new|show>\n"
+                  "    modacct <user> [flag]\n"
                   "    quit\n"
                   "    restart <auth|lobby|status> [...]\n"
                   "    welcome <message>\n",

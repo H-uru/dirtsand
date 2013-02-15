@@ -888,6 +888,64 @@ void dm_auth_updateAgeSrv(Auth_UpdateAgeSrv* msg)
     SEND_REPLY(msg, client ? DS::e_NetSuccess : DS::e_NetPlayerNotFound);
 }
 
+void dm_auth_acctFlags(Auth_AccountFlags* msg)
+{
+    PostgresStrings<2> parms;
+    parms.set(0, msg->m_acctName);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT \"AcctFlags\" FROM auth.\"Accounts\""
+                                    "    WHERE LOWER(\"Login\")=LOWER($1)",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) != 1) {
+        fprintf(stderr, "%s:%d:\n    Expected 1 row, got %d\n",
+                __FILE__, __LINE__, PQntuples(result));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+
+    uint32_t acctFlags = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+
+    /* Thar be moar majick */
+#define TOGGLE_FLAG(flag) \
+    if (msg->m_flags & flag) { \
+        if (acctFlags & flag) \
+            acctFlags &= ~flag; \
+        else \
+            acctFlags |= flag; \
+    }
+    TOGGLE_FLAG(DS::e_AcctAdmin);
+    TOGGLE_FLAG(DS::e_AcctBanned);
+    TOGGLE_FLAG(DS::e_AcctBetaTester);
+#undef TOGGLE_FLAG
+
+    if (msg->m_flags != 0) {
+        parms.set(1, acctFlags);
+        result = PQexecParams(s_postgres,
+                              "UPDATE auth.\"Accounts\" SET \"AcctFlags\"=$2"
+                              "    WHERE LOWER(\"Login\")=LOWER($1)",
+                              2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQclear(result);
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+        PQclear(result);
+    }
+    msg->m_flags = acctFlags;
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -1087,6 +1145,9 @@ void dm_authDaemon()
                 break;
             case e_AuthUpdateAgeSrv:
                 dm_auth_updateAgeSrv(reinterpret_cast<Auth_UpdateAgeSrv*>(msg.m_payload));
+                break;
+            case e_AuthAcctFlags:
+                dm_auth_acctFlags(reinterpret_cast<Auth_AccountFlags*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

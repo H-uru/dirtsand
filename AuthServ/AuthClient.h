@@ -73,7 +73,7 @@ enum AuthDaemonMessages
     e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
     e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic, e_AuthCreateScore,
     e_AuthGetScores, e_AuthAddScorePoints, e_AuthTransferScorePoints,
-    e_AuthUpdateAgeSrv
+    e_AuthUpdateAgeSrv, e_AuthAcctFlags
 };
 
 struct Auth_AccountInfo
@@ -221,6 +221,12 @@ struct Auth_UpdateAgeSrv : public Auth_ClientMessage
     uint32_t m_playerId;
     uint32_t m_ageNodeId;
     bool m_isAdmin;
+};
+
+struct Auth_AccountFlags : public Auth_ClientMessage
+{
+    DS::String m_acctName;
+    uint32_t m_flags;
 };
 
 DS::Blob gen_default_sdl(const DS::String& filename);

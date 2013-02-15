@@ -1029,3 +1029,18 @@ void DS::AuthServer_AddAcct(DS::String acctName, DS::String password)
     info->m_password = password;
     s_authChannel.putMessage(e_AuthAddAcct, info);
 }
+
+uint32_t DS::AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags)
+{
+    AuthClient_Private client;
+    Auth_AccountFlags req;
+    req.m_client = &client;
+    req.m_acctName = acctName;
+    req.m_flags = flags;
+    s_authChannel.putMessage(e_AuthAcctFlags, &req);
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    if (reply.m_messageType == DS::e_NetSuccess)
+        return req.m_flags;
+    else
+        return static_cast<uint32_t>(-1);
+}
