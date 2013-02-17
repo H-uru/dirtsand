@@ -53,7 +53,7 @@ namespace DS
     void CryptStateFree(CryptState state);
 
     void CryptSendBuffer(const SocketHandle sock, CryptState crypt,
-                         const void* buffer, size_t size, SendFlag mode=e_SendBlocking);
+                         const void* buffer, size_t size, SendFlag mode=e_SendDefault);
     void CryptRecvBuffer(const SocketHandle sock, CryptState crypt,
                          void* buffer, size_t size);
 

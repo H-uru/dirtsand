@@ -203,7 +203,7 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
         if (!(v_has_node(client->m_ageNodeId, nodeIdx) || v_has_node(client->m_player.m_playerId, nodeIdx)))
             continue;
         try {
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 22, DS::e_SendNonblocking);
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 22, DS::e_SendImmediately);
         } catch (DS::SockHup&) {
             // Client ignored us.  Return the favor
         }
@@ -225,7 +225,7 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
         try {
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 14, DS::e_SendNonblocking);
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 14, DS::e_SendImmediately);
         } catch (DS::SockHup&) {
             // Client ignored us.  Return the favor
         }
@@ -246,7 +246,7 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
         try {
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 10, DS::e_SendNonblocking);
+            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 10, DS::e_SendImmediately);
         } catch (DS::SockHup&) {
             // Client ignored us.  Return the favor
         }
