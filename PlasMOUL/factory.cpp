@@ -38,6 +38,8 @@
 #include "Messages/LinkToAgeMsg.h"
 #include "Messages/ParticleMsg.h"
 #include "Messages/MultistageMsg.h"
+#include "Messages/SetNetGroupIdMsg.h"
+#include "Messages/InputEventMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"

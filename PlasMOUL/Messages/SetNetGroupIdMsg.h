@@ -15,34 +15,27 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_NETMSGGROUPOWNER_H
-#define _MOUL_NETMSGGROUPOWNER_H
+#ifndef _MOUL_SETNETGROUPID_H
+#define _MOUL_SETNETGROUPID_H
 
-#include "NetMessage.h"
+#include "Message.h"
 #include "NetGroupId.h"
 
-struct stat;
 namespace MOUL
 {
-    class NetMsgGroupOwner : public NetMsgServerToClient
+    class SetNetGroupIdMsg : public Message
     {
-        FACTORY_CREATABLE(NetMsgGroupOwner)
-
-    public:
-        struct GroupInfo
-        {
-            NetGroupId m_group;
-            bool m_own;
-        };
-
-        std::vector<GroupInfo> m_groups;
+        FACTORY_CREATABLE(SetNetGroupIdMsg);
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
     protected:
-        NetMsgGroupOwner(uint16_t type) : NetMsgServerToClient(type) { }
+        SetNetGroupIdMsg(uint16_t type) : Message(type) { }
+
+    public:
+        NetGroupId m_group;
     };
-}
+};
 
 #endif

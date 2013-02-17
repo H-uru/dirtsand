@@ -15,34 +15,47 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_NETMSGGROUPOWNER_H
-#define _MOUL_NETMSGGROUPOWNER_H
+#ifndef _MOUL_INPUTEVENTMSG_H
+#define _MOUL_INPUTEVENTMSG_H
 
-#include "NetMessage.h"
-#include "NetGroupId.h"
+#include "Message.h"
+#include "Types/Math.h"
+#include "strings.h"
 
-struct stat;
 namespace MOUL
 {
-    class NetMsgGroupOwner : public NetMsgServerToClient
+    class InputEventMsg : public Message
     {
-        FACTORY_CREATABLE(NetMsgGroupOwner)
+        FACTORY_CREATABLE(InputEventMsg)
 
-    public:
-        struct GroupInfo
-        {
-            NetGroupId m_group;
-            bool m_own;
-        };
+        int32_t m_event;
 
-        std::vector<GroupInfo> m_groups;
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream);
+
+        virtual bool makeSafeForNet() { return false; }
+
+    protected:
+        InputEventMsg(uint16_t type) : Message(type), m_event(0) { }
+    };
+
+    class ControlEventMsg : public InputEventMsg
+    {
+        FACTORY_CREATABLE(ControlEventMsg)
+
+        int32_t m_controlCode;
+        bool m_activated;
+        float m_controlPercent;
+        DS::Vector3 m_turnToPoint;
+        DS::String m_cmd;
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream);
 
     protected:
-        NetMsgGroupOwner(uint16_t type) : NetMsgServerToClient(type) { }
+        ControlEventMsg(uint16_t type)
+            : InputEventMsg(type), m_controlCode(0), m_activated(false), m_controlPercent(0) { }
     };
-}
+};
 
 #endif
