@@ -15,34 +15,36 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _MOUL_NETMSGGROUPOWNER_H
-#define _MOUL_NETMSGGROUPOWNER_H
+#include "InputEventMsg.h"
 
-#include "NetMessage.h"
-#include "NetGroupId.h"
-
-struct stat;
-namespace MOUL
+void MOUL::InputEventMsg::read(DS::Stream* stream)
 {
-    class NetMsgGroupOwner : public NetMsgServerToClient
-    {
-        FACTORY_CREATABLE(NetMsgGroupOwner)
-
-    public:
-        struct GroupInfo
-        {
-            NetGroupId m_group;
-            bool m_own;
-        };
-
-        std::vector<GroupInfo> m_groups;
-
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
-
-    protected:
-        NetMsgGroupOwner(uint16_t type) : NetMsgServerToClient(type) { }
-    };
+    MOUL::Message::read(stream);
+    m_event = stream->read<int32_t>();
 }
 
-#endif
+void MOUL::InputEventMsg::write(DS::Stream* stream)
+{
+    MOUL::Message::write(stream);
+    stream->write<int32_t>(m_event);
+}
+
+void MOUL::ControlEventMsg::read(DS::Stream* stream)
+{
+    MOUL::InputEventMsg::read(stream);
+    m_controlCode = stream->read<int32_t>();
+    m_activated = static_cast<bool>(stream->read<uint32_t>());
+    m_controlPercent = stream->read<float>();
+    m_turnToPoint = stream->read<DS::Vector3>();
+    m_cmd = stream->readPString<uint16_t>();
+}
+
+void MOUL::ControlEventMsg::write(DS::Stream* stream)
+{
+    MOUL::InputEventMsg::write(stream);
+    stream->write<int32_t>(m_controlCode);
+    stream->write<uint32_t>(static_cast<uint32_t>(m_activated));
+    stream->write<float>(m_controlPercent);
+    stream->write<DS::Vector3>(m_turnToPoint);
+    stream->writePString<uint16_t>(m_cmd);
+}
