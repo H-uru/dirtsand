@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 
 static const int SOCK_YES = 1;
 
@@ -41,6 +42,7 @@ struct SocketHandle_Private
         sockaddr_storage m_addrMax;
     };
     socklen_t m_addrLen;
+    std::mutex m_sendLock;
 
     SocketHandle_Private() : m_addrLen(sizeof(m_addrMax)) { }
 };
@@ -189,6 +191,7 @@ void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size
 {
     int32_t flags = (mode & DS::e_SendNonBlocking) ? MSG_DONTWAIT : 0;
     bool retry = !(mode & DS::e_SendNoRetry);
+    std::lock_guard<std::mutex> guard(reinterpret_cast<SocketHandle_Private*>(sock)->m_sendLock);
     do {
         ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                              buffer, size, flags);
