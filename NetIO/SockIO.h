@@ -25,10 +25,13 @@ namespace DS
 {
     enum SendFlag
     {
-        e_SendBlocking,
-        e_SendNonblocking,
-        e_SendNonblockingRecoverable,
-        e_SendMax
+        e_SendDefault,
+        e_SendNonBlocking = (1<<0),
+        e_SendNoRetry = (1<<1),
+        e_SendAllowFailure = (1<<2),
+
+        e_SendImmediately = (e_SendNonBlocking | e_SendNoRetry),
+        e_SendSpam = (e_SendImmediately | e_SendAllowFailure)
     };
 
     typedef void* SocketHandle;
@@ -43,7 +46,7 @@ namespace DS
     uint32_t GetAddress4(const char* lookup);
 
     void SendBuffer(const SocketHandle sock, const void* buffer,
-                    size_t size, SendFlag mode=e_SendBlocking);
+                    size_t size, SendFlag mode=e_SendDefault);
     void RecvBuffer(const SocketHandle sock, void* buffer, size_t size);
     size_t PeekSize(const SocketHandle sock);
 

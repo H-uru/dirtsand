@@ -105,7 +105,7 @@ void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
     DM_WRITEMSG(host, msg);
 
     std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
-    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNonblocking : DS::e_SendNonblockingRecoverable;
+    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNoRetry : DS::e_SendSpam;
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId == sender
             && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
@@ -127,7 +127,7 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
     DM_WRITEMSG(host, msg);
 
     std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
-    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNonblocking : DS::e_SendNonblockingRecoverable;
+    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNoRetry : DS::e_SendSpam;
     for (auto rcvr_iter = receivers.begin(); rcvr_iter != receivers.end(); ++rcvr_iter) {
         for (hostmap_t::iterator recv_host = s_gameHosts.begin(); recv_host != s_gameHosts.end(); ++recv_host) {
             auto client = recv_host->second->m_clients.find(*rcvr_iter);
