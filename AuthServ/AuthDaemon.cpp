@@ -25,6 +25,7 @@
 std::thread s_authDaemonThread;
 DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
+bool s_restrictLogins = false;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -165,6 +166,9 @@ void dm_auth_login(Auth_LoginInfo* info)
     // Avoid fetching the players for banned dudes
     if (client->m_acctFlags & DS::e_AcctBanned) {
         SEND_REPLY(info, DS::e_NetAccountBanned);
+        return;
+    } else if (s_restrictLogins && !(client->m_acctFlags & (DS::e_AcctAdmin | DS::e_AcctBetaTester))) {
+        SEND_REPLY(info, DS::e_NetLoginDenied);
         return;
     }
 
@@ -1148,6 +1152,14 @@ void dm_authDaemon()
                 break;
             case e_AuthAcctFlags:
                 dm_auth_acctFlags(reinterpret_cast<Auth_AccountFlags*>(msg.m_payload));
+                break;
+            case e_AuthRestrictLogins:
+                s_restrictLogins = !s_restrictLogins;
+                if (msg.m_payload) {
+                    Auth_RestrictLogins* info = reinterpret_cast<Auth_RestrictLogins*>(msg.m_payload);
+                    info->m_status = s_restrictLogins;
+                    SEND_REPLY(info, DS::e_NetSuccess);
+                }
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

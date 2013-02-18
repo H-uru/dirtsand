@@ -60,7 +60,7 @@ static char** console_completer(const char* text, int start, int end)
     static const char* completions[] = {
         /* Commands */
         "addacct", "clients", "commdebug", "help", "keygen", "modacct", "quit",
-        "restart", "welcome",
+        "restart", "restrict", "welcome",
         /* Services */
         "auth", "lobby", "status",
     };
@@ -120,11 +120,25 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if (argc == 1) {
-        fputs("Warning: No config file specified. Using defaults...\n", stderr);
+    // Preset some arguments
+    const char* settings = 0;
+    bool restrictLogins = false;
+
+    // Poor man command parser
+    for (int i = 1; i < argc; ++i) {
+        const char* arg = argv[i];
+        if (strcasecmp(arg, "--restrict-logins") == 0)
+            restrictLogins = true;
+        else
+            settings = arg;
+    }
+
+    if (settings) {
+        if (!DS::Settings::LoadFrom(settings))
+            return 1;
+    } else {
         DS::Settings::UseDefaults();
-    } else if (!DS::Settings::LoadFrom(argv[1])) {
-        return 1;
+        fputs("Warning: No config file specified. Using defaults...\n", stderr);
     }
 
     // Show a stackdump in case we crash
@@ -137,7 +151,7 @@ int main(int argc, char* argv[])
 
     SDL::DescriptorDb::LoadDescriptors(DS::Settings::SdlPath());
     DS::FileServer_Init();
-    DS::AuthServer_Init();
+    DS::AuthServer_Init(restrictLogins);
     DS::GameServer_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
@@ -290,6 +304,10 @@ int main(int argc, char* argv[])
             if (!(flags & DS::e_AcctMask))
                 fputs(" [none]", stdout);
             fputs("\n", stdout);
+        } else if (args[0] == "restrict") {
+            bool result = DS::AuthServer_RestrictLogins();
+            const char* hint = (result ? "restricted" : "unrestricted");
+            fprintf(stdout, "Logins are %s\n", hint);
         } else if (args[0] == "welcome") {
             DS::Settings::SetWelcomeMsg(cmdbuf + strlen("welcome "));
         } else if (args[0] == "help") {
@@ -302,6 +320,7 @@ int main(int argc, char* argv[])
                   "    modacct <user> [flag]\n"
                   "    quit\n"
                   "    restart <auth|lobby|status> [...]\n"
+                  "    restrict\n"
                   "    welcome <message>\n",
                   stdout);
         } else {

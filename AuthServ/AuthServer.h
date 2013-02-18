@@ -23,8 +23,9 @@
 
 namespace DS
 {
-    void AuthServer_Init();
+    void AuthServer_Init(bool restrictLogins=false);
     void AuthServer_Add(SocketHandle client);
+    bool AuthServer_RestrictLogins();
     void AuthServer_Shutdown();
 
     void AuthServer_DisplayClients();

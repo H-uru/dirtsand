@@ -989,9 +989,11 @@ void wk_authWorker(DS::SocketHandle sockp)
     DS::FreeSock(client.m_sock);
 }
 
-void DS::AuthServer_Init()
+void DS::AuthServer_Init(bool restrictLogins)
 {
     s_authDaemonThread = std::thread(&dm_authDaemon);
+    if (restrictLogins)
+        s_authChannel.putMessage(e_AuthRestrictLogins);
 }
 
 void DS::AuthServer_Add(DS::SocketHandle client)
@@ -1003,6 +1005,16 @@ void DS::AuthServer_Add(DS::SocketHandle client)
 
     std::thread threadh(&wk_authWorker, client);
     threadh.detach();
+}
+
+bool DS::AuthServer_RestrictLogins()
+{
+    AuthClient_Private client;
+    Auth_RestrictLogins msg;
+    msg.m_client = &client;
+    s_authChannel.putMessage(e_AuthRestrictLogins, &msg);
+    client.m_channel.getMessage();
+    return msg.m_status;
 }
 
 void DS::AuthServer_Shutdown()
