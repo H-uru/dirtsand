@@ -426,11 +426,29 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     if (msg->m_player.m_playerId == 0)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
-    // Tell neighborhood about its new member
-    v_ref_node(std::get<2>(player), std::get<1>(player), std::get<0>(player));
-    dm_auth_bcast_ref({std::get<2>(player), std::get<1>(player), std::get<0>(player), 0});
-
     PostgresStrings<5> iparms;
+    iparms.set(0, DS::Vault::e_NodePlayerInfoList);
+    iparms.set(1, DS::Vault::e_AllPlayersFolder);
+    result = PQexecParams(s_postgres,
+                          "SELECT idx FROM vault.\"Nodes\""
+                          "    WHERE \"NodeType\"=$1 AND \"Int32_1\"=$2",
+                          2, 0, iparms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        // this doesn't block continuing
+    } else if (PQntuples(result) > 0) {
+        DS_DASSERT(PQntuples(result) == 1);
+        uint32_t allPlayersFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        if (v_ref_node(allPlayersFolder, std::get<1>(player), 0))
+            dm_auth_bcast_ref({allPlayersFolder, std::get<1>(player), 0, 0});
+    }
+    PQclear(result);
+
+    // Tell neighborhood about its new member
+    if (v_ref_node(std::get<2>(player), std::get<1>(player), std::get<0>(player)))
+        dm_auth_bcast_ref({std::get<2>(player), std::get<1>(player), std::get<0>(player), 0});
+
     iparms.set(0, client->m_acctUuid.toString());
     iparms.set(1, msg->m_player.m_playerId);
     iparms.set(2, msg->m_player.m_playerName);

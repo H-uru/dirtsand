@@ -248,6 +248,13 @@ bool dm_vault_init()
         if (!v_ref_node(s_systemNode, globalInbox, 0))
             return false;
 
+        // Create the AllPlayers folder
+        node.set_NodeType(DS::Vault::e_NodePlayerInfoList);
+        node.set_Int32_1(DS::Vault::e_AllPlayersFolder);
+        uint32_t allPlayers = v_create_node(node);
+        if (allPlayers == 0)
+            return false;
+
         std::list<AuthServer_AgeInfo> ages = configure_static_ages();
         for (auto iter = ages.begin(); iter != ages.end(); ++iter) {
             if (std::get<0>(v_create_age(*iter, e_AgePublic)) == 0)
