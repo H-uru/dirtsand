@@ -125,11 +125,12 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
                      const std::vector<uint32_t>& receivers)
 {
     DM_WRITEMSG(host, msg);
-
-    std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
     DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNoRetry : DS::e_SendSpam;
+
     for (auto rcvr_iter = receivers.begin(); rcvr_iter != receivers.end(); ++rcvr_iter) {
+        std::lock_guard<std::mutex> hostGuard(s_gameHostMutex);
         for (hostmap_t::iterator recv_host = s_gameHosts.begin(); recv_host != s_gameHosts.end(); ++recv_host) {
+            std::lock_guard<std::mutex> clientGuard(recv_host->second->m_clientMutex);
             auto client = recv_host->second->m_clients.find(*rcvr_iter);
             if (client != recv_host->second->m_clients.end()) {
                 try {
