@@ -371,10 +371,10 @@ void DS::GameServer_DisplayClients()
     std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
     if (s_gameHosts.size())
         fputs("Game Servers:\n", stdout);
-    for (hostmap_t::iterator host_iter = s_gameHosts.begin();
-         host_iter != s_gameHosts.end(); ++host_iter) {
+    for (hostmap_t::iterator host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter) {
         printf("    %s {%s}\n", host_iter->second->m_ageFilename.c_str(),
                host_iter->second->m_instanceId.toString().c_str());
+        std::lock_guard<std::mutex> clientGuard(host_iter->second->m_clientMutex);
         for (auto client_iter = host_iter->second->m_clients.begin();
              client_iter != host_iter->second->m_clients.end(); ++ client_iter)
             printf("      * %s - %s (%u)\n", DS::SockIpAddress(client_iter->second->m_sock).c_str(),
