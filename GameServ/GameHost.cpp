@@ -255,6 +255,7 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     // This does a few things for us...
     //   1. We get proper age node subscriptions (vault downloaded after we reply to this req)
     //   2. We ensure that the player is logged in and is supposed to be coming here.
+    //   3. We learn if the client is an admin (can send naughty messages)
     AuthClient_Private fakeClient;
     Auth_UpdateAgeSrv authReq;
     authReq.m_client = &fakeClient;
@@ -263,6 +264,7 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     s_authChannel.putMessage(e_AuthUpdateAgeSrv, reinterpret_cast<void*>(&authReq));
 
     DS::FifoMessage authReply = fakeClient.m_channel.getMessage();
+    msg->m_client->m_isAdmin = authReq.m_isAdmin;
     if (authReply.m_messageType != DS::e_NetSuccess) {
         SEND_REPLY(msg, authReply.m_messageType);
         return;
@@ -687,7 +689,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             {
                 MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
                 gameMsg->m_message->m_bcastFlags |= MOUL::Message::e_NetNonLocal;
-                if (gameMsg->m_message->makeSafeForNet())
+                if (msg->m_client->m_isAdmin || gameMsg->m_message->makeSafeForNet())
                     dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
             }
             break;
@@ -696,7 +698,7 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                 MOUL::NetMsgGameMessageDirected* directedMsg =
                         netmsg->Cast<MOUL::NetMsgGameMessageDirected>();
                 directedMsg->m_message->m_bcastFlags |= MOUL::Message::e_NetNonLocal;
-                if (directedMsg->m_message->makeSafeForNet())
+                if (msg->m_client->m_isAdmin || directedMsg->m_message->makeSafeForNet())
                     dm_propagate_to(host, netmsg, directedMsg->m_receivers);
             }
             break;

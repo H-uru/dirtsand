@@ -23,13 +23,15 @@
 
 namespace DS
 {
-    void AuthServer_Init();
+    void AuthServer_Init(bool restrictLogins=false);
     void AuthServer_Add(SocketHandle client);
+    bool AuthServer_RestrictLogins();
     void AuthServer_Shutdown();
 
     void AuthServer_DisplayClients();
 
     void AuthServer_AddAcct(DS::String, DS::String);
+    uint32_t AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags);
 
     class DbException : public std::exception
     {

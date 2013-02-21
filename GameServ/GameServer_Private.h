@@ -54,6 +54,7 @@ struct GameClient_Private : public AuthClient_Private
     MOUL::Uoid m_clientKey;
     sdlnamemap_t m_states;
     bool m_isLoaded;
+    bool m_isAdmin;
 };
 
 struct GameHost_Private

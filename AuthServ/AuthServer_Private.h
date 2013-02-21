@@ -88,11 +88,12 @@ struct AuthServer_Private : public AuthClient_Private
     DS::BufferStream m_buffer;
     uint32_t m_serverChallenge;
     DS::Uuid m_acctUuid;
+    uint32_t m_acctFlags;
     AuthServer_PlayerInfo m_player;
     uint32_t m_ageNodeId;
     std::map<uint32_t, DS::Stream*> m_downloads;
 
-    AuthServer_Private() : m_serverChallenge(0), m_ageNodeId(0) { }
+    AuthServer_Private() : m_serverChallenge(0), m_acctFlags(0), m_ageNodeId(0) { }
 
     ~AuthServer_Private()
     {

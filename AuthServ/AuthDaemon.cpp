@@ -25,6 +25,7 @@
 std::thread s_authDaemonThread;
 DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
+bool s_restrictLogins = false;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -155,12 +156,21 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
 
     client->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));
-    info->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+    client->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), 0, 10);
     info->m_billingType = strtoul(PQgetvalue(result, 0, 3), 0, 10);
     printf("[Auth] %s logged in as %s {%s}\n",
            DS::SockIpAddress(info->m_client->m_sock).c_str(),
            info->m_acctName.c_str(), client->m_acctUuid.toString().c_str());
     PQclear(result);
+
+    // Avoid fetching the players for banned dudes
+    if (client->m_acctFlags & DS::e_AcctBanned) {
+        SEND_REPLY(info, DS::e_NetAccountBanned);
+        return;
+    } else if (s_restrictLogins && !(client->m_acctFlags & (DS::e_AcctAdmin | DS::e_AcctBetaTester))) {
+        SEND_REPLY(info, DS::e_NetLoginDenied);
+        return;
+    }
 
     // Get list of players
     DS::String uuidString = client->m_acctUuid.toString();
@@ -875,9 +885,69 @@ void dm_auth_updateAgeSrv(Auth_UpdateAgeSrv* msg)
     }
     s_authClientMutex.unlock();
 
-    if (client)
+    if (client) {
         client->m_ageNodeId = msg->m_ageNodeId;
+        msg->m_isAdmin = (client->m_acctFlags & DS::e_AcctAdmin);
+    }
     SEND_REPLY(msg, client ? DS::e_NetSuccess : DS::e_NetPlayerNotFound);
+}
+
+void dm_auth_acctFlags(Auth_AccountFlags* msg)
+{
+    PostgresStrings<2> parms;
+    parms.set(0, msg->m_acctName);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT \"AcctFlags\" FROM auth.\"Accounts\""
+                                    "    WHERE LOWER(\"Login\")=LOWER($1)",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) != 1) {
+        fprintf(stderr, "%s:%d:\n    Expected 1 row, got %d\n",
+                __FILE__, __LINE__, PQntuples(result));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+
+    uint32_t acctFlags = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+
+    /* Thar be moar majick */
+#define TOGGLE_FLAG(flag) \
+    if (msg->m_flags & flag) { \
+        if (acctFlags & flag) \
+            acctFlags &= ~flag; \
+        else \
+            acctFlags |= flag; \
+    }
+    TOGGLE_FLAG(DS::e_AcctAdmin);
+    TOGGLE_FLAG(DS::e_AcctBanned);
+    TOGGLE_FLAG(DS::e_AcctBetaTester);
+#undef TOGGLE_FLAG
+
+    if (msg->m_flags != 0) {
+        parms.set(1, acctFlags);
+        result = PQexecParams(s_postgres,
+                              "UPDATE auth.\"Accounts\" SET \"AcctFlags\"=$2"
+                              "    WHERE LOWER(\"Login\")=LOWER($1)",
+                              2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQclear(result);
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+        PQclear(result);
+    }
+    msg->m_flags = acctFlags;
+    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void dm_authDaemon()
@@ -1079,6 +1149,17 @@ void dm_authDaemon()
                 break;
             case e_AuthUpdateAgeSrv:
                 dm_auth_updateAgeSrv(reinterpret_cast<Auth_UpdateAgeSrv*>(msg.m_payload));
+                break;
+            case e_AuthAcctFlags:
+                dm_auth_acctFlags(reinterpret_cast<Auth_AccountFlags*>(msg.m_payload));
+                break;
+            case e_AuthRestrictLogins:
+                s_restrictLogins = !s_restrictLogins;
+                if (msg.m_payload) {
+                    Auth_RestrictLogins* info = reinterpret_cast<Auth_RestrictLogins*>(msg.m_payload);
+                    info->m_status = s_restrictLogins;
+                    SEND_REPLY(info, DS::e_NetSuccess);
+                }
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
