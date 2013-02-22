@@ -59,8 +59,8 @@ static char** console_completer(const char* text, int start, int end)
 {
     static const char* completions[] = {
         /* Commands */
-        "addacct", "clients", "commdebug", "help", "keygen", "modacct", "quit",
-        "restart", "restrict", "welcome",
+        "addacct", "addallplayers", "clients", "commdebug", "help", "keygen", "modacct",
+        "quit", "restart", "restrict", "welcome",
         /* Services */
         "auth", "lobby", "status",
     };
@@ -310,9 +310,17 @@ int main(int argc, char* argv[])
             fprintf(stdout, "Logins are %s\n", hint);
         } else if (args[0] == "welcome") {
             DS::Settings::SetWelcomeMsg(cmdbuf + strlen("welcome "));
+        } else if (args[0] == "addallplayers") {
+            if (args.size() < 2) {
+                fputs("Usage: addallplayers [playerId]\n", stdout);
+                continue;
+            }
+            if (!DS::AuthServer_AddAllPlayersFolder(args[1].toUint()))
+                fprintf(stderr, "Couldn't add the AllPlayers folder to %d", args[1].toUint());
         } else if (args[0] == "help") {
             fputs("DirtSand v1.0 Console supported commands:\n"
                   "    addacct <user> <password>\n"
+                  "    addallplayers <playerId>\n"
                   "    clients\n"
                   "    commdebug <on|off>\n"
                   "    help\n"

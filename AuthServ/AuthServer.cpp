@@ -1056,3 +1056,13 @@ uint32_t DS::AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags)
     else
         return static_cast<uint32_t>(-1);
 }
+
+bool DS::AuthServer_AddAllPlayersFolder(uint32_t playerId)
+{
+    AuthClient_Private client;
+    Auth_AddAllPlayers msg;
+    msg.m_client = &client;
+    msg.m_playerId = playerId;
+    s_authChannel.putMessage(e_AuthAddAllPlayers, &msg);
+    return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
+}
