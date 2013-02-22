@@ -97,7 +97,7 @@ void cb_buildId(FileServer_Private& client)
     client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
 
     // Build ID
-    client.m_buffer.write<uint32_t>(CLIENT_BUILD_ID);
+    client.m_buffer.write<uint32_t>(DS::Settings::BuildId());
 
     SEND_REPLY();
 }
@@ -117,7 +117,7 @@ void cb_manifest(FileServer_Private& client)
 
     // Build ID
     uint32_t buildId = DS::RecvValue<uint32_t>(client.m_sock);
-    if (buildId && buildId != CLIENT_BUILD_ID) {
+    if (buildId && buildId != DS::Settings::BuildId()) {
         fprintf(stderr, "[File] Wrong Build ID from %s: %d\n",
                 DS::SockIpAddress(client.m_sock).c_str(), buildId);
         DS::CloseSock(client.m_sock);
@@ -183,7 +183,7 @@ void cb_downloadStart(FileServer_Private& client)
 
     // Build ID
     uint32_t buildId = DS::RecvValue<uint32_t>(client.m_sock);
-    if (buildId && buildId != CLIENT_BUILD_ID) {
+    if (buildId && buildId != DS::Settings::BuildId()) {
         fprintf(stderr, "[File] Wrong Build ID from %s: %d\n",
                 DS::SockIpAddress(client.m_sock).c_str(), buildId);
         DS::CloseSock(client.m_sock);

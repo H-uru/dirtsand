@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
     DS::StartStatusHTTP();
 
     char rl_prompt[32];
-    snprintf(rl_prompt, 32, "ds-%u> ", CLIENT_BUILD_ID);
+    snprintf(rl_prompt, 32, "ds-%u> ", DS::Settings::BuildId());
 
     char* cmdbuf = 0;
     rl_attempted_completion_function = &console_completer;

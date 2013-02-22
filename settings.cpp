@@ -21,6 +21,43 @@
 #include <vector>
 #include <cstdio>
 
+/* Constants configured via CMake */
+uint32_t DS::Settings::BranchId()
+{
+    return PRODUCT_BRANCH_ID;
+}
+
+uint32_t DS::Settings::BuildId()
+{
+    return PRODUCT_BUILD_ID;
+}
+
+uint32_t DS::Settings::BuildType()
+{
+    return PRODUCT_BUILD_TYPE;
+}
+
+const char* DS::Settings::ProductUuid()
+{
+    return PRODUCT_UUID;
+}
+
+const char* DS::Settings::HoodUserName()
+{
+    return HOOD_USER_NAME;
+}
+
+const char* DS::Settings::HoodInstanceName()
+{
+    return HOOD_INST_NAME;
+}
+
+uint32_t DS::Settings::HoodPopThreshold()
+{
+    return HOOD_POP_THRESHOLD;
+}
+
+
 static struct
 {
     /* Encryption */
