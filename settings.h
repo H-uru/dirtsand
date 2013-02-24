@@ -56,6 +56,7 @@ namespace DS
         const char* LobbyAddress();
         const char* LobbyPort();
 
+        bool StatusEnabled();
         const char* StatusAddress();
         const char* StatusPort();
 

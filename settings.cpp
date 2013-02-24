@@ -46,6 +46,7 @@ static struct
     DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
 
     /* Misc */
+    bool m_statusEnabled;
     DS::String m_welcome;
 } s_settings;
 
@@ -125,6 +126,14 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_statusAddr = params[1];
             } else if (params[0] == "Status.Port") {
                 s_settings.m_statusPort = params[1];
+            } else if (params[0] == "Status.Enabled") {
+                if (params[1].compare("true", e_CaseInsensitive) == 0)
+                    s_settings.m_statusEnabled = true;
+                else if (params[1].compare("false", e_CaseInsensitive) == 0)
+                    s_settings.m_statusEnabled = false;
+                else
+                    fprintf(stderr, "Error: '%s' is not a boolean value\n",
+                            params[1].c_str());
             } else if (params[0] == "File.Root") {
                 s_settings.m_fileRoot = params[1];
                 if (s_settings.m_fileRoot.right(1) != "/")
@@ -173,6 +182,7 @@ void DS::Settings::UseDefaults()
     s_settings.m_gameServ = "localhost";
     s_settings.m_lobbyPort = "14617";
     s_settings.m_statusPort = "8080";
+    s_settings.m_statusEnabled = true;
 
     s_settings.m_fileRoot = "./data";
     s_settings.m_authRoot = "./authdata";
@@ -220,6 +230,11 @@ const char* DS::Settings::LobbyAddress()
 const char* DS::Settings::LobbyPort()
 {
     return s_settings.m_lobbyPort.c_str();
+}
+
+bool DS::Settings::StatusEnabled()
+{
+    return s_settings.m_statusEnabled;
 }
 
 const char* DS::Settings::StatusAddress()

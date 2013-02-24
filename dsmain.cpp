@@ -155,7 +155,8 @@ int main(int argc, char* argv[])
     DS::GameServer_Init();
     DS::GateKeeper_Init();
     DS::StartLobby();
-    DS::StartStatusHTTP();
+    if (DS::Settings::StatusEnabled())
+        DS::StartStatusHTTP();
 
     char rl_prompt[32];
     snprintf(rl_prompt, 32, "ds-%u> ", CLIENT_BUILD_ID);
@@ -309,6 +310,9 @@ int main(int argc, char* argv[])
             const char* hint = (result ? "restricted" : "unrestricted");
             fprintf(stdout, "Logins are %s\n", hint);
         } else if (args[0] == "welcome") {
+            if (!DS::Settings::StatusEnabled())
+                fputs("Warning:  Status server disabled.  "
+                      "Setting a welcome message has no effect.\n", stderr);
             DS::Settings::SetWelcomeMsg(cmdbuf + strlen("welcome "));
         } else if (args[0] == "help") {
             fputs("DirtSand v1.0 Console supported commands:\n"
@@ -328,7 +332,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    DS::StopStatusHTTP();
+    if (DS::Settings::StatusEnabled())
+        DS::StopStatusHTTP();
     DS::StopLobby();
     DS::GateKeeper_Shutdown();
     DS::GameServer_Shutdown();
