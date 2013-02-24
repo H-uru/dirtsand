@@ -68,10 +68,13 @@ DS::Blob gen_default_sdl(const DS::String& filename)
 static std::tuple<uint32_t, uint32_t>
 find_a_friendly_neighborhood_for_our_new_visitor()
 {
-    PGresult* result = PQexec(s_postgres,
+    PostgresStrings<2> parms;
+    parms.set(0, DS::Settings::HoodUserName());
+    PGresult* result = PQexecParams(s_postgres,
                        "SELECT idx FROM vault.\"Nodes\" WHERE \"String64_2\"="
-                       "    'Neighborhood' AND \"String64_4\" = '" HOOD_USER_NAME "'"
-                       "    ORDER BY \"Int32_1\"");
+                       "    'Neighborhood' AND \"String64_4\" = $1"
+                       "    ORDER BY \"Int32_1\"",
+                       1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
@@ -82,7 +85,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
     for (int i = 0; i < PQntuples(result); ++i) {
         uint32_t ageInfoId = strtoul(PQgetvalue(result, i, 0), 0, 10);
         uint32_t owners = v_count_age_owners(ageInfoId);
-        if (owners < HOOD_POPULATION_THRESHOLD) {
+        if (owners < DS::Settings::HoodPopThreshold()) {
             theHoodInfo = ageInfoId;
             break;
         }
@@ -94,15 +97,15 @@ find_a_friendly_neighborhood_for_our_new_visitor()
         AuthServer_AgeInfo age;
         age.m_ageId = gen_uuid();
         age.m_filename = "Neighborhood";
-        age.m_instName = HOOD_INSTANCE_NAME;
-        age.m_userName = HOOD_USER_NAME;
-        age.m_description = HOOD_USER_NAME " " HOOD_INSTANCE_NAME;
+        age.m_instName = DS::Settings::HoodInstanceName();
+        age.m_userName = DS::Settings::HoodUserName();
+        age.m_description = DS::String::Format("%s %s",
+                DS::Settings::HoodUserName(), DS::Settings::HoodInstanceName());
         age.m_seqNumber = -1;   // Auto-generate
         theHoodInfo = std::get<1>(v_create_age(age, e_AgePublic));
     }
 
     // It's important to BCast new hood members, so we'll return the ageOwners folder
-    PostgresStrings<2> parms;
     parms.set(0, theHoodInfo);
     parms.set(1, DS::Vault::e_AgeOwnersFolder);
     result = PQexecParams(s_postgres, "SELECT idx FROM vault.find_folder($1, $2);",
