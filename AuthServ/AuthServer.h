@@ -32,6 +32,7 @@ namespace DS
 
     void AuthServer_AddAcct(DS::String, DS::String);
     uint32_t AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags);
+    bool AuthServer_AddAllPlayersFolder(uint32_t playerId);
 
     class DbException : public std::exception
     {
