@@ -26,6 +26,7 @@ std::thread s_authDaemonThread;
 DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
 bool s_restrictLogins = false;
+extern uint32_t s_allPlayers;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -427,8 +428,12 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
 
     // Tell neighborhood about its new member
-    v_ref_node(std::get<2>(player), std::get<1>(player), std::get<0>(player));
-    dm_auth_bcast_ref({std::get<2>(player), std::get<1>(player), std::get<0>(player), 0});
+    if (v_ref_node(std::get<2>(player), std::get<1>(player), std::get<0>(player)))
+        dm_auth_bcast_ref({std::get<2>(player), std::get<1>(player), std::get<0>(player), 0});
+
+    // Add new player to AllPlayers
+    if (v_ref_node(s_allPlayers, std::get<1>(player), 0))
+        dm_auth_bcast_ref({s_allPlayers, std::get<1>(player), 0, 0});
 
     PostgresStrings<5> iparms;
     iparms.set(0, client->m_acctUuid.toString());
@@ -950,6 +955,27 @@ void dm_auth_acctFlags(Auth_AccountFlags* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_addAllPlayers(Auth_AddAllPlayers* msg)
+{
+    check_postgres();
+
+    if (v_has_node(msg->m_playerId, s_allPlayers)) {
+        if (!v_unref_node(msg->m_playerId, s_allPlayers)) {
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+        dm_auth_bcast_unref({msg->m_playerId, s_allPlayers, 0, 0});
+    } else {
+        if (!v_ref_node(msg->m_playerId, s_allPlayers, 0)) {
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+        dm_auth_bcast_ref({msg->m_playerId, s_allPlayers, 0, 0});
+    }
+
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -966,6 +992,10 @@ void dm_authDaemon()
 
     if (!dm_vault_init()) {
         fputs("[Auth] Vault failed to initialize\n", stderr);
+        return;
+    }
+    if (!dm_all_players_init()) {
+        fputs("[Auth] AllPlayers folder failed to initialize\n", stderr);
         return;
     }
 
@@ -1160,6 +1190,9 @@ void dm_authDaemon()
                     info->m_status = s_restrictLogins;
                     SEND_REPLY(info, DS::e_NetSuccess);
                 }
+                break;
+            case e_AuthAddAllPlayers:
+                dm_auth_addAllPlayers(reinterpret_cast<Auth_AddAllPlayers*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

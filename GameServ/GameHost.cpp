@@ -100,6 +100,27 @@ void dm_game_shutdown(GameHost_Private* host)
     delete host;
 }
 
+void dm_broadcast(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender)
+{
+    DM_WRITEMSG(host, msg);
+    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNoRetry : DS::e_SendSpam;
+
+    std::lock_guard<std::mutex> hostGuard(s_gameHostMutex);
+    for (auto host_it = s_gameHosts.begin(); host_it != s_gameHosts.end(); ++host_it) {
+        std::lock_guard<std::mutex> clientGuard(host_it->second->m_clientMutex);
+        for (auto client_it = host_it->second->m_clients.begin(); client_it != host_it->second->m_clients.end(); ++client_it) {
+            if (client_it->second->m_clientInfo.m_PlayerId == sender
+                && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
+                continue;
+
+            try {
+                DS::CryptSendBuffer(client_it->second->m_sock, client_it->second->m_crypt,
+                                    host->m_buffer.buffer(), host->m_buffer.size(), mode);
+            } catch (DS::SockHup&) { }
+        }
+    }
+}
+
 void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender)
 {
     DM_WRITEMSG(host, msg);
@@ -689,7 +710,12 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             {
                 MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
                 gameMsg->m_message->m_bcastFlags |= MOUL::Message::e_NetNonLocal;
-                if (msg->m_client->m_isAdmin || gameMsg->m_message->makeSafeForNet())
+                if (msg->m_client->m_isAdmin) {
+                    if (gameMsg->m_contentFlags & MOUL::NetMessage::e_RouteToAllPlayers)
+                        dm_broadcast(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
+                    else
+                        dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
+                } else if (gameMsg->m_message->makeSafeForNet())
                     dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
             }
             break;

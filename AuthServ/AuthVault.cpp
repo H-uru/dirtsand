@@ -25,6 +25,7 @@
 
 static uint32_t s_systemNode = 0;
 extern PGconn* s_postgres;
+uint32_t s_allPlayers = 0;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -262,6 +263,58 @@ bool dm_vault_init()
         PQclear(result);
     }
 
+    return true;
+}
+
+bool dm_all_players_init()
+{
+    PostgresStrings<2> parms;
+    parms.set(0, DS::Vault::e_NodePlayerInfoList);
+    parms.set(1, DS::Vault::e_AllPlayersFolder);
+    PGresult* result = PQexecParams(s_postgres,
+                                    "SELECT idx FROM vault.\"Nodes\""
+                                    "    WHERE \"NodeType\"=$1 AND \"Int32_1\"=$2",
+                                    2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    } else if (PQntuples(result) > 0) {
+        DS_DASSERT(PQntuples(result) == 1);
+        s_allPlayers = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        PQclear(result);
+        return true;
+    }
+
+    // create that mutha
+    result = PQexecParams(s_postgres,
+                          "INSERT INTO vault.\"Nodes\" (\"NodeType\", \"Int32_1\")"
+                          "    VALUES ($1, $2) RETURNING idx",
+                          2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+    s_allPlayers = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+
+    // add the already existing players
+    parms.set(0, DS::Vault::e_NodePlayerInfo);
+    result = PQexecParams(s_postgres,
+                          "SELECT idx FROM vault.\"Nodes\" WHERE \"NodeType\"=$1",
+                          1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+    for (int i = 0; i < PQntuples(result); ++i)
+        v_ref_node(s_allPlayers, strtoul(PQgetvalue(result, i, 0), 0, 10), 0);
+    PQclear(result);
     return true;
 }
 
