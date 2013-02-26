@@ -106,7 +106,7 @@ void cb_register(AuthServer_Private& client)
 
     // Build ID
     uint32_t buildId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    if (buildId && buildId != CLIENT_BUILD_ID) {
+    if (buildId && buildId != DS::Settings::BuildId()) {
         fprintf(stderr, "[Auth] Wrong Build ID from %s: %d\n",
                 DS::SockIpAddress(client.m_sock).c_str(), buildId);
         DS::CloseSock(client.m_sock);

@@ -1,6 +1,20 @@
 project(dirtsand)
 cmake_minimum_required(VERSION 2.6)
 
+# Set up Product Identification parameters (NOTE: Should match plClient)
+set(PRODUCT_BRANCH_ID   "1"         CACHE STRING "Branch ID")
+set(PRODUCT_BUILD_ID    "912"       CACHE STRING "Build ID")
+set(PRODUCT_BUILD_TYPE  "50"        CACHE STRING "Build Type")
+set(PRODUCT_UUID        "ea489821-6c35-4bd0-9dae-bb17c585e680"
+                                    CACHE STRING "Product UUID")
+
+set(DS_HOOD_USER_NAME       "DS"
+    CACHE STRING "Default Neighborhood Name")
+set(DS_HOOD_INST_NAME       "Neighborhood"
+    CACHE STRING "Default Neighborhood Instance Name")
+set(DS_HOOD_POP_THRESHOLD   "20"
+    CACHE STRING "Default Neighborhood Max Population")
+
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                     OUTPUT_VARIABLE GCC_VERSION)
@@ -34,6 +48,14 @@ try_compile(HAVE_ATOMIC ${dirtsand_BINARY_DIR}
 if(HAVE_ATOMIC)
     add_definitions(-DHAVE_ATOMIC)
 endif()
+
+add_definitions(-DPRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID})
+add_definitions(-DPRODUCT_BUILD_ID=${PRODUCT_BUILD_ID})
+add_definitions(-DPRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE})
+add_definitions(-DPRODUCT_UUID="${PRODUCT_UUID}")
+add_definitions(-DHOOD_USER_NAME="${DS_HOOD_USER_NAME}")
+add_definitions(-DHOOD_INST_NAME="${DS_HOOD_INST_NAME}")
+add_definitions(-DHOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD})
 
 set(PlasMOUL_SOURCES
     PlasMOUL/AgeLinkStruct.cpp
