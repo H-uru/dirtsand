@@ -225,7 +225,7 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
     while (size > 0) {
         ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                              buffer, size, 0);
-        if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK))
+        if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK || errno == EPIPE))
             throw DS::SockHup();
         if (bytes < 0 && errno == EINTR)
             continue;
