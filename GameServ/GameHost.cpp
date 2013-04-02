@@ -63,6 +63,7 @@ void dm_game_shutdown(GameHost_Private* host)
 
     for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter)
         clone_iter->second->unref();
+    host->m_clones.clear();
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
