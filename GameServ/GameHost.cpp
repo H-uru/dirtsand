@@ -622,30 +622,23 @@ void dm_load_clone(GameHost_Private* host, GameClient_Private* client,
                    MOUL::NetMsgLoadClone* netmsg)
 {
     MOUL::LoadCloneMsg* msg = netmsg->m_message->Cast<MOUL::LoadCloneMsg>();
-    if (msg->makeSafeForNet())
-    {
-        if (netmsg->m_isPlayer)
-        {
+    if (msg->makeSafeForNet()) {
+        if (netmsg->m_isPlayer) {
             host->m_clientMutex.lock();
             client->m_clientKey = netmsg->m_object;
             client->m_isLoaded = netmsg->m_isLoading;
             host->m_clientMutex.unlock();
-        }
-        else
-        {
+        } else {
             std::lock_guard<std::mutex> cloneGuard(host->m_cloneMutex);
             auto it = host->m_clones.find(netmsg->m_object);
-            if (it != host->m_clones.end())
-            {
+            if (it != host->m_clones.end()) {
                 it->second->unref();
                 // If, for some reason, the client decides to send a dupe (it can happen...)
                 if (netmsg->m_isLoading)
                     host->m_clones[netmsg->m_object] = netmsg;
                 else
                     host->m_clones.erase(it);
-            }
-            else if (netmsg->m_isLoading)
-            {
+            } else if (netmsg->m_isLoading) {
                 netmsg->ref();
                 host->m_clones[netmsg->m_object] = netmsg;
             }
