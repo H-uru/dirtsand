@@ -634,9 +634,10 @@ void dm_load_clone(GameHost_Private* host, GameClient_Private* client,
             if (it != host->m_clones.end()) {
                 it->second->unref();
                 // If, for some reason, the client decides to send a dupe (it can happen...)
-                if (netmsg->m_isLoading)
+                if (netmsg->m_isLoading) {
+                    netmsg->ref();
                     host->m_clones[netmsg->m_object] = netmsg;
-                else
+                } else
                     host->m_clones.erase(it);
             } else if (netmsg->m_isLoading) {
                 netmsg->ref();
