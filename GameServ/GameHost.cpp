@@ -61,10 +61,8 @@ void dm_game_shutdown(GameHost_Private* host)
             DS::CloseSock(client_iter->second->m_sock);
     }
 
-    host->m_cloneMutex.lock();
     for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter)
         clone_iter->second->unref();
-    host->m_cloneMutex.unlock();
 
     bool complete = false;
     for (int i=0; i<50 && !complete; ++i) {
@@ -554,14 +552,10 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     members->unref();
 
     // Load non-avatar clones (ie NPC quabs)
-    {
-        std::lock_guard<std::mutex> cloneGuard(host->m_cloneMutex);
-        for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter)
-        {
-            DM_WRITEMSG(host, clone_iter->second);
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size());
-        }
+    for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter) {
+        DM_WRITEMSG(host, clone_iter->second);
+        DS::CryptSendBuffer(client->m_sock, client->m_crypt,
+                            host->m_buffer.buffer(), host->m_buffer.size());
     }
 
     // Load clones for players already in the age
@@ -629,7 +623,6 @@ void dm_load_clone(GameHost_Private* host, GameClient_Private* client,
             client->m_isLoaded = netmsg->m_isLoading;
             host->m_clientMutex.unlock();
         } else {
-            std::lock_guard<std::mutex> cloneGuard(host->m_cloneMutex);
             auto it = host->m_clones.find(netmsg->m_object);
             if (it != host->m_clones.end()) {
                 it->second->unref();
