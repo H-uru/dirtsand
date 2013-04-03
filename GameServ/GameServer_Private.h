@@ -70,7 +70,6 @@ struct GameHost_Private
     std::mutex m_clientMutex;
     std::mutex m_lockMutex;
     std::mutex m_gmMutex;
-    std::mutex m_cloneMutex;
     DS::MsgChannel m_channel;
     DS::BufferStream m_buffer;
 
