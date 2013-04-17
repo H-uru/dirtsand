@@ -111,6 +111,7 @@ extern std::thread s_authDaemonThread;
 
 void dm_authDaemon();
 bool dm_vault_init();
+bool dm_check_static_ages();
 bool dm_all_players_init();
 
 DS::Uuid gen_uuid();

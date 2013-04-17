@@ -123,17 +123,25 @@ find_a_friendly_neighborhood_for_our_new_visitor()
     }
 }
 
-static uint32_t find_public_age_1(const DS::String& filename)
+static uint32_t find_public_age_1(const DS::String& filename, const DS::Uuid& uuid=DS::Uuid())
 {
-    PostgresStrings<1> parm;
-    parm.set(0, filename);
-    PGresult* result = PQexecParams(s_postgres, "SELECT idx FROM vault.\"Nodes\""
-                       "    WHERE \"Int32_2\" = 1 AND \"String64_2\"=$1",
-                       1, 0, parm.m_values, 0, 0, 0);
+    PostgresStrings<2> parms;
+    parms.set(0, filename);
+    PGresult* result;
+    if (uuid.isNull()) {
+        result = PQexecParams(s_postgres, "SELECT idx FROM vault.\"Nodes\""
+                              "    WHERE \"Int32_2\" = 1 AND \"String64_2\"=$1",
+                              1, 0, parms.m_values, 0, 0, 0);
+    } else {
+        parms.set(1, uuid.toString());
+        result = PQexecParams(s_postgres, "SELECT idx FROM vault.\"Nodes\""
+                              "    WHERE \"Int32_2\" = 1 AND \"String64_2\"=$1 AND \"Uuid_1\"=$2",
+                              2, 0, parms.m_values, 0, 0, 0);
+    }
     uint32_t ageInfoId = 0;
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
-        DS_DASSERT(PQntuples(result) == 1);
-        ageInfoId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        if (PQntuples(result) > 0)
+            ageInfoId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
     } else {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
@@ -171,9 +179,7 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
                 header.replace("[","");
                 header.replace("]","");
 
-                if (header == "auto")
-                    age.m_ageId = gen_uuid();
-                else
+                if (header != "auto")
                     age.m_ageId = DS::Uuid(header.c_str());
 
                 haveAge = true;
@@ -251,12 +257,6 @@ bool dm_vault_init()
 
         if (!v_ref_node(s_systemNode, globalInbox, 0))
             return false;
-
-        std::list<AuthServer_AgeInfo> ages = configure_static_ages();
-        for (auto iter = ages.begin(); iter != ages.end(); ++iter) {
-            if (std::get<0>(v_create_age(*iter, e_AgePublic)) == 0)
-                return false;
-        }
     } else {
         DS_DASSERT(count == 1);
         s_systemNode = strtoul(PQgetvalue(result, 0, 0), 0, 10);
@@ -315,6 +315,21 @@ bool dm_all_players_init()
     for (int i = 0; i < PQntuples(result); ++i)
         v_ref_node(s_allPlayers, strtoul(PQgetvalue(result, i, 0), 0, 10), 0);
     PQclear(result);
+    return true;
+}
+
+bool dm_check_static_ages()
+{
+    std::list<AuthServer_AgeInfo> ages = configure_static_ages();
+    for (auto it = ages.begin(); it != ages.end(); ++it) {
+        AuthServer_AgeInfo& age = *it;
+        if (find_public_age_1(age.m_filename, age.m_ageId) == 0) {
+            if (age.m_ageId.isNull())
+                age.m_ageId = gen_uuid();
+            if (std::get<0>(v_create_age(age, e_AgePublic)) == 0)
+                return false;
+        }
+    }
     return true;
 }
 
