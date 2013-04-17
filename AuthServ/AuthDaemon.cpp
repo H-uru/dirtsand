@@ -994,6 +994,10 @@ void dm_authDaemon()
         fputs("[Auth] Vault failed to initialize\n", stderr);
         return;
     }
+    if (!dm_check_static_ages()) {
+        fputs("[Auth] Failed to initialize static ages\n", stderr);
+        return;
+    }
     if (!dm_all_players_init()) {
         fputs("[Auth] AllPlayers folder failed to initialize\n", stderr);
         return;
