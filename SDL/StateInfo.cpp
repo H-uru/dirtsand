@@ -717,7 +717,12 @@ void SDL::Variable::setDefault()
 bool SDL::Variable::isDefault() const
 {
     DS_DASSERT(m_data != 0);
-    
+
+    // Variable length vars are never at the default!
+    // Why? The count is read/written in a !default block.
+    if (m_data->m_desc->m_size == -1)
+        return false;
+
     // Don't assume any one default is the same thing that the client
     // will provide if the default is missing from the SDL file
     if (!m_data->m_desc->m_default.m_valid)
