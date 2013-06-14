@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 
 # Set up Product Identification parameters (NOTE: Should match plClient)
 set(PRODUCT_BRANCH_ID   "1"         CACHE STRING "Branch ID")
-set(PRODUCT_BUILD_ID    "912"       CACHE STRING "Build ID")
+set(PRODUCT_BUILD_ID    "918"       CACHE STRING "Build ID")
 set(PRODUCT_BUILD_TYPE  "50"        CACHE STRING "Build Type")
 set(PRODUCT_UUID        "ea489821-6c35-4bd0-9dae-bb17c585e680"
                                     CACHE STRING "Product UUID")
