@@ -24,6 +24,41 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <memory>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+struct FileRequest
+{
+    int m_fd;
+    off_t m_size;
+    off_t m_pos;
+
+    typedef std::tuple<bool, off_t> chunk_t;
+
+    FileRequest(int fd) : m_fd(fd), m_pos()
+    {
+        struct stat stat_buf;
+        fstat(m_fd, &stat_buf);
+        m_size = stat_buf.st_size;
+    }
+
+    ~FileRequest()
+    {
+        close(m_fd);
+    }
+
+    chunk_t nextChunk()
+    {
+        off_t left = m_size - m_pos;
+        if (left > CHUNK_SIZE) {
+            return std::make_tuple(false, CHUNK_SIZE);
+        } else {
+            return std::make_tuple(true, left);
+        }
+    }
+};
 
 struct FileServer_Private
 {
@@ -31,15 +66,11 @@ struct FileServer_Private
     DS::BufferStream m_buffer;
     uint32_t m_readerId;
 
-    std::map<uint32_t, DS::Stream*> m_downloads;
+    std::map<uint32_t, std::unique_ptr<FileRequest>> m_downloads;
 
     ~FileServer_Private()
     {
-        while (!m_downloads.empty()) {
-            auto item = m_downloads.begin();
-            delete item->second;
-            m_downloads.erase(item);
-        }
+        m_downloads.clear();
     }
 };
 
@@ -66,6 +97,11 @@ enum FileServer_MsgIds
     client.m_buffer.seek(0, SEEK_SET); \
     client.m_buffer.write<uint32_t>(client.m_buffer.size()); \
     DS::SendBuffer(client.m_sock, client.m_buffer.buffer(), client.m_buffer.size())
+
+#define SEND_FD_REPLY(fd, off, sz) \
+    client.m_buffer.seek(0, SEEK_SET); \
+    client.m_buffer.write<uint32_t>(client.m_buffer.size() + sz); \
+    DS::SendFile(client.m_sock, client.m_buffer.buffer(), client.m_buffer.size(), (fd), &(off), (sz))
 
 void file_init(FileServer_Private& client)
 {
@@ -202,48 +238,37 @@ void cb_downloadStart(FileServer_Private& client)
     filename.replace("\\", "/");
 
     filename = DS::Settings::FileRoot() + filename;
-    DS::FileStream* stream = new DS::FileStream();
-    try {
-        stream->open(filename.c_str(), "rb");
-    } catch (DS::FileIOException ex) {
-        fprintf(stderr, "[File] Could not open file %s: %s\n[File] Requested by %s\n",
-                filename.c_str(), ex.what(), DS::SockIpAddress(client.m_sock).c_str());
+    int fd = open(filename.c_str(), O_RDONLY);
+
+    if (fd < 0) {
+        fprintf(stderr, "[File] Could not open file %s\n[File] Requested by %s\n",
+                filename.c_str(), DS::SockIpAddress(client.m_sock).c_str());
         client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
         client.m_buffer.write<uint32_t>(0);     // Reader ID
         client.m_buffer.write<uint32_t>(0);     // File size
         client.m_buffer.write<uint32_t>(0);     // Data packet size
         SEND_REPLY();
-        delete stream;
         return;
     }
 
+    std::unique_ptr<FileRequest> req(new FileRequest(fd));
     client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
     client.m_buffer.write<uint32_t>(++client.m_readerId);
-    client.m_buffer.write<uint32_t>(stream->size());
+    client.m_buffer.write<uint32_t>(req->m_size);
 
-    uint8_t data[CHUNK_SIZE];
-    if (stream->size() > CHUNK_SIZE) {
-        client.m_buffer.write<uint32_t>(CHUNK_SIZE);
-        stream->readBytes(data, CHUNK_SIZE);
-        client.m_buffer.writeBytes(data, CHUNK_SIZE);
-        client.m_downloads[client.m_readerId] = stream;
-    } else {
-        client.m_buffer.write<uint32_t>(stream->size());
-        stream->readBytes(data, stream->size());
-        client.m_buffer.writeBytes(data, stream->size());
-        delete stream;
+    FileRequest::chunk_t c = req->nextChunk();
+    client.m_buffer.write<uint32_t>(std::get<1>(c));
+    SEND_FD_REPLY(req->m_fd, req->m_pos, std::get<1>(c));
+    if (!std::get<0>(c)) {
+        client.m_downloads[client.m_readerId] = std::move(req);
     }
-
-    SEND_REPLY();
 }
 
 void cb_downloadNext(FileServer_Private& client)
 {
     START_REPLY(e_FileToCli_FileDownloadReply);
 
-    // Trans ID
-    client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
-
+    uint32_t transId = DS::RecvValue<uint32_t>(client.m_sock);
     uint32_t readerId = DS::RecvValue<uint32_t>(client.m_sock);
     auto fi = client.m_downloads.find(readerId);
     if (fi == client.m_downloads.end()) {
@@ -251,25 +276,17 @@ void cb_downloadNext(FileServer_Private& client)
         return;
     }
 
+    client.m_buffer.write<uint32_t>(transId);
     client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
     client.m_buffer.write<uint32_t>(fi->first);
-    client.m_buffer.write<uint32_t>(fi->second->size());
+    client.m_buffer.write<uint32_t>(fi->second->m_size);
 
-    uint8_t data[CHUNK_SIZE];
-    size_t bytesLeft = fi->second->size() - fi->second->tell();
-    if (bytesLeft > CHUNK_SIZE) {
-        client.m_buffer.write<uint32_t>(CHUNK_SIZE);
-        fi->second->readBytes(data, CHUNK_SIZE);
-        client.m_buffer.writeBytes(data, CHUNK_SIZE);
-    } else {
-        client.m_buffer.write<uint32_t>(bytesLeft);
-        fi->second->readBytes(data, bytesLeft);
-        client.m_buffer.writeBytes(data, bytesLeft);
-        delete fi->second;
+    FileRequest::chunk_t c = fi->second->nextChunk();
+    client.m_buffer.write<uint32_t>(std::get<1>(c));
+    SEND_FD_REPLY(fi->second->m_fd, fi->second->m_pos, std::get<1>(c));
+    if (std::get<0>(c)) {
         client.m_downloads.erase(fi);
     }
-
-    SEND_REPLY();
 }
 
 void wk_fileServ(DS::SocketHandle sockp)

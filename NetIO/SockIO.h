@@ -50,6 +50,8 @@ namespace DS
 
     void SendBuffer(const SocketHandle sock, const void* buffer,
                     size_t size, SendFlag mode=e_SendDefault);
+    void SendFile(const SocketHandle sock, const void* buffer, size_t bufsz,
+                  int fd, off_t* offset, size_t fdsz);
     void RecvBuffer(const SocketHandle sock, void* buffer, size_t size);
     size_t PeekSize(const SocketHandle sock);
 

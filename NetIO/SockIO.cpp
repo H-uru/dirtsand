@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/sendfile.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -30,6 +31,7 @@
 #include <cstring>
 #include <mutex>
 
+static const int SOCK_NO  = 0;
 static const int SOCK_YES = 1;
 
 struct SocketHandle_Private
@@ -218,6 +220,35 @@ void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size
         CloseSock(sock);
         throw DS::SockHup();
     }
+}
+
+void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
+                  int fd, off_t* offset, size_t fdsz)
+{
+    SocketHandle_Private* imp = reinterpret_cast<SocketHandle_Private*>(sock);
+    std::lock_guard<std::mutex> guard(imp->m_sendLock);
+
+    // Send the prepended buffer
+    setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_YES, sizeof(SOCK_YES));
+    while (bufsz > 0) {
+        ssize_t bytes = send(imp->m_sockfd, buffer, bufsz, 0);
+        if (bytes < 0 && (errno == EPIPE || errno == ECONNRESET))
+            throw DS::SockHup();
+        else if (bytes == 0)
+            throw DS::SockHup();
+        DS_PASSERT(bytes > 0);
+
+        bufsz -= bytes;
+        buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
+    }
+
+    // Now send the file data via a system call
+    while (fdsz > 0) {
+        ssize_t bytes = sendfile(imp->m_sockfd, fd, offset, fdsz);
+        DS_PASSERT(bytes > 0);
+        fdsz -= bytes;
+    }
+    setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_NO, sizeof(SOCK_NO));
 }
 
 void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
