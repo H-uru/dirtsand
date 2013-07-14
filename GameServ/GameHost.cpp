@@ -627,6 +627,9 @@ void dm_load_clone(GameHost_Private* host, GameClient_Private* client,
             }
         }
         dm_propagate(host, netmsg, client->m_clientInfo.m_PlayerId);
+
+        // Any subsequent sends of these message are initial states
+        netmsg->m_isInitialState = true;
     }
 }
 
