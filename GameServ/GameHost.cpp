@@ -194,6 +194,8 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 
         dm_propagate(host, netMsg, msg->m_client->m_clientInfo.m_PlayerId);
         netMsg->unref();
+
+        host->m_states.erase(msg->m_client->m_clientKey);
     }
 
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
