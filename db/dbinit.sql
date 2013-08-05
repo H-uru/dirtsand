@@ -85,7 +85,7 @@ CREATE TABLE "Scores" (
     "Points" integer DEFAULT 0 NOT NULL
 );
 ALTER TABLE auth."Scores" OWNER TO dirtsand;
-CREATE INDEX ON auth."Scores" ("OwnerIdx", "Name");
+CREATE INDEX "Score_Index" ON auth."Scores" ("OwnerIdx", "Name");
 
 CREATE SEQUENCE "Scores_idx_seq"
     START WITH 1
