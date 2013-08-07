@@ -102,15 +102,15 @@ RETURNS integer AS
 $BODY$
 DECLARE
     ownerId ALIAS FOR $1;
-    type ALIAS FOR $2;
-    name ALIAS FOR $3;
+    scoreType ALIAS FOR $2;
+    scoreName ALIAS FOR $3;
     points ALIAS FOR $4;
 
     scoreId integer DEFAULT -1;
 BEGIN
-    IF (SELECT COUNT(*) FROM auth."Scores" WHERE "OwnerIdx"=ownerId AND "Name"=name) < 1 THEN
+    IF (SELECT COUNT(*) FROM auth."Scores" WHERE "OwnerIdx"=ownerId AND "Name"=ownerName) < 1 THEN
         INSERT INTO auth."Scores" ("OwnerIdx", "CreateTime", "Type", "Name", "Points")
-        VALUES (ownerId, EXTRACT(EPOCH FROM NOW()), type, name, points)
+        VALUES (ownerId, EXTRACT(EPOCH FROM NOW()), scoreType, scoreName, points)
         RETURNING idx INTO scoreId;
     END IF;
     RETURN scoreId;
