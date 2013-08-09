@@ -108,7 +108,7 @@ DECLARE
 
     scoreId integer DEFAULT -1;
 BEGIN
-    IF (SELECT COUNT(*) FROM auth."Scores" WHERE "OwnerIdx"=ownerId AND "Name"=ownerName) < 1 THEN
+    IF (SELECT COUNT(*) FROM auth."Scores" WHERE "OwnerIdx"=ownerId AND "Name"=scoreName) < 1 THEN
         INSERT INTO auth."Scores" ("OwnerIdx", "CreateTime", "Type", "Name", "Points")
         VALUES (ownerId, EXTRACT(EPOCH FROM NOW()), scoreType, scoreName, points)
         RETURNING idx INTO scoreId;
