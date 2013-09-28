@@ -40,7 +40,14 @@ enum GameServer_MsgIds
     e_GameToCli_PropagateBuffer, e_GameToCli_GameMgrMsg,
 };
 
-typedef std::unordered_map<DS::String, SDL::State, DS::StringHash> sdlnamemap_t;
+struct GameState
+{
+    bool m_persist;
+    bool m_isAvatar;
+    SDL::State m_state;
+};
+
+typedef std::unordered_map<DS::String, GameState, DS::StringHash> sdlnamemap_t;
 typedef std::unordered_map<MOUL::Uoid, sdlnamemap_t, MOUL::UoidHash> sdlstatemap_t;
 typedef std::unordered_map<MOUL::Uoid, uint32_t, MOUL::UoidHash> lockmap_t;
 
@@ -52,7 +59,6 @@ struct GameClient_Private : public AuthClient_Private
     DS::Uuid m_clientId;
     MOUL::ClientGuid m_clientInfo;
     MOUL::Uoid m_clientKey;
-    sdlnamemap_t m_states;
     bool m_isLoaded;
     bool m_isAdmin;
 };

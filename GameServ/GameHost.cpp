@@ -194,6 +194,8 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 
         dm_propagate(host, netMsg, msg->m_client->m_clientInfo.m_PlayerId);
         netMsg->unref();
+
+        host->m_states.erase(msg->m_client->m_clientKey);
     }
 
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
@@ -363,7 +365,9 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
         for (sdlnamemap_t::iterator it = state_iter->second.begin();
              it != state_iter->second.end(); ++it) {
             state->m_object = state_iter->first;
-            state->m_sdlBlob = it->second.toBlob();
+            state->m_isAvatar = it->second.m_isAvatar;
+            state->m_persistOnServer = it->second.m_persist;
+            state->m_sdlBlob = it->second.m_state.toBlob();
             DM_WRITEMSG(host, state);
             DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                                 host->m_buffer.buffer(), host->m_buffer.size());
@@ -417,17 +421,20 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
         if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
             fputs("[Game] Error writing SDL node back to vault\n", stderr);
-    } else if (state->m_isAvatar) {
-        if (client->m_states.find(update.descriptor()->m_name) == client->m_states.end())
-            client->m_states[update.descriptor()->m_name] = update;
-        else
-            client->m_states[update.descriptor()->m_name].add(update);
     } else {
-        sdlstatemap_t::iterator fobj = host->m_states.find(state->m_object);
-        if (fobj == host->m_states.end() || fobj->second.find(update.descriptor()->m_name) == fobj->second.end())
-            host->m_states[state->m_object][update.descriptor()->m_name] = update;
-        else
-            host->m_states[state->m_object][update.descriptor()->m_name].add(update);
+        auto fobj = host->m_states.find(state->m_object);
+        if (fobj == host->m_states.end() || fobj->second.find(update.descriptor()->m_name) == fobj->second.end()) {
+            GameState gs;
+            gs.m_isAvatar = state->m_isAvatar;
+            gs.m_persist = state->m_persistOnServer;
+            gs.m_state = update;
+            host->m_states[state->m_object][update.descriptor()->m_name] = gs;
+        } else {
+            GameState& gs = host->m_states[state->m_object][update.descriptor()->m_name];
+            gs.m_isAvatar = state->m_isAvatar;
+            gs.m_persist = state->m_persistOnServer;
+            gs.m_state.add(update);
+        }
 
         if (state->m_persistOnServer) {
             check_postgres(host);
@@ -590,23 +597,6 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
                 DM_WRITEMSG(host, cloneMsg);
                 DS::CryptSendBuffer(client->m_sock, client->m_crypt,
                                     host->m_buffer.buffer(), host->m_buffer.size());
-
-                MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
-                state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                                    | MOUL::NetMessage::e_NeedsReliableSend;
-                state->m_timestamp.setNow();
-                // Blame Cyan for these odd flags
-                state->m_isInitial = true;
-                state->m_persistOnServer = true;
-                state->m_isAvatar = false;
-                state->m_object = client_iter->second->m_clientKey;
-                for (auto sdl_iter = client_iter->second->m_states.begin(); sdl_iter != client_iter->second->m_states.end(); ++sdl_iter) {
-                    state->m_sdlBlob = sdl_iter->second.toBlob();
-                    DM_WRITEMSG(host, state);
-                    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                        host->m_buffer.buffer(), host->m_buffer.size());
-                }
-                state->unref();
             }
         }
     }
@@ -639,6 +629,9 @@ void dm_load_clone(GameHost_Private* host, GameClient_Private* client,
             }
         }
         dm_propagate(host, netmsg, client->m_clientInfo.m_PlayerId);
+
+        // Any subsequent sends of these message are initial states
+        netmsg->m_isInitialState = true;
     }
 }
 
@@ -934,7 +927,12 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                 try {
                     SDL::State state = SDL::State::FromBlob(sdlblob);
                     state.update();
-                    host->m_states[key][PQgetvalue(result, i, 0)] = state;
+
+                    GameState gs;
+                    gs.m_isAvatar = false;
+                    gs.m_persist = true;
+                    gs.m_state = state;
+                    host->m_states[key][PQgetvalue(result, i, 0)] = gs;
                 } catch (DS::EofException) {
                     fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s\n",
                             PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str());
