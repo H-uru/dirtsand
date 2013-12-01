@@ -1346,7 +1346,7 @@ bool v_find_public_ages(const DS::String& ageFilename, std::vector<Auth_PubAgeRe
                        "SELECT idx, \"Uuid_1\", \"String64_3\", \"String64_4\","
                        "    \"Text_1\",\"Int32_1\", \"Int32_3\" FROM vault.\"Nodes\""
                        "    WHERE \"NodeType\"=$1 AND \"Int32_2\"=1 AND \"String64_2\"=$2"
-                       "    ORDER BY \"ModifyTime\" LIMIT 50",
+                       "    ORDER BY \"ModifyTime\" DESC LIMIT 50",
                        2, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
