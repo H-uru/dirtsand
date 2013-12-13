@@ -390,6 +390,61 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     reply->unref();
 }
 
+void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor, MOUL::Uoid& object, const SDL::State& state)
+{
+    check_postgres(host);
+
+    DS::Blob sdlBlob = state.toBlob();
+    PostgresStrings<4> parms;
+    host->m_buffer.truncate();
+    object.write(&host->m_buffer);
+    parms.set(0, host->m_serverIdx);
+    parms.set(1, descriptor);
+    parms.set(2, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
+    parms.set(3, DS::Base64Encode(sdlBlob.buffer(), sdlBlob.size()));
+    PGresult* result = PQexecParams(host->m_postgres,
+                                    "SELECT idx FROM game.\"AgeStates\""
+                                    "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
+                                    3, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+        PQclear(result);
+        return;
+    }
+    if (PQntuples(result) == 0) {
+        PQclear(result);
+        result = PQexecParams(host->m_postgres,
+                              "INSERT INTO game.\"AgeStates\""
+                              "    (\"ServerIdx\", \"Descriptor\", \"ObjectKey\", \"SdlBlob\")"
+                              "    VALUES ($1, $2, $3, $4)",
+                              4, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            PQclear(result);
+            return;
+        }
+        PQclear(result);
+    } else {
+        DS_DASSERT(PQntuples(result) == 1);
+        parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
+        parms.set(1, parms.m_strings[3]);   // SDL blob
+        PQclear(result);
+        result = PQexecParams(host->m_postgres,
+                              "UPDATE game.\"AgeStates\""
+                              "    SET \"SdlBlob\"=$2 WHERE idx=$1",
+                              2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            PQclear(result);
+            return;
+        }
+        PQclear(result);
+    }
+}
+
 void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
                  MOUL::NetMsgSDLState* state, bool bcast)
 {
@@ -429,64 +484,17 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
             gs.m_persist = state->m_persistOnServer;
             gs.m_state = update;
             host->m_states[state->m_object][update.descriptor()->m_name] = gs;
+
+            if (state->m_persistOnServer)
+                dm_save_sdl_state(host, update.descriptor()->m_name, state->m_object, update);
         } else {
             GameState& gs = host->m_states[state->m_object][update.descriptor()->m_name];
             gs.m_isAvatar = state->m_isAvatar;
             gs.m_persist = state->m_persistOnServer;
             gs.m_state.add(update);
-        }
 
-        if (state->m_persistOnServer) {
-            check_postgres(host);
-
-            PostgresStrings<4> parms;
-            host->m_buffer.truncate();
-            state->m_object.write(&host->m_buffer);
-            parms.set(0, host->m_serverIdx);
-            parms.set(1, update.descriptor()->m_name);
-            parms.set(2, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
-            parms.set(3, DS::Base64Encode(state->m_sdlBlob.buffer(), state->m_sdlBlob.size()));
-            PGresult* result = PQexecParams(host->m_postgres,
-                "SELECT idx FROM game.\"AgeStates\""
-                "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
-                3, 0, parms.m_values, 0, 0, 0);
-            if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-                fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                        __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-                PQclear(result);
-                return;
-            }
-            if (PQntuples(result) == 0) {
-                PQclear(result);
-                result = PQexecParams(host->m_postgres,
-                    "INSERT INTO game.\"AgeStates\""
-                    "    (\"ServerIdx\", \"Descriptor\", \"ObjectKey\", \"SdlBlob\")"
-                    "    VALUES ($1, $2, $3, $4)",
-                    4, 0, parms.m_values, 0, 0, 0);
-                if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-                    fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                            __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-                    PQclear(result);
-                    return;
-                }
-                PQclear(result);
-            } else {
-                DS_DASSERT(PQntuples(result) == 1);
-                parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
-                parms.set(1, parms.m_strings[3]);   // SDL blob
-                PQclear(result);
-                result = PQexecParams(host->m_postgres,
-                    "UPDATE game.\"AgeStates\""
-                    "    SET \"SdlBlob\"=$2 WHERE idx=$1",
-                    2, 0, parms.m_values, 0, 0, 0);
-                if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-                    fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                            __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-                    PQclear(result);
-                    return;
-                }
-                PQclear(result);
-            }
+            if (state->m_persistOnServer)
+                dm_save_sdl_state(host, update.descriptor()->m_name, state->m_object, gs.m_state);
         }
     }
 
