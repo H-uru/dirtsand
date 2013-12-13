@@ -150,14 +150,14 @@ namespace DS
         bool toBool() const;
 
         /* Manipulation */
-        std::vector<String> split(char separator = 0, ssize_t max = -1);
-        String left(ssize_t length);
-        String right(ssize_t length);
-        String mid(size_t start, ssize_t length = -1);
-        String strip(char comment = 0);
+        std::vector<String> split(char separator = 0, ssize_t max = -1) const;
+        String left(ssize_t length) const;
+        String right(ssize_t length) const;
+        String mid(size_t start, ssize_t length = -1) const;
+        String strip(char comment = 0) const;
 
-        ssize_t find(const char* substr, ssize_t start = 0);
-        ssize_t rfind(const char* substr, ssize_t start = -1);
+        ssize_t find(const char* substr, ssize_t start = 0) const;
+        ssize_t rfind(const char* substr, ssize_t start = -1) const;
         void replace(const char* from, const char* to);
 
         /* Creation */
