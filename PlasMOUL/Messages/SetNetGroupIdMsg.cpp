@@ -24,7 +24,7 @@ void MOUL::SetNetGroupIdMsg::read(DS::Stream* stream)
     m_group.m_flags = stream->read<uint8_t>();
 }
 
-void MOUL::SetNetGroupIdMsg::write(DS::Stream* stream)
+void MOUL::SetNetGroupIdMsg::write(DS::Stream* stream) const
 {
     MOUL::Message::write(stream);
     m_group.m_location.write(stream);

@@ -32,7 +32,7 @@ void MOUL::AnimStage::read(DS::Stream* stream)
     m_regressTo = stream->read<uint32_t>();
 }
 
-void MOUL::AnimStage::write(DS::Stream* stream)
+void MOUL::AnimStage::write(DS::Stream* stream) const
 {
     stream->writeSafeString(m_animName);
     stream->write<uint8_t>(m_notify);

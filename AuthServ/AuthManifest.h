@@ -36,7 +36,7 @@ namespace DS
         ~AuthManifest();
 
         NetResultCode loadManifest(const char* filename);
-        uint32_t encodeToStream(DS::Stream* stream);
+        uint32_t encodeToStream(DS::Stream* stream) const;
 
         size_t fileCount() const { return m_files.size(); }
 

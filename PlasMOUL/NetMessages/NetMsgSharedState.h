@@ -45,7 +45,7 @@ namespace MOUL
         GenericType() : m_type(e_TypeNone) { }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
     };
 
     struct GenericVar
@@ -54,7 +54,7 @@ namespace MOUL
         GenericType m_value;
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
     };
 
     class NetMsgSharedState : public NetMsgObject
@@ -68,7 +68,7 @@ namespace MOUL
         std::vector<GenericVar> m_vars;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgSharedState(uint16_t type)

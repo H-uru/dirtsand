@@ -28,7 +28,7 @@ namespace MOUL
         FACTORY_CREATABLE(LoadAvatarMsg)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         bool m_isPlayer;

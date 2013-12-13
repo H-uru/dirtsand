@@ -37,7 +37,7 @@ namespace MOUL
         uint32_t m_numStates;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgInitialAgeStateSent(uint16_t type) : NetMsgServerToClient(type) { }

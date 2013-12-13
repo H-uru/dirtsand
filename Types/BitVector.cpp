@@ -43,7 +43,7 @@ void DS::BitVector::read(DS::Stream* stream)
     stream->readBytes(m_bits, m_words * sizeof(uint32_t));
 }
 
-void DS::BitVector::write(DS::Stream* stream)
+void DS::BitVector::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_words);
     stream->writeBytes(m_bits, m_words * sizeof(uint32_t));

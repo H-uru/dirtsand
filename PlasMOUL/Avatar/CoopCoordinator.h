@@ -34,7 +34,7 @@ namespace MOUL
         FACTORY_CREATABLE(CoopCoordinator)
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
 
     public:
         Key m_hostKey, m_guestKey;

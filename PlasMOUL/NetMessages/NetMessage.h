@@ -62,7 +62,7 @@ namespace MOUL
         DS::Uuid m_acctId;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMessage(uint16_t type)

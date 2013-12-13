@@ -46,7 +46,7 @@ namespace MOUL
         bool m_setTime, m_setDirection;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         AvBrainGenericMsg(uint16_t type) : AvatarMsg(type) { }
@@ -57,7 +57,7 @@ namespace MOUL
         FACTORY_CREATABLE(AvCoopMsg)
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
         virtual bool makeSafeForNet();
 
     public:
@@ -88,7 +88,7 @@ namespace MOUL
         bool m_aborted;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         AvTaskSeekDoneMsg(uint16_t type) : AvatarMsg(type) { }

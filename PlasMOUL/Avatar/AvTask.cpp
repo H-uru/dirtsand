@@ -30,7 +30,7 @@ void MOUL::AvAnimTask::read(DS::Stream* stream)
     m_attach = stream->read<bool>();
 }
 
-void MOUL::AvAnimTask::write(DS::Stream* stream)
+void MOUL::AvAnimTask::write(DS::Stream* stream) const
 {
     stream->writeSafeString(m_animName);
     stream->write<float>(m_initialBlend);
@@ -48,7 +48,7 @@ void MOUL::AvOneShotLinkTask::read(DS::Stream* stream)
     m_markerName = stream->readSafeString();
 }
 
-void MOUL::AvOneShotLinkTask::write(DS::Stream* stream)
+void MOUL::AvOneShotLinkTask::write(DS::Stream* stream) const
 {
     stream->writeSafeString(m_animName);
     stream->writeSafeString(m_markerName);
@@ -60,7 +60,7 @@ void MOUL::AvTaskBrain::read(DS::Stream* stream)
     m_brain = Factory::Read<ArmatureBrain>(stream);
 }
 
-void MOUL::AvTaskBrain::write(DS::Stream* stream)
+void MOUL::AvTaskBrain::write(DS::Stream* stream) const
 {
     Factory::WriteCreatable(stream, m_brain);
 }

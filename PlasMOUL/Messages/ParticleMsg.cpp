@@ -26,7 +26,7 @@ void MOUL::ParticleKillMsg::read(DS::Stream* s)
     m_flags = s->read<uint8_t>();
 }
 
-void MOUL::ParticleKillMsg::write(DS::Stream* s)
+void MOUL::ParticleKillMsg::write(DS::Stream* s) const
 {
     Message::write(s);
 
@@ -43,7 +43,7 @@ void MOUL::ParticleTransferMsg::read(DS::Stream* s)
     m_transferCount = s->read<uint16_t>();
 }
 
-void MOUL::ParticleTransferMsg::write(DS::Stream* s)
+void MOUL::ParticleTransferMsg::write(DS::Stream* s) const
 {
     Message::write(s);
 

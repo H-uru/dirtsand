@@ -31,7 +31,7 @@ namespace MOUL
         Key m_linkKey, m_animKey;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         LinkEffectsTriggerMsg(uint16_t type)

@@ -31,7 +31,7 @@ namespace MOUL
         MOUL::Uoid m_uoid;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgPlayerPage(uint16_t type) : NetMessage(type) { }

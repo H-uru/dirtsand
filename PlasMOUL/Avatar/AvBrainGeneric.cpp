@@ -64,7 +64,7 @@ void MOUL::AvBrainGeneric::read(DS::Stream* stream)
     m_recipient.read(stream);
 }
 
-void MOUL::AvBrainGeneric::write(DS::Stream* stream)
+void MOUL::AvBrainGeneric::write(DS::Stream* stream) const
 {
     MOUL::ArmatureBrain::write(stream);
 

@@ -36,7 +36,7 @@ void MOUL::MessageWithCallbacks::read(DS::Stream* stream)
         m_callbacks[i] = MOUL::Factory::Read<MOUL::Message>(stream);
 }
 
-void MOUL::MessageWithCallbacks::write(DS::Stream* stream)
+void MOUL::MessageWithCallbacks::write(DS::Stream* stream) const
 {
     Message::write(stream);
 
@@ -70,7 +70,7 @@ void MOUL::AnimCmdMsg::read(DS::Stream* stream)
     m_loopName = stream->readSafeString();
 }
 
-void MOUL::AnimCmdMsg::write(DS::Stream* stream)
+void MOUL::AnimCmdMsg::write(DS::Stream* stream) const
 {
     MessageWithCallbacks::write(stream);
 

@@ -23,7 +23,7 @@ void MOUL::InputEventMsg::read(DS::Stream* stream)
     m_event = stream->read<int32_t>();
 }
 
-void MOUL::InputEventMsg::write(DS::Stream* stream)
+void MOUL::InputEventMsg::write(DS::Stream* stream) const
 {
     MOUL::Message::write(stream);
     stream->write<int32_t>(m_event);
@@ -39,7 +39,7 @@ void MOUL::ControlEventMsg::read(DS::Stream* stream)
     m_cmd = stream->readPString<uint16_t>();
 }
 
-void MOUL::ControlEventMsg::write(DS::Stream* stream)
+void MOUL::ControlEventMsg::write(DS::Stream* stream) const
 {
     MOUL::InputEventMsg::write(stream);
     stream->write<int32_t>(m_controlCode);

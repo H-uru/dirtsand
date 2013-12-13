@@ -147,7 +147,7 @@ namespace Vault
         bool isNull() const { return m_fields == 0; }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
     private:
         uint64_t m_fields;

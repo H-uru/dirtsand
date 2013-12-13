@@ -269,7 +269,7 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
     }
 }
 
-void SDL::Variable::_ref::write(DS::Stream* stream)
+void SDL::Variable::_ref::write(DS::Stream* stream) const
 {
     for (size_t i=0; i<m_size; ++i) {
         switch (m_desc->m_type) {
@@ -399,7 +399,7 @@ void SDL::Variable::read(DS::Stream* stream)
     m_data->m_flags |= e_XIsDirty;
 }
 
-void SDL::Variable::write(DS::Stream* stream)
+void SDL::Variable::write(DS::Stream* stream) const
 {
     uint8_t contents = 0;
     if (!m_data->m_notificationHint.isNull())
@@ -409,7 +409,7 @@ void SDL::Variable::write(DS::Stream* stream)
         stream->write<uint8_t>(0);
         stream->writeSafeString(m_data->m_notificationHint);
     }
-    
+
     if (isDefault())
         m_data->m_flags |= e_SameAsDefault;
     stream->write<uint8_t>(m_data->m_flags & 0xFF);

@@ -27,7 +27,7 @@ namespace MOUL
         FACTORY_CREATABLE(SubWorldMsg)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         Key m_world;

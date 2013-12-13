@@ -33,7 +33,7 @@ namespace MOUL
         static Creatable* Create(uint16_t type);
 
         static Creatable* ReadCreatable(DS::Stream* stream);
-        static void WriteCreatable(DS::Stream* stream, Creatable* obj);
+        static void WriteCreatable(DS::Stream* stream, const Creatable* obj);
 
         template <class cre_t>
         static cre_t* Read(DS::Stream* stream)

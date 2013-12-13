@@ -27,7 +27,7 @@ namespace MOUL
         FACTORY_CREATABLE(ParticleKillMsg)
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
 
     public:
         enum
@@ -49,7 +49,7 @@ namespace MOUL
         FACTORY_CREATABLE(ParticleTransferMsg)
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
 
     public:
         Key m_sysKey;

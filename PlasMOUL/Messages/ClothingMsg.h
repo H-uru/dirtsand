@@ -47,7 +47,7 @@ namespace MOUL
         float m_weight;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         ClothingMsg(uint16_t type)

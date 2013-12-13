@@ -68,7 +68,7 @@ DS::NetResultCode DS::FileManifest::loadManifest(const char* filename)
     return e_NetSuccess;
 }
 
-uint32_t DS::FileManifest::encodeToStream(DS::Stream* stream)
+uint32_t DS::FileManifest::encodeToStream(DS::Stream* stream) const
 {
     uint32_t start = stream->tell();
 

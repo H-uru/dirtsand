@@ -33,7 +33,7 @@ void MOUL::NetMsgSDLState::read(DS::Stream* stream)
     m_isAvatar = stream->read<bool>();
 }
 
-void MOUL::NetMsgSDLState::write(DS::Stream* stream)
+void MOUL::NetMsgSDLState::write(DS::Stream* stream) const
 {
     NetMsgObject::write(stream);
 

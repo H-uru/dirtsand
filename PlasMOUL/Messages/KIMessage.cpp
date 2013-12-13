@@ -30,7 +30,7 @@ void MOUL::KIMessage::read(DS::Stream* stream)
     m_value = stream->read<int32_t>();
 }
 
-void MOUL::KIMessage::write(DS::Stream* stream)
+void MOUL::KIMessage::write(DS::Stream* stream) const
 {
     Message::write(stream);
 

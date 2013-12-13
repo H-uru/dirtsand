@@ -28,7 +28,7 @@ namespace MOUL
         FACTORY_CREATABLE(LinkToAgeMsg)
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
 
         virtual bool makeSafeForNet();
 

@@ -31,7 +31,7 @@ void MOUL::ArmatureBrain::read(DS::Stream* stream)
     stream->read<double>();
 }
 
-void MOUL::ArmatureBrain::write(DS::Stream* stream)
+void MOUL::ArmatureBrain::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(0);
     stream->write<bool>(false);
@@ -46,7 +46,7 @@ void MOUL::AvBrainHuman::read(DS::Stream* stream)
     m_isCustomAvatar = stream->read<bool>();
 }
 
-void MOUL::AvBrainHuman::write(DS::Stream* stream)
+void MOUL::AvBrainHuman::write(DS::Stream* stream) const
 {
     ArmatureBrain::write(stream);
     stream->write<bool>(m_isCustomAvatar);

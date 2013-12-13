@@ -390,7 +390,8 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     reply->unref();
 }
 
-void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor, MOUL::Uoid& object, const SDL::State& state)
+void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor,
+                       const MOUL::Uoid& object, const SDL::State& state)
 {
     check_postgres(host);
 

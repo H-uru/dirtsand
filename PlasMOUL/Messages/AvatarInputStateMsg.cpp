@@ -23,7 +23,7 @@ void MOUL::AvatarInputStateMsg::read(DS::Stream* stream)
     m_state = stream->read<uint16_t>();
 }
 
-void MOUL::AvatarInputStateMsg::write(DS::Stream* stream)
+void MOUL::AvatarInputStateMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
     stream->write<uint16_t>(m_state);

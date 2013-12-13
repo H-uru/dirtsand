@@ -33,7 +33,7 @@ void MOUL::ClothingMsg::read(DS::Stream* stream)
     m_weight = stream->read<float>();
 }
 
-void MOUL::ClothingMsg::write(DS::Stream* stream)
+void MOUL::ClothingMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 

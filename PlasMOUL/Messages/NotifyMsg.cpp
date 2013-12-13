@@ -39,7 +39,7 @@ void MOUL::NotifyMsg::read(DS::Stream* stream)
         m_events[i] = EventData::Read(stream);
 }
 
-void MOUL::NotifyMsg::write(DS::Stream* stream)
+void MOUL::NotifyMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 

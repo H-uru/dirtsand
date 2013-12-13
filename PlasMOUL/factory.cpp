@@ -80,7 +80,7 @@ MOUL::Creatable* MOUL::Factory::ReadCreatable(DS::Stream* stream)
     return obj;
 }
 
-void MOUL::Factory::WriteCreatable(DS::Stream* stream, MOUL::Creatable* obj)
+void MOUL::Factory::WriteCreatable(DS::Stream* stream, const MOUL::Creatable* obj)
 {
     if (obj) {
         stream->write<uint16_t>(obj->type());

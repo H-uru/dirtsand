@@ -29,7 +29,7 @@ namespace DS
         UnifiedTime() : m_secs(0), m_micros(0) { }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
         bool isNull() const { return m_secs == 0 && m_micros == 0; }
 

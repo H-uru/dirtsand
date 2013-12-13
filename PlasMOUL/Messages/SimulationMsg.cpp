@@ -22,7 +22,7 @@ void MOUL::SubWorldMsg::read(DS::Stream* stream)
     m_world.read(stream);
 }
 
-void MOUL::SubWorldMsg::write(DS::Stream* stream)
+void MOUL::SubWorldMsg::write(DS::Stream* stream) const
 {
     m_world.write(stream);
 }

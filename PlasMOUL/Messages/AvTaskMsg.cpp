@@ -26,7 +26,7 @@ void MOUL::AvTaskMsg::read(DS::Stream* stream)
         m_task = Factory::Read<AvTask>(stream);
 }
 
-void MOUL::AvTaskMsg::write(DS::Stream* stream)
+void MOUL::AvTaskMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 
@@ -44,7 +44,7 @@ void MOUL::AvPushBrainMsg::read(DS::Stream* stream)
     m_brain = Factory::Read<ArmatureBrain>(stream);
 }
 
-void MOUL::AvPushBrainMsg::write(DS::Stream* stream)
+void MOUL::AvPushBrainMsg::write(DS::Stream* stream) const
 {
     AvTaskMsg::write(stream);
     Factory::WriteCreatable(stream, m_brain);

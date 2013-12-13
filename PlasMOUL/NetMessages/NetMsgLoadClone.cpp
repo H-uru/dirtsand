@@ -27,7 +27,7 @@ void MOUL::NetMsgLoadClone::read(DS::Stream* stream)
     m_isInitialState = stream->read<bool>();
 }
 
-void MOUL::NetMsgLoadClone::write(DS::Stream* stream)
+void MOUL::NetMsgLoadClone::write(DS::Stream* stream) const
 {
     NetMsgGameMessage::write(stream);
 

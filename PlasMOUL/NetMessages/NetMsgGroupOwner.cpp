@@ -40,7 +40,7 @@ void MOUL::NetMsgGroupOwner::read(DS::Stream* stream)
     }
 }
 
-void MOUL::NetMsgGroupOwner::write(DS::Stream* stream)
+void MOUL::NetMsgGroupOwner::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
 

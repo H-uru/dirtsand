@@ -26,7 +26,7 @@ void MOUL::MultistageModMsg::read(DS::Stream* s)
     m_numLoops = s->read<uint8_t>();
 }
 
-void MOUL::MultistageModMsg::write(DS::Stream* s)
+void MOUL::MultistageModMsg::write(DS::Stream* s) const
 {
     MOUL::Message::write(s);
 

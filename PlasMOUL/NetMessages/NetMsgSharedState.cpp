@@ -46,7 +46,7 @@ void MOUL::GenericType::read(DS::Stream* stream)
     }
 }
 
-void MOUL::GenericType::write(DS::Stream* stream)
+void MOUL::GenericType::write(DS::Stream* stream) const
 {
     stream->write<uint8_t>(m_type);
 
@@ -80,7 +80,7 @@ void MOUL::GenericVar::read(DS::Stream* stream)
     m_value.read(stream);
 }
 
-void MOUL::GenericVar::write(DS::Stream* stream)
+void MOUL::GenericVar::write(DS::Stream* stream) const
 {
     stream->writeSafeString(m_name, DS::e_StringUTF8);
     m_value.write(stream);
@@ -107,7 +107,7 @@ void MOUL::NetMsgSharedState::read(DS::Stream* stream)
     m_lockRequest = stream->read<uint8_t>();
 }
 
-void MOUL::NetMsgSharedState::write(DS::Stream* stream)
+void MOUL::NetMsgSharedState::write(DS::Stream* stream) const
 {
     NetMsgObject::write(stream);
 

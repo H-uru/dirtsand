@@ -30,7 +30,7 @@ namespace MOUL
         bool m_isInitial, m_persistOnServer, m_isAvatar;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgSDLState(uint16_t type) : NetMsgObject(type) { }

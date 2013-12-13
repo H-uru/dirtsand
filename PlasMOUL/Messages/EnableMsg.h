@@ -34,7 +34,7 @@ namespace MOUL
         };
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         DS::BitVector m_cmd;

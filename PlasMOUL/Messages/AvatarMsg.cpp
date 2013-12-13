@@ -32,7 +32,7 @@ void MOUL::AvBrainGenericMsg::read(DS::Stream* stream)
     m_transitionTime = stream->read<float>();
 }
 
-void MOUL::AvBrainGenericMsg::write(DS::Stream* stream)
+void MOUL::AvBrainGenericMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 
@@ -59,7 +59,7 @@ void MOUL::AvCoopMsg::read(DS::Stream* s)
     m_command = (Command)s->read<uint16_t>();
 }
 
-void MOUL::AvCoopMsg::write(DS::Stream* s)
+void MOUL::AvCoopMsg::write(DS::Stream* s) const
 {
     Message::write(s);
 
@@ -87,7 +87,7 @@ void MOUL::AvTaskSeekDoneMsg::read(DS::Stream* stream)
     m_aborted = stream->read<bool>();
 }
 
-void MOUL::AvTaskSeekDoneMsg::write(DS::Stream* stream)
+void MOUL::AvTaskSeekDoneMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
     stream->write<bool>(m_aborted);

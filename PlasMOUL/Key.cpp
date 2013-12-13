@@ -39,7 +39,7 @@ void MOUL::Location::read(DS::Stream* stream)
     m_flags = stream->read<uint16_t>();
 }
 
-void MOUL::Location::write(DS::Stream* stream)
+void MOUL::Location::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_sequence);
     stream->write<uint16_t>(m_flags);
@@ -71,7 +71,7 @@ void MOUL::Uoid::read(DS::Stream* stream)
     }
 }
 
-void MOUL::Uoid::write(DS::Stream* stream)
+void MOUL::Uoid::write(DS::Stream* stream) const
 {
     uint8_t contents = 0;
     if (m_loadMask != 0xFF)
@@ -103,7 +103,7 @@ void MOUL::Key::read(DS::Stream* stream)
     }
 }
 
-void MOUL::Key::write(DS::Stream* stream)
+void MOUL::Key::write(DS::Stream* stream) const
 {
     stream->write<bool>(!isNull());
     if (!isNull())

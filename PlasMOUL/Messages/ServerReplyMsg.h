@@ -30,7 +30,7 @@ namespace MOUL
         Type m_reply;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         ServerReplyMsg(uint16_t type) : Message(type), m_reply(e_Invalid) { }

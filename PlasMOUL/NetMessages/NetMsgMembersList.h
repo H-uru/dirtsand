@@ -64,7 +64,7 @@ namespace MOUL
         #undef CLI_FIELD
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
         ClientGuid() : m_flags(0) { }
     };
@@ -78,7 +78,7 @@ namespace MOUL
         NetMsgMemberInfo() : m_flags(0) { }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
     };
 
     class NetMsgMembersListReq : public NetMessage
@@ -96,7 +96,7 @@ namespace MOUL
         std::vector<NetMsgMemberInfo> m_members;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgMembersList(uint16_t type) : NetMsgServerToClient(type) { }
@@ -110,7 +110,7 @@ namespace MOUL
         bool m_addMember;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgMemberUpdate(uint16_t type) : NetMsgServerToClient(type) { }

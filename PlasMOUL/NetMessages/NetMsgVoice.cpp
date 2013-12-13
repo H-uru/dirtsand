@@ -34,7 +34,7 @@ void MOUL::NetMsgVoice::read(DS::Stream* stream)
         m_receivers[i] = stream->read<uint32_t>();
 }
 
-void MOUL::NetMsgVoice::write(DS::Stream* stream)
+void MOUL::NetMsgVoice::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
 

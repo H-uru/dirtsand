@@ -43,7 +43,7 @@ void MOUL::ClientGuid::read(DS::Stream* stream)
         m_ClientKey = stream->readPString<uint16_t>();
 }
 
-void MOUL::ClientGuid::write(DS::Stream* stream)
+void MOUL::ClientGuid::write(DS::Stream* stream) const
 {
     stream->write<uint16_t>(m_flags);
 
@@ -82,7 +82,7 @@ void MOUL::NetMsgMemberInfo::read(DS::Stream* stream)
     m_avatarKey.read(stream);
 }
 
-void MOUL::NetMsgMemberInfo::write(DS::Stream* stream)
+void MOUL::NetMsgMemberInfo::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_flags);
     m_client.write(stream);
@@ -98,7 +98,7 @@ void MOUL::NetMsgMembersList::read(DS::Stream* stream)
         m_members[i].read(stream);
 }
 
-void MOUL::NetMsgMembersList::write(DS::Stream* stream)
+void MOUL::NetMsgMembersList::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
 
@@ -115,7 +115,7 @@ void MOUL::NetMsgMemberUpdate::read(DS::Stream* stream)
     m_addMember = stream->read<bool>();
 }
 
-void MOUL::NetMsgMemberUpdate::write(DS::Stream* stream)
+void MOUL::NetMsgMemberUpdate::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
 

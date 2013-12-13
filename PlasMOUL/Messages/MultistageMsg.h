@@ -28,7 +28,7 @@ namespace MOUL
         FACTORY_CREATABLE(MultistageModMsg);
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
 
     public:
         DS::BitVector m_cmds;
