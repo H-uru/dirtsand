@@ -27,7 +27,7 @@ namespace MOUL
         FACTORY_CREATABLE(AvatarInputStateMsg)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         uint16_t m_state;

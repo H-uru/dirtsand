@@ -27,7 +27,7 @@ void MOUL::Message::read(DS::Stream* stream)
     m_bcastFlags = stream->read<uint32_t>();
 }
 
-void MOUL::Message::write(DS::Stream* stream)
+void MOUL::Message::write(DS::Stream* stream) const
 {
     m_sender.write(stream);
     stream->write<uint32_t>(m_receivers.size());

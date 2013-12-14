@@ -32,7 +32,7 @@ void MOUL::NetMsgGameMessage::read(DS::Stream* stream)
         m_deliveryTime.read(stream);
 }
 
-void MOUL::NetMsgGameMessage::write(DS::Stream* stream)
+void MOUL::NetMsgGameMessage::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
 
@@ -57,7 +57,7 @@ void MOUL::NetMsgGameMessageDirected::read(DS::Stream* stream)
         m_receivers[i] = stream->read<uint32_t>();
 }
 
-void MOUL::NetMsgGameMessageDirected::write(DS::Stream* stream)
+void MOUL::NetMsgGameMessageDirected::write(DS::Stream* stream) const
 {
     NetMsgGameMessage::write(stream);
 

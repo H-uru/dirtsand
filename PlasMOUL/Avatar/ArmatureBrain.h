@@ -26,7 +26,7 @@ namespace MOUL
     {
     public:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         ArmatureBrain(uint16_t type) : Creatable(type) { }
@@ -39,7 +39,7 @@ namespace MOUL
         bool m_isCustomAvatar;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         AvBrainHuman(uint16_t type)

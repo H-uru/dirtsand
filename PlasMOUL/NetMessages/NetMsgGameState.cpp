@@ -23,7 +23,7 @@ void MOUL::NetMsgInitialAgeStateSent::read(DS::Stream* stream)
     m_numStates = stream->read<uint32_t>();
 }
 
-void MOUL::NetMsgInitialAgeStateSent::write(DS::Stream* stream)
+void MOUL::NetMsgInitialAgeStateSent::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
     stream->write<uint32_t>(m_numStates);

@@ -24,7 +24,7 @@ void MOUL::EnableMsg::read(DS::Stream* stream)
     m_types.read(stream);
 }
 
-void MOUL::EnableMsg::write(DS::Stream* stream)
+void MOUL::EnableMsg::write(DS::Stream* stream) const
 {
     MOUL::Message::write(stream);
     m_cmd.write(stream);

@@ -68,7 +68,7 @@ namespace MOUL
         int32_t m_value;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
         virtual bool makeSafeForNet();
 

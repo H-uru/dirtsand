@@ -29,7 +29,7 @@ namespace MOUL
         FACTORY_CREATABLE(MessageWithCallbacks)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
         virtual bool makeSafeForNet();
 
@@ -48,7 +48,7 @@ namespace MOUL
         FACTORY_CREATABLE(AnimCmdMsg)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         enum

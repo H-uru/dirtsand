@@ -96,7 +96,7 @@ void MOUL::CollisionEventData::read(DS::Stream* stream)
     m_hittee.read(stream);
 }
 
-void MOUL::CollisionEventData::write(DS::Stream* stream)
+void MOUL::CollisionEventData::write(DS::Stream* stream) const
 {
     stream->write<bool>(m_enter);
     m_hitter.write(stream);
@@ -111,7 +111,7 @@ void MOUL::PickedEventData::read(DS::Stream* stream)
     m_hitPoint = stream->read<DS::Vector3>();
 }
 
-void MOUL::PickedEventData::write(DS::Stream* stream)
+void MOUL::PickedEventData::write(DS::Stream* stream) const
 {
     m_picker.write(stream);
     m_picked.write(stream);
@@ -125,7 +125,7 @@ void MOUL::ControlKeyEventData::read(DS::Stream* stream)
     m_down = stream->read<bool>();
 }
 
-void MOUL::ControlKeyEventData::write(DS::Stream* stream)
+void MOUL::ControlKeyEventData::write(DS::Stream* stream) const
 {
     stream->write<int32_t>(m_controlKey);
     stream->write<bool>(m_down);
@@ -148,7 +148,7 @@ void MOUL::VariableEventData::read(DS::Stream* stream)
     m_key.read(stream);
 }
 
-void MOUL::VariableEventData::write(DS::Stream* stream)
+void MOUL::VariableEventData::write(DS::Stream* stream) const
 {
     stream->writeSafeString(m_name);
     stream->write<uint32_t>(m_dataType);
@@ -173,7 +173,7 @@ void MOUL::FacingEventData::read(DS::Stream* stream)
     m_enabled = stream->read<bool>();
 }
 
-void MOUL::FacingEventData::write(DS::Stream* stream)
+void MOUL::FacingEventData::write(DS::Stream* stream) const
 {
     m_facer.write(stream);
     m_facee.write(stream);
@@ -188,7 +188,7 @@ void MOUL::ContainedEventData::read(DS::Stream* stream)
     m_entering = stream->read<bool>();
 }
 
-void MOUL::ContainedEventData::write(DS::Stream* stream)
+void MOUL::ContainedEventData::write(DS::Stream* stream) const
 {
     m_contained.write(stream);
     m_container.write(stream);
@@ -201,7 +201,7 @@ void MOUL::ActivateEventData::read(DS::Stream* stream)
     m_activate = stream->read<bool>();
 }
 
-void MOUL::ActivateEventData::write(DS::Stream* stream)
+void MOUL::ActivateEventData::write(DS::Stream* stream) const
 {
     stream->write<bool>(m_active);
     stream->write<bool>(m_activate);
@@ -212,7 +212,7 @@ void MOUL::CallbackEventData::read(DS::Stream* stream)
     m_callbackType = stream->read<int32_t>();
 }
 
-void MOUL::CallbackEventData::write(DS::Stream* stream)
+void MOUL::CallbackEventData::write(DS::Stream* stream) const
 {
     stream->write<int32_t>(m_callbackType);
 }
@@ -222,7 +222,7 @@ void MOUL::ResponderStateEventData::read(DS::Stream* stream)
     m_state = stream->read<int32_t>();
 }
 
-void MOUL::ResponderStateEventData::write(DS::Stream* stream)
+void MOUL::ResponderStateEventData::write(DS::Stream* stream) const
 {
     stream->write<int32_t>(m_state);
 }
@@ -234,7 +234,7 @@ void MOUL::MultiStageEventData::read(DS::Stream* stream)
     m_avatar.read(stream);
 }
 
-void MOUL::MultiStageEventData::write(DS::Stream* stream)
+void MOUL::MultiStageEventData::write(DS::Stream* stream) const
 {
     stream->write<int32_t>(m_stage);
     stream->write<int32_t>(m_event);
@@ -247,7 +247,7 @@ void MOUL::SpawnedEventData::read(DS::Stream* stream)
     m_spanee.read(stream);
 }
 
-void MOUL::SpawnedEventData::write(DS::Stream* stream)
+void MOUL::SpawnedEventData::write(DS::Stream* stream) const
 {
     m_spawner.write(stream);
     m_spanee.write(stream);
@@ -259,7 +259,7 @@ void MOUL::CoopEventData::read(DS::Stream* stream)
     m_serial = stream->read<uint16_t>();
 }
 
-void MOUL::CoopEventData::write(DS::Stream* stream)
+void MOUL::CoopEventData::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_id);
     stream->write<uint16_t>(m_serial);
@@ -272,7 +272,7 @@ void MOUL::OfferLinkBookEventData::read(DS::Stream* stream)
     m_offeree = stream->read<uint32_t>();
 }
 
-void MOUL::OfferLinkBookEventData::write(DS::Stream* stream)
+void MOUL::OfferLinkBookEventData::write(DS::Stream* stream) const
 {
     m_offerer.write(stream);
     stream->write<uint32_t>(m_targetAge);
@@ -285,7 +285,7 @@ void MOUL::BookEventData::read(DS::Stream* stream)
     m_linkId = stream->read<uint32_t>();
 }
 
-void MOUL::BookEventData::write(DS::Stream* stream)
+void MOUL::BookEventData::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_event);
     stream->write<uint32_t>(m_linkId);
@@ -296,7 +296,7 @@ void MOUL::ClimbingBlockerHitEventData::read(DS::Stream* stream)
     m_blocker.read(stream);
 }
 
-void MOUL::ClimbingBlockerHitEventData::write(DS::Stream* stream)
+void MOUL::ClimbingBlockerHitEventData::write(DS::Stream* stream) const
 {
     m_blocker.write(stream);
 }

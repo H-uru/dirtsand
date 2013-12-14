@@ -29,7 +29,7 @@ void MOUL::InputIfaceMgrMsg::read(DS::Stream* stream)
     m_avatar.read(stream);
 }
 
-void MOUL::InputIfaceMgrMsg::write(DS::Stream* stream)
+void MOUL::InputIfaceMgrMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 

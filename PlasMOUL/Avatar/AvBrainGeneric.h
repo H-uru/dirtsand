@@ -29,7 +29,7 @@ namespace MOUL
         FACTORY_CREATABLE(AvBrainGeneric)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         std::vector<AnimStage*> m_stages;

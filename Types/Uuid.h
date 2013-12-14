@@ -46,7 +46,7 @@ namespace DS
         bool isNull() const { return operator==(Uuid()); }
 
         void read(Stream* stream);
-        void write(Stream* stream);
+        void write(Stream* stream) const;
 
         String toString() const;
 

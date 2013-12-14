@@ -39,7 +39,7 @@ namespace DS
         { return memcmp(m_data, other.m_data, sizeof(m_data)) != 0; }
 
         void read(Stream* stream);
-        void write(Stream* stream);
+        void write(Stream* stream) const;
         void swapBytes();
 
         String toString() const;

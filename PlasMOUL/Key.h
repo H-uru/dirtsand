@@ -43,7 +43,7 @@ namespace MOUL
         Location(int prefix, int page, uint16_t flags);
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
         bool operator==(const Location& other) const
         { return m_sequence == other.m_sequence; }
@@ -89,7 +89,7 @@ namespace MOUL
               m_name(name), m_id(id), m_cloneId(0), m_clonePlayerId(0) { }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
         bool isNull() const { return m_type == 0x8000; }
 
@@ -173,7 +173,7 @@ namespace MOUL
         /* Note: these will NOT keep synchronized copies.  You need some
            form of Resource Manager to handle that. */
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
     private:
         struct _keydata

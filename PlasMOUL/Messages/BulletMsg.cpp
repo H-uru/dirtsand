@@ -29,7 +29,7 @@ void MOUL::BulletMsg::read(DS::Stream* stream)
     m_partyTime = stream->read<float>();
 }
 
-void MOUL::BulletMsg::write(DS::Stream* stream)
+void MOUL::BulletMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 

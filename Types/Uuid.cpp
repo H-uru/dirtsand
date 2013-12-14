@@ -78,7 +78,7 @@ void DS::Uuid::read(DS::Stream* stream)
     stream->readBytes(m_data4, sizeof(m_data4));
 }
 
-void DS::Uuid::write(DS::Stream* stream)
+void DS::Uuid::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_data1);
     stream->write<uint16_t>(m_data2);

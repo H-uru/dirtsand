@@ -33,7 +33,7 @@ namespace MOUL
         std::vector<uint32_t> m_receivers;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgVoice(uint16_t type)

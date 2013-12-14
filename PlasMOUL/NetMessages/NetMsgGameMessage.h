@@ -32,7 +32,7 @@ namespace MOUL
         DS::UnifiedTime m_deliveryTime;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgGameMessage(uint16_t type)
@@ -52,7 +52,7 @@ namespace MOUL
         std::vector<uint32_t> m_receivers;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgGameMessageDirected(uint16_t type) : NetMsgGameMessage(type) { }

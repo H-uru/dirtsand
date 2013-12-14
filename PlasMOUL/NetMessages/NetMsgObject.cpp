@@ -46,7 +46,7 @@ void MOUL::NetMsgStream::read(DS::Stream* stream)
     }
 }
 
-void MOUL::NetMsgStream::write(DS::Stream* stream)
+void MOUL::NetMsgStream::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_stream.size());
     stream->write<uint8_t>(m_compression);
@@ -77,7 +77,7 @@ void MOUL::NetMsgObject::read(DS::Stream* stream)
     m_object.read(stream);
 }
 
-void MOUL::NetMsgObject::write(DS::Stream* stream)
+void MOUL::NetMsgObject::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
     m_object.write(stream);

@@ -113,7 +113,7 @@ void DS::Vault::Node::read(DS::Stream* stream)
     }
 }
 
-void DS::Vault::Node::write(DS::Stream* stream)
+void DS::Vault::Node::write(DS::Stream* stream) const
 {
     stream->write<uint64_t>(m_fields);
     if (m_fields & e_FieldNodeIdx)

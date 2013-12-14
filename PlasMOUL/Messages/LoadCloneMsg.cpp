@@ -32,7 +32,7 @@ void MOUL::LoadCloneMsg::read(DS::Stream* stream)
     m_triggerMsg = Factory::Read<Message>(stream);
 }
 
-void MOUL::LoadCloneMsg::write(DS::Stream* stream)
+void MOUL::LoadCloneMsg::write(DS::Stream* stream) const
 {
     MOUL::Message::write(stream);
 

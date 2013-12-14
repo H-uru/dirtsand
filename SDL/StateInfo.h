@@ -86,7 +86,7 @@ namespace SDL
         }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
         void copy(const Variable&);
 
 #ifdef DEBUG
@@ -142,7 +142,7 @@ namespace SDL
             void clear();
 
             void read(DS::Stream* stream);
-            void write(DS::Stream* stream);
+            void write(DS::Stream* stream) const;
 
             friend class Variable;
         }* m_data;

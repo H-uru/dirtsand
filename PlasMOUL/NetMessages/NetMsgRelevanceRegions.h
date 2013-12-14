@@ -31,7 +31,7 @@ namespace MOUL
         DS::BitVector m_regionsIAmIn;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgRelevanceRegions(uint16_t type) : NetMessage(type) { }

@@ -122,7 +122,7 @@ void DS::FileStream::open(const char* filename, const char* mode)
         throw FileIOException(strerror(errno));
 }
 
-uint32_t DS::FileStream::size()
+uint32_t DS::FileStream::size() const
 {
     struct stat statbuf;
     fstat(fileno(m_file), &statbuf);

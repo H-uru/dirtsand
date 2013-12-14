@@ -35,7 +35,7 @@ void MOUL::AvBrainCoop::read(DS::Stream* s)
         m_recipients[i].read(s);
 }
 
-void MOUL::AvBrainCoop::write(DS::Stream* s)
+void MOUL::AvBrainCoop::write(DS::Stream* s) const
 {
     MOUL::AvBrainGeneric::write(s);
 

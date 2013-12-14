@@ -40,7 +40,7 @@ namespace MOUL
         std::vector<EventData*> m_events;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NotifyMsg(uint16_t type) : Message(type) { }

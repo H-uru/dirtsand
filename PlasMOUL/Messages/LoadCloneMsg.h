@@ -27,7 +27,7 @@ namespace MOUL
         FACTORY_CREATABLE(LoadCloneMsg)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         Key m_cloneKey, m_requestorKey;

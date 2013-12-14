@@ -55,7 +55,7 @@ namespace MOUL
         uint32_t m_bcastFlags;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
         virtual bool makeSafeForNet() { return true; }
 

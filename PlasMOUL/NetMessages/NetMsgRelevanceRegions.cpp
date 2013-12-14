@@ -24,7 +24,7 @@ void MOUL::NetMsgRelevanceRegions::read(DS::Stream* stream)
     m_regionsIAmIn.read(stream);
 }
 
-void MOUL::NetMsgRelevanceRegions::write(DS::Stream* stream)
+void MOUL::NetMsgRelevanceRegions::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
     m_regionsICareAbout.write(stream);

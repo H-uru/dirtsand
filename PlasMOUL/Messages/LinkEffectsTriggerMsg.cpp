@@ -28,7 +28,7 @@ void MOUL::LinkEffectsTriggerMsg::read(DS::Stream* stream)
     m_animKey.read(stream);
 }
 
-void MOUL::LinkEffectsTriggerMsg::write(DS::Stream* stream)
+void MOUL::LinkEffectsTriggerMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 

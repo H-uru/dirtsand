@@ -32,7 +32,7 @@ void MOUL::LoadAvatarMsg::read(DS::Stream* stream)
     m_userString = stream->readSafeString();
 }
 
-void MOUL::LoadAvatarMsg::write(DS::Stream* stream)
+void MOUL::LoadAvatarMsg::write(DS::Stream* stream) const
 {
     LoadCloneMsg::write(stream);
 

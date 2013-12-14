@@ -38,7 +38,7 @@ namespace MOUL
         std::vector<GroupInfo> m_groups;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgGroupOwner(uint16_t type) : NetMsgServerToClient(type) { }

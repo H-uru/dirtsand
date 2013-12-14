@@ -56,7 +56,7 @@ namespace MOUL
         }
 
         virtual void read(DS::Stream* stream) { }
-        virtual void write(DS::Stream* stream) { }
+        virtual void write(DS::Stream* stream) const { }
 
     protected:
         /* Only the Factory may create creatables */

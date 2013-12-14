@@ -27,7 +27,7 @@ void MOUL::LinkToAgeMsg::read(DS::Stream* s)
     m_linkInAnim = s->readSafeString();
 }
 
-void MOUL::LinkToAgeMsg::write(DS::Stream* s)
+void MOUL::LinkToAgeMsg::write(DS::Stream* s) const
 {
     Message::write(s);
 

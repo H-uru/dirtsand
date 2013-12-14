@@ -33,7 +33,7 @@ namespace MOUL
         FACTORY_CREATABLE(AvAnimTask)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         DS::String m_animName;
@@ -58,7 +58,7 @@ namespace MOUL
         FACTORY_CREATABLE(AvOneShotLinkTask)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         DS::String m_animName, m_markerName;
@@ -80,7 +80,7 @@ namespace MOUL
         FACTORY_CREATABLE(AvTaskBrain)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         ArmatureBrain* m_brain;

@@ -64,7 +64,7 @@ namespace DS
         }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
     private:
         uint32_t* m_bits;

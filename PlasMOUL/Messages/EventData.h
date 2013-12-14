@@ -51,7 +51,7 @@ namespace MOUL
         EventData(int type) : m_type(type) { }
 
         virtual void read(DS::Stream* stream) { }
-        virtual void write(DS::Stream* stream) { }
+        virtual void write(DS::Stream* stream) const { }
     };
 
     class CollisionEventData : public EventData
@@ -64,7 +64,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class PickedEventData : public EventData
@@ -78,7 +78,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class ControlKeyEventData : public EventData
@@ -92,7 +92,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class VariableEventData : public EventData
@@ -111,7 +111,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class FacingEventData : public EventData
@@ -125,7 +125,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class ContainedEventData : public EventData
@@ -138,7 +138,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class ActivateEventData : public EventData
@@ -151,7 +151,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class CallbackEventData : public EventData
@@ -163,7 +163,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class ResponderStateEventData : public EventData
@@ -175,7 +175,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class MultiStageEventData : public EventData
@@ -189,7 +189,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class SpawnedEventData : public EventData
@@ -201,7 +201,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class ClickDragEventData : public EventData
@@ -220,7 +220,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class OfferLinkBookEventData : public EventData
@@ -234,7 +234,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class BookEventData : public EventData
@@ -246,7 +246,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 
     class ClimbingBlockerHitEventData : public EventData
@@ -258,7 +258,7 @@ namespace MOUL
 
     protected:
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
     };
 }
 

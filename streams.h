@@ -96,9 +96,9 @@ namespace DS
         void writeString(const String& value, DS::StringType format = e_StringRAW8);
         void writeSafeString(const String& value, DS::StringType format = e_StringRAW8);
 
-        virtual uint32_t tell() = 0;
+        virtual uint32_t tell() const = 0;
         virtual void seek(int32_t offset, int whence) = 0;
-        virtual uint32_t size() = 0;
+        virtual uint32_t size() const = 0;
         virtual bool atEof() = 0;
         virtual void flush() = 0;
     };
@@ -132,9 +132,9 @@ namespace DS
         virtual ssize_t writeBytes(const void* buffer, size_t count)
         { return fwrite(buffer, 1, count, m_file); }
 
-        virtual uint32_t tell() { return static_cast<uint32_t>(ftell(m_file)); }
+        virtual uint32_t tell() const { return static_cast<uint32_t>(ftell(m_file)); }
         virtual void seek(int32_t offset, int whence) { fseek(m_file, offset, whence); }
-        virtual uint32_t size();
+        virtual uint32_t size() const;
         virtual bool atEof();
         virtual void flush() { fflush(m_file); }
 
@@ -153,9 +153,9 @@ namespace DS
         virtual ssize_t readBytes(void* buffer, size_t count);
         virtual ssize_t writeBytes(const void* buffer, size_t count);
 
-        virtual uint32_t tell() { return static_cast<uint32_t>(m_position); }
+        virtual uint32_t tell() const { return static_cast<uint32_t>(m_position); }
         virtual void seek(int32_t offset, int whence);
-        virtual uint32_t size() { return m_size; }
+        virtual uint32_t size() const { return m_size; }
         virtual bool atEof() { return m_position >= m_size; }
         virtual void flush() { }
 
@@ -252,9 +252,9 @@ namespace DS
         virtual ssize_t readBytes(void* buffer, size_t count);
         virtual ssize_t writeBytes(const void* buffer, size_t count);
 
-        virtual uint32_t tell() { return static_cast<uint32_t>(m_position); }
+        virtual uint32_t tell() const { return static_cast<uint32_t>(m_position); }
         virtual void seek(int32_t offset, int whence);
-        virtual uint32_t size() { return static_cast<uint32_t>(m_blob.size()); }
+        virtual uint32_t size() const { return static_cast<uint32_t>(m_blob.size()); }
         virtual bool atEof() { return tell() >= size(); }
         virtual void flush() { }
 

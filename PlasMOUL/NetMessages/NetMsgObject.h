@@ -34,7 +34,7 @@ namespace MOUL
             : m_compression(compress) { }
 
         void read(DS::Stream* stream);
-        void write(DS::Stream* stream);
+        void write(DS::Stream* stream) const;
 
         Compression m_compression;
         DS::BufferStream m_stream;
@@ -47,7 +47,7 @@ namespace MOUL
         NetMsgStream::Compression m_compression;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         NetMsgObject(uint16_t type)

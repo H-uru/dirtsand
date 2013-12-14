@@ -33,7 +33,7 @@ namespace MOUL
         Key m_avatar;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         InputIfaceMgrMsg(uint16_t type)

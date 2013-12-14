@@ -42,7 +42,7 @@ void MOUL::NetMessage::read(DS::Stream* stream)
         m_acctId.read(stream);
 }
 
-void MOUL::NetMessage::write(DS::Stream* stream)
+void MOUL::NetMessage::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_contentFlags);
 

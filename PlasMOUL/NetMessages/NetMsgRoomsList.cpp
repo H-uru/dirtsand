@@ -28,7 +28,7 @@ void MOUL::NetMsgRoomsList::read(DS::Stream* stream)
     }
 }
 
-void MOUL::NetMsgRoomsList::write(DS::Stream* stream)
+void MOUL::NetMsgRoomsList::write(DS::Stream* stream) const
 {
     NetMessage::write(stream);
 
@@ -45,7 +45,7 @@ void MOUL::NetMsgPagingRoom::read(DS::Stream* stream)
     m_pagingFlags = stream->read<uint8_t>();
 }
 
-void MOUL::NetMsgPagingRoom::write(DS::Stream* stream)
+void MOUL::NetMsgPagingRoom::write(DS::Stream* stream) const
 {
     NetMsgRoomsList::write(stream);
     stream->write<uint8_t>(m_pagingFlags);

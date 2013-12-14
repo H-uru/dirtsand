@@ -35,7 +35,7 @@ void MOUL::AvSeekMsg::read(DS::Stream* stream)
     m_finishKey.read(stream);
 }
 
-void MOUL::AvSeekMsg::write(DS::Stream* stream)
+void MOUL::AvSeekMsg::write(DS::Stream* stream) const
 {
     AvTaskMsg::write(stream);
 
@@ -62,7 +62,7 @@ void MOUL::AvOneShotMsg::read(DS::Stream* stream)
     m_reversible = stream->read<bool>();
 }
 
-void MOUL::AvOneShotMsg::write(DS::Stream* stream)
+void MOUL::AvOneShotMsg::write(DS::Stream* stream) const
 {
     AvSeekMsg::write(stream);
 

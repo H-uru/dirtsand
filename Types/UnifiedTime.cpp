@@ -24,7 +24,7 @@ void DS::UnifiedTime::read(DS::Stream* stream)
     m_micros = stream->read<uint32_t>();
 }
 
-void DS::UnifiedTime::write(DS::Stream* stream)
+void DS::UnifiedTime::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_secs);
     stream->write<uint32_t>(m_micros);

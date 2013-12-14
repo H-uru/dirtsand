@@ -28,7 +28,7 @@ namespace MOUL
         FACTORY_CREATABLE(BulletMsg)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         enum { e_Stop, e_Shot, e_Spray };

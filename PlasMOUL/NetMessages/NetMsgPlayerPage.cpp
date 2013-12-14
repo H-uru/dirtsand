@@ -24,7 +24,7 @@ void MOUL::NetMsgPlayerPage::read(DS::Stream* stream)
     m_uoid.read(stream);
 }
 
-void MOUL::NetMsgPlayerPage::write(DS::Stream* stream)
+void MOUL::NetMsgPlayerPage::write(DS::Stream* stream) const
 {
     MOUL::NetMessage::write(stream);
     stream->write<bool>(m_unload);

@@ -31,7 +31,7 @@ namespace MOUL
         int32_t m_event;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
         virtual bool makeSafeForNet() { return false; }
 
@@ -50,7 +50,7 @@ namespace MOUL
         DS::String m_cmd;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         ControlEventMsg(uint16_t type)

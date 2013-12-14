@@ -417,7 +417,7 @@ bool DS::String::toBool() const
     return toInt() != 0;
 }
 
-std::vector<DS::String> DS::String::split(char separator, ssize_t max)
+std::vector<DS::String> DS::String::split(char separator, ssize_t max) const
 {
     if (isEmpty())
         return std::vector<DS::String>();
@@ -443,7 +443,7 @@ std::vector<DS::String> DS::String::split(char separator, ssize_t max)
     return std::vector<DS::String>(subs.begin(), subs.end());
 }
 
-DS::String DS::String::left(ssize_t count)
+DS::String DS::String::left(ssize_t count) const
 {
     if (count < 0) {
         count += length();
@@ -461,7 +461,7 @@ DS::String DS::String::left(ssize_t count)
     return result;
 }
 
-DS::String DS::String::right(ssize_t count)
+DS::String DS::String::right(ssize_t count) const
 {
     if (count < 0) {
         count += length();
@@ -479,7 +479,7 @@ DS::String DS::String::right(ssize_t count)
     return result;
 }
 
-DS::String DS::String::mid(size_t start, ssize_t count)
+DS::String DS::String::mid(size_t start, ssize_t count) const
 {
     if (count < 0)
         count = length() - start;
@@ -496,7 +496,7 @@ DS::String DS::String::mid(size_t start, ssize_t count)
     return result;
 }
 
-DS::String DS::String::strip(char comment)
+DS::String DS::String::strip(char comment) const
 {
     if (isNull())
         return DS::String();
@@ -528,7 +528,7 @@ DS::String DS::String::strip(char comment)
     return result;
 }
 
-ssize_t DS::String::find(const char* substr, ssize_t start)
+ssize_t DS::String::find(const char* substr, ssize_t start) const
 {
     DS_DASSERT(substr);
     DS_DASSERT(start >= 0);
@@ -542,7 +542,7 @@ ssize_t DS::String::find(const char* substr, ssize_t start)
     return -1;
 }
 
-ssize_t DS::String::rfind(const char* substr, ssize_t start)
+ssize_t DS::String::rfind(const char* substr, ssize_t start) const
 {
     DS_DASSERT(substr);
     size_t sublen = strlen(substr);

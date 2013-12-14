@@ -44,7 +44,7 @@ void DS::ShaHash::read(DS::Stream* stream)
     m_data[4] = stream->read<uint32_t>();
 }
 
-void DS::ShaHash::write(DS::Stream* stream)
+void DS::ShaHash::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_data[0]);
     stream->write<uint32_t>(m_data[1]);

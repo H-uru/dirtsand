@@ -29,7 +29,7 @@ namespace MOUL
         FACTORY_CREATABLE(AvBrainCoop)
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     public:
         uint32_t m_initiatorId;

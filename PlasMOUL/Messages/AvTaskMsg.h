@@ -30,7 +30,7 @@ namespace MOUL
         AvTask* m_task;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         AvTaskMsg(uint16_t type) : AvatarMsg(type), m_task(0) { }
@@ -48,7 +48,7 @@ namespace MOUL
         ArmatureBrain* m_brain;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         AvPushBrainMsg(uint16_t type) : AvTaskMsg(type), m_brain(0) { }

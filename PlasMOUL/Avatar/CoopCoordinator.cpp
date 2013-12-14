@@ -49,7 +49,7 @@ void MOUL::CoopCoordinator::read(DS::Stream* s)
     m_autoStartGuest = s->read<bool>();
 }
 
-void MOUL::CoopCoordinator::write(DS::Stream* s)
+void MOUL::CoopCoordinator::write(DS::Stream* s) const
 {
     m_hostKey.write(s);
     m_guestKey.write(s);

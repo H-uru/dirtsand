@@ -38,7 +38,7 @@ namespace MOUL
         Key m_finishKey;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         AvSeekMsg(uint16_t type) : AvTaskMsg(type) { }
@@ -52,7 +52,7 @@ namespace MOUL
         bool m_drivable, m_reversible;
 
         virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
     protected:
         AvOneShotMsg(uint16_t type) : AvSeekMsg(type) { }
