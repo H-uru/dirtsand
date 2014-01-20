@@ -22,7 +22,7 @@ void MOUL::AvSeekMsg::read(DS::Stream* stream)
     AvTaskMsg::read(stream);
 
     m_seekPoint.read(stream);
-    if (!m_seekPoint.isNull()) {
+    if (m_seekPoint.isNull()) {
         m_targetPos = stream->read<DS::Vector3>();
         m_targetLook = stream->read<DS::Vector3>();
     }
@@ -40,7 +40,7 @@ void MOUL::AvSeekMsg::write(DS::Stream* stream) const
     AvTaskMsg::write(stream);
 
     m_seekPoint.write(stream);
-    if (!m_seekPoint.isNull()) {
+    if (m_seekPoint.isNull()) {
         stream->write<DS::Vector3>(m_targetPos);
         stream->write<DS::Vector3>(m_targetLook);
     }
