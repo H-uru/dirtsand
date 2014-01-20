@@ -19,10 +19,12 @@
 
 void MOUL::SubWorldMsg::read(DS::Stream* stream)
 {
+    MOUL::Message::read(stream);
     m_world.read(stream);
 }
 
 void MOUL::SubWorldMsg::write(DS::Stream* stream) const
 {
+    MOUL::Message::write(stream);
     m_world.write(stream);
 }
