@@ -40,7 +40,7 @@ namespace MOUL
         };
 
         void read(DS::Stream* s);
-        void write(DS::Stream* s);
+        void write(DS::Stream* s) const;
 
         DS::String title() const { return m_title; }
         void setTitle(const DS::String& title)
@@ -73,7 +73,7 @@ namespace MOUL
         FACTORY_CREATABLE(AgeInfoStruct)
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
 
     public:
         DS::String filename() const { return m_ageFilename; }
@@ -155,19 +155,11 @@ namespace MOUL
         FACTORY_CREATABLE(AgeLinkStruct)
 
         virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s);
+        virtual void write(DS::Stream* s) const;
 
     public:
         SpawnPointInfo& spawnPt() { return m_spawnPt; }
-
-        AgeInfoStruct* ensureAgeInfo()
-        {
-            if (!m_ageInfo) {
-                m_ageInfo = AgeInfoStruct::Create();
-                m_flags |= e_HasAgeInfo;
-            }
-            return m_ageInfo;
-        }
+        const SpawnPointInfo& spawnPt() const { return m_spawnPt; }
 
         uint8_t linkingRules() const { return m_linkingRules; }
         void setLinkingRules(uint8_t rules)
@@ -209,7 +201,13 @@ namespace MOUL
         bool m_amCcr;
         DS::String m_parentAgeFilename;
 
-        AgeLinkStruct(uint16_t type) : Creatable(type), m_flags(e_HasSpawnPt), m_ageInfo(0), m_linkingRules(0), m_amCcr(false) { }
+        AgeLinkStruct(uint16_t type)
+            : Creatable(type), m_flags(e_HasSpawnPt), m_ageInfo(nullptr),
+              m_linkingRules(0), m_amCcr(false)
+        {
+            m_ageInfo = AgeInfoStruct::Create();
+            m_flags |= e_HasAgeInfo;
+        }
 
         virtual ~AgeLinkStruct()
         {

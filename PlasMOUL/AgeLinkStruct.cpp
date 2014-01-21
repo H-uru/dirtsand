@@ -29,7 +29,7 @@ void MOUL::SpawnPointInfo::read(DS::Stream* s)
         m_cameraStack = s->readPString<uint16_t>();
 }
 
-void MOUL::SpawnPointInfo::write(DS::Stream* s)
+void MOUL::SpawnPointInfo::write(DS::Stream* s) const
 {
     m_flags.write(s);
     if (m_flags.get(e_HasTitle))
@@ -59,7 +59,7 @@ void MOUL::AgeInfoStruct::read(DS::Stream* s)
         m_ageLanguage = s->read<int32_t>();
 }
 
-void MOUL::AgeInfoStruct::write(DS::Stream* s)
+void MOUL::AgeInfoStruct::write(DS::Stream* s) const
 {
     s->write<uint8_t>(m_flags);
     if (m_flags & e_HasAgeFilename)
@@ -86,7 +86,7 @@ void MOUL::AgeLinkStruct::read(DS::Stream* s)
 
     m_ageInfo->unref();
     if (m_flags & e_HasAgeInfo)
-        ensureAgeInfo()->read(s);
+        m_ageInfo->read(s);
     if (m_flags & e_HasLinkingRules)
         m_linkingRules = s->read<uint8_t>();
     if (m_flags & e_HasSpawnPt)
@@ -97,14 +97,14 @@ void MOUL::AgeLinkStruct::read(DS::Stream* s)
         m_parentAgeFilename = s->readPString<uint16_t>();
 }
 
-void MOUL::AgeLinkStruct::write(DS::Stream* s)
+void MOUL::AgeLinkStruct::write(DS::Stream* s) const
 {
     DS_PASSERT(!(m_flags & e_HasSpawnPtInline)); // Trolololololololo
     DS_PASSERT(!(m_flags & e_HasSpawnPtLegacy)); // Ahahahahahahahaha
     s->write<uint16_t>(m_flags);
 
     if (m_flags & e_HasAgeInfo)
-        ensureAgeInfo()->write(s);
+        m_ageInfo->write(s);
     if (m_flags & e_HasLinkingRules)
         s->write<uint8_t>(m_linkingRules);
     if (m_flags & e_HasSpawnPt)
