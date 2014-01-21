@@ -84,7 +84,6 @@ void MOUL::AgeLinkStruct::read(DS::Stream* s)
     DS_PASSERT(!(m_flags & e_HasSpawnPtInline)); // Trolololololololo
     DS_PASSERT(!(m_flags & e_HasSpawnPtLegacy)); // Ahahahahahahahaha
 
-    m_ageInfo->unref();
     if (m_flags & e_HasAgeInfo)
         m_ageInfo->read(s);
     if (m_flags & e_HasLinkingRules)
