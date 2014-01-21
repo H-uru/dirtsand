@@ -93,6 +93,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/MultistageMsg.cpp
     PlasMOUL/Messages/SetNetGroupIdMsg.cpp
     PlasMOUL/Messages/InputEventMsg.cpp
+    PlasMOUL/Messages/WarpMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
