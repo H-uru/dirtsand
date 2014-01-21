@@ -42,6 +42,7 @@
 #include "Messages/SetNetGroupIdMsg.h"
 #include "Messages/InputEventMsg.h"
 #include "Messages/WarpMsg.h"
+#include "Messages/LinkingMgrMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"
