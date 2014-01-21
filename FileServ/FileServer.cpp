@@ -110,8 +110,8 @@ void cb_manifest(FileServer_Private& client)
     client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
 
     // Manifest name
-    chr16_t mfsbuf[260];
-    DS::RecvBuffer(client.m_sock, mfsbuf, 260 * sizeof(chr16_t));
+    char16_t mfsbuf[260];
+    DS::RecvBuffer(client.m_sock, mfsbuf, sizeof(mfsbuf));
     mfsbuf[259] = 0;
     DS::String mfsname = DS::String::FromUtf16(mfsbuf);
 
@@ -176,8 +176,8 @@ void cb_downloadStart(FileServer_Private& client)
     client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
 
     // Download filename
-    chr16_t buffer[260];
-    DS::RecvBuffer(client.m_sock, buffer, 260 * sizeof(chr16_t));
+    char16_t buffer[260];
+    DS::RecvBuffer(client.m_sock, buffer, sizeof(buffer));
     buffer[259] = 0;
     DS::String filename = DS::String::FromUtf16(buffer);
 

@@ -82,14 +82,14 @@ namespace DS
         void writePString(const String& value, DS::StringType format = e_StringRAW8)
         {
             if (format == e_StringUTF16) {
-                StringBuffer<chr16_t> buffer = value.toUtf16();
+                StringBuffer<char16_t> buffer = value.toUtf16();
                 write<sz_t>(buffer.length());
-                writeBytes(buffer.data(), buffer.length());
+                writeBytes(buffer.data(), buffer.length() * sizeof(char16_t));
             } else {
-                StringBuffer<chr8_t> buffer = (format == e_StringUTF8) ? value.toUtf8()
-                                                                       : value.toRaw();
+                StringBuffer<char> buffer = (format == e_StringUTF8) ? value.toUtf8()
+                                                                     : value.toRaw();
                 write<sz_t>(buffer.length());
-                writeBytes(buffer.data(), buffer.length());
+                writeBytes(buffer.data(), buffer.length() * sizeof(char));
             }
         }
 

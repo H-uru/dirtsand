@@ -153,12 +153,8 @@ void cb_login(AuthServer_Private& client)
         START_REPLY(e_AuthToCli_AcctPlayerInfo);
         client.m_buffer.write<uint32_t>(transId);
         client.m_buffer.write<uint32_t>(player_iter->m_playerId);
-        DS::StringBuffer<chr16_t> wstrbuf = player_iter->m_playerName.toUtf16();
-        client.m_buffer.write<uint16_t>(wstrbuf.length());
-        client.m_buffer.writeBytes(wstrbuf.data(), wstrbuf.length() * sizeof(chr16_t));
-        wstrbuf = player_iter->m_avatarModel.toUtf16();
-        client.m_buffer.write<uint16_t>(wstrbuf.length());
-        client.m_buffer.writeBytes(wstrbuf.data(), wstrbuf.length() * sizeof(chr16_t));
+        client.m_buffer.writePString<uint16_t>(player_iter->m_playerName, DS::e_StringUTF16);
+        client.m_buffer.writePString<uint16_t>(player_iter->m_avatarModel, DS::e_StringUTF16);
         client.m_buffer.write<uint32_t>(player_iter->m_explorer);
         SEND_REPLY();
     }
@@ -221,12 +217,8 @@ void cb_playerCreate(AuthServer_Private& client)
     } else {
         client.m_buffer.write<uint32_t>(msg.m_player.m_playerId);
         client.m_buffer.write<uint32_t>(1);   // Explorer
-        DS::StringBuffer<chr16_t> wbuf = msg.m_player.m_playerName.toUtf16();
-        client.m_buffer.write<uint16_t>(wbuf.length());
-        client.m_buffer.writeBytes(wbuf.data(), wbuf.length() * sizeof(chr16_t));
-        wbuf = msg.m_player.m_avatarModel.toUtf16();
-        client.m_buffer.write<uint16_t>(wbuf.length());
-        client.m_buffer.writeBytes(wbuf.data(), wbuf.length() * sizeof(chr16_t));
+        client.m_buffer.writePString<uint16_t>(msg.m_player.m_playerName, DS::e_StringUTF16);
+        client.m_buffer.writePString<uint16_t>(msg.m_player.m_avatarModel, DS::e_StringUTF16);
     }
 
     SEND_REPLY();
@@ -517,13 +509,10 @@ void cb_ageRequest(AuthServer_Private& client, bool ext)
         client.m_buffer.write<uint32_t>(msg.m_mcpId);
         client.m_buffer.write<DS::Uuid>(msg.m_instanceId);
         client.m_buffer.write<uint32_t>(msg.m_ageNodeIdx);
-        if (ext) {
-            DS::StringBuffer<chr16_t> wbuf = DS::Settings::GameServerAddress().toUtf16();
-            client.m_buffer.write<uint16_t>(wbuf.length());
-            client.m_buffer.writeBytes(wbuf.data(), wbuf.length());
-        } else {
+        if (ext)
+            client.m_buffer.writePString<uint16_t>(DS::Settings::GameServerAddress(), DS::e_StringUTF16);
+        else
             client.m_buffer.write<uint32_t>(msg.m_serverAddress);
-        }
     }
 
     SEND_REPLY();
@@ -714,10 +703,10 @@ void cb_scoreGetScores(AuthServer_Private& client)
     } else {
         client.m_buffer.write<uint32_t>(msg.m_scores.size());
         // eap sucks -- need utf16 string length in bytes
-        DS::StringBuffer<chr16_t> name = msg.m_name.toUtf16();
+        DS::StringBuffer<char16_t> name = msg.m_name.toUtf16();
         uint32_t bufsz = msg.m_scores.size() *
                         (Auth_GetScores::GameScore::BaseStride +
-                        ((name.length() + 1) * sizeof(chr16_t)));
+                        ((name.length() + 1) * sizeof(char16_t)));
         client.m_buffer.write<uint32_t>(bufsz);
         for (auto score : msg.m_scores) {
             client.m_buffer.write<uint32_t>(score.m_scoreId);
@@ -726,9 +715,9 @@ void cb_scoreGetScores(AuthServer_Private& client)
             client.m_buffer.write<uint32_t>(score.m_type);
             client.m_buffer.write<uint32_t>(score.m_points);
             // evil string shit
-            client.m_buffer.write<uint32_t>((name.length() + 1) * sizeof(chr16_t));
-            client.m_buffer.writeBytes(name.data(), name.length() * sizeof(chr16_t));
-            client.m_buffer.write<chr16_t>(0);
+            client.m_buffer.write<uint32_t>((name.length() + 1) * sizeof(char16_t));
+            client.m_buffer.writeBytes(name.data(), name.length() * sizeof(char16_t));
+            client.m_buffer.write<char16_t>(0);
         }
     }
     SEND_REPLY();
@@ -791,33 +780,33 @@ void cb_getPublicAges(AuthServer_Private& client)
         for (size_t i = 0; i < msg.m_ages.size(); i++) {
             client.m_buffer.writeBytes(msg.m_ages[i].m_instance.m_bytes, sizeof(client.m_acctUuid.m_bytes));
 
-            chr16_t strbuffer[2048];
-            DS::StringBuffer<chr16_t> buf;
+            char16_t strbuffer[2048];
+            DS::StringBuffer<char16_t> buf;
             uint32_t copylen;
 
             buf = msg.m_agename.toUtf16();
             copylen = buf.length() < 64 ? buf.length() : 63;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
             strbuffer[copylen] = 0;
-            client.m_buffer.writeBytes(strbuffer, 128);
+            client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
             buf = msg.m_ages[i].m_instancename.toUtf16();
             copylen = buf.length() < 64 ? buf.length() : 63;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
             strbuffer[copylen] = 0;
-            client.m_buffer.writeBytes(strbuffer, 128);
+            client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
             buf = msg.m_ages[i].m_username.toUtf16();
             copylen = buf.length() < 64 ? buf.length() : 63;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
             strbuffer[copylen] = 0;
-            client.m_buffer.writeBytes(strbuffer, 128);
+            client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
             buf = msg.m_ages[i].m_description.toUtf16();
             copylen = buf.length() < 1024 ? buf.length() : 1023;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(chr16_t));
+            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
             strbuffer[copylen] = 0;
-            client.m_buffer.writeBytes(strbuffer, 2048);
+            client.m_buffer.writeBytes(strbuffer, 1024 * sizeof(char16_t));
 
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_sequence);
             client.m_buffer.write<uint32_t>(msg.m_ages[i].m_language);

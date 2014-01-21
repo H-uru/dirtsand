@@ -129,17 +129,17 @@ namespace DS
         int compare(const String& other, CaseSensitivity cs = e_CaseSensitive) const;
 
         size_t length() const { return m_data.length(); }
-        const char* c_str() const { return reinterpret_cast<const char*>(m_data.data()); }
+        const char* c_str() const { return m_data.data(); }
         bool isNull() const { return m_data.isNull(); }
         bool isEmpty() const { return m_data.isEmpty(); }
 
         /* Conversion */
-        StringBuffer<chr8_t> toRaw() const;
-        StringBuffer<chr8_t> toUtf8() const;
-        StringBuffer<chr16_t> toUtf16() const;
-        static String FromRaw(const chr8_t* string, ssize_t length = -1);
-        static String FromUtf8(const chr8_t* string, ssize_t length = -1);
-        static String FromUtf16(const chr16_t* string, ssize_t length = -1);
+        StringBuffer<char> toRaw() const;
+        StringBuffer<char> toUtf8() const;
+        StringBuffer<char16_t> toUtf16() const;
+        static String FromRaw(const char* string, ssize_t length = -1);
+        static String FromUtf8(const char* string, ssize_t length = -1);
+        static String FromUtf16(const char16_t* string, ssize_t length = -1);
 
         String toUpper() const;
         String toLower() const;
@@ -166,7 +166,7 @@ namespace DS
         static String Steal(const char* buffer, ssize_t length = -1);
 
     private:
-        StringBuffer<chr8_t> m_data;
+        StringBuffer<char> m_data;
     };
 
     struct StringHash : public std::hash<std::string>

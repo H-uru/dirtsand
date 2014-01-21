@@ -62,9 +62,8 @@ uint32_t DS::AuthManifest::encodeToStream(DS::Stream* stream) const
     uint32_t start = stream->tell();
 
     for (auto it = m_files.begin(); it != m_files.end(); ++it) {
-        StringBuffer<chr16_t> wstrbuf = (*it)->m_filename.toUtf16();
-        stream->writeBytes(wstrbuf.data(), wstrbuf.length() * sizeof(chr16_t));
-        stream->write<chr16_t>(0);
+        stream->writeString((*it)->m_filename, DS::e_StringUTF16);
+        stream->write<char16_t>(0);
 
         stream->write<uint16_t>((*it)->m_fileSize >> 16);
         stream->write<uint16_t>((*it)->m_fileSize & 0xFFFF);
@@ -72,6 +71,6 @@ uint32_t DS::AuthManifest::encodeToStream(DS::Stream* stream) const
     }
     stream->write<uint16_t>(0);
 
-    DS_DASSERT((stream->tell() - start) % sizeof(chr16_t) == 0);
-    return (stream->tell() - start) / sizeof(chr16_t);
+    DS_DASSERT((stream->tell() - start) % sizeof(char16_t) == 0);
+    return (stream->tell() - start) / sizeof(char16_t);
 }

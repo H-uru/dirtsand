@@ -95,8 +95,7 @@ void MOUL::NetMsgSharedState::read(DS::Stream* stream)
     m_compression = msgStream.m_compression;
 
     // Read the state
-    uint16_t nameLen = msgStream.m_stream.read<uint16_t>();
-    m_stateName = msgStream.m_stream.readString(nameLen, DS::e_StringUTF8);
+    m_stateName = msgStream.m_stream.readPString<uint16_t>(DS::e_StringUTF8);
     m_vars.resize(msgStream.m_stream.read<uint32_t>());
     m_serverMayDelete = msgStream.m_stream.read<bool>();
 
@@ -115,9 +114,7 @@ void MOUL::NetMsgSharedState::write(DS::Stream* stream) const
     NetMsgStream msgStream;
     msgStream.m_compression = m_compression;
 
-    DS::StringBuffer<chr8_t> name = m_stateName.toUtf8();
-    msgStream.m_stream.write<uint16_t>(name.length());
-    msgStream.m_stream.writeBytes(name.data(), name.length());
+    msgStream.m_stream.writePString<uint16_t>(m_stateName, DS::e_StringUTF8);
     msgStream.m_stream.write<uint32_t>(m_vars.size());
     msgStream.m_stream.write<bool>(m_serverMayDelete);
 

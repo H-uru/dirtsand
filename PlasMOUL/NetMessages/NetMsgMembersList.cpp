@@ -51,11 +51,8 @@ void MOUL::ClientGuid::write(DS::Stream* stream) const
         m_AcctUuid.write(stream);
     if ((m_flags & e_HasPlayerId) || (m_flags & e_HasTempPlayerId))
         stream->write<uint32_t>(m_PlayerId);
-    if (m_flags & e_HasPlayerName) {
-        DS::StringBuffer<chr8_t> asciibuf = m_PlayerName.toRaw();
-        stream->write<uint16_t>(asciibuf.length());
-        stream->writeBytes(asciibuf.data(), asciibuf.length());
-    }
+    if (m_flags & e_HasPlayerName)
+        stream->writePString<uint16_t>(m_PlayerName);
     if (m_flags & e_HasCCRLevel)
         stream->write<uint8_t>(m_CCRLevel);
     if (m_flags & e_HasProtectedLogin)
@@ -68,11 +65,8 @@ void MOUL::ClientGuid::write(DS::Stream* stream) const
         stream->write<uint16_t>(m_SrcPort);
     if (m_flags & e_HasReserved)
         stream->write<uint16_t>(m_Reserved);
-    if (m_flags & e_HasClientKey) {
-        DS::StringBuffer<chr8_t> asciibuf = m_ClientKey.toRaw();
-        stream->write<uint16_t>(asciibuf.length());
-        stream->writeBytes(asciibuf.data(), asciibuf.length());
-    }
+    if (m_flags & e_HasClientKey)
+        stream->writePString<uint16_t>(m_ClientKey);
 }
 
 void MOUL::NetMsgMemberInfo::read(DS::Stream* stream)

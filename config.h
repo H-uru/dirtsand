@@ -21,9 +21,6 @@
 #include <cstdlib>
 #include <stdint.h>
 
-typedef unsigned char   chr8_t;
-typedef unsigned short  chr16_t;
-
 namespace DS
 {
     enum AccountFlags

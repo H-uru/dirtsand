@@ -226,14 +226,14 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
 
 DS::ShaHash DS::BuggyHashPassword(const String& username, const String& password)
 {
-    StringBuffer<chr16_t> wuser = username.toUtf16();
-    StringBuffer<chr16_t> wpass = password.toUtf16();
-    chr16_t* buffer = new chr16_t[wuser.length() + wpass.length()];
-    memcpy(buffer, wpass.data(), wpass.length() * sizeof(chr16_t));
-    memcpy(buffer + wpass.length(), wuser.data(), wuser.length() * sizeof(chr16_t));
+    StringBuffer<char16_t> wuser = username.toUtf16();
+    StringBuffer<char16_t> wpass = password.toUtf16();
+    char16_t* buffer = new char16_t[wuser.length() + wpass.length()];
+    memcpy(buffer, wpass.data(), wpass.length() * sizeof(char16_t));
+    memcpy(buffer + wpass.length(), wuser.data(), wuser.length() * sizeof(char16_t));
     buffer[wpass.length() - 1] = 0;
     buffer[wpass.length() + wuser.length() - 1] = 0;
-    ShaHash hash = ShaHash::Sha0(buffer, (wuser.length() + wpass.length()) * sizeof(chr16_t));
+    ShaHash hash = ShaHash::Sha0(buffer, (wuser.length() + wpass.length()) * sizeof(char16_t));
     delete[] buffer;
     return hash;
 }

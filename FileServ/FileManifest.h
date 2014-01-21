@@ -26,7 +26,7 @@ namespace DS
     struct FileInfo
     {
         String m_filename, m_downloadName;
-        chr16_t m_fileHash[32], m_downloadHash[32];
+        char16_t m_fileHash[32], m_downloadHash[32];
         uint32_t m_fileSize, m_downloadSize;
         uint32_t m_flags;
     };

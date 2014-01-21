@@ -30,14 +30,14 @@ static size_t tstrlen(const char_type* string)
     return sptr - string;
 }
 
-static void raw_to_utf8(chr8_t** dest, size_t* destlen,
-                        const chr8_t* src, ssize_t srclen)
+static void raw_to_utf8(uint8_t** dest, size_t* destlen,
+                        const uint8_t* src, ssize_t srclen)
 {
     if (srclen < 0)
         srclen = static_cast<size_t>(tstrlen(src));
 
     size_t convlen = 0;
-    const chr8_t* sptr = src;
+    const uint8_t* sptr = src;
     while (sptr < src + srclen) {
         if (*sptr >= 0x80)
             convlen += 2;
@@ -49,8 +49,8 @@ static void raw_to_utf8(chr8_t** dest, size_t* destlen,
         *destlen = convlen;
 
     if (dest) {
-        *dest = new chr8_t[convlen + 1];
-        chr8_t* dptr = *dest;
+        *dest = new uint8_t[convlen + 1];
+        uint8_t* dptr = *dest;
         sptr = src;
         while (sptr < src + srclen) {
             if (*sptr >= 0x80) {
@@ -65,14 +65,14 @@ static void raw_to_utf8(chr8_t** dest, size_t* destlen,
     }
 }
 
-static void utf16_to_utf8(chr8_t** dest, size_t* destlen,
-                          const chr16_t* src, ssize_t srclen)
+static void utf16_to_utf8(uint8_t** dest, size_t* destlen,
+                          const uint16_t* src, ssize_t srclen)
 {
     if (srclen < 0)
         srclen = static_cast<size_t>(tstrlen(src));
 
     size_t convlen = 0;
-    const chr16_t* sptr = src;
+    const uint16_t* sptr = src;
     while (sptr < src + srclen) {
         if (*sptr >= 0xD800 && *sptr <= 0xDFFF) {
             convlen += 4;
@@ -90,8 +90,8 @@ static void utf16_to_utf8(chr8_t** dest, size_t* destlen,
         *destlen = convlen;
 
     if (dest) {
-        *dest = new chr8_t[convlen + 1];
-        chr8_t* dptr = *dest;
+        *dest = new uint8_t[convlen + 1];
+        uint8_t* dptr = *dest;
         sptr = src;
         while (sptr < src + srclen) {
             if (*sptr >= 0xD800 && *sptr <= 0xDFFF) {
@@ -129,14 +129,14 @@ static void utf16_to_utf8(chr8_t** dest, size_t* destlen,
     }
 }
 
-static void utf8_to_raw(chr8_t** dest, size_t* destlen,
-                        const chr8_t* src, ssize_t srclen)
+static void utf8_to_raw(uint8_t** dest, size_t* destlen,
+                        const uint8_t* src, ssize_t srclen)
 {
     if (srclen < 0)
         srclen = static_cast<size_t>(tstrlen(src));
 
     size_t convlen = 0;
-    const chr8_t* sptr = src;
+    const uint8_t* sptr = src;
     while (sptr < src + srclen) {
         if ((*sptr & 0xF8) == 0xF0)
             sptr += 4;
@@ -152,8 +152,8 @@ static void utf8_to_raw(chr8_t** dest, size_t* destlen,
         *destlen = convlen;
 
     if (dest) {
-        *dest = new chr8_t[convlen + 1];
-        chr8_t* dptr = *dest;
+        *dest = new uint8_t[convlen + 1];
+        uint8_t* dptr = *dest;
         sptr = src;
         while (sptr < src + srclen) {
             if ((*sptr & 0xF8) == 0xF0) {
@@ -166,7 +166,7 @@ static void utf8_to_raw(chr8_t** dest, size_t* destlen,
                 int ch  = (*sptr++ & 0x1F) << 6;
                 if (sptr < src + srclen)
                     ch += (*sptr++ & 0x3F);
-                *dptr++ = (ch <= 0xFF) ? static_cast<chr8_t>(ch) : '?';
+                *dptr++ = (ch <= 0xFF) ? static_cast<uint8_t>(ch) : '?';
             } else {
                 *dptr++ = *sptr++;
             }
@@ -175,14 +175,14 @@ static void utf8_to_raw(chr8_t** dest, size_t* destlen,
     }
 }
 
-static void utf8_to_utf16(chr16_t** dest, size_t* destlen,
-                          const chr8_t* src, ssize_t srclen)
+static void utf8_to_utf16(uint16_t** dest, size_t* destlen,
+                          const uint8_t* src, ssize_t srclen)
 {
     if (srclen < 0)
         srclen = static_cast<size_t>(tstrlen(src));
 
     size_t convlen = 0;
-    const chr8_t* sptr = src;
+    const uint8_t* sptr = src;
     while (sptr < src + srclen) {
         if ((*sptr & 0xF8) == 0xF0) {
             /* Surrogate pair needed */
@@ -201,8 +201,8 @@ static void utf8_to_utf16(chr16_t** dest, size_t* destlen,
         *destlen = convlen;
 
     if (dest) {
-        *dest = new chr16_t[convlen + 1];
-        chr16_t* dptr = *dest;
+        *dest = new uint16_t[convlen + 1];
+        uint16_t* dptr = *dest;
         sptr = src;
         while (sptr < src + srclen) {
             if ((*sptr & 0xF8) == 0xF0) {
@@ -240,10 +240,10 @@ DS::String& DS::String::operator=(const char* strconst)
 {
     if (strconst) {
         size_t length = tstrlen(strconst);
-        chr8_t* bufdata = new chr8_t[length + 1];
+        char* bufdata = new char[length + 1];
         memcpy(bufdata, strconst, length);
         bufdata[length] = 0;
-        m_data = StringBuffer<chr8_t>(bufdata, length);
+        m_data = StringBuffer<char>(bufdata, length);
     }
     return *this;
 }
@@ -255,11 +255,11 @@ DS::String& DS::String::operator+=(const char* strconst)
 
     if (strconst && *strconst != 0) {
         size_t addlen = tstrlen(strconst);
-        chr8_t* buffer = new chr8_t[m_data.m_buffer->m_length + addlen + 1];
+        char* buffer = new char[m_data.m_buffer->m_length + addlen + 1];
         memcpy(buffer, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
         memcpy(buffer + m_data.m_buffer->m_length, strconst, addlen);
         buffer[m_data.m_buffer->m_length + addlen] = 0;
-        m_data = StringBuffer<chr8_t>(buffer, m_data.m_buffer->m_length + addlen);
+        m_data = StringBuffer<char>(buffer, m_data.m_buffer->m_length + addlen);
     }
     return *this;
 }
@@ -270,11 +270,11 @@ DS::String& DS::String::operator+=(const String& other)
         return operator=(other);
 
     if (!other.isEmpty()) {
-        chr8_t* buffer = new chr8_t[m_data.m_buffer->m_length + other.m_data.m_buffer->m_length + 1];
+        char* buffer = new char[m_data.m_buffer->m_length + other.m_data.m_buffer->m_length + 1];
         memcpy(buffer, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
         memcpy(buffer + m_data.m_buffer->m_length, other.m_data.m_buffer->m_string, other.m_data.m_buffer->m_length);
         buffer[m_data.m_buffer->m_length + other.m_data.m_buffer->m_length] = 0;
-        m_data = StringBuffer<chr8_t>(buffer, m_data.m_buffer->m_length + other.m_data.m_buffer->m_length);
+        m_data = StringBuffer<char>(buffer, m_data.m_buffer->m_length + other.m_data.m_buffer->m_length);
     }
     return *this;
 }
@@ -286,9 +286,9 @@ int DS::String::compare(const char* strconst, CaseSensitivity cs) const
     if (!strconst || *strconst == 0)
         return 1;
     if (cs == e_CaseSensitive)
-        return strcmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string), strconst);
+        return strcmp(m_data.m_buffer->m_string, strconst);
     else
-        return strcasecmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string), strconst);
+        return strcasecmp(m_data.m_buffer->m_string, strconst);
 }
 
 int DS::String::compare(const String& other, CaseSensitivity cs) const
@@ -298,85 +298,85 @@ int DS::String::compare(const String& other, CaseSensitivity cs) const
     if (other.isEmpty())
         return 1;
     if (cs == e_CaseSensitive)
-        return strcmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string),
-                      reinterpret_cast<const char*>(other.m_data.m_buffer->m_string));
+        return strcmp(m_data.m_buffer->m_string, other.m_data.m_buffer->m_string);
     else
-        return strcasecmp(reinterpret_cast<const char*>(m_data.m_buffer->m_string),
-                          reinterpret_cast<const char*>(other.m_data.m_buffer->m_string));
+        return strcasecmp(m_data.m_buffer->m_string, other.m_data.m_buffer->m_string);
 }
 
-DS::StringBuffer<chr8_t> DS::String::toRaw() const
+DS::StringBuffer<char> DS::String::toRaw() const
 {
     if (isNull())
-        return StringBuffer<chr8_t>();
+        return StringBuffer<char>();
 
-    chr8_t* buffer;
+    uint8_t* buffer;
     size_t length;
-    utf8_to_raw(&buffer, &length, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
-    return StringBuffer<chr8_t>(buffer, length);
+    utf8_to_raw(&buffer, &length, reinterpret_cast<const uint8_t*>(m_data.m_buffer->m_string),
+                m_data.m_buffer->m_length);
+    return StringBuffer<char>(reinterpret_cast<char*>(buffer), length);
 }
 
-DS::StringBuffer<chr8_t> DS::String::toUtf8() const
+DS::StringBuffer<char> DS::String::toUtf8() const
 {
     /* Provide a deep copy so the original string doesn't affect this buffer. */
     if (isNull())
-        return StringBuffer<chr8_t>();
+        return StringBuffer<char>();
 
-    chr8_t* buffer = new chr8_t[m_data.m_buffer->m_length + 1];
+    char* buffer = new char[m_data.m_buffer->m_length + 1];
     memcpy(buffer, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
     buffer[m_data.m_buffer->m_length] = 0;
-    return StringBuffer<chr8_t>(buffer, m_data.m_buffer->m_length);
+    return StringBuffer<char>(buffer, m_data.m_buffer->m_length);
 }
 
-DS::StringBuffer<chr16_t> DS::String::toUtf16() const
+DS::StringBuffer<char16_t> DS::String::toUtf16() const
 {
     if (isNull())
-        return StringBuffer<chr16_t>();
+        return StringBuffer<char16_t>();
 
-    chr16_t* buffer;
+    uint16_t* buffer;
     size_t length;
-    utf8_to_utf16(&buffer, &length, m_data.m_buffer->m_string, m_data.m_buffer->m_length);
-    return StringBuffer<chr16_t>(buffer, length);
+    utf8_to_utf16(&buffer, &length, reinterpret_cast<const uint8_t*>(m_data.m_buffer->m_string),
+                  m_data.m_buffer->m_length);
+    return StringBuffer<char16_t>(reinterpret_cast<char16_t*>(buffer), length);
 }
 
-DS::String DS::String::FromRaw(const chr8_t* string, ssize_t length)
+DS::String DS::String::FromRaw(const char* string, ssize_t length)
 {
     if (!string)
         return String();
 
-    chr8_t* buffer;
+    uint8_t* buffer;
     size_t buflen;
-    raw_to_utf8(&buffer, &buflen, string, length);
+    raw_to_utf8(&buffer, &buflen, reinterpret_cast<const uint8_t*>(string), length);
     String result;
-    result.m_data = StringBuffer<chr8_t>(buffer, buflen);
+    result.m_data = StringBuffer<char>(reinterpret_cast<char*>(buffer), buflen);
     return result;
 }
 
-DS::String DS::String::FromUtf8(const chr8_t* string, ssize_t length)
+DS::String DS::String::FromUtf8(const char* string, ssize_t length)
 {
     if (!string)
         return String();
 
     if (length < 0)
         length = tstrlen(string);
-    chr8_t* buffer = new chr8_t[length + 1];
+    char* buffer = new char[length + 1];
     memcpy(buffer, string, length);
     buffer[length] = 0;
     String result;
-    result.m_data = StringBuffer<chr8_t>(buffer, length);
+    result.m_data = StringBuffer<char>(buffer, length);
     return result;
 }
 
-DS::String DS::String::FromUtf16(const chr16_t* string, ssize_t length)
+DS::String DS::String::FromUtf16(const char16_t* string, ssize_t length)
 {
     if (!string)
         return String();
 
-    chr8_t* buffer;
+    uint8_t* buffer;
     size_t buflen;
-    utf16_to_utf8(&buffer, &buflen, string, length);
+    utf16_to_utf8(&buffer, &buflen, reinterpret_cast<const uint16_t*>(string), length);
     String result;
-    result.m_data = StringBuffer<chr8_t>(buffer, buflen);
+    result.m_data = StringBuffer<char>(reinterpret_cast<char*>(buffer), buflen);
     return result;
 }
 
@@ -423,8 +423,8 @@ std::vector<DS::String> DS::String::split(char separator, ssize_t max) const
         return std::vector<DS::String>();
 
     std::list<DS::String> subs;
-    const chr8_t* cptr = m_data.data();
-    const chr8_t* scanp = cptr;
+    const char* cptr = m_data.data();
+    const char* scanp = cptr;
     while (*scanp && max) {
         if (!separator && isspace(*scanp)) {
             subs.push_back(DS::String::FromUtf8(cptr, scanp - cptr));
@@ -432,7 +432,7 @@ std::vector<DS::String> DS::String::split(char separator, ssize_t max) const
             while (*scanp && isspace(*scanp))
                 ++scanp;
             cptr = scanp;
-        } else if (*scanp == static_cast<chr8_t>(separator)) {
+        } else if (*scanp == separator) {
             subs.push_back(DS::String::FromUtf8(cptr, scanp - cptr));
             --max;
             cptr = scanp + 1;
@@ -453,11 +453,11 @@ DS::String DS::String::left(ssize_t count) const
     if (static_cast<size_t>(count) >= length())
         return *this;
 
-    chr8_t* trimbuf = new chr8_t[count+1];
+    char* trimbuf = new char[count+1];
     memcpy(trimbuf, m_data.data(), count);
     trimbuf[count] = 0;
     String result;
-    result.m_data = StringBuffer<chr8_t>(trimbuf, count);
+    result.m_data = StringBuffer<char>(trimbuf, count);
     return result;
 }
 
@@ -471,11 +471,11 @@ DS::String DS::String::right(ssize_t count) const
     if (static_cast<size_t>(count) >= length())
         return *this;
 
-    chr8_t* trimbuf = new chr8_t[count+1];
+    char* trimbuf = new char[count+1];
     memcpy(trimbuf, m_data.data() + m_data.length() - count, count);
     trimbuf[count] = 0;
     String result;
-    result.m_data = StringBuffer<chr8_t>(trimbuf, count);
+    result.m_data = StringBuffer<char>(trimbuf, count);
     return result;
 }
 
@@ -488,11 +488,11 @@ DS::String DS::String::mid(size_t start, ssize_t count) const
     if (start >= length())
         return String();
 
-    chr8_t* trimbuf = new chr8_t[count+1];
+    char* trimbuf = new char[count+1];
     memcpy(trimbuf, m_data.data() + start, count);
     trimbuf[count] = 0;
     String result;
-    result.m_data = StringBuffer<chr8_t>(trimbuf, count);
+    result.m_data = StringBuffer<char>(trimbuf, count);
     return result;
 }
 
@@ -535,7 +535,7 @@ ssize_t DS::String::find(const char* substr, ssize_t start) const
     size_t sublen = strlen(substr);
 
     while (start + sublen <= length()) {
-        if (strncmp(reinterpret_cast<const char*>(m_data.data()) + start, substr, sublen) == 0)
+        if (strncmp(m_data.data() + start, substr, sublen) == 0)
             return start;
         ++start;
     }
@@ -548,10 +548,10 @@ ssize_t DS::String::rfind(const char* substr, ssize_t start) const
     size_t sublen = strlen(substr);
     if (start < 0)
         start = length() - sublen;
-    DS_DASSERT(start <= (length() - sublen));
+    DS_DASSERT(static_cast<size_t>(start) <= (length() - sublen));
 
     while (start >= 0) {
-        if (strncmp(reinterpret_cast<const char*>(m_data.data()) + start, substr, sublen) == 0)
+        if (strncmp(m_data.data() + start, substr, sublen) == 0)
             return start;
         --start;
     }
@@ -603,6 +603,6 @@ DS::String DS::String::Steal(const char* buffer, ssize_t length)
     DS::String stolen;
     if (length < 0)
         length = tstrlen(buffer);
-    stolen.m_data = StringBuffer<chr8_t>(reinterpret_cast<const chr8_t*>(buffer), length);
+    stolen.m_data = StringBuffer<char>(buffer, length);
     return stolen;
 }

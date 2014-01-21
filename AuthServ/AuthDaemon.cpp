@@ -40,7 +40,7 @@ static inline void check_postgres()
 
 void dm_auth_addacct(Auth_AccountInfo* info)
 {
-    DS::StringBuffer<chr8_t> pwBuf = info->m_password.toUtf8();
+    DS::StringBuffer<char> pwBuf = info->m_password.toUtf8();
     DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.length());
     PostgresStrings<3> iparms;
     iparms.set(0, gen_uuid().toString());

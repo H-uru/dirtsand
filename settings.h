@@ -52,8 +52,8 @@ namespace DS
         const uint32_t* DroidKey();
 
         // Optimized for throwing onto the network
-        DS::StringBuffer<chr16_t> FileServerAddress();
-        DS::StringBuffer<chr16_t> AuthServerAddress();
+        DS::StringBuffer<char16_t> FileServerAddress();
+        DS::StringBuffer<char16_t> AuthServerAddress();
         DS::String GameServerAddress();
 
         const char* LobbyAddress();

@@ -66,8 +66,8 @@ static struct
 
     /* Servers */
     // TODO: Allow multiple servers for load balancing
-    DS::StringBuffer<chr16_t> m_fileServ;
-    DS::StringBuffer<chr16_t> m_authServ;
+    DS::StringBuffer<char16_t> m_fileServ;
+    DS::StringBuffer<char16_t> m_authServ;
     DS::String m_gameServ;
 
     /* Host configuration */
@@ -244,12 +244,12 @@ const uint32_t* DS::Settings::DroidKey()
     return s_settings.m_droidKey;
 }
 
-DS::StringBuffer<chr16_t> DS::Settings::FileServerAddress()
+DS::StringBuffer<char16_t> DS::Settings::FileServerAddress()
 {
     return s_settings.m_fileServ;
 }
 
-DS::StringBuffer<chr16_t> DS::Settings::AuthServerAddress()
+DS::StringBuffer<char16_t> DS::Settings::AuthServerAddress()
 {
     return s_settings.m_authServ;
 }

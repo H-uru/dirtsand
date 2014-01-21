@@ -21,19 +21,19 @@
 #define READ_VAULT_STRING(string) \
     { \
         uint32_t length = stream->read<uint32_t>(); \
-        DS_PASSERT((length % sizeof(chr16_t)) == 0); \
-        chr16_t* buffer = new chr16_t[length / sizeof(chr16_t)]; \
+        DS_PASSERT((length % sizeof(char16_t)) == 0); \
+        char16_t* buffer = new char16_t[length / sizeof(char16_t)]; \
         stream->readBytes(buffer, length); \
-        string = DS::String::FromUtf16(buffer, (length / sizeof(chr16_t))-1); \
+        string = DS::String::FromUtf16(buffer, (length / sizeof(char16_t))-1); \
         delete[] buffer; \
     }
 
 #define WRITE_VAULT_STRING(string) \
     { \
-        DS::StringBuffer<chr16_t> wbuf = string.toUtf16(); \
-        stream->write<uint32_t>((wbuf.length() + 1) * sizeof(chr16_t)); \
-        stream->writeBytes(wbuf.data(), wbuf.length() * sizeof(chr16_t)); \
-        stream->write<chr16_t>(0); \
+        DS::StringBuffer<char16_t> wbuf = string.toUtf16(); \
+        stream->write<uint32_t>((wbuf.length() + 1) * sizeof(char16_t)); \
+        stream->writeBytes(wbuf.data(), wbuf.length() * sizeof(char16_t)); \
+        stream->write<char16_t>(0); \
     }
 
 void DS::Vault::Node::read(DS::Stream* stream)

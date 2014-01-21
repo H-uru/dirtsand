@@ -109,7 +109,7 @@ SDL::Token SDL::Parser::next()
 {
     while (m_buffer.empty()) {
         Token tokbuf;
-        chr8_t lnbuf[4096];
+        char lnbuf[4096];
         if (!fgets(reinterpret_cast<char*>(lnbuf), 4096, m_file)) {
             tokbuf.m_type = e_TokEof;
             m_buffer.push_back(tokbuf);
@@ -117,7 +117,7 @@ SDL::Token SDL::Parser::next()
         }
         tokbuf.m_lineno = ++m_lineno;
 
-        chr8_t* lnp = lnbuf;
+        char* lnp = lnbuf;
         while (*lnp) {
             if (*lnp == '#') {
                 // Comment - terminate scanning
@@ -128,7 +128,7 @@ SDL::Token SDL::Parser::next()
                 ++lnp;
             } else if ((*lnp >= '0' && *lnp <= '9') || *lnp == '-') {
                 // Numeric constant
-                chr8_t* endp = lnp + 1;
+                char* endp = lnp + 1;
                 while (*endp && ((*endp >= '0' && *endp <= '9') || *endp == '.'))
                     ++endp;
                 tokbuf.m_type = e_TokNumeric;
@@ -138,7 +138,7 @@ SDL::Token SDL::Parser::next()
             } else if ((*lnp >= 'A' && *lnp <= 'Z') || (*lnp >= 'a' && *lnp <= 'z')
                         || *lnp == '_') {
                 // Identifier or keyword
-                chr8_t* endp = lnp + 1;
+                char* endp = lnp + 1;
                 while (*endp && ((*endp >= 'A' && *endp <= 'Z') || (*endp >= 'a' && *endp <= 'z')
                        || (*endp >= '0' && *endp <= '9') || *endp == '_'))
                     ++endp;
@@ -148,7 +148,7 @@ SDL::Token SDL::Parser::next()
                 lnp = endp;
             } else if (*lnp == '$') {
                 // Statedesc reference
-                chr8_t* endp = lnp + 1;
+                char* endp = lnp + 1;
                 while (*endp && ((*endp >= 'A' && *endp <= 'Z') || (*endp >= 'a' && *endp <= 'z')
                        || (*endp >= '0' && *endp <= '9') || *endp == '_'))
                     ++endp;
@@ -164,7 +164,7 @@ SDL::Token SDL::Parser::next()
                 ++lnp;
             } else if (*lnp == '"') {
                 // String constant
-                chr8_t* endp = lnp + 1;
+                char* endp = lnp + 1;
                 while (*endp && *endp != '"')
                     ++endp;
                 tokbuf.m_type = e_TokQuoted;

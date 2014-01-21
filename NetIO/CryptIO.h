@@ -68,9 +68,9 @@ namespace DS
     inline DS::String CryptRecvString(const SocketHandle sock, CryptState crypt)
     {
         uint16_t length = CryptRecvValue<uint16_t>(sock, crypt);
-        chr16_t* buffer = new chr16_t[length];
+        char16_t* buffer = new char16_t[length];
         try {
-            CryptRecvBuffer(sock, crypt, buffer, length * sizeof(chr16_t));
+            CryptRecvBuffer(sock, crypt, buffer, length * sizeof(char16_t));
         } catch (...) {
             delete[] buffer;
             throw;

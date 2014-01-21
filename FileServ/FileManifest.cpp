@@ -56,8 +56,8 @@ DS::NetResultCode DS::FileManifest::loadManifest(const char* filename)
         FileInfo* info = new FileInfo;
         info->m_filename = parts[0];
         info->m_downloadName = parts[1];
-        memcpy(info->m_fileHash, parts[2].toUtf16().data(), 32 * sizeof(chr16_t));
-        memcpy(info->m_downloadHash, parts[3].toUtf16().data(), 32 * sizeof(chr16_t));
+        memcpy(info->m_fileHash, parts[2].toUtf16().data(), 32 * sizeof(char16_t));
+        memcpy(info->m_downloadHash, parts[3].toUtf16().data(), 32 * sizeof(char16_t));
         info->m_fileSize = parts[4].toUint();
         info->m_downloadSize = parts[5].toUint();
         info->m_flags = parts[6].toUint();
@@ -73,19 +73,17 @@ uint32_t DS::FileManifest::encodeToStream(DS::Stream* stream) const
     uint32_t start = stream->tell();
 
     for (auto it = m_files.begin(); it != m_files.end(); ++it) {
-        StringBuffer<chr16_t> wstrbuf = (*it)->m_filename.toUtf16();
-        stream->writeBytes(wstrbuf.data(), wstrbuf.length() * sizeof(chr16_t));
-        stream->write<chr16_t>(0);
+        stream->writeString((*it)->m_filename, DS::e_StringUTF16);
+        stream->write<char16_t>(0);
 
-        wstrbuf = (*it)->m_downloadName.toUtf16();
-        stream->writeBytes(wstrbuf.data(), wstrbuf.length() * sizeof(chr16_t));
-        stream->write<chr16_t>(0);
+        stream->writeString((*it)->m_downloadName, DS::e_StringUTF16);
+        stream->write<char16_t>(0);
 
-        stream->writeBytes((*it)->m_fileHash, 32 * sizeof(chr16_t));
-        stream->write<chr16_t>(0);
+        stream->writeBytes((*it)->m_fileHash, sizeof(FileInfo::m_fileHash));
+        stream->write<char16_t>(0);
 
-        stream->writeBytes((*it)->m_downloadHash, 32 * sizeof(chr16_t));
-        stream->write<chr16_t>(0);
+        stream->writeBytes((*it)->m_downloadHash, sizeof(FileInfo::m_downloadHash));
+        stream->write<char16_t>(0);
 
         stream->write<uint16_t>((*it)->m_fileSize >> 16);
         stream->write<uint16_t>((*it)->m_fileSize & 0xFFFF);
@@ -101,6 +99,6 @@ uint32_t DS::FileManifest::encodeToStream(DS::Stream* stream) const
     }
     stream->write<uint16_t>(0);
 
-    DS_DASSERT((stream->tell() - start) % sizeof(chr16_t) == 0);
-    return (stream->tell() - start) / sizeof(chr16_t);
+    DS_DASSERT((stream->tell() - start) % sizeof(char16_t) == 0);
+    return (stream->tell() - start) / sizeof(char16_t);
 }
