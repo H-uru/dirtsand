@@ -521,9 +521,9 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
             }
         } else {
             auto it = host->m_locks.find(msg->m_object);
-            if (it != host->m_locks.end() && it->second == client->m_clientInfo.m_PlayerId) {
+            if (it != host->m_locks.end() && it->second == client->m_clientInfo.m_PlayerId)
                 host->m_locks.erase(it);
-            }
+            reply->unref();
             return;
         }
     }

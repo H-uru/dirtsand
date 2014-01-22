@@ -177,6 +177,7 @@ int main(int argc, char* argv[])
             continue;
         }
         add_history(cmdbuf);
+        DS::String arg_str = DS::String(cmdbuf + args.front().length() + 1);
         free(cmdbuf);
 
         if (args[0] == "quit") {
@@ -313,7 +314,7 @@ int main(int argc, char* argv[])
             if (!DS::Settings::StatusEnabled())
                 fputs("Warning:  Status server disabled.  "
                       "Setting a welcome message has no effect.\n", stderr);
-            DS::Settings::SetWelcomeMsg(cmdbuf + strlen("welcome "));
+            DS::Settings::SetWelcomeMsg(arg_str);
         } else if (args[0] == "addallplayers") {
             if (args.size() < 2) {
                 fputs("Usage: addallplayers [playerId]\n", stdout);

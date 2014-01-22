@@ -291,23 +291,22 @@ void DS::GameServer_Init()
     } else {
         for (int i=0; i<count; ++i) {
             DS::String filename = DS::String::Format("%s/%s", DS::Settings::AgePath(), dirls[i]->d_name);
-            FILE* ageFile = fopen(filename.c_str(), "r");
-            if (ageFile) {
+            std::unique_ptr<FILE, std::function<int (FILE*)>> ageFile(fopen(filename.c_str(), "r"), &fclose);
+            if (ageFile.get()) {
                 char magic[12];
-                fread(magic, 1, 12, ageFile);
+                fread(magic, 1, 12, ageFile.get());
                 if (memcmp(magic, "whatdoyousee", 12) == 0 || memcmp(magic, "notthedroids", 12) == 0
                     || memcmp(magic, "BriceIsSmart", 12) == 0) {
                     fputs("[Game] Error: Please decrypt your .age files before using!\n", stderr);
                     break;
                 }
-                fseek(ageFile, 0, SEEK_SET);
+                fseek(ageFile.get(), 0, SEEK_SET);
 
                 DS::String ageName = dirls[i]->d_name;
                 ageName = ageName.left(ageName.find(".age"));
-                Game_AgeInfo age = age_parse(ageFile);
+                Game_AgeInfo age = age_parse(ageFile.get());
                 if (age.m_seqPrefix >= 0)
                     s_ages[ageName] = age;
-                fclose(ageFile);
             }
             free(dirls[i]);
         }

@@ -666,7 +666,7 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     node.set_CreatorIdx(playerIdx);
     node.set_Blob_1(link);
     uint32_t cityLink = v_create_node(node);
-    if (hoodLink == 0)
+    if (cityLink == 0)
         return std::make_tuple(0, 0, 0);
 
     AuthServer_AgeInfo relto;
