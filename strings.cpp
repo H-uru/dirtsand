@@ -590,11 +590,13 @@ DS::String DS::String::FormatV(const char* fmt, va_list aptr)
     int chars = vsnprintf(buffer, 256, fmt, aptr);
     DS_DASSERT(chars >= 0);
     if (chars >= 256) {
+        va_end(aptr);
         va_copy(aptr, aptr_save);
         char* bigbuf = new char[chars+1];
         vsnprintf(bigbuf, chars+1, fmt, aptr);
         return Steal(bigbuf);
     }
+    va_end(aptr_save);
     return DS::String(buffer);
 }
 
