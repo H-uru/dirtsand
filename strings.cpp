@@ -585,12 +585,12 @@ DS::String DS::String::Format(const char* fmt, ... )
 DS::String DS::String::FormatV(const char* fmt, va_list aptr)
 {
     char buffer[256];
-    va_list aptr_save;
-    va_copy(aptr_save, aptr);
-    int chars = vsnprintf(buffer, 256, fmt, aptr);
+    va_list aptr_copy;
+    va_copy(aptr_copy, aptr);
+    int chars = vsnprintf(buffer, 256, fmt, aptr_copy);
+    va_end(aptr_copy);
     DS_DASSERT(chars >= 0);
     if (chars >= 256) {
-        va_copy(aptr, aptr_save);
         char* bigbuf = new char[chars+1];
         vsnprintf(bigbuf, chars+1, fmt, aptr);
         return Steal(bigbuf);
