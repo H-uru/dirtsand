@@ -120,6 +120,7 @@ set(dirtsand_SOURCES
     Types/Uuid.cpp
     Types/ShaHash.cpp
     Types/BitVector.cpp
+    Types/Math.cpp
     NetIO/MsgChannel.cpp
     NetIO/SockIO.cpp
     NetIO/CryptIO.cpp
