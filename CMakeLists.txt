@@ -94,6 +94,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/SetNetGroupIdMsg.cpp
     PlasMOUL/Messages/InputEventMsg.cpp
     PlasMOUL/Messages/WarpMsg.cpp
+    PlasMOUL/Messages/CreatableList.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
