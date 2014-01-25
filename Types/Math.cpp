@@ -15,50 +15,48 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_MATH_H
-#define _DS_MATH_H
+#include "Math.h"
+#include "streams.h"
 
-namespace DS
+bool DS::Matrix44::operator==(const DS::Matrix44& other) const
 {
-    class Stream;
-
-    struct Vector3
-    {
-        float m_X, m_Y, m_Z;
-
-        bool operator==(const Vector3& other) const
-        {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z;
-        }
-        bool operator!=(const Vector3& other) const { return !operator==(other); }
-
-    };
-
-    struct Quaternion
-    {
-        float m_X, m_Y, m_Z, m_W;
-
-        bool operator==(const Quaternion& other) const
-        {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z
-                && m_W == other.m_W;
-        }
-        bool operator!=(const Quaternion& other) const { return !operator==(other); }
-    };
-
-    struct Matrix44
-    {
-        bool m_identity;
-        float m_map[4][4];
-
-        bool operator==(const Matrix44& other) const;
-        bool operator!=(const Matrix44& other) const { return !operator==(other); }
-
-        void reset();
-
-        void read(DS::Stream* stream);
-        void write(DS::Stream* stream) const;
-    };
+    if (m_identity && other.m_identity)
+        return true;
+    return memcmp(m_map, other.m_map, sizeof(m_map)) == 0;
 }
 
-#endif
+void DS::Matrix44::reset()
+{
+    static const float s_identity[4][4] = {{1.0f, 0.0f, 0.0f, 0.0f},
+                                           {0.0f, 1.0f, 0.0f, 0.0f},
+                                           {0.0f, 0.0f, 1.0f, 0.0f},
+                                           {0.0f, 0.0f, 0.0f, 1.0f}};
+    memcpy(m_map, s_identity, sizeof(m_map));
+    m_identity = true;
+}
+
+void DS::Matrix44::read(DS::Stream* stream)
+{
+    m_identity = !stream->read<bool>();
+    if (!m_identity)
+    {
+        for (uint8_t i = 0; i < 4; i++)
+            for (uint8_t j = 0; j < 4; j++)
+                m_map[i][j] = stream->read<float>();
+    }
+    else
+    {
+        reset();
+    }
+}
+
+void DS::Matrix44::write(DS::Stream* stream) const
+{
+    stream->write<bool>(!m_identity);
+    if (!m_identity)
+    {
+        for (uint8_t i = 0; i < 4; i++)
+            for (uint8_t j = 0; j < 4; j++)
+                stream->write<float>(m_map[i][j]);
+    }
+}

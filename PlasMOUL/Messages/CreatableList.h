@@ -15,50 +15,36 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_MATH_H
-#define _DS_MATH_H
+#ifndef _MOUL_CREATABLELIST_H
+#define _MOUL_CREATABLELIST_H
 
-namespace DS
+#include "creatable.h"
+#include <map>
+#include <vector>
+
+namespace MOUL
 {
-    class Stream;
-
-    struct Vector3
+    class CreatableList
     {
-        float m_X, m_Y, m_Z;
-
-        bool operator==(const Vector3& other) const
+        enum Flags
         {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z;
-        }
-        bool operator!=(const Vector3& other) const { return !operator==(other); }
+            e_WantCompression = (1<<0),
+            e_Compressed      = (1<<1),
+            e_Written         = (1<<2), // Only used in the client
+        };
 
-    };
+        uint8_t m_flags;
+        std::map<uint16_t, Creatable*> m_items;
 
-    struct Quaternion
-    {
-        float m_X, m_Y, m_Z, m_W;
+    public:
+        CreatableList() : m_flags(e_WantCompression) { }
+        virtual ~CreatableList() { clear(); }
 
-        bool operator==(const Quaternion& other) const
-        {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z
-                && m_W == other.m_W;
-        }
-        bool operator!=(const Quaternion& other) const { return !operator==(other); }
-    };
-
-    struct Matrix44
-    {
-        bool m_identity;
-        float m_map[4][4];
-
-        bool operator==(const Matrix44& other) const;
-        bool operator!=(const Matrix44& other) const { return !operator==(other); }
-
-        void reset();
+        void clear();
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream) const;
     };
 }
 
-#endif
+#endif // _MOUL_CREATABLELIST_H

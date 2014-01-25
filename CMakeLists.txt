@@ -64,6 +64,7 @@ add_definitions(-DHOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD})
 set(PlasMOUL_SOURCES
     PlasMOUL/AgeLinkStruct.cpp
     PlasMOUL/Key.cpp
+    PlasMOUL/GenericValue.cpp
     PlasMOUL/Avatar/AnimStage.cpp
     PlasMOUL/Avatar/ArmatureBrain.cpp
     PlasMOUL/Avatar/AvBrainCoop.cpp
@@ -93,6 +94,11 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/MultistageMsg.cpp
     PlasMOUL/Messages/SetNetGroupIdMsg.cpp
     PlasMOUL/Messages/InputEventMsg.cpp
+    PlasMOUL/Messages/WarpMsg.cpp
+    PlasMOUL/Messages/CreatableList.cpp
+    PlasMOUL/Messages/LinkingMgrMsg.cpp
+    PlasMOUL/Messages/ClimbMsg.cpp
+    PlasMOUL/Messages/BackdoorMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
@@ -120,6 +126,7 @@ set(dirtsand_SOURCES
     Types/Uuid.cpp
     Types/ShaHash.cpp
     Types/BitVector.cpp
+    Types/Math.cpp
     NetIO/MsgChannel.cpp
     NetIO/SockIO.cpp
     NetIO/CryptIO.cpp

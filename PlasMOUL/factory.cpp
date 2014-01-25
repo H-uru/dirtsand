@@ -19,6 +19,7 @@
 #include "errors.h"
 
 #include "AgeLinkStruct.h"
+#include "GenericValue.h"
 #include "Avatar/AvBrainCoop.h"
 #include "Avatar/AvBrainGeneric.h"
 #include "Avatar/CoopCoordinator.h"
@@ -40,6 +41,10 @@
 #include "Messages/MultistageMsg.h"
 #include "Messages/SetNetGroupIdMsg.h"
 #include "Messages/InputEventMsg.h"
+#include "Messages/WarpMsg.h"
+#include "Messages/LinkingMgrMsg.h"
+#include "Messages/ClimbMsg.h"
+#include "Messages/BackdoorMsg.h"
 #include "NetMessages/NetMsgLoadClone.h"
 #include "NetMessages/NetMsgPlayerPage.h"
 #include "NetMessages/NetMsgMembersList.h"

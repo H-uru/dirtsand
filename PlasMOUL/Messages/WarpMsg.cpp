@@ -15,50 +15,18 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_MATH_H
-#define _DS_MATH_H
+#include "WarpMsg.h"
 
-namespace DS
+void MOUL::WarpMsg::read(DS::Stream* stream)
 {
-    class Stream;
-
-    struct Vector3
-    {
-        float m_X, m_Y, m_Z;
-
-        bool operator==(const Vector3& other) const
-        {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z;
-        }
-        bool operator!=(const Vector3& other) const { return !operator==(other); }
-
-    };
-
-    struct Quaternion
-    {
-        float m_X, m_Y, m_Z, m_W;
-
-        bool operator==(const Quaternion& other) const
-        {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z
-                && m_W == other.m_W;
-        }
-        bool operator!=(const Quaternion& other) const { return !operator==(other); }
-    };
-
-    struct Matrix44
-    {
-        bool m_identity;
-        float m_map[4][4];
-
-        bool operator==(const Matrix44& other) const;
-        bool operator!=(const Matrix44& other) const { return !operator==(other); }
-
-        void reset();
-
-        void read(DS::Stream* stream);
-        void write(DS::Stream* stream) const;
-    };
+    Message::read(stream);
+    m_transform.read(stream);
+    m_warpFlags = stream->read<uint32_t>();
 }
 
-#endif
+void MOUL::WarpMsg::write(DS::Stream* stream) const
+{
+    Message::write(stream);
+    m_transform.write(stream);
+    stream->write<uint32_t>(m_warpFlags);
+}

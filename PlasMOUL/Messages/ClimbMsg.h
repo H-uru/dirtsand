@@ -15,50 +15,29 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
-#ifndef _DS_MATH_H
-#define _DS_MATH_H
+#ifndef _MOUL_CLIMBMSG_H
+#define _MOUL_CLIMBMSG_H
 
-namespace DS
+#include "Message.h"
+
+namespace MOUL
 {
-    class Stream;
-
-    struct Vector3
+    class ClimbMsg : public Message
     {
-        float m_X, m_Y, m_Z;
+        FACTORY_CREATABLE(ClimbMsg)
 
-        bool operator==(const Vector3& other) const
-        {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z;
-        }
-        bool operator!=(const Vector3& other) const { return !operator==(other); }
+        virtual void read(DS::Stream* stream);
+        virtual void write(DS::Stream* stream) const;
 
-    };
+    public:
+        uint32_t m_cmd;
+        uint32_t m_direction;
+        bool m_status;
+        Key m_target;
 
-    struct Quaternion
-    {
-        float m_X, m_Y, m_Z, m_W;
-
-        bool operator==(const Quaternion& other) const
-        {
-            return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z
-                && m_W == other.m_W;
-        }
-        bool operator!=(const Quaternion& other) const { return !operator==(other); }
-    };
-
-    struct Matrix44
-    {
-        bool m_identity;
-        float m_map[4][4];
-
-        bool operator==(const Matrix44& other) const;
-        bool operator!=(const Matrix44& other) const { return !operator==(other); }
-
-        void reset();
-
-        void read(DS::Stream* stream);
-        void write(DS::Stream* stream) const;
+    protected:
+        ClimbMsg(uint16_t type) : Message(type) { }
     };
 }
 
-#endif
+#endif // _MOUL_CLIMBMSG_H
