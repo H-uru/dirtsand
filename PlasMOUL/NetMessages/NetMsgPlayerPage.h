@@ -34,7 +34,7 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        NetMsgPlayerPage(uint16_t type) : NetMessage(type) { }
+        NetMsgPlayerPage(uint16_t type) : NetMessage(type), m_unload() { }
     };
 }
 

@@ -42,7 +42,9 @@ namespace MOUL
         bool m_start, m_loop, m_attach;
 
     protected:
-        AvAnimTask(uint16_t type) : AvTask(type) { }
+        AvAnimTask(uint16_t type)
+            : AvTask(type), m_initialBlend(), m_targetBlend(), m_fadeSpeed(),
+              m_setTime(), m_start(), m_loop(), m_attach() { }
     };
 
     class AvOneShotTask : public AvTask
@@ -86,12 +88,9 @@ namespace MOUL
         ArmatureBrain* m_brain;
 
     protected:
-        AvTaskBrain(uint16_t type) : AvTask(type), m_brain(0) { }
+        AvTaskBrain(uint16_t type) : AvTask(type), m_brain() { }
 
-        virtual ~AvTaskBrain()
-        {
-            m_brain->unref();
-        }
+        virtual ~AvTaskBrain() { m_brain->unref(); }
     };
 
     class AvTaskSeek : public AvTask

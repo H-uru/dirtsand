@@ -49,7 +49,10 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        AvBrainGenericMsg(uint16_t type) : AvatarMsg(type) { }
+        AvBrainGenericMsg(uint16_t type)
+            : AvatarMsg(type), m_type(), m_stage(), m_newTime(),
+              m_transitionTime(), m_newDirection(), m_setTime(),
+              m_setDirection() { }
     };
 
     class AvCoopMsg : public Message
@@ -72,13 +75,11 @@ namespace MOUL
         Command m_command;
 
     protected:
-        AvCoopMsg(uint16_t type) : Message(type), m_coordinator(0), m_initiatorId(0),
-            m_initiatorSerial(0), m_command(e_None) { }
+        AvCoopMsg(uint16_t type)
+            : Message(type), m_coordinator(), m_initiatorId(),
+              m_initiatorSerial(), m_command(e_None) { }
 
-        virtual ~AvCoopMsg()
-        {
-            m_coordinator->unref();
-        }
+        virtual ~AvCoopMsg() { m_coordinator->unref(); }
     };
 
     class AvTaskSeekDoneMsg : public AvatarMsg
@@ -91,7 +92,7 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        AvTaskSeekDoneMsg(uint16_t type) : AvatarMsg(type) { }
+        AvTaskSeekDoneMsg(uint16_t type) : AvatarMsg(type), m_aborted() { }
     };
 }
 

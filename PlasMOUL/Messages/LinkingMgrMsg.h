@@ -39,7 +39,7 @@ namespace MOUL
         CreatableList m_args;
 
     protected:
-        LinkingMgrMsg(uint16_t type) : Message(type) { }
+        LinkingMgrMsg(uint16_t type) : Message(type), m_cmd() { }
     };
 }
 

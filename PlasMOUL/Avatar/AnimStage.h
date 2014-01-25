@@ -46,7 +46,11 @@ namespace MOUL
         bool m_attached;
 
     protected:
-        AnimStage(uint16_t type) : Creatable(type) { }
+        AnimStage(uint16_t type)
+            : Creatable(type), m_notify(), m_forwardType(), m_backType(),
+              m_advanceType(), m_regressType(), m_loops(), m_doAdvance(),
+              m_doRegress(), m_advanceTo(), m_regressTo(), m_localTime(),
+              m_length(), m_curLoop(), m_attached() { }
     };
 }
 

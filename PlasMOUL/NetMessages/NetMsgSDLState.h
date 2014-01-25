@@ -33,7 +33,9 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        NetMsgSDLState(uint16_t type) : NetMsgObject(type) { }
+        NetMsgSDLState(uint16_t type)
+            : NetMsgObject(type), m_isInitial(), m_persistOnServer(),
+              m_isAvatar() { }
     };
 
     class NetMsgSDLStateBCast : public NetMsgSDLState

@@ -146,7 +146,7 @@ namespace MOUL
         int32_t m_ageLanguage;
 
         AgeInfoStruct(uint16_t type)
-            : Creatable(type), m_flags(0), m_ageSequenceNumber(0),
+            : Creatable(type), m_flags(), m_ageSequenceNumber(),
               m_ageLanguage(-1) { }
     };
 
@@ -202,17 +202,10 @@ namespace MOUL
         DS::String m_parentAgeFilename;
 
         AgeLinkStruct(uint16_t type)
-            : Creatable(type), m_flags(e_HasSpawnPt), m_ageInfo(nullptr),
-              m_linkingRules(0), m_amCcr(false)
-        {
-            m_ageInfo = AgeInfoStruct::Create();
-            m_flags |= e_HasAgeInfo;
-        }
+            : Creatable(type), m_flags(e_HasSpawnPt | e_HasAgeInfo),
+              m_ageInfo(AgeInfoStruct::Create()), m_linkingRules(), m_amCcr() { }
 
-        virtual ~AgeLinkStruct()
-        {
-            m_ageInfo->unref();
-        }
+        virtual ~AgeLinkStruct() { m_ageInfo->unref(); }
     };
 };
 

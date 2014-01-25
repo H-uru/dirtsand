@@ -36,7 +36,8 @@ namespace MOUL
         Key m_target;
 
     protected:
-        ClimbMsg(uint16_t type) : Message(type) { }
+        ClimbMsg(uint16_t type)
+            : Message(type), m_cmd(), m_direction(), m_status() { }
     };
 }
 

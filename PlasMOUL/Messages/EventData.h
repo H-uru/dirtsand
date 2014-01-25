@@ -57,7 +57,7 @@ namespace MOUL
     class CollisionEventData : public EventData
     {
     public:
-        CollisionEventData() : EventData(e_EvtCollision), m_enter(false) { }
+        CollisionEventData() : EventData(e_EvtCollision), m_enter() { }
 
         bool m_enter;
         Key m_hitter, m_hittee;
@@ -70,7 +70,7 @@ namespace MOUL
     class PickedEventData : public EventData
     {
     public:
-        PickedEventData() : EventData(e_EvtPicked), m_enabled(false) { }
+        PickedEventData() : EventData(e_EvtPicked), m_enabled() { }
 
         bool m_enabled;
         Key m_picker, m_picked;
@@ -85,7 +85,7 @@ namespace MOUL
     {
     public:
         ControlKeyEventData()
-            : EventData(e_EvtControlKey), m_controlKey(0), m_down(false) { }
+            : EventData(e_EvtControlKey), m_controlKey(), m_down() { }
 
         int32_t m_controlKey;
         bool m_down;
@@ -117,7 +117,7 @@ namespace MOUL
     class FacingEventData : public EventData
     {
     public:
-        FacingEventData() : EventData(e_EvtFacing), m_dot(0), m_enabled(false) { }
+        FacingEventData() : EventData(e_EvtFacing), m_dot(), m_enabled() { }
 
         Key m_facer, m_facee;
         float m_dot;
@@ -131,7 +131,7 @@ namespace MOUL
     class ContainedEventData : public EventData
     {
     public:
-        ContainedEventData() : EventData(e_EvtContained), m_entering(false) { }
+        ContainedEventData() : EventData(e_EvtContained), m_entering() { }
 
         bool m_entering;
         Key m_contained, m_container;
@@ -145,7 +145,7 @@ namespace MOUL
     {
     public:
         ActivateEventData()
-            : EventData(e_EvtActivate), m_active(false), m_activate(false) { }
+            : EventData(e_EvtActivate), m_active(), m_activate() { }
 
         bool m_active, m_activate;
 
@@ -157,7 +157,7 @@ namespace MOUL
     class CallbackEventData : public EventData
     {
     public:
-        CallbackEventData() : EventData(e_EvtCallback), m_callbackType(0) { }
+        CallbackEventData() : EventData(e_EvtCallback), m_callbackType() { }
 
         int32_t m_callbackType;
 
@@ -169,7 +169,7 @@ namespace MOUL
     class ResponderStateEventData : public EventData
     {
     public:
-        ResponderStateEventData() : EventData(e_EvtResponderState), m_state(0) { }
+        ResponderStateEventData() : EventData(e_EvtResponderState), m_state() { }
 
         int32_t m_state;
 
@@ -182,7 +182,7 @@ namespace MOUL
     {
     public:
         MultiStageEventData()
-            : EventData(e_EvtMultiStage), m_stage(0), m_event(0) { }
+            : EventData(e_EvtMultiStage), m_stage(), m_event() { }
 
         int32_t m_stage, m_event;
         Key m_avatar;
@@ -213,7 +213,7 @@ namespace MOUL
     class CoopEventData : public EventData
     {
     public:
-        CoopEventData() : EventData(e_EvtCoop), m_id(0), m_serial(0) { }
+        CoopEventData() : EventData(e_EvtCoop), m_id(), m_serial() { }
 
         uint32_t m_id;
         uint16_t m_serial;
@@ -227,7 +227,7 @@ namespace MOUL
     {
     public:
         OfferLinkBookEventData()
-            : EventData(e_EvtOfferLinkBook), m_targetAge(0), m_offeree(0) { }
+            : EventData(e_EvtOfferLinkBook), m_targetAge(), m_offeree() { }
 
         Key m_offerer;
         uint32_t m_targetAge, m_offeree;
@@ -240,7 +240,7 @@ namespace MOUL
     class BookEventData : public EventData
     {
     public:
-        BookEventData() : EventData(e_EvtBook), m_event(0), m_linkId(0) { }
+        BookEventData() : EventData(e_EvtBook), m_event(), m_linkId() { }
 
         uint32_t m_event, m_linkId;
 

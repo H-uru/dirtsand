@@ -51,8 +51,7 @@ namespace MOUL
 
     protected:
         ClothingMsg(uint16_t type)
-            : Message(type), m_commands(0), m_layer(0), m_delta(0),
-              m_weight(0) { }
+            : Message(type), m_commands(), m_layer(), m_delta(), m_weight() { }
     };
 }
 

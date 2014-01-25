@@ -48,9 +48,9 @@ namespace MOUL
 
     protected:
         CoopCoordinator(uint16_t type)
-            : Creatable(type), m_hostBrain(0), m_guestBrain(0),
-              m_hostOfferStage(0), m_guestAcceptStage(0), m_acceptMsg(0),
-              m_autoStartGuest(false) { }
+            : Creatable(type), m_hostBrain(), m_guestBrain(),
+              m_hostOfferStage(), m_guestAcceptStage(), m_acceptMsg(),
+              m_autoStartGuest() { }
 
         virtual ~CoopCoordinator();
     };

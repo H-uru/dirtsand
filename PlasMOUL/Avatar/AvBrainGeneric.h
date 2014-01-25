@@ -45,7 +45,9 @@ namespace MOUL
 
     protected:
         AvBrainGeneric(uint16_t type)
-            : ArmatureBrain(type), m_startMessage(0), m_endMessage(0) { }
+            : ArmatureBrain(type), m_curStage(), m_type(), m_exitFlags(),
+              m_mode(), m_forward(), m_startMessage(), m_endMessage(),
+              m_fadeIn(), m_fadeOut(), m_moveMode(), m_bodyUsage() { }
         virtual ~AvBrainGeneric();
     };
 }

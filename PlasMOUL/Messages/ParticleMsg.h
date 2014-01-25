@@ -41,7 +41,7 @@ namespace MOUL
 
     protected:
         ParticleKillMsg(uint16_t type)
-            : Message(type), m_flags(0), m_numToKill(0.f), m_timeLeft(0.f) { }
+            : Message(type), m_flags(), m_numToKill(), m_timeLeft() { }
     };
 
     class ParticleTransferMsg : public Message
@@ -57,7 +57,7 @@ namespace MOUL
 
     protected:
         ParticleTransferMsg(uint16_t type)
-            : Message(type), m_transferCount(0) { }
+            : Message(type), m_transferCount() { }
     };
 };
 

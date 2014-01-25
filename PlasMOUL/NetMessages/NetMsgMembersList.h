@@ -66,7 +66,7 @@ namespace MOUL
         void read(DS::Stream* stream);
         void write(DS::Stream* stream) const;
 
-        ClientGuid() : m_flags(0) { }
+        ClientGuid() : m_flags() { }
     };
 
     struct NetMsgMemberInfo
@@ -75,7 +75,7 @@ namespace MOUL
         ClientGuid m_client;
         Uoid m_avatarKey;
 
-        NetMsgMemberInfo() : m_flags(0) { }
+        NetMsgMemberInfo() : m_flags() { }
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream) const;
@@ -113,7 +113,8 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        NetMsgMemberUpdate(uint16_t type) : NetMsgServerToClient(type) { }
+        NetMsgMemberUpdate(uint16_t type)
+            : NetMsgServerToClient(type), m_addMember() { }
     };
 }
 

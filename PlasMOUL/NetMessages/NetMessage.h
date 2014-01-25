@@ -66,9 +66,9 @@ namespace MOUL
 
     protected:
         NetMessage(uint16_t type)
-            : Creatable(type), m_contentFlags(0), m_protocolVerMaj(NETMSG_PROTOCOL_MAJ),
-              m_protocolVerMin(NETMSG_PROTOCOL_MIN), m_context(0), m_transId(0),
-              m_playerId(0) { }
+            : Creatable(type), m_contentFlags(), m_protocolVerMaj(NETMSG_PROTOCOL_MAJ),
+              m_protocolVerMin(NETMSG_PROTOCOL_MIN), m_context(), m_transId(),
+              m_playerId() { }
     };
 
     class NetMsgServerToClient : public NetMessage

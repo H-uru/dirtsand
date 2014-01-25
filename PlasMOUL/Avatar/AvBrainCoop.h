@@ -40,8 +40,8 @@ namespace MOUL
 
     protected:
         AvBrainCoop(uint16_t type)
-            : AvBrainGeneric(type), m_initiatorId(0), m_initiatorSerial(0),
-              m_waitingForClick(false) { }
+            : AvBrainGeneric(type), m_initiatorId(), m_initiatorSerial(),
+              m_waitingForClick() { }
     };
 };
 

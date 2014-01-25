@@ -80,13 +80,13 @@ namespace MOUL
     {
     public:
         Uoid()
-            : m_loadMask(0xFF), m_type(0x8000), m_id(0), m_cloneId(0),
-              m_clonePlayerId(0) { }
+            : m_loadMask(0xFF), m_type(0x8000), m_id(), m_cloneId(),
+              m_clonePlayerId() { }
 
         Uoid(const Location& loc, uint16_t type, const DS::String& name,
              uint32_t id = 0, uint8_t loadMask = 0xFF)
             : m_location(loc), m_loadMask(loadMask), m_type(type),
-              m_name(name), m_id(id), m_cloneId(0), m_clonePlayerId(0) { }
+              m_name(name), m_id(id), m_cloneId(), m_clonePlayerId() { }
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream) const;
@@ -117,7 +117,7 @@ namespace MOUL
         static Key AvatarMgrKey;
         static Key NetClientMgrKey;
 
-        Key() : m_data(0) { }
+        Key() : m_data() { }
 
         Key(const Key& copy) : m_data(copy.m_data)
         {

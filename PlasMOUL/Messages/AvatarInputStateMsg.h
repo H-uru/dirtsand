@@ -33,8 +33,7 @@ namespace MOUL
         uint16_t m_state;
 
     protected:
-        AvatarInputStateMsg(uint16_t type)
-            : Message(type), m_state(0) { }
+        AvatarInputStateMsg(uint16_t type) : Message(type), m_state() { }
     };
 }
 

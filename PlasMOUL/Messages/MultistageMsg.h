@@ -37,7 +37,7 @@ namespace MOUL
 
     protected:
         MultistageModMsg(uint16_t type)
-            : Message(type), m_stage(0), m_numLoops(0) { }
+            : Message(type), m_stage(), m_numLoops() { }
     };
 };
 

@@ -37,7 +37,7 @@ namespace MOUL
 
     protected:
         NetMsgVoice(uint16_t type)
-            : NetMessage(type), m_flags(0), m_frames(0) { }
+            : NetMessage(type), m_flags(), m_frames() { }
     };
 }
 

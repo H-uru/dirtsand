@@ -61,7 +61,7 @@ namespace MOUL
 
     protected:
         Message(uint16_t type)
-            : Creatable(type), m_timestamp(0.0), m_bcastFlags(0) { }
+            : Creatable(type), m_timestamp(), m_bcastFlags() { }
     };
 }
 

@@ -37,7 +37,7 @@ namespace MOUL
         uint32_t m_warpFlags;
 
     protected:
-        WarpMsg(uint16_t type) : Message(type) { }
+        WarpMsg(uint16_t type) : Message(type), m_warpFlags() { }
     };
 }
 

@@ -39,8 +39,7 @@ namespace MOUL
 
     protected:
         BulletMsg(uint16_t type)
-            : Message(type), m_cmd(0), m_range(0.0), 
-              m_radius(0.0), m_partyTime(0.0) { }
+            : Message(type), m_cmd(), m_range(), m_radius(), m_partyTime() { }
     };
 };
 

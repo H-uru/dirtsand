@@ -60,7 +60,8 @@ namespace MOUL
         uint8_t m_pagingFlags;
 
     protected:
-        NetMsgPagingRoom(uint16_t type) : NetMsgRoomsList(type) { }
+        NetMsgPagingRoom(uint16_t type)
+            : NetMsgRoomsList(type), m_pagingFlags() { }
     };
 }
 

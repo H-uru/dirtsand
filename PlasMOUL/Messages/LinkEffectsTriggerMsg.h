@@ -35,7 +35,7 @@ namespace MOUL
 
     protected:
         LinkEffectsTriggerMsg(uint16_t type)
-            : Message(type), m_invisLevel(0), m_effects(0), m_leaving(false) { }
+            : Message(type), m_invisLevel(), m_effects(), m_leaving() { }
     };
 }
 

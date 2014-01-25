@@ -43,7 +43,7 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        NotifyMsg(uint16_t type) : Message(type) { }
+        NotifyMsg(uint16_t type) : Message(type), m_type(), m_id(), m_state() { }
         virtual ~NotifyMsg();
     };
 }

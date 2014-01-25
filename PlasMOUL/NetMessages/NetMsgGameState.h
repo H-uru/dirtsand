@@ -40,7 +40,8 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        NetMsgInitialAgeStateSent(uint16_t type) : NetMsgServerToClient(type) { }
+        NetMsgInitialAgeStateSent(uint16_t type)
+            : NetMsgServerToClient(type), m_numStates() { }
     };
 }
 

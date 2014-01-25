@@ -42,8 +42,7 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        AvBrainHuman(uint16_t type)
-            : ArmatureBrain(type), m_isCustomAvatar(false) { }
+        AvBrainHuman(uint16_t type) : ArmatureBrain(type), m_isCustomAvatar() { }
     };
 
     class AvBrainClimb : public ArmatureBrain

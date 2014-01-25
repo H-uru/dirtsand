@@ -37,7 +37,7 @@ namespace MOUL
 
     protected:
         InputIfaceMgrMsg(uint16_t type)
-            : Message(type), m_command(0), m_pageId(0) { }
+            : Message(type), m_command(), m_pageId() { }
     };
 }
 

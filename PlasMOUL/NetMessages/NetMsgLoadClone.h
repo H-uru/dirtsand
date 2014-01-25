@@ -34,7 +34,9 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        NetMsgLoadClone(uint16_t type) : NetMsgGameMessage(type) { }
+        NetMsgLoadClone(uint16_t type)
+            : NetMsgGameMessage(type), m_isPlayer(), m_isLoading(),
+              m_isInitialState() { }
     };
 }
 

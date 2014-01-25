@@ -73,7 +73,9 @@ namespace MOUL
         virtual bool makeSafeForNet();
 
     protected:
-        KIMessage(uint16_t type) : Message(type) { }
+        KIMessage(uint16_t type)
+            : Message(type), m_command(), m_flags(), m_playerId(), m_delay(),
+              m_value() { }
     };
 }
 

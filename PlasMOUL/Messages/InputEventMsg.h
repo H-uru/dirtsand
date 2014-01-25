@@ -36,7 +36,7 @@ namespace MOUL
         virtual bool makeSafeForNet() { return false; }
 
     protected:
-        InputEventMsg(uint16_t type) : Message(type), m_event(0) { }
+        InputEventMsg(uint16_t type) : Message(type), m_event() { }
     };
 
     class ControlEventMsg : public InputEventMsg
@@ -54,7 +54,8 @@ namespace MOUL
 
     protected:
         ControlEventMsg(uint16_t type)
-            : InputEventMsg(type), m_controlCode(0), m_activated(false), m_controlPercent(0) { }
+            : InputEventMsg(type), m_controlCode(), m_activated(),
+              m_controlPercent() { }
     };
 };
 

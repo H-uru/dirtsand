@@ -37,8 +37,7 @@ namespace MOUL
         std::vector<Message*> m_callbacks;
 
     protected:
-        MessageWithCallbacks(uint16_t type)
-            : Message(type) { }
+        MessageWithCallbacks(uint16_t type) : Message(type) { }
 
         virtual ~MessageWithCallbacks();
     };
@@ -68,9 +67,8 @@ namespace MOUL
 
     protected:
         AnimCmdMsg(uint16_t type)
-            : MessageWithCallbacks(type), m_begin(0.0), m_end(0.0),
-              m_loopEnd(0.0), m_loopBegin(0.0), m_speed(0.0),
-              m_speedChangeRate(0.0), m_time(0.0) { }
+            : MessageWithCallbacks(type), m_begin(), m_end(), m_loopEnd(),
+              m_loopBegin(), m_speed(), m_speedChangeRate(), m_time() { }
     };
 };
 

@@ -72,7 +72,7 @@ namespace MOUL
 
     protected:
         NetMsgSharedState(uint16_t type)
-            : NetMsgObject(type), m_lockRequest(0) { }
+            : NetMsgObject(type), m_lockRequest(), m_serverMayDelete() { }
     };
 
     class NetMsgTestAndSet : public NetMsgSharedState

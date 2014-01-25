@@ -41,7 +41,9 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        AvSeekMsg(uint16_t type) : AvTaskMsg(type) { }
+        AvSeekMsg(uint16_t type)
+            : AvTaskMsg(type), m_duration(), m_smartSeek(), m_noSeek(),
+              m_alignType(), m_flags() { }
     };
 
     class AvOneShotMsg : public AvSeekMsg
@@ -55,7 +57,8 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     protected:
-        AvOneShotMsg(uint16_t type) : AvSeekMsg(type) { }
+        AvOneShotMsg(uint16_t type)
+            : AvSeekMsg(type), m_drivable(), m_reversible() { }
     };
 }
 

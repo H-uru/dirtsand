@@ -20,63 +20,63 @@
 
 int32_t MOUL::GenericValue::toInt() const
 {
-    DS_PASSERT(m_type == e_Int || m_type == e_Any);
-    if (m_type == e_Any)
+    DS_PASSERT(m_dataType == e_Int || m_dataType == e_Any);
+    if (m_dataType == e_Any)
         return m_string.toInt();
     return m_int;
 }
 
 uint32_t MOUL::GenericValue::toUint() const
 {
-    DS_PASSERT(m_type == e_UInt || m_type == e_Any);
-    if (m_type == e_Any)
+    DS_PASSERT(m_dataType == e_UInt || m_dataType == e_Any);
+    if (m_dataType == e_Any)
         return m_string.toUint();
     return m_uint;
 }
 
 float MOUL::GenericValue::toFloat() const
 {
-    DS_PASSERT(m_type == e_Float || m_type == e_Any);
-    if (m_type == e_Any)
+    DS_PASSERT(m_dataType == e_Float || m_dataType == e_Any);
+    if (m_dataType == e_Any)
         return m_string.toFloat();
     return m_float;
 }
 
 double MOUL::GenericValue::toDouble() const
 {
-    DS_PASSERT(m_type == e_Double || m_type == e_Any);
-    if (m_type == e_Any)
+    DS_PASSERT(m_dataType == e_Double || m_dataType == e_Any);
+    if (m_dataType == e_Any)
         return m_string.toDouble();
     return m_double;
 }
 
 bool MOUL::GenericValue::toBool() const
 {
-    DS_PASSERT(m_type == e_Bool || m_type == e_Any);
-    if (m_type == e_Any)
+    DS_PASSERT(m_dataType == e_Bool || m_dataType == e_Any);
+    if (m_dataType == e_Any)
         return m_string.toBool();
     return m_bool;
 }
 
 DS::String MOUL::GenericValue::toString() const
 {
-    DS_PASSERT(m_type == e_String || m_type == e_Any);
+    DS_PASSERT(m_dataType == e_String || m_dataType == e_Any);
     return m_string;
 }
 
 char MOUL::GenericValue::toChar() const
 {
-    DS_PASSERT(m_type == e_Char || m_type == e_Any);
-    if (m_type == e_Any)
+    DS_PASSERT(m_dataType == e_Char || m_dataType == e_Any);
+    if (m_dataType == e_Any)
         return m_string.c_str()[0];
     return m_char;
 }
 
 void MOUL::GenericValue::read(DS::Stream* stream)
 {
-    m_type = stream->read<uint8_t>();
+    m_dataType = stream->read<uint8_t>();
 
-    switch (m_type)
+    switch (m_dataType)
     {
     case e_String:
     case e_Any:
@@ -107,9 +107,9 @@ void MOUL::GenericValue::read(DS::Stream* stream)
 
 void MOUL::GenericValue::write(DS::Stream* stream) const
 {
-    stream->write<uint8_t>(m_type);
+    stream->write<uint8_t>(m_dataType);
 
-    switch (m_type)
+    switch (m_dataType)
     {
     case e_String:
     case e_Any:

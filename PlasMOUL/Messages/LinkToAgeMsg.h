@@ -41,10 +41,7 @@ namespace MOUL
         LinkToAgeMsg(uint16_t type)
             : Message(type), m_ageLink(AgeLinkStruct::Create()) { }
 
-        virtual ~LinkToAgeMsg()
-        {
-            m_ageLink->unref();
-        }
+        virtual ~LinkToAgeMsg() { m_ageLink->unref(); }
     };
 };
 
