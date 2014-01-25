@@ -64,6 +64,7 @@ add_definitions(-DHOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD})
 set(PlasMOUL_SOURCES
     PlasMOUL/AgeLinkStruct.cpp
     PlasMOUL/Key.cpp
+    PlasMOUL/GenericValue.cpp
     PlasMOUL/Avatar/AnimStage.cpp
     PlasMOUL/Avatar/ArmatureBrain.cpp
     PlasMOUL/Avatar/AvBrainCoop.cpp

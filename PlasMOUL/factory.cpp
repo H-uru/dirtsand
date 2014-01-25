@@ -19,6 +19,7 @@
 #include "errors.h"
 
 #include "AgeLinkStruct.h"
+#include "GenericValue.h"
 #include "Avatar/AvBrainCoop.h"
 #include "Avatar/AvBrainGeneric.h"
 #include "Avatar/CoopCoordinator.h"
