@@ -29,9 +29,8 @@ void MOUL::LinkingMgrMsg::read(DS::Stream* stream)
     m_contentFlags.read(stream);
     if (m_contentFlags.get(e_Command))
         m_cmd = stream->read<uint8_t>();
-    if (m_contentFlags.get(e_Args)) {
+    if (m_contentFlags.get(e_Args))
         m_args.read(stream);
-    }
 }
 
 void MOUL::LinkingMgrMsg::write(DS::Stream* stream) const
@@ -40,7 +39,6 @@ void MOUL::LinkingMgrMsg::write(DS::Stream* stream) const
     m_contentFlags.write(stream);
     if (m_contentFlags.get(e_Command))
         stream->write<uint8_t>(m_cmd);
-    if (m_contentFlags.get(e_Args)) {
+    if (m_contentFlags.get(e_Args))
         m_args.write(stream);
-    }
 }

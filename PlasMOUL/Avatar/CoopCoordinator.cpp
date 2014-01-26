@@ -44,7 +44,7 @@ void MOUL::CoopCoordinator::read(DS::Stream* s)
     if (s->read<bool>())
         m_acceptMsg = Factory::Read<Message>(s);
     else
-        m_acceptMsg = 0;
+        m_acceptMsg = nullptr;
     m_synchBone = s->readSafeString();
     m_autoStartGuest = s->read<bool>();
 }

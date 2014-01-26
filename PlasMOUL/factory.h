@@ -52,7 +52,7 @@ namespace MOUL
                     obj->unref();
                 return result;
             } else {
-                return 0;
+                return nullptr;
             }
         }
     };

@@ -73,11 +73,13 @@ void MOUL::AvCoopMsg::write(DS::Stream* s) const
 
 bool MOUL::AvCoopMsg::makeSafeForNet()
 {
-    if (m_coordinator)
-        if (m_coordinator->m_acceptMsg)
+    if (m_coordinator) {
+        if (m_coordinator->m_acceptMsg) {
             // This can only be LinkToAgeMsg.
             // Indeed, this will be the only way to send that msg over the wire
             return m_coordinator->m_acceptMsg->type() == ID_LinkToAgeMsg;
+        }
+    }
     return true;
 }
 

@@ -49,13 +49,13 @@ void MOUL::AvBrainGeneric::read(DS::Stream* stream)
     if (stream->read<bool>())
         m_startMessage = Factory::Read<Message>(stream);
     else
-        m_startMessage = 0;
+        m_startMessage = nullptr;
 
     m_endMessage->unref();
     if (stream->read<bool>())
         m_endMessage = Factory::Read<Message>(stream);
     else
-        m_endMessage = 0;
+        m_endMessage = nullptr;
 
     m_fadeIn = stream->read<float>();
     m_fadeOut = stream->read<float>();

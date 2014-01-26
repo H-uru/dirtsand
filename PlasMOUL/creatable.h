@@ -71,8 +71,8 @@ namespace MOUL
         uint16_t m_type;
 
         /* Prevent stack copying of creatables */
-        Creatable(const Creatable& copy) { }
-        Creatable& operator=(const Creatable& copy) { return *this; }
+        Creatable(const Creatable& copy) = delete;
+        void operator=(const Creatable& copy) = delete;
     };
 }
 

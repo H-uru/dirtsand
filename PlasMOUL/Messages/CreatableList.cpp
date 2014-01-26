@@ -38,8 +38,7 @@ void MOUL::CreatableList::read(DS::Stream* stream)
     uint32_t bufSz = stream->read<uint32_t>();
     uint8_t* buf = new uint8_t[bufSz];
 
-    if (m_flags & e_Compressed)
-    {
+    if (m_flags & e_Compressed) {
         uint32_t zBufSz = stream->read<uint32_t>();
         uint8_t* zBuf = new uint8_t[zBufSz];
         stream->readBytes(zBuf, zBufSz);
@@ -52,17 +51,14 @@ void MOUL::CreatableList::read(DS::Stream* stream)
         }
         DS_PASSERT(zLen == bufSz);
         m_flags &= ~e_Compressed;
-    }
-    else
-    {
+    } else {
         stream->readBytes(buf, bufSz);
     }
 
     DS::BufferStream ram;
     ram.steal(buf, bufSz);
     uint16_t numItems = ram.read<uint16_t>();
-    for (uint16_t i = 0; i < numItems; i++)
-    {
+    for (uint16_t i = 0; i < numItems; i++) {
         uint16_t id = ram.read<uint16_t>();
         uint16_t type = ram.read<uint16_t>();
         Creatable* cre = Factory::Create(type);
@@ -77,8 +73,7 @@ void MOUL::CreatableList::write(DS::Stream* stream) const
     DS::BufferStream ram;
     uint16_t numItems = m_items.size();
     ram.write<uint16_t>(numItems);
-    for (auto& it : m_items)
-    {
+    for (auto& it : m_items) {
         uint16_t id = it.first;
         Creatable* item = it.second;
         uint16_t type = item->type();
@@ -94,8 +89,7 @@ void MOUL::CreatableList::write(DS::Stream* stream) const
     uLongf zBufSz;
 
     uint8_t flags = m_flags & ~e_Compressed;
-    if (flags & e_WantCompression && bufSz > COMPRESSION_THRESHOLD)
-    {
+    if (flags & e_WantCompression && bufSz > COMPRESSION_THRESHOLD) {
         uint8_t* zBuf = new uint8_t[bufSz];
         int result = compress(zBuf, &zBufSz, buf, bufSz);
         if (result != Z_OK) {

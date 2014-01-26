@@ -39,7 +39,7 @@ void DS::BitVector::read(DS::Stream* stream)
 {
     delete[] m_bits;
     m_words = stream->read<uint32_t>();
-    m_bits = m_words ? new uint32_t[m_words] : 0;
+    m_bits = m_words ? new uint32_t[m_words] : nullptr;
     stream->readBytes(m_bits, m_words * sizeof(uint32_t));
 }
 

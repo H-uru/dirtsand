@@ -38,14 +38,12 @@ void DS::Matrix44::reset()
 void DS::Matrix44::read(DS::Stream* stream)
 {
     m_identity = !stream->read<bool>();
-    if (!m_identity)
-    {
-        for (uint8_t i = 0; i < 4; i++)
+    if (!m_identity) {
+        for (uint8_t i = 0; i < 4; i++) {
             for (uint8_t j = 0; j < 4; j++)
                 m_map[i][j] = stream->read<float>();
-    }
-    else
-    {
+        }
+    } else {
         reset();
     }
 }
@@ -53,10 +51,10 @@ void DS::Matrix44::read(DS::Stream* stream)
 void DS::Matrix44::write(DS::Stream* stream) const
 {
     stream->write<bool>(!m_identity);
-    if (!m_identity)
-    {
-        for (uint8_t i = 0; i < 4; i++)
+    if (!m_identity) {
+        for (uint8_t i = 0; i < 4; i++) {
             for (uint8_t j = 0; j < 4; j++)
                 stream->write<float>(m_map[i][j]);
+        }
     }
 }

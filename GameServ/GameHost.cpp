@@ -169,8 +169,7 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
 void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 {
     // Unload the avatar clone if the client committed hara-kiri
-    if (msg->m_client->m_isLoaded && !msg->m_client->m_clientKey.isNull())
-    {
+    if (msg->m_client->m_isLoaded && !msg->m_client->m_clientKey.isNull()) {
         MOUL::LoadCloneMsg* cloneMsg = MOUL::LoadCloneMsg::Create();
         cloneMsg->m_bcastFlags = MOUL::Message::e_NetPropagate
                                | MOUL::Message::e_LocalPropagate;
@@ -213,8 +212,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 
     // Release any stale locks
     host->m_lockMutex.lock();
-    for (auto it = host->m_locks.begin(); it != host->m_locks.end(); )
-    {
+    for (auto it = host->m_locks.begin(); it != host->m_locks.end(); ) {
         if (it->second == msg->m_client->m_clientInfo.m_PlayerId)
             it = host->m_locks.erase(it);
         else
@@ -228,8 +226,8 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
         if (host->m_gameMaster == msg->m_client->m_clientInfo.m_PlayerId) {
             MOUL::NetMsgGroupOwner* groupMsg = MOUL::NetMsgGroupOwner::Create();
             groupMsg->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
-                                    | MOUL::NetMessage::e_IsSystemMessage
-                                    | MOUL::NetMessage::e_NeedsReliableSend;
+                                     | MOUL::NetMessage::e_IsSystemMessage
+                                     | MOUL::NetMessage::e_NeedsReliableSend;
             groupMsg->m_timestamp.setNow();
             groupMsg->m_groups.resize(1);
             groupMsg->m_groups[0].m_own = true;
@@ -249,8 +247,9 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
                             msg->m_client->m_clientInfo.m_PlayerId, newOwner->m_clientInfo.m_PlayerId);
                     DS_DASSERT(false);
                 }
-            } else
+            } else {
                 host->m_gameMaster = 0;
+            }
             groupMsg->unref();
         }
     }
@@ -305,8 +304,9 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     if (!host->m_gameMaster) {
         groupMsg->m_groups[0].m_own = true;
         host->m_gameMaster = msg->m_client->m_clientInfo.m_PlayerId;
-    } else
+    } else {
         groupMsg->m_groups[0].m_own = false;
+    }
     host->m_gmMutex.unlock();
 
     DM_WRITEMSG(host, groupMsg);
@@ -754,7 +754,8 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
-void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg) {
+void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
+{
     SDL::State vaultState = SDL::State::FromBlob(msg->m_node.m_Blob_1);
     host->m_vaultState.merge(vaultState);
     msg->m_node.m_Blob_1 = host->m_vaultState.toBlob();
