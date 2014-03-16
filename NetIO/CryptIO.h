@@ -65,10 +65,11 @@ namespace DS
         return value;
     }
 
-    inline uint32_t CryptRecvSize(const SocketHandle sock, CryptState crypt)
+    inline uint32_t CryptRecvSize(const SocketHandle sock, CryptState crypt,
+                                  uint32_t maxSize = MAX_PAYLOAD_SIZE)
     {
         uint32_t size = CryptRecvValue<uint32_t>(sock, crypt);
-        if (size > MAX_PAYLOAD_SIZE)
+        if (size > maxSize)
             throw PacketSizeOutOfBounds(size);
         return size;
     }

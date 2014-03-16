@@ -77,10 +77,10 @@ namespace DS
         uint32_t m_requestedSize;
     };
 
-    inline uint32_t RecvSize(const SocketHandle sock)
+    inline uint32_t RecvSize(const SocketHandle sock, uint32_t maxSize = MAX_PAYLOAD_SIZE)
     {
         uint32_t size = RecvValue<uint32_t>(sock);
-        if (size > MAX_PAYLOAD_SIZE)
+        if (size > maxSize)
             throw PacketSizeOutOfBounds(size);
         return size;
     }

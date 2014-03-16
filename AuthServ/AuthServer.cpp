@@ -22,6 +22,8 @@
 #include "errors.h"
 #include <openssl/rand.h>
 
+#define NODE_SIZE_MAX (4 * 1024 * 1024)
+
 extern bool s_commdebug;
 
 std::list<AuthServer_Private*> s_authClients;
@@ -287,7 +289,7 @@ void cb_nodeCreate(AuthServer_Private& client)
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
-    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt, NODE_SIZE_MAX);
     std::unique_ptr<uint8_t[]> nodeBuffer(new uint8_t[nodeSize]);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer.get(), nodeSize);
     DS::Blob nodeData = DS::Blob::Steal(nodeBuffer.release(), nodeSize);
@@ -350,7 +352,7 @@ void cb_nodeUpdate(AuthServer_Private& client)
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, &msg.m_revision.m_bytes,
                         sizeof(msg.m_revision.m_bytes));
 
-    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt, NODE_SIZE_MAX);
     std::unique_ptr<uint8_t[]> nodeBuffer(new uint8_t[nodeSize]);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer.get(), nodeSize);
     DS::Blob nodeData = DS::Blob::Steal(nodeBuffer.release(), nodeSize);
@@ -445,7 +447,7 @@ void cb_nodeFind(AuthServer_Private& client)
     Auth_NodeFindList msg;
     msg.m_client = &client;
 
-    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt, NODE_SIZE_MAX);
     std::unique_ptr<uint8_t[]> nodeBuffer(new uint8_t[nodeSize]);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer.get(), nodeSize);
     DS::Blob nodeData = DS::Blob::Steal(nodeBuffer.release(), nodeSize);
