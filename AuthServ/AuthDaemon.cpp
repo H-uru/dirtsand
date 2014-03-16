@@ -1203,7 +1203,7 @@ void dm_authDaemon()
                 DS_DASSERT(0);
                 break;
             }
-        } catch (DS::AssertException ex) {
+        } catch (const DS::AssertException& ex) {
             fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
                     ex.m_file, ex.m_line, ex.m_cond);
             if (msg.m_payload) {
@@ -1211,6 +1211,9 @@ void dm_authDaemon()
                 SEND_REPLY(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload),
                            DS::e_NetInternalError);
             }
+        } catch (const DS::PacketSizeOutOfBounds& ex) {
+            fprintf(stderr, "[Auth] Client packet size too large: Requested %u bytes\n",
+                    ex.requestedSize());
         }
     }
 

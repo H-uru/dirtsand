@@ -88,13 +88,12 @@ void cb_ping(AuthServer_Private& client)
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
     // Payload
-    uint32_t payloadSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint32_t payloadSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
     client.m_buffer.write<uint32_t>(payloadSize);
     if (payloadSize) {
-        uint8_t* payload = new uint8_t[payloadSize];
-        DS::CryptRecvBuffer(client.m_sock, client.m_crypt, payload, payloadSize);
-        client.m_buffer.writeBytes(payload, payloadSize);
-        delete[] payload;
+        std::unique_ptr<uint8_t[]> payload(new uint8_t[payloadSize]);
+        DS::CryptRecvBuffer(client.m_sock, client.m_crypt, payload.get(), payloadSize);
+        client.m_buffer.writeBytes(payload.get(), payloadSize);
     }
 
     SEND_REPLY();
@@ -288,10 +287,10 @@ void cb_nodeCreate(AuthServer_Private& client)
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
-    uint32_t nodeSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    uint8_t* nodeBuffer = new uint8_t[nodeSize];
-    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer, nodeSize);
-    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer, nodeSize);
+    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    std::unique_ptr<uint8_t[]> nodeBuffer(new uint8_t[nodeSize]);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer.get(), nodeSize);
+    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer.release(), nodeSize);
     DS::BlobStream nodeStream(nodeData);
 
     Auth_NodeInfo msg;
@@ -351,10 +350,10 @@ void cb_nodeUpdate(AuthServer_Private& client)
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, &msg.m_revision.m_bytes,
                         sizeof(msg.m_revision.m_bytes));
 
-    uint32_t nodeSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    uint8_t* nodeBuffer = new uint8_t[nodeSize];
-    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer, nodeSize);
-    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer, nodeSize);
+    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    std::unique_ptr<uint8_t[]> nodeBuffer(new uint8_t[nodeSize]);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer.get(), nodeSize);
+    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer.release(), nodeSize);
     DS::BlobStream nodeStream(nodeData);
 
     msg.m_node.read(&nodeStream);
@@ -446,10 +445,10 @@ void cb_nodeFind(AuthServer_Private& client)
     Auth_NodeFindList msg;
     msg.m_client = &client;
 
-    uint32_t nodeSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    uint8_t* nodeBuffer = new uint8_t[nodeSize];
-    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer, nodeSize);
-    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer, nodeSize);
+    uint32_t nodeSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    std::unique_ptr<uint8_t[]> nodeBuffer(new uint8_t[nodeSize]);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, nodeBuffer.get(), nodeSize);
+    DS::Blob nodeData = DS::Blob::Steal(nodeBuffer.release(), nodeSize);
     DS::BlobStream nodeStream(nodeData);
 
     msg.m_template.read(&nodeStream);
@@ -958,10 +957,13 @@ void wk_authWorker(DS::SocketHandle sockp)
                 throw DS::SockHup();
             }
         }
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
-    } catch (DS::SockHup) {
+    } catch (const DS::PacketSizeOutOfBounds& ex) {
+        fprintf(stderr, "[Auth] Client packet size too large: Requested %u bytes\n",
+                ex.requestedSize());
+    } catch (const DS::SockHup&) {
         // Socket closed...
     }
 

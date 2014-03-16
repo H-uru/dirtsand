@@ -108,13 +108,12 @@ void cb_ping(GateKeeper_Private& client)
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
     // Payload
-    uint32_t payloadSize = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    uint32_t payloadSize = DS::CryptRecvSize(client.m_sock, client.m_crypt);
     client.m_buffer.write<uint32_t>(payloadSize);
     if (payloadSize) {
-        uint8_t* payload = new uint8_t[payloadSize];
-        DS::CryptRecvBuffer(client.m_sock, client.m_crypt, payload, payloadSize);
-        client.m_buffer.writeBytes(payload, payloadSize);
-        delete[] payload;
+        std::unique_ptr<uint8_t[]> payload(new uint8_t[payloadSize]);
+        DS::CryptRecvBuffer(client.m_sock, client.m_crypt, payload.get(), payloadSize);
+        client.m_buffer.writeBytes(payload.get(), payloadSize);
     }
 
     SEND_REPLY();
@@ -186,10 +185,13 @@ void wk_gateKeeper(DS::SocketHandle sockp)
                 throw DS::SockHup();
             }
         }
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[GateKeeper] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
-    } catch (DS::SockHup) {
+    } catch (const DS::PacketSizeOutOfBounds& ex) {
+        fprintf(stderr, "[GateKeeper] Client packet size too large: Requested %u bytes\n",
+                ex.requestedSize());
+    } catch (const DS::SockHup&) {
         // Socket closed...
     }
 

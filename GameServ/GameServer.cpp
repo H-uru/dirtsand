@@ -150,19 +150,19 @@ void cb_netmsg(GameClient_Private& client)
     msg.m_client = &client;
     msg.m_messageType = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
 
-    uint32_t size = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    uint8_t* buffer = new uint8_t[size];
-    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
-    msg.m_message = DS::Blob::Steal(buffer, size);
+    uint32_t size = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer.get(), size);
+    msg.m_message = DS::Blob::Steal(buffer.release(), size);
     client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
     client.m_channel.getMessage();
 }
 
 void cb_gameMgrMsg(GameClient_Private& client)
 {
-    uint32_t size = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    uint8_t* buffer = new uint8_t[size];
-    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer, size);
+    uint32_t size = DS::CryptRecvSize(client.m_sock, client.m_crypt);
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
+    DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer.get(), size);
 
     fputs("GAME MGR MSG", stdout);
     for (size_t i=0; i<size; ++i) {
@@ -173,7 +173,6 @@ void cb_gameMgrMsg(GameClient_Private& client)
         printf("%02X ", buffer[i]);
     }
     fputc('\n', stdout);
-    delete[] buffer;
 }
 
 void wk_gameWorker(DS::SocketHandle sockp)
@@ -221,10 +220,13 @@ void wk_gameWorker(DS::SocketHandle sockp)
                 throw DS::SockHup();
             }
         }
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
-    } catch (DS::SockHup) {
+    } catch (const DS::PacketSizeOutOfBounds& ex) {
+        fprintf(stderr, "[Game] Client packet size too large: Requested %u bytes\n",
+                ex.requestedSize());
+    } catch (const DS::SockHup&) {
         // Socket closed...
     }
 

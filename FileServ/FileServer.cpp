@@ -315,10 +315,13 @@ void wk_fileServ(DS::SocketHandle sockp)
                 throw DS::SockHup();
             }
         }
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[File] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
-    } catch (DS::SockHup) {
+    } catch (const DS::PacketSizeOutOfBounds& ex) {
+        fprintf(stderr, "[File] Client packet size too large: Requested %u bytes\n",
+                ex.requestedSize());
+    } catch (const DS::SockHup&) {
         // Socket closed...
     }
 

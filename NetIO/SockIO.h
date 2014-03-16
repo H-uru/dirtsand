@@ -21,6 +21,9 @@
 #include "streams.h"
 #include <exception>
 
+// Don't allow the client to send payloads > 128KB in size
+#define MAX_PAYLOAD_SIZE (128 * 1024)
+
 namespace DS
 {
     enum SendFlag
@@ -56,6 +59,30 @@ namespace DS
         tp value;
         RecvBuffer(sock, &value, sizeof(value));
         return value;
+    }
+
+    class PacketSizeOutOfBounds : public std::exception
+    {
+    public:
+        PacketSizeOutOfBounds(uint32_t requestedSize) throw()
+            : m_requestedSize(requestedSize) { }
+        virtual ~PacketSizeOutOfBounds() throw() { }
+
+        virtual const char* what() const throw()
+        { return "Packet size is too large"; }
+
+        uint32_t requestedSize() const { return m_requestedSize; }
+
+    private:
+        uint32_t m_requestedSize;
+    };
+
+    inline uint32_t RecvSize(const SocketHandle sock)
+    {
+        uint32_t size = RecvValue<uint32_t>(sock);
+        if (size > MAX_PAYLOAD_SIZE)
+            throw PacketSizeOutOfBounds(size);
+        return size;
     }
 
     class SockHup : public std::exception
