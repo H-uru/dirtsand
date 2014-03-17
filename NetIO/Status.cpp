@@ -47,22 +47,21 @@ void dm_htserv()
 
             std::list<DS::String> lines;
             for ( ;; ) {
-                char* buffer = 0;
+                std::unique_ptr<char[]> buffer;
                 DS::String scratch;
                 try {
                     size_t bufSize = DS::PeekSize(client);
-                    buffer = new char[scratch.length() + bufSize + 1];
-                    memcpy(buffer, scratch.c_str(), scratch.length());
-                    DS::RecvBuffer(client, buffer + scratch.length(), bufSize);
+                    buffer.reset(new char[scratch.length() + bufSize + 1]);
+                    memcpy(buffer.get(), scratch.c_str(), scratch.length());
+                    DS::RecvBuffer(client, buffer.get() + scratch.length(), bufSize);
                     buffer[scratch.length() + bufSize] = 0;
-                } catch (DS::SockHup) {
+                } catch (const DS::SockHup&) {
                     lines.clear();
-                    delete[] buffer;
                     break;
                 }
 
-                char* cp = buffer;
-                char* sp = buffer;
+                char* cp = buffer.get();
+                char* sp = buffer.get();
                 while (*cp) {
                     if (*cp == '\r' || *cp == '\n') {
                         if (*cp == '\r' && *(cp + 1) == '\n') {
@@ -79,7 +78,6 @@ void dm_htserv()
                 }
                 if (cp != sp)
                     scratch += sp;
-                delete[] buffer;
 
                 if (lines.size() && lines.back().isEmpty()) {
                     // Got the separator line

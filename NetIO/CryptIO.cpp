@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <mutex>
+#include <memory>
 
 #ifdef DEBUG
 bool s_commdebug = false;
@@ -176,12 +177,11 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
     if (!statep) {
         DS::SendBuffer(sock, buffer, size);
     } else if (size > 4096) {
-        unsigned char* cryptbuf = new unsigned char[size];
+        std::unique_ptr<unsigned char[]> cryptbuf(new unsigned char[size]);
         statep->m_mutex.lock();
-        RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), cryptbuf);
+        RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), cryptbuf.get());
         statep->m_mutex.unlock();
-        DS::SendBuffer(sock, cryptbuf, size, mode);
-        delete[] cryptbuf;
+        DS::SendBuffer(sock, cryptbuf.get(), size, mode);
     } else {
         unsigned char stack[4096];
         statep->m_mutex.lock();
@@ -198,10 +198,9 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
     if (!statep) {
         DS::RecvBuffer(sock, buffer, size);
     } else if (size > 4096) {
-        unsigned char* cryptbuf = new unsigned char[size];
-        DS::RecvBuffer(sock, cryptbuf, size);
-        RC4(&statep->m_readKey, size, cryptbuf, reinterpret_cast<unsigned char*>(buffer));
-        delete[] cryptbuf;
+        std::unique_ptr<unsigned char[]> cryptbuf(new unsigned char[size]);
+        DS::RecvBuffer(sock, cryptbuf.get(), size);
+        RC4(&statep->m_readKey, size, cryptbuf.get(), reinterpret_cast<unsigned char*>(buffer));
     } else {
         unsigned char stack[4096];
         DS::RecvBuffer(sock, stack, size);
@@ -222,6 +221,15 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         fputc('\n', stdout);
     }
 #endif
+}
+
+DS::String DS::CryptRecvString(const SocketHandle sock, CryptState crypt)
+{
+    uint16_t length = CryptRecvValue<uint16_t>(sock, crypt);
+    std::unique_ptr<char16_t[]> buffer(new char16_t[length]);
+    CryptRecvBuffer(sock, crypt, buffer.get(), length * sizeof(char16_t));
+    String result = String::FromUtf16(buffer.get(), length);
+    return result;
 }
 
 DS::ShaHash DS::BuggyHashPassword(const String& username, const String& password)

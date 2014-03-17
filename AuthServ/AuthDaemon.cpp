@@ -52,7 +52,6 @@ void dm_auth_addacct(Auth_AccountInfo* info)
             "    VALUES ($1, $2, $3, 0, 1)"
             "    RETURNING idx",
             3, 0, iparms.m_values, 0, 0, 0);
-    delete info;
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));

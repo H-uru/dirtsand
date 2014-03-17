@@ -589,7 +589,7 @@ void cb_downloadStart(AuthServer_Private& client)
     DS::FileStream* stream = new DS::FileStream();
     try {
         stream->open(filename.c_str(), "rb");
-    } catch (DS::FileIOException ex) {
+    } catch (const DS::FileIOException& ex) {
         fprintf(stderr, "[Auth] Could not open file %s: %s\n[Auth] Requested by %s\n",
                 filename.c_str(), ex.what(), DS::SockIpAddress(client.m_sock).c_str());
         client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
@@ -787,25 +787,25 @@ void cb_getPublicAges(AuthServer_Private& client)
 
             buf = msg.m_agename.toUtf16();
             copylen = buf.length() < 64 ? buf.length() : 63;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
+            memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
             buf = msg.m_ages[i].m_instancename.toUtf16();
             copylen = buf.length() < 64 ? buf.length() : 63;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
+            memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
             buf = msg.m_ages[i].m_username.toUtf16();
             copylen = buf.length() < 64 ? buf.length() : 63;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
+            memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
             buf = msg.m_ages[i].m_description.toUtf16();
             copylen = buf.length() < 1024 ? buf.length() : 1023;
-            memcpy(strbuffer, buf.data(), copylen*sizeof(char16_t));
+            memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 1024 * sizeof(char16_t));
 
@@ -1029,10 +1029,10 @@ void DS::AuthServer_DisplayClients()
 
 void DS::AuthServer_AddAcct(DS::String acctName, DS::String password)
 {
-    Auth_AccountInfo* info = new Auth_AccountInfo;
-    info->m_acctName = acctName;
-    info->m_password = password;
-    s_authChannel.putMessage(e_AuthAddAcct, info);
+    Auth_AccountInfo info;
+    info.m_acctName = acctName;
+    info.m_password = password;
+    s_authChannel.putMessage(e_AuthAddAcct, &info);
 }
 
 uint32_t DS::AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags)
