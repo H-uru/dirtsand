@@ -95,16 +95,23 @@ static void print_trace(const char* text)
     free(stack_strings);
 }
 
-static void sigh_segv(int)
+static void sigh_crash(int signum)
 {
-    print_trace("Segfault");
-    abort();
+    const char *name =
+        (signum == SIGSEGV) ? "Segfault" :
+        (signum == SIGABRT) ? "Abort" :
+        (signum == SIGFPE)  ? "Divide by Zero" :
+        (signum == SIGBUS)  ? "Bus Error" :
+        "Unknown";
+
+    print_trace(name);
+    exit(4);
 }
 
 static void exception_filter()
 {
     print_trace("Unhandled exception");
-    abort();
+    exit(4);
 }
 
 static void sigh_term(int)
@@ -143,8 +150,11 @@ int main(int argc, char* argv[])
 
     // Show a stackdump in case we crash
     std::set_terminate(&exception_filter);
-    signal(SIGSEGV, &sigh_segv);
     signal(SIGTERM, &sigh_term);
+    signal(SIGSEGV, &sigh_crash);
+    signal(SIGABRT, &sigh_crash);
+    signal(SIGBUS, &sigh_crash);
+    signal(SIGFPE, &sigh_crash);
 
     // Ignore sigpipe and force send() to return EPIPE
     signal(SIGPIPE, SIG_IGN);
