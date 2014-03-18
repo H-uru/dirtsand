@@ -274,7 +274,8 @@ int main(int argc, char* argv[])
                 fputs("Usage: addacct <user> <password>\n", stdout);
                 continue;
             }
-            DS::AuthServer_AddAcct(args[1], args[2]);
+            if (!DS::AuthServer_AddAcct(args[1], args[2]))
+                fputs("Account was not added.\n", stderr);
         } else if (args[0] == "modacct") {
             if (args.size() < 2) {
                 fputs("Usage: modacct <user> [flag]\n", stdout);

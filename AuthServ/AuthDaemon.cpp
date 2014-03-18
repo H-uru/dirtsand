@@ -38,28 +38,55 @@ static inline void check_postgres()
     DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
 }
 
-void dm_auth_addacct(Auth_AccountInfo* info)
+void dm_auth_addacct(Auth_AddAcct* msg)
 {
-    DS::StringBuffer<char> pwBuf = info->m_password.toUtf8();
-    DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.length());
-    PostgresStrings<3> iparms;
-    iparms.set(0, gen_uuid().toString());
-    iparms.set(1, pwHash.toString());
-    iparms.set(2, info->m_acctName);
+    check_postgres();
+
+    PostgresStrings<3> qparms;
+    qparms.set(0, msg->m_acctInfo.m_acctName);
     PGresult* result = PQexecParams(s_postgres,
-            "INSERT INTO auth.\"Accounts\""
-            "    (\"AcctUuid\", \"PassHash\", \"Login\", \"AcctFlags\", \"BillingType\")"
-            "    VALUES ($1, $2, $3, 0, 1)"
-            "    RETURNING idx",
-            3, 0, iparms.m_values, 0, 0, 0);
+            "SELECT idx, \"AcctUuid\" FROM auth.\"Accounts\""
+            "    WHERE LOWER(\"Login\")=LOWER($1)",
+            1, 0, qparms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    DS_DASSERT(PQntuples(result) == 1);
-    PQclear(result);
+
+    if (PQntuples(result) == 0) {
+        PQclear(result);
+
+        DS::StringBuffer<char> pwBuf = msg->m_acctInfo.m_password.toUtf8();
+        DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.length());
+        PostgresStrings<3> iparms;
+        iparms.set(0, gen_uuid().toString());
+        iparms.set(1, pwHash.toString());
+        iparms.set(2, msg->m_acctInfo.m_acctName);
+        PGresult* result = PQexecParams(s_postgres,
+                "INSERT INTO auth.\"Accounts\""
+                "    (\"AcctUuid\", \"PassHash\", \"Login\", \"AcctFlags\", \"BillingType\")"
+                "    VALUES ($1, $2, $3, 0, 1)"
+                "    returning idx",
+                3, 0, iparms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQclear(result);
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+        DS_DASSERT(PQntuples(result) == 1);
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetSuccess);
+    } else {
+        fprintf(stderr, "Error: Account already exists (ID %s; UUID %s)\n",
+                PQgetvalue(result, 0, 0), PQgetvalue(result, 0, 1));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetAccountAlreadyExists);
+    }
 }
 
 void dm_auth_shutdown()
@@ -1160,7 +1187,7 @@ void dm_authDaemon()
                 dm_auth_disconnect(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload));
                 break;
             case e_AuthAddAcct:
-                dm_auth_addacct(reinterpret_cast<Auth_AccountInfo*>(msg.m_payload));
+                dm_auth_addacct(reinterpret_cast<Auth_AddAcct*>(msg.m_payload));
                 break;
             case e_AuthGetPublic:
                 dm_auth_get_public(reinterpret_cast<Auth_PubAgeRequest*>(msg.m_payload));

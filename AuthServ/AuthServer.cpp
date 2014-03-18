@@ -1027,12 +1027,16 @@ void DS::AuthServer_DisplayClients()
     }
 }
 
-void DS::AuthServer_AddAcct(DS::String acctName, DS::String password)
+bool DS::AuthServer_AddAcct(const DS::String& acctName, const DS::String& password)
 {
-    Auth_AccountInfo info;
-    info.m_acctName = acctName;
-    info.m_password = password;
-    s_authChannel.putMessage(e_AuthAddAcct, &info);
+    AuthClient_Private client;
+    Auth_AddAcct req;
+    req.m_client = &client;
+    req.m_acctInfo.m_acctName = acctName;
+    req.m_acctInfo.m_password = password;
+    s_authChannel.putMessage(e_AuthAddAcct, &req);
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    return reply.m_messageType == DS::e_NetSuccess;
 }
 
 uint32_t DS::AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags)

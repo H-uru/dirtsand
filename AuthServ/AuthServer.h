@@ -30,7 +30,7 @@ namespace DS
 
     void AuthServer_DisplayClients();
 
-    void AuthServer_AddAcct(DS::String, DS::String);
+    bool AuthServer_AddAcct(const DS::String&, const DS::String&);
     uint32_t AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags);
     bool AuthServer_AddAllPlayersFolder(uint32_t playerId);
 

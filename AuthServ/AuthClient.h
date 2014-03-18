@@ -229,6 +229,11 @@ struct Auth_AccountFlags : public Auth_ClientMessage
     uint32_t m_flags;
 };
 
+struct Auth_AddAcct : public Auth_ClientMessage
+{
+    Auth_AccountInfo m_acctInfo;
+};
+
 struct Auth_RestrictLogins : public Auth_ClientMessage
 {
     bool m_status;
