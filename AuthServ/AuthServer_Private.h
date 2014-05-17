@@ -18,6 +18,7 @@
 #include "AuthServer.h"
 #include "AuthClient.h"
 #include "db/pqaccess.h"
+#include "SDL/StateInfo.h"
 #include "streams.h"
 #include <vector>
 #include <list>
@@ -111,6 +112,7 @@ extern std::thread s_authDaemonThread;
 
 void dm_authDaemon();
 bool dm_vault_init();
+bool dm_global_sdl_init();
 bool dm_check_static_ages();
 bool dm_all_players_init();
 
@@ -120,6 +122,8 @@ enum AgeFlags
 {
     e_AgePublic  = (1<<0),
 };
+
+bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc);
 
 std::tuple<uint32_t, uint32_t>
 v_create_age(AuthServer_AgeInfo age, uint32_t flags);

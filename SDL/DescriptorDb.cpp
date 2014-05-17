@@ -107,3 +107,19 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindLatestDescriptor(DS::String name)
 
     return &newi->second;
 }
+
+bool SDL::DescriptorDb::ForLatestDescriptors(descfunc_t functor)
+{
+    for (auto namei = s_descriptors.begin(); namei != s_descriptors.end(); ++namei) {
+        auto veri = namei->second.begin();
+        auto newi = veri;
+        for ( ; veri != namei->second.end(); ++veri) {
+            if (veri->first > newi->first)
+                newi = veri;
+        }
+        if (!functor(namei->first, &newi->second))
+            return false;
+    }
+    return true;
+}
+

@@ -19,6 +19,7 @@
 #define _SDL_DESCRIPTORDB_H
 
 #include "StateInfo.h"
+#include <functional>
 #include <vector>
 
 namespace SDL
@@ -67,9 +68,12 @@ namespace SDL
     class DescriptorDb
     {
     public:
+        typedef std::function<bool(const DS::String&, StateDescriptor*)> descfunc_t;
+
         static bool LoadDescriptors(const char* sdlpath);
         static StateDescriptor* FindDescriptor(DS::String name, int version);
         static StateDescriptor* FindLatestDescriptor(DS::String name);
+        static bool ForLatestDescriptors(descfunc_t functor);
 
     private:
         DescriptorDb() = delete;
