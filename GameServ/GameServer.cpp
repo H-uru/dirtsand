@@ -349,6 +349,17 @@ void DS::GameServer_Shutdown()
         fputs("[Game] Servers didn't die after 5 seconds!\n", stderr);
 }
 
+void DS::GameServer_UpdateGlobalSDL(const DS::String& age)
+{
+    std::lock_guard<std::mutex> lock(s_gameHostMutex);
+    for (auto it = s_gameHosts.begin(); it != s_gameHosts.end(); ++it) {
+        if (!it->second || it->second->m_ageFilename != age)
+            continue;
+        it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, 0);
+    }
+}
+
+
 bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId)
 {
     s_gameHostMutex.lock();
@@ -361,7 +372,7 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
     if (host) {
         Game_SdlMessage* msg = new Game_SdlMessage;
         msg->m_node = node;
-        host->m_channel.putMessage(e_GameSdlUpdate, msg);
+        host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
         return true;
     }
     return false;

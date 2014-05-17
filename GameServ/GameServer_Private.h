@@ -111,7 +111,7 @@ extern agemap_t s_ages;
 enum GameHostMessages
 {
     e_GameShutdown, e_GameDisconnect, e_GameJoinAge, e_GamePropagate,
-    e_GameSdlUpdate,
+    e_GameLocalSdlUpdate, e_GameGlobalSdlUpdate
 };
 
 struct Game_ClientMessage

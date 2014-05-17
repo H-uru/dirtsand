@@ -20,6 +20,7 @@
 #include "encodings.h"
 #include "settings.h"
 #include "errors.h"
+#include <SDL/DescriptorDb.h>
 #include <chrono>
 
 std::thread s_authDaemonThread;
@@ -1022,6 +1023,71 @@ void dm_auth_fetchSDL(Auth_FetchSDL* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
+{
+    auto it = s_globalStates.find(msg->m_ageFilename);
+    if (it == s_globalStates.end()) {
+        SEND_REPLY(msg, DS::e_NetStateObjectNotFound);
+        return;
+    }
+
+    SDL::State state = it->second;
+    for (size_t i = 0; i < state.data()->m_simpleVars.size(); ++i) {
+        SDL::Variable* var = state.data()->m_simpleVars[i];
+        if (var->descriptor()->m_name == msg->m_variable) {
+            var->data()->m_flags |= SDL::Variable::e_HasTimeStamp | SDL::Variable::e_XIsDirty;
+            var->data()->m_timestamp.setNow();
+
+            if (msg->m_value.isEmpty()) {
+                var->setDefault();
+            } else {
+                var->data()->m_flags &= ~SDL::Variable::e_SameAsDefault;
+                switch (var->descriptor()->m_type) {
+                case SDL::e_VarBool:
+                    var->data()->m_bool[0] = msg->m_value.toBool();
+                    break;
+                case SDL::e_VarByte:
+                    var->data()->m_byte[0] = static_cast<int8_t>(msg->m_value.toUint());
+                    break;
+                case SDL::e_VarInt:
+                    var->data()->m_int[0] = msg->m_value.toInt();
+                    break;
+                case SDL::e_VarShort:
+                    var->data()->m_short[0] = static_cast<int16_t>(msg->m_value.toInt());
+                    break;
+                default:
+                    // Global SDL is only plain old ints...
+                    SEND_REPLY(msg, DS::e_NetNotSupported);
+                    return;
+                }
+            }
+
+            // I guess this is a good time to save it back to the DB?
+            DS::Blob blob = state.toBlob();
+            PostgresStrings<2> parms;
+            parms.set(0, msg->m_ageFilename);
+            parms.set(1, DS::Base64Encode(blob.buffer(), blob.size()));
+            PGresult* result = PQexecParams(s_postgres, "UPDATE vault.\"GlobalStates\""
+                                            "    SET \"SdlBlob\" = $2"
+                                            "    WHERE \"Descriptor\" = $1",
+                                            2, 0, parms.m_values, 0, 0, 0);
+            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                        __FILE__, __LINE__, PQerrorMessage(s_postgres));
+                // This doesn't block continuing...
+                DS_DASSERT(false);
+            }
+
+            DS::GameServer_UpdateGlobalSDL(msg->m_ageFilename);
+            SEND_REPLY(msg, DS::e_NetSuccess);
+            return;
+        }
+    }
+
+    // If we got here, then we didn't find a variable...
+    SEND_REPLY(msg, DS::e_NetInvalidParameter);
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -1250,6 +1316,9 @@ void dm_authDaemon()
                 break;
             case e_AuthFetchSDL:
                 dm_auth_fetchSDL(reinterpret_cast<Auth_FetchSDL*>(msg.m_payload));
+                break;
+            case e_AuthUpdateGlobalSDL:
+                dm_auth_update_globalSDL(reinterpret_cast<Auth_UpdateGlobalSDL*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

@@ -753,25 +753,11 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
-void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
+void dm_bcast_agesdl_hook(GameHost_Private* host)
 {
-    SDL::State vaultState = SDL::State::FromBlob(msg->m_node.m_Blob_1);
-    host->m_localState.merge(vaultState);
-    host->m_ageSdlHook.merge(vaultState);
-    msg->m_node.m_Blob_1 = host->m_localState.toBlob();
-
-    Auth_NodeInfo sdlNode;
-    AuthClient_Private fakeClient;
-    sdlNode.m_client = &fakeClient;
-    sdlNode.m_node = msg->m_node;
-    sdlNode.m_revision = DS::Uuid();
-    s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
-    if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
-        fputs("[Game] Error writing SDL node back to vault\n", stderr);
-
     Game_AgeInfo info = s_ages[host->m_ageFilename];
 
-    MOUL::NetMsgSDLStateBCast* bcast = MOUL::NetMsgSDLStateBCast::Create(); //MOUL::Factory::Create(MOUL::ID_NetMsgSDLStateBCast);
+    MOUL::NetMsgSDLStateBCast* bcast = MOUL::NetMsgSDLStateBCast::Create();
     bcast->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
                             | MOUL::NetMessage::e_NeedsReliableSend;
     bcast->m_timestamp.setNow();
@@ -795,10 +781,33 @@ void dm_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
             // of the client list if one hung up
         }
     }
+    bcast->unref();
+}
 
+void dm_local_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
+{
+    SDL::State vaultState = SDL::State::FromBlob(msg->m_node.m_Blob_1);
+    host->m_ageSdlHook.merge(vaultState);
+    host->m_ageSdlHook.merge(host->m_globalState);
+    host->m_localState.merge(vaultState);
+    msg->m_node.m_Blob_1 = host->m_localState.toBlob();
 
-    delete bcast;
-    delete msg;
+    Auth_NodeInfo sdlNode;
+    AuthClient_Private fakeClient;
+    sdlNode.m_client = &fakeClient;
+    sdlNode.m_node = msg->m_node;
+    sdlNode.m_revision = DS::Uuid();
+    s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
+    if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
+        fputs("[Game] Error writing SDL node back to vault\n", stderr);
+
+    dm_bcast_agesdl_hook(host);
+}
+
+void dm_global_sdl_update(GameHost_Private* host)
+{
+    host->m_ageSdlHook.merge(host->m_globalState);
+    dm_bcast_agesdl_hook(host);
 }
 
 void dm_gameHost(GameHost_Private* host)
@@ -819,8 +828,11 @@ void dm_gameHost(GameHost_Private* host)
             case e_GamePropagate:
                 dm_game_message(host, reinterpret_cast<Game_PropagateMessage*>(msg.m_payload));
                 break;
-            case e_GameSdlUpdate:
-                dm_sdl_update(host, reinterpret_cast<Game_SdlMessage*>(msg.m_payload));
+            case e_GameLocalSdlUpdate:
+                dm_local_sdl_update(host, reinterpret_cast<Game_SdlMessage*>(msg.m_payload));
+                break;
+            case e_GameGlobalSdlUpdate:
+                dm_global_sdl_update(host);
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

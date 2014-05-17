@@ -1063,3 +1063,15 @@ bool DS::AuthServer_AddAllPlayersFolder(uint32_t playerId)
     s_authChannel.putMessage(e_AuthAddAllPlayers, &msg);
     return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
 }
+
+bool DS::AuthServer_ChangeGlobalSDL(const DS::String& ageName, const DS::String& var, const DS::String& value)
+{
+    AuthClient_Private client;
+    Auth_UpdateGlobalSDL msg;
+    msg.m_client = &client;
+    msg.m_ageFilename = ageName;
+    msg.m_variable = var;
+    msg.m_value = value;
+    s_authChannel.putMessage(e_AuthUpdateGlobalSDL, &msg);
+    return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
+}
