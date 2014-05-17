@@ -124,6 +124,7 @@ enum AgeFlags
 };
 
 bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc);
+SDL::State v_find_global_sdl(const DS::String& ageName);
 
 std::tuple<uint32_t, uint32_t>
 v_create_age(AuthServer_AgeInfo age, uint32_t flags);

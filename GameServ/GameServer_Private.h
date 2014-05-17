@@ -80,9 +80,12 @@ struct GameHost_Private
     DS::BufferStream m_buffer;
 
     PGconn* m_postgres;
-    uint32_t m_sdlIdx;
-    SDL::State m_vaultState;
     sdlstatemap_t m_states;
+
+    uint32_t m_sdlIdx;
+    SDL::State m_globalState;
+    SDL::State m_localState;
+    SDL::State m_ageSdlHook;
 
     bool m_temp;
 };

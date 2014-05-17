@@ -25,6 +25,7 @@
 
 static uint32_t s_systemNode = 0;
 extern PGconn* s_postgres;
+extern std::unordered_map<DS::String, SDL::State, DS::StringHash> s_globalStates;
 uint32_t s_allPlayers = 0;
 
 #define SEND_REPLY(msg, result) \
@@ -362,8 +363,8 @@ bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc)
     }
 
     if (PQntuples(result) == 0) {
-        SDL::State state(desc);
-        DS::Blob blob = state.toBlob();
+        s_globalStates[name] = SDL::State(desc);
+        DS::Blob blob = s_globalStates[name].toBlob();
 
         parms.set(1, DS::Base64Encode(blob.buffer(), blob.size()));
         result = PQexecParams(s_postgres, "INSERT INTO vault.\"GlobalStates\""
@@ -400,8 +401,34 @@ bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc)
             }
             PQclear(result);
         }
+        s_globalStates[name] = state;
     }
     return true;
+}
+
+SDL::State v_find_global_sdl(const DS::String& ageName)
+{
+    SDL::StateDescriptor* desc = SDL::DescriptorDb::FindLatestDescriptor(ageName);
+    if (!desc)
+        return nullptr;
+    check_postgres();
+
+    PostgresStrings<1> parms;
+    parms.set(0, ageName);
+    PGresult* result = PQexecParams(s_postgres, "SELECT \"SdlBlob\" FROM vault.\"GlobalStates\""
+                                    "WHERE \"Descriptor\"=$1 LIMIT 1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return nullptr;
+    }
+
+    DS_PASSERT(PQntuples(result) == 1);
+    DS::Blob blob = DS::Base64Decode(PQgetvalue(result, 0, 0));
+    PQclear(result);
+    return SDL::State::FromBlob(blob);
 }
 
 std::tuple<uint32_t, uint32_t>

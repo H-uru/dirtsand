@@ -27,6 +27,7 @@ DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
 bool s_restrictLogins = false;
 extern uint32_t s_allPlayers;
+std::unordered_map<DS::String, SDL::State, DS::StringHash> s_globalStates;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -110,6 +111,7 @@ void dm_auth_shutdown()
         fputs("[Auth] Clients didn't die after 5 seconds!\n", stderr);
 
     PQfinish(s_postgres);
+    s_globalStates.clear();
 }
 
 void dm_auth_login(Auth_LoginInfo* info)
@@ -1002,6 +1004,24 @@ void dm_auth_addAllPlayers(Auth_AddAllPlayers* msg)
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
+void dm_auth_fetchSDL(Auth_FetchSDL* msg)
+{
+    auto global_it = s_globalStates.find(msg->m_ageFilename);
+    if (global_it != s_globalStates.end()) {
+        msg->m_globalState = global_it->second;
+    }
+
+    if (msg->m_sdlNodeId == 0) {
+        // TODO: Determine if there actually is a non-null state and save to vault
+        msg->m_localState = gen_default_sdl(msg->m_ageFilename);
+    } else {
+        DS::Vault::Node sdlNode = v_fetch_node(msg->m_sdlNodeId);
+        msg->m_localState = sdlNode.m_Blob_1;
+    }
+
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void dm_authDaemon()
 {
     s_postgres = PQconnectdb(DS::String::Format(
@@ -1227,6 +1247,9 @@ void dm_authDaemon()
                 break;
             case e_AuthAddAllPlayers:
                 dm_auth_addAllPlayers(reinterpret_cast<Auth_AddAllPlayers*>(msg.m_payload));
+                break;
+            case e_AuthFetchSDL:
+                dm_auth_fetchSDL(reinterpret_cast<Auth_FetchSDL*>(msg.m_payload));
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */

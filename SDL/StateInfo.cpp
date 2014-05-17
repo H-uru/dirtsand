@@ -948,14 +948,14 @@ void SDL::State::merge(const SDL::State& state)
     }
 }
 
-void SDL::State::update()
+bool SDL::State::update()
 {
     if (!m_data)
-        return;
+        return false;
 
     StateDescriptor* newdesc = DescriptorDb::FindLatestDescriptor(m_data->m_desc->m_name);
     if (newdesc == m_data->m_desc)
-        return;
+        return false;
 
     SDL::State newstate(newdesc);
     for (size_t i=0; i < newstate.m_data->m_vars.size(); ++i) {
@@ -968,6 +968,7 @@ void SDL::State::update()
     newstate.m_data->ref();
     m_data->unref();
     m_data = newstate.m_data;
+    return true;
 }
 
 void SDL::State::setDefault()
@@ -1023,7 +1024,7 @@ DS::Blob SDL::State::toBlob() const
     if (!m_data)
         return DS::Blob();
     DS::BufferStream buffer;
-    
+
     // Stream header (see ::Create)
     uint16_t hflags = 0x8000;
     if (!m_data->m_object.isNull())
