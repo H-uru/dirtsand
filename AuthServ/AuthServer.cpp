@@ -361,6 +361,7 @@ void cb_nodeUpdate(AuthServer_Private& client)
     msg.m_node.read(&nodeStream);
     DS_PASSERT(nodeStream.atEof());
     msg.m_node.m_NodeIdx = m_nodeId;
+    msg.m_internal = false;
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();

@@ -171,6 +171,7 @@ void dm_local_sdl_update(GameHost_Private* host, const DS::Blob& blob)
     Auth_NodeInfo sdlNode;
     AuthClient_Private fakeClient;
     sdlNode.m_client = &fakeClient;
+    sdlNode.m_internal = true;
     sdlNode.m_node.set_NodeIdx(host->m_sdlIdx);
     sdlNode.m_node.set_Blob_1(blob);
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
@@ -795,6 +796,7 @@ void dm_local_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
     Auth_NodeInfo sdlNode;
     AuthClient_Private fakeClient;
     sdlNode.m_client = &fakeClient;
+    sdlNode.m_internal = true;
     sdlNode.m_node = msg->m_node;
     sdlNode.m_revision = DS::Uuid();
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));

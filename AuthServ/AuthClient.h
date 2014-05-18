@@ -120,6 +120,7 @@ struct Auth_NodeInfo : public Auth_ClientMessage
 {
     DS::Vault::Node m_node;
     DS::Uuid m_revision;
+    bool m_internal;
 };
 
 struct Auth_NodeRef : public Auth_ClientMessage

@@ -1178,7 +1178,7 @@ void dm_authDaemon()
             case e_VaultUpdateNode:
                 {
                     Auth_NodeInfo* info = reinterpret_cast<Auth_NodeInfo*>(msg.m_payload);
-                    if (!info->m_revision.isNull() && info->m_node.m_NodeType == DS::Vault::e_NodeSDL) {
+                    if (!info->m_internal && info->m_node.m_NodeType == DS::Vault::e_NodeSDL) {
                         // This is an SDL update. It needs to be passed off to the gameserver
                         PostgresStrings<1> parms;
                         parms.set(0, info->m_node.m_NodeIdx);
