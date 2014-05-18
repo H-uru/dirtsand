@@ -384,9 +384,13 @@ void SDL::Variable::read(DS::Stream* stream)
     } else {
         if (m_data->m_flags & e_HasTimeStamp)
             m_data->m_timestamp.read(stream);
-        if (m_data->m_timestamp.isNull())
+        if ((m_data->m_flags & e_HasDirtyFlag)  && (m_data->m_flags & e_WantTimeStamp)) {
             m_data->m_timestamp.setNow();
+            m_data->m_flags &= ~e_WantTimeStamp;
+            m_data->m_flags |= e_HasTimeStamp;
+        }
 
+        m_data->m_flags &= ~e_HasDirtyFlag;
         if (!(m_data->m_flags & e_SameAsDefault)) {
             if (m_data->m_desc->m_size == -1) {
                 size_t count = stream->read<uint32_t>();
