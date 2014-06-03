@@ -361,6 +361,7 @@ void cb_nodeUpdate(AuthServer_Private& client)
     msg.m_node.read(&nodeStream);
     DS_PASSERT(nodeStream.atEof());
     msg.m_node.m_NodeIdx = m_nodeId;
+    msg.m_internal = false;
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();
@@ -1061,5 +1062,17 @@ bool DS::AuthServer_AddAllPlayersFolder(uint32_t playerId)
     msg.m_client = &client;
     msg.m_playerId = playerId;
     s_authChannel.putMessage(e_AuthAddAllPlayers, &msg);
+    return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
+}
+
+bool DS::AuthServer_ChangeGlobalSDL(const DS::String& ageName, const DS::String& var, const DS::String& value)
+{
+    AuthClient_Private client;
+    Auth_UpdateGlobalSDL msg;
+    msg.m_client = &client;
+    msg.m_ageFilename = ageName;
+    msg.m_variable = var;
+    msg.m_value = value;
+    s_authChannel.putMessage(e_AuthUpdateGlobalSDL, &msg);
     return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
 }

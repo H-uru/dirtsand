@@ -17,6 +17,7 @@
 
 #include "AuthServer.h"
 #include "VaultTypes.h"
+#include "SDL/StateInfo.h"
 #include "NetIO/SockIO.h"
 #include "NetIO/CryptIO.h"
 #include "NetIO/MsgChannel.h"
@@ -73,7 +74,8 @@ enum AuthDaemonMessages
     e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
     e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic, e_AuthCreateScore,
     e_AuthGetScores, e_AuthAddScorePoints, e_AuthTransferScorePoints,
-    e_AuthUpdateAgeSrv, e_AuthAcctFlags, e_AuthRestrictLogins, e_AuthAddAllPlayers
+    e_AuthUpdateAgeSrv, e_AuthAcctFlags, e_AuthRestrictLogins, e_AuthAddAllPlayers,
+    e_AuthFetchSDL, e_AuthUpdateGlobalSDL
 };
 
 struct Auth_AccountInfo
@@ -118,6 +120,7 @@ struct Auth_NodeInfo : public Auth_ClientMessage
 {
     DS::Vault::Node m_node;
     DS::Uuid m_revision;
+    bool m_internal;
 };
 
 struct Auth_NodeRef : public Auth_ClientMessage
@@ -242,6 +245,22 @@ struct Auth_RestrictLogins : public Auth_ClientMessage
 struct Auth_AddAllPlayers : public Auth_ClientMessage
 {
     uint32_t m_playerId;
+};
+
+struct Auth_FetchSDL : public Auth_ClientMessage
+{
+    DS::String m_ageFilename;
+    uint32_t m_sdlNodeId;
+
+    DS::Blob m_localState;
+    SDL::State m_globalState;
+};
+
+struct Auth_UpdateGlobalSDL : public Auth_ClientMessage
+{
+    DS::String m_ageFilename;
+    DS::String m_variable;
+    DS::String m_value;
 };
 
 DS::Blob gen_default_sdl(const DS::String& filename);

@@ -59,8 +59,8 @@ static char** console_completer(const char* text, int start, int end)
 {
     static const char* completions[] = {
         /* Commands */
-        "addacct", "addallplayers", "clients", "commdebug", "help", "keygen", "modacct",
-        "quit", "restart", "restrict", "welcome",
+        "addacct", "addallplayers", "clients", "commdebug", "globalsdl", "help", "keygen",
+        "modacct", "quit", "restart", "restrict", "welcome",
         /* Services */
         "auth", "lobby", "status",
     };
@@ -333,12 +333,23 @@ int main(int argc, char* argv[])
             }
             if (!DS::AuthServer_AddAllPlayersFolder(args[1].toUint()))
                 fprintf(stderr, "Couldn't add the AllPlayers folder to %d", args[1].toUint());
+        } else if (args[0] == "globalsdl") {
+            if (args.size() < 3) {
+                fputs("Usage: globalsdl <ageName> <variable> <value>\n", stdout);
+                continue;
+            }
+            DS::String value;
+            if (args.size() > 3)
+                value = args[3];
+            if (!DS::AuthServer_ChangeGlobalSDL(args[1], args[2], value))
+                fprintf(stderr, "Error: Failed to change variable '%s'\n", args[2].c_str());
         } else if (args[0] == "help") {
             fputs("DirtSand v1.0 Console supported commands:\n"
                   "    addacct <user> <password>\n"
                   "    addallplayers <playerId>\n"
                   "    clients\n"
                   "    commdebug <on|off>\n"
+                  "    globalsdl <ageName> <variable> <value>\n"
                   "    help\n"
                   "    keygen <new|show>\n"
                   "    modacct <user> [flag]\n"

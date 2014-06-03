@@ -175,6 +175,7 @@ ALTER FUNCTION auth.transfer_score_points(IN integer, IN integer, IN integer, IN
 -- [Optional] Utility to clear an entire vault --
 CREATE OR REPLACE FUNCTION clear_vault() RETURNS void AS
 $BODY$
+SELECT setval('vault."GlobalStates_idx_seq"', 1, false);
 SELECT setval('vault."Nodes_idx_seq"', 10001, false);
 SELECT setval('vault."NodeRefs_idx_seq"', 1, false);
 SELECT setval('game."Servers_idx_seq"', 1, false);
@@ -182,6 +183,7 @@ SELECT setval('game."AgeSeqNumber"', 1, false);
 SELECT setval('game."AgeStates_idx_seq"', 1, false);
 SELECT setval('auth."Players_idx_seq"', 1, false);
 SELECT setval('auth."Scores_idx_seq"', 1, false);
+DELETE FROM vault."GlobalStates";
 DELETE FROM vault."Nodes";
 DELETE FROM vault."NodeRefs";
 DELETE FROM game."Servers";

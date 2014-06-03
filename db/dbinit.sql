@@ -99,6 +99,24 @@ SELECT pg_catalog.setval('"Scores_idx_seq"', 1, false);
 
 SET search_path = vault, pg_catalog;
 
+CREATE TABLE "GlobalStates" (
+    idx integer NOT NULL,
+    "Descriptor" character varying(64) NOT NULL,
+    "SdlBlob" text NOT NULL
+);
+ALTER TABLE vault."GlobalStates" OWNER TO dirtsand;
+CREATE INDEX "GlobalStates_Index" ON vault."GlobalStates" ("Descriptor");
+
+CREATE SEQUENCE "GlobalStates_idx_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+ALTER TABLE vault."GlobalStates_idx_seq" OWNER TO dirtsand;
+ALTER SEQUENCE "GlobalStates_idx_seq" OWNED BY "GlobalStates".idx;
+SELECT pg_catalog.setval('"GlobalStates_idx_seq"', 1, false);
+
 CREATE TABLE "NodeRefs" (
     idx integer NOT NULL,
     "ParentIdx" integer NOT NULL,
@@ -228,9 +246,12 @@ ALTER TABLE ONLY "Scores"
 CREATE INDEX "Login_Index" ON "Accounts" USING hash ("Login");
 
 SET search_path = vault, pg_catalog;
+ALTER TABLE "GlobalStates" ALTER COLUMN idx SET DEFAULT nextval('"GlobalStates_idx_seq"'::regclass);
 ALTER TABLE "NodeRefs" ALTER COLUMN idx SET DEFAULT nextval('"NodeRefs_idx_seq"'::regclass);
 ALTER TABLE "Nodes" ALTER COLUMN idx SET DEFAULT nextval('"Nodes_idx_seq"'::regclass);
 
+ALTER TABLE ONLY "GlobalStates"
+    ADD CONSTRAINT "GlobalStates_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "NodeRefs"
     ADD CONSTRAINT "NodeRefs_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "Nodes"

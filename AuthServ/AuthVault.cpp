@@ -25,6 +25,7 @@
 
 static uint32_t s_systemNode = 0;
 extern PGconn* s_postgres;
+extern std::unordered_map<DS::String, SDL::State, DS::StringHash> s_globalStates;
 uint32_t s_allPlayers = 0;
 
 #define SEND_REPLY(msg, result) \
@@ -266,6 +267,11 @@ bool dm_vault_init()
     return true;
 }
 
+bool dm_global_sdl_init()
+{
+    return SDL::DescriptorDb::ForLatestDescriptors(v_check_global_sdl);
+}
+
 bool dm_all_players_init()
 {
     PostgresStrings<2> parms;
@@ -333,6 +339,98 @@ bool dm_check_static_ages()
     return true;
 }
 
+bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc)
+{
+    // If this isn't an age, we don't care...
+    DS::String agefile = DS::String::Format("%s/%s.age", DS::Settings::AgePath(), name.c_str());
+    DS::FileStream fs;
+    try {
+        fs.open(agefile.c_str(), "r");
+    } catch (DS::FileIOException&) {
+        return true;
+    }
+
+    PostgresStrings<2> parms;
+    parms.set(0, name);
+    PGresult* result = PQexecParams(s_postgres, "SELECT idx,\"SdlBlob\" FROM vault.\"GlobalStates\""
+                                    "WHERE \"Descriptor\"=$1 LIMIT 1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return false;
+    }
+
+    if (PQntuples(result) == 0) {
+        s_globalStates[name] = SDL::State(desc);
+        DS::Blob blob = s_globalStates[name].toBlob();
+
+        parms.set(1, DS::Base64Encode(blob.buffer(), blob.size()));
+        result = PQexecParams(s_postgres, "INSERT INTO vault.\"GlobalStates\""
+                              "    (\"Descriptor\", \"SdlBlob\") VALUES ($1, $2)",
+                              2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQclear(result);
+            return false;
+        }
+        PQclear(result);
+    } else {
+        uint32_t idx = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        DS::Blob blob = DS::Base64Decode(PQgetvalue(result, 0, 1));
+        SDL::State state = SDL::State::FromBlob(blob);
+        PQclear(result);
+
+        // Slightly redundant, but this will prevent us from doing needless work.
+        if (state.descriptor() != desc) {
+            state.update();
+            blob = state.toBlob();
+
+            parms.set(0, idx);
+            parms.set(1, DS::Base64Encode(blob.buffer(), blob.size()));
+            result = PQexecParams(s_postgres, "UPDATE vault.\"GlobalStates\""
+                                  "SET \"SdlBlob\"=$2 WHERE idx=$1",
+                                  2, 0, parms.m_values, 0, 0, 0);
+            if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+                fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                        __FILE__, __LINE__, PQerrorMessage(s_postgres));
+                // This doesn't block continuing...
+                DS_DASSERT(false);
+            }
+            PQclear(result);
+        }
+        s_globalStates[name] = state;
+    }
+    return true;
+}
+
+SDL::State v_find_global_sdl(const DS::String& ageName)
+{
+    SDL::StateDescriptor* desc = SDL::DescriptorDb::FindLatestDescriptor(ageName);
+    if (!desc)
+        return nullptr;
+    check_postgres();
+
+    PostgresStrings<1> parms;
+    parms.set(0, ageName);
+    PGresult* result = PQexecParams(s_postgres, "SELECT \"SdlBlob\" FROM vault.\"GlobalStates\""
+                                    "WHERE \"Descriptor\"=$1 LIMIT 1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        return nullptr;
+    }
+
+    DS_PASSERT(PQntuples(result) == 1);
+    DS::Blob blob = DS::Base64Decode(PQgetvalue(result, 0, 0));
+    PQclear(result);
+    return SDL::State::FromBlob(blob);
+}
+
 std::tuple<uint32_t, uint32_t>
 v_create_age(AuthServer_AgeInfo age, uint32_t flags)
 {
@@ -364,8 +462,6 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
     uint32_t ageNode = v_create_node(node);
     if (ageNode == 0)
         return std::make_pair(0, 0);
-
-    // TODO: Global SDL node
 
     node.clear();
     node.set_NodeType(DS::Vault::e_NodeFolder);

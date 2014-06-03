@@ -18,6 +18,7 @@
 #ifndef _SDL_STATEINFO_H
 #define _SDL_STATEINFO_H
 
+#include <atomic>
 #include "PlasMOUL/Key.h"
 #include "PlasMOUL/creatable.h"
 #include "Types/UnifiedTime.h"
@@ -125,7 +126,7 @@ namespace SDL
             uint16_t m_flags;
 
         private:
-            int m_refs;
+            std::atomic_int m_refs;
             VarDescriptor* m_desc;
 
             _ref(VarDescriptor* desc);
@@ -183,7 +184,7 @@ namespace SDL
         void write(DS::Stream* stream) const;
         void add(const State& state);
         void merge(const State& state);
-        void update();
+        bool update();
 
 #ifdef DEBUG
         void debug();
@@ -214,7 +215,7 @@ namespace SDL
     private:
         struct _ref
         {
-            int m_refs;
+            std::atomic_int m_refs;
             StateDescriptor* m_desc;
             std::vector<Variable> m_vars;
             std::vector<Variable*> m_simpleVars, m_sdVars;

@@ -80,9 +80,12 @@ struct GameHost_Private
     DS::BufferStream m_buffer;
 
     PGconn* m_postgres;
-    uint32_t m_sdlIdx;
-    SDL::State m_vaultState;
     sdlstatemap_t m_states;
+
+    uint32_t m_sdlIdx;
+    SDL::State m_globalState;
+    SDL::State m_localState;
+    SDL::State m_ageSdlHook;
 
     bool m_temp;
 };
@@ -108,7 +111,7 @@ extern agemap_t s_ages;
 enum GameHostMessages
 {
     e_GameShutdown, e_GameDisconnect, e_GameJoinAge, e_GamePropagate,
-    e_GameSdlUpdate,
+    e_GameLocalSdlUpdate, e_GameGlobalSdlUpdate
 };
 
 struct Game_ClientMessage

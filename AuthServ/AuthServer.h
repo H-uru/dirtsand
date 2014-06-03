@@ -33,6 +33,8 @@ namespace DS
     bool AuthServer_AddAcct(const DS::String&, const DS::String&);
     uint32_t AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags);
     bool AuthServer_AddAllPlayersFolder(uint32_t playerId);
+    bool AuthServer_ChangeGlobalSDL(const DS::String& ageName, const DS::String& var,
+                                    const DS::String& value);
 
     class DbException : public std::exception
     {
