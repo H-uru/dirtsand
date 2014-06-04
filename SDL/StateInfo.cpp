@@ -390,7 +390,6 @@ void SDL::Variable::read(DS::Stream* stream)
             m_data->m_flags |= e_HasTimeStamp;
         }
 
-        m_data->m_flags &= ~e_HasDirtyFlag;
         if (!(m_data->m_flags & e_SameAsDefault)) {
             if (m_data->m_desc->m_size == -1) {
                 size_t count = stream->read<uint32_t>();
