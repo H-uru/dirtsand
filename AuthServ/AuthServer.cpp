@@ -239,11 +239,6 @@ void cb_playerDelete(AuthServer_Private& client)
 
     DS::FifoMessage reply = client.m_channel.getMessage();
     client.m_buffer.write<uint32_t>(reply.m_messageType);
-    if (reply.m_messageType != DS::e_NetSuccess) {
-        client.m_buffer.write<uint32_t>(0);   // Player ID
-    } else {
-        client.m_buffer.write<uint32_t>(msg.m_playerId);
-    }
 
     SEND_REPLY();
 }
