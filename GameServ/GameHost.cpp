@@ -466,6 +466,12 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
         return;
     }
 
+    if (!update.descriptor()) {
+        fprintf(stderr, "[SDL] Received an update for '%s' using an invalid descriptor!\n",
+                state->m_object.m_name.c_str());
+        return;
+    }
+
 #if 0  // Enable for SDL debugging
     fprintf(stderr, "[SDL] Bcasting SDL %s for [%04X]%s\n",
             update.descriptor()->m_name.c_str(), state->m_object.m_type,
