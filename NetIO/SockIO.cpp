@@ -245,6 +245,12 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
     // Now send the file data via a system call
     while (fdsz > 0) {
         ssize_t bytes = sendfile(imp->m_sockfd, fd, offset, fdsz);
+        if (bytes < 0 && (errno == EAGAIN))
+            continue;
+        else if (bytes < 0 && (errno == EPIPE || errno == ECONNRESET))
+            throw DS::SockHup();
+        else if (bytes == 0)
+            throw DS::SockHup();
         DS_PASSERT(bytes > 0);
         fdsz -= bytes;
     }
