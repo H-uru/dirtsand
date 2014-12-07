@@ -99,6 +99,7 @@ set(PlasMOUL_SOURCES
     PlasMOUL/Messages/LinkingMgrMsg.cpp
     PlasMOUL/Messages/ClimbMsg.cpp
     PlasMOUL/Messages/BackdoorMsg.cpp
+    PlasMOUL/Messages/PseudoLinkEffectMsg.cpp
     PlasMOUL/NetMessages/NetMessage.cpp
     PlasMOUL/NetMessages/NetMsgObject.cpp
     PlasMOUL/NetMessages/NetMsgGameMessage.cpp
