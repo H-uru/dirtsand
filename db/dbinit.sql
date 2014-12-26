@@ -15,8 +15,6 @@
 -------------------------------------------------------------------------------
 -- DirtSand DB initialization script --
 
-\connect dirtsand
-
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
 SET check_function_bodies = false;
@@ -24,13 +22,8 @@ SET client_min_messages = warning;
 SET escape_string_warning = off;
 
 CREATE SCHEMA auth;
-ALTER SCHEMA auth OWNER TO dirtsand;
-
 CREATE SCHEMA game;
-ALTER SCHEMA game OWNER TO dirtsand;
-
 CREATE SCHEMA vault;
-ALTER SCHEMA vault OWNER TO dirtsand;
 
 SET search_path = auth, pg_catalog;
 SET default_tablespace = '';
@@ -44,7 +37,6 @@ CREATE TABLE "Accounts" (
     "AcctFlags" integer DEFAULT 0 NOT NULL,
     "BillingType" integer DEFAULT 0 NOT NULL
 );
-ALTER TABLE auth."Accounts" OWNER TO dirtsand;
 
 CREATE SEQUENCE "Accounts_idx_seq"
     START WITH 1
@@ -52,7 +44,6 @@ CREATE SEQUENCE "Accounts_idx_seq"
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE auth."Accounts_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Accounts_idx_seq" OWNED BY "Accounts".idx;
 SELECT pg_catalog.setval('"Accounts_idx_seq"', 1, false);
 
@@ -64,7 +55,6 @@ CREATE TABLE "Players" (
     "AvatarShape" character varying(64) NOT NULL,
     "Explorer" integer DEFAULT 1 NOT NULL
 );
-ALTER TABLE auth."Players" OWNER TO dirtsand;
 
 CREATE SEQUENCE "Players_idx_seq"
     START WITH 1
@@ -72,7 +62,6 @@ CREATE SEQUENCE "Players_idx_seq"
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE auth."Players_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Players_idx_seq" OWNED BY "Players".idx;
 SELECT pg_catalog.setval('"Players_idx_seq"', 1, false);
 
@@ -84,7 +73,6 @@ CREATE TABLE "Scores" (
     "Name" character varying(64) NOT NULL,
     "Points" integer DEFAULT 0 NOT NULL
 );
-ALTER TABLE auth."Scores" OWNER TO dirtsand;
 CREATE INDEX "Score_Index" ON auth."Scores" ("OwnerIdx", "Name");
 
 CREATE SEQUENCE "Scores_idx_seq"
@@ -93,7 +81,6 @@ CREATE SEQUENCE "Scores_idx_seq"
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE auth."Scores_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Scores_idx_seq" OWNED BY "Scores".idx;
 SELECT pg_catalog.setval('"Scores_idx_seq"', 1, false);
 
@@ -104,7 +91,6 @@ CREATE TABLE "GlobalStates" (
     "Descriptor" character varying(64) NOT NULL,
     "SdlBlob" text NOT NULL
 );
-ALTER TABLE vault."GlobalStates" OWNER TO dirtsand;
 CREATE INDEX "GlobalStates_Index" ON vault."GlobalStates" ("Descriptor");
 
 CREATE SEQUENCE "GlobalStates_idx_seq"
@@ -113,7 +99,6 @@ CREATE SEQUENCE "GlobalStates_idx_seq"
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE vault."GlobalStates_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "GlobalStates_idx_seq" OWNED BY "GlobalStates".idx;
 SELECT pg_catalog.setval('"GlobalStates_idx_seq"', 1, false);
 
@@ -124,7 +109,6 @@ CREATE TABLE "NodeRefs" (
     "OwnerIdx" integer DEFAULT 0 NOT NULL,
     "Seen" integer DEFAULT 0 NOT NULL
 );
-ALTER TABLE vault."NodeRefs" OWNER TO dirtsand;
 CREATE INDEX RefParent ON vault."NodeRefs" ("ParentIdx");
 CREATE SEQUENCE "NodeRefs_idx_seq"
     START WITH 1
@@ -132,7 +116,6 @@ CREATE SEQUENCE "NodeRefs_idx_seq"
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE vault."NodeRefs_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "NodeRefs_idx_seq" OWNED BY "NodeRefs".idx;
 SELECT pg_catalog.setval('"NodeRefs_idx_seq"', 1, false);
 
@@ -170,14 +153,12 @@ CREATE TABLE "Nodes" (
     "Blob_1" text,
     "Blob_2" text
 );
-ALTER TABLE vault."Nodes" OWNER TO dirtsand;
 CREATE INDEX PublicAgeList ON vault."Nodes" ("NodeType", "Int32_2", "String64_2");
 CREATE SEQUENCE "Nodes_idx_seq"
     INCREMENT BY 1
     NO MAXVALUE
     MINVALUE 10001
     CACHE 1;
-ALTER TABLE vault."Nodes_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Nodes_idx_seq" OWNED BY "Nodes".idx;
 SELECT pg_catalog.setval('"Nodes_idx_seq"', 10001, false);
 
@@ -192,14 +173,12 @@ CREATE TABLE "Servers" (
     "SdlIdx" integer NOT NULL,
     "Temporary" boolean DEFAULT 'f' NOT NULL
 );
-ALTER TABLE game."Servers" OWNER TO dirtsand;
 CREATE SEQUENCE "Servers_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE game."Servers_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "Servers_idx_seq" OWNED BY "Servers".idx;
 SELECT pg_catalog.setval('"Servers_idx_seq"', 1, false);
 
@@ -209,7 +188,6 @@ CREATE SEQUENCE "AgeSeqNumber"
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE game."AgeSeqNumber" OWNER TO dirtsand;
 SELECT pg_catalog.setval('"AgeSeqNumber"', 1, false);
 
 CREATE TABLE "AgeStates" (
@@ -219,14 +197,12 @@ CREATE TABLE "AgeStates" (
     "ObjectKey" text NOT NULL,
     "SdlBlob" text NOT NULL
 );
-ALTER TABLE game."AgeStates" OWNER TO dirtsand;
 CREATE SEQUENCE "AgeStates_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-ALTER TABLE game."AgeStates_idx_seq" OWNER TO dirtsand;
 ALTER SEQUENCE "AgeStates_idx_seq" OWNED BY "AgeStates".idx;
 SELECT pg_catalog.setval('"AgeStates_idx_seq"', 1, false);
 

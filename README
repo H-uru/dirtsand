@@ -24,9 +24,9 @@ Prerequisites:
 
 
 1) Create a user and path for the DIRTSAND server to run from
-   (OPTIONAL, but recommended).
 
    $ sudo useradd dirtsand -d /opt/dirtsand -m -p <password> -s /bin/bash
+   $ su dirtsand
 
 
 2) Check out a copy of the source:
@@ -103,8 +103,8 @@ the server settings as described in the "configure dirtsand" step.
 
 3) Set up the dirtsand database:
 
-   $ sudo -u postgres psql -d dirtsand < db/dbinit.sql
-   $ sudo -u postgres psql -d dirtsand < db/functions.sql
+   $ psql -d dirtsand < db/dbinit.sql
+   $ psql -d dirtsand < db/functions.sql
 
    If there were no other errors, your database should be ready for DIRTSAND
 
@@ -120,7 +120,6 @@ the server settings as described in the "configure dirtsand" step.
 
    $ sudo cp dirtsand.sample.ini /opt/dirtsand/dirtsand.ini
    $ sudo chown dirtsand /opt/dirtsand/dirtsand.ini
-   $ su - dirtsand
    $ <your-favorite-editor> dirtsand.ini
 
    To generate the RC4 keys, you can simply run the keygen command from

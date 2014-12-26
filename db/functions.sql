@@ -15,8 +15,6 @@
 -------------------------------------------------------------------------------
 -- Utility functions for DirtSand operation and administration --
 
-\connect dirtsand
-
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
 SET check_function_bodies = false;
@@ -45,7 +43,6 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql VOLATILE;
-ALTER FUNCTION vault.fetch_tree(IN integer) OWNER TO dirtsand;
 
 
 -- [Required] Fetch a specific folder child node --
@@ -68,7 +65,6 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql VOLATILE;
-ALTER FUNCTION vault.find_folder(IN integer, IN integer) OWNER TO dirtsand;
 
 
 -- [Required] Checks to see if a node is in another node's tree --
@@ -92,7 +88,6 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql VOLATILE;
-ALTER FUNCTION vault.has_node(IN integer, IN integer) OWNER TO dirtsand;
 
 
 -- [Required] Create a new score--
@@ -143,7 +138,6 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql VOLATILE;
-ALTER FUNCTION auth.add_score_points(IN integer, IN integer, IN boolean) OWNER TO dirtsand;
 
 
 --- [Required] Transfers points from one score to another ---
@@ -169,7 +163,6 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql VOLATILE;
-ALTER FUNCTION auth.transfer_score_points(IN integer, IN integer, IN integer, IN boolean) OWNER TO dirtsand;
 
 
 -- [Optional] Utility to clear an entire vault --
@@ -192,4 +185,3 @@ DELETE FROM auth."Players";
 DELETE FROM auth."Scores";
 $BODY$
 LANGUAGE 'sql' VOLATILE;
-ALTER FUNCTION clear_vault() OWNER TO dirtsand;
