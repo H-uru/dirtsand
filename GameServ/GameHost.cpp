@@ -221,7 +221,6 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 
     dm_propagate(host, memberMsg, msg->m_client->m_clientInfo.m_PlayerId);
     memberMsg->unref();
-    SEND_REPLY(msg, DS::e_NetSuccess);
 
     // Release any stale locks
     host->m_lockMutex.lock();
@@ -275,6 +274,8 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     //       joining just as the last player is leaving.
     if (host->m_clients.size() == 0)
         host->m_channel.putMessage(e_GameShutdown, 0);
+
+    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
