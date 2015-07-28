@@ -74,8 +74,8 @@ enum AuthDaemonMessages
     e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
     e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic, e_AuthCreateScore,
     e_AuthGetScores, e_AuthAddScorePoints, e_AuthTransferScorePoints,
-    e_AuthUpdateAgeSrv, e_AuthAcctFlags, e_AuthRestrictLogins, e_AuthAddAllPlayers,
-    e_AuthFetchSDL, e_AuthUpdateGlobalSDL
+    e_AuthGetHighScores, e_AuthUpdateAgeSrv, e_AuthAcctFlags, e_AuthRestrictLogins,
+    e_AuthAddAllPlayers, e_AuthFetchSDL, e_AuthUpdateGlobalSDL
 };
 
 struct Auth_AccountInfo
@@ -217,6 +217,11 @@ struct Auth_TransferScore : public Auth_ClientMessage
 {
     uint32_t m_srcScoreId, m_dstScoreId;
     uint32_t m_points;
+};
+
+struct Auth_GetHighScores : public Auth_GetScores
+{
+    uint32_t m_maxScores;
 };
 
 struct Auth_UpdateAgeSrv : public Auth_ClientMessage
