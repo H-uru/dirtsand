@@ -805,6 +805,7 @@ void dm_auth_getScores(Auth_GetScores* msg)
     for (int i = 0; i < PQntuples(result); ++i) {
         Auth_GetScores::GameScore score;
         score.m_scoreId = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        score.m_owner = msg->m_owner;
         score.m_createTime = strtoul(PQgetvalue(result, i, 1), 0, 10);
         score.m_type = strtoul(PQgetvalue(result, i, 2), 0, 10);
         score.m_points = strtoul(PQgetvalue(result, i, 3), 0, 10);
@@ -905,6 +906,67 @@ void dm_auth_transferScorePoints(Auth_TransferScore* msg)
     uint32_t status = strtoul(PQgetvalue(result, 0, 0), 0, 10);
     PQclear(result);
     SEND_REPLY(msg, (status != 0) ? DS::e_NetSuccess : DS::e_NetScoreNotEnoughPoints);
+}
+
+void dm_auth_getHighScores(Auth_GetHighScores* msg)
+{
+    PostgresStrings<3> parms;
+    PGresult* result;
+    if (msg->m_owner == 0) {
+        parms.set(0, msg->m_name);
+        parms.set(1, msg->m_maxScores);
+        result = PQexecParams(s_postgres,
+                              "SELECT idx, \"CreateTime\", \"Type\", \"Points\""
+                              "    FROM auth.\"Scores\" WHERE \"Name\"=$1"
+                              "    LIMIT $2",
+                              2, 0, parms.m_values, 0, 0, 0);
+    } else {
+        parms.set(0, msg->m_owner);
+        parms.set(1, DS::Vault::e_AgeOwnersFolder);
+        result = PQexecParams(s_postgres,
+                              "SELECT idx FROM vault.find_folder($1, $2)",
+                               2, 0, parms.m_values, 0, 0, 0);
+        if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQclear(result);
+            SEND_REPLY(msg, DS::e_NetInternalError);
+            return;
+        }
+        DS_PASSERT(PQntuples(result) == 1);
+        uint32_t ageOwnersFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        PQclear(result);
+
+        parms.set(0, msg->m_name);
+        parms.set(1, ageOwnersFolder);
+        parms.set(2, msg->m_maxScores);
+        result = PQexecParams(s_postgres,
+                              "SELECT idx, \"OwnerIdx\", \"CreateTime\", \"Type\", \"Points\""
+                              "    FROM auth.\"Scores\" WHERE \"Name\"=$1"
+                              "    AND \"OwnerIdx\" IN (SELECT \"ChildIdx\""
+                              "    FROM vault.\"NodeRefs\" WHERE \"ParentIdx\"=$2)"
+                              "    LIMIT $3",
+                              3, 0, parms.m_values, 0, 0, 0);
+    }
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    msg->m_scores.reserve(PQntuples(result));
+    for (int i = 0; i < PQntuples(result); ++i) {
+        Auth_GetScores::GameScore score;
+        score.m_scoreId = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        score.m_owner = strtoul(PQgetvalue(result, i, 1), 0, 10);
+        score.m_createTime = strtoul(PQgetvalue(result, i, 2), 0, 10);
+        score.m_type = strtoul(PQgetvalue(result, i, 3), 0, 10);
+        score.m_points = strtoul(PQgetvalue(result, i, 4), 0, 10);
+        msg->m_scores.push_back(score);
+    }
+    PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void dm_auth_updateAgeSrv(Auth_UpdateAgeSrv* msg)
@@ -1296,6 +1358,9 @@ void dm_authDaemon()
                 break;
             case e_AuthTransferScorePoints:
                 dm_auth_transferScorePoints(reinterpret_cast<Auth_TransferScore*>(msg.m_payload));
+                break;
+            case e_AuthGetHighScores:
+                dm_auth_getHighScores(reinterpret_cast<Auth_GetHighScores*>(msg.m_payload));
                 break;
             case e_AuthUpdateAgeSrv:
                 dm_auth_updateAgeSrv(reinterpret_cast<Auth_UpdateAgeSrv*>(msg.m_payload));
