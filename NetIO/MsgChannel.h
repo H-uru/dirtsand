@@ -38,6 +38,7 @@ namespace DS
         int fd() const { return m_semaphore; }
         void putMessage(int type, void* payload = 0);
         FifoMessage getMessage();
+        bool hasMessage();
 
     private:
         int m_semaphore;

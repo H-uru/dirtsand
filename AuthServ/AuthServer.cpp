@@ -21,6 +21,7 @@
 #include "settings.h"
 #include "errors.h"
 #include <openssl/rand.h>
+#include <poll.h>
 
 #define NODE_SIZE_MAX (4 * 1024 * 1024)
 
@@ -851,6 +852,134 @@ void cb_setAgePublic(AuthServer_Private& client)
     client.m_channel.getMessage(); // wait for daemon to finish
 }
 
+void cb_sockRead(AuthServer_Private& client)
+{
+    uint16_t msgId = DS::CryptRecvValue<uint16_t>(client.m_sock, client.m_crypt);
+    switch (msgId) {
+    case e_CliToAuth_PingRequest:
+        cb_ping(client);
+        break;
+    case e_CliToAuth_ClientRegisterRequest:
+        cb_register(client);
+        break;
+    case e_CliToAuth_AcctLoginRequest:
+        cb_login(client);
+        break;
+    case e_CliToAuth_AcctSetPlayerRequest:
+        cb_setPlayer(client);
+        break;
+    case e_CliToAuth_PlayerCreateRequest:
+        cb_playerCreate(client);
+        break;
+    case e_CliToAuth_PlayerDeleteRequest:
+        cb_playerDelete(client);
+        break;
+    case e_CliToAuth_VaultNodeCreate:
+        cb_nodeCreate(client);
+        break;
+    case e_CliToAuth_VaultNodeFetch:
+        cb_nodeFetch(client);
+        break;
+    case e_CliToAuth_VaultNodeSave:
+        cb_nodeUpdate(client);
+        break;
+    case e_CliToAuth_VaultNodeAdd:
+        cb_nodeRef(client);
+        break;
+    case e_CliToAuth_VaultNodeRemove:
+        cb_nodeUnref(client);
+        break;
+    case e_CliToAuth_VaultFetchNodeRefs:
+        cb_nodeTree(client);
+        break;
+    case e_CliToAuth_VaultInitAgeRequest:
+        cb_ageCreate(client);
+        break;
+    case e_CliToAuth_VaultNodeFind:
+        cb_nodeFind(client);
+        break;
+    case e_CliToAuth_VaultSendNode:
+        cb_nodeSend(client);
+        break;
+    case e_CliToAuth_AgeRequest:
+        cb_ageRequest(client, false);
+        break;
+    case e_CliToAuth_AgeRequestEx:
+        cb_ageRequest(client, true);
+        break;
+    case e_CliToAuth_FileListRequest:
+        cb_fileList(client);
+        break;
+    case e_CliToAuth_FileDownloadRequest:
+        cb_downloadStart(client);
+        break;
+    case e_CliToAuth_FileDownloadChunkAck:
+        cb_downloadNext(client);
+        break;
+    case e_CliToAuth_LogPythonTraceback:
+        printf("[Auth] Got client python traceback:\n%s\n",
+                DS::CryptRecvString(client.m_sock, client.m_crypt).c_str());
+        break;
+    case e_CliToAuth_LogStackDump:
+        printf("[Auth] Got client stackdump:\n%s\n",
+                DS::CryptRecvString(client.m_sock, client.m_crypt).c_str());
+        break;
+    case e_CliToAuth_LogClientDebuggerConnect:
+        // Nobody cares
+        break;
+    case e_CliToAuth_ScoreCreate:
+        cb_scoreCreate(client);
+        break;
+    case e_CliToAuth_ScoreGetScores:
+        cb_scoreGetScores(client);
+        break;
+    case e_CliToAuth_ScoreAddPoints:
+        cb_scoreAddPoints(client);
+        break;
+    case e_CliToAuth_ScoreTransferPoints:
+        cb_scoreTransferPoints(client);
+        break;
+    case e_CliToAuth_ScoreGetHighScores:
+        cb_scoreGetHighScores(client);
+        break;
+    case e_CliToAuth_GetPublicAgeList:
+        cb_getPublicAges(client);
+        break;
+    case e_CliToAuth_SetAgePublic:
+        cb_setAgePublic(client);
+        break;
+    case e_CliToAuth_ClientSetCCRLevel:
+    case e_CliToAuth_AcctSetRolesRequest:
+    case e_CliToAuth_AcctSetBillingTypeRequest:
+    case e_CliToAuth_AcctActivateRequest:
+    case e_CliToAuth_AcctCreateFromKeyRequest:
+    case e_CliToAuth_VaultNodeDelete:
+    case e_CliToAuth_UpgradeVisitorRequest:
+    case e_CliToAuth_SetPlayerBanStatusRequest:
+    case e_CliToAuth_KickPlayer:
+        fprintf(stderr, "[Auth] Got unsupported client message %d from %s\n",
+                msgId, DS::SockIpAddress(client.m_sock).c_str());
+        DS::CloseSock(client.m_sock);
+        throw DS::SockHup();
+    default:
+        /* Invalid message */
+        fprintf(stderr, "[Auth] Got invalid message ID %d from %s\n",
+                msgId, DS::SockIpAddress(client.m_sock).c_str());
+        DS::CloseSock(client.m_sock);
+        throw DS::SockHup();
+    }
+}
+
+void cb_broadcast(AuthServer_Private& client)
+{
+    DS::FifoMessage bcast = client.m_broadcast.getMessage();
+    DS::BufferStream* msg = reinterpret_cast<DS::BufferStream*>(bcast.m_payload);
+    START_REPLY(bcast.m_messageType);
+    client.m_buffer.writeBytes(msg->buffer(), msg->size());
+    msg->unref();
+    SEND_REPLY();
+}
+
 void wk_authWorker(DS::SocketHandle sockp)
 {
     AuthServer_Private client;
@@ -866,121 +995,23 @@ void wk_authWorker(DS::SocketHandle sockp)
         s_authClients.push_back(&client);
         s_authClientMutex.unlock();
 
+        // Poll the client socket and the daemon broadcast channel for messages
+        pollfd fds[2];
+        fds[0].fd = DS::SockFd(sockp);
+        fds[0].events = POLLIN;
+        fds[1].fd = client.m_broadcast.fd();
+        fds[1].events = POLLIN;
+
         for ( ;; ) {
-            uint16_t msgId = DS::CryptRecvValue<uint16_t>(client.m_sock, client.m_crypt);
-            switch (msgId) {
-            case e_CliToAuth_PingRequest:
-                cb_ping(client);
-                break;
-            case e_CliToAuth_ClientRegisterRequest:
-                cb_register(client);
-                break;
-            case e_CliToAuth_AcctLoginRequest:
-                cb_login(client);
-                break;
-            case e_CliToAuth_AcctSetPlayerRequest:
-                cb_setPlayer(client);
-                break;
-            case e_CliToAuth_PlayerCreateRequest:
-                cb_playerCreate(client);
-                break;
-            case e_CliToAuth_PlayerDeleteRequest:
-                cb_playerDelete(client);
-                break;
-            case e_CliToAuth_VaultNodeCreate:
-                cb_nodeCreate(client);
-                break;
-            case e_CliToAuth_VaultNodeFetch:
-                cb_nodeFetch(client);
-                break;
-            case e_CliToAuth_VaultNodeSave:
-                cb_nodeUpdate(client);
-                break;
-            case e_CliToAuth_VaultNodeAdd:
-                cb_nodeRef(client);
-                break;
-            case e_CliToAuth_VaultNodeRemove:
-                cb_nodeUnref(client);
-                break;
-            case e_CliToAuth_VaultFetchNodeRefs:
-                cb_nodeTree(client);
-                break;
-            case e_CliToAuth_VaultInitAgeRequest:
-                cb_ageCreate(client);
-                break;
-            case e_CliToAuth_VaultNodeFind:
-                cb_nodeFind(client);
-                break;
-            case e_CliToAuth_VaultSendNode:
-                cb_nodeSend(client);
-                break;
-            case e_CliToAuth_AgeRequest:
-                cb_ageRequest(client, false);
-                break;
-            case e_CliToAuth_AgeRequestEx:
-                cb_ageRequest(client, true);
-                break;
-            case e_CliToAuth_FileListRequest:
-                cb_fileList(client);
-                break;
-            case e_CliToAuth_FileDownloadRequest:
-                cb_downloadStart(client);
-                break;
-            case e_CliToAuth_FileDownloadChunkAck:
-                cb_downloadNext(client);
-                break;
-            case e_CliToAuth_LogPythonTraceback:
-                printf("[Auth] Got client python traceback:\n%s\n",
-                       DS::CryptRecvString(client.m_sock, client.m_crypt).c_str());
-                break;
-            case e_CliToAuth_LogStackDump:
-                printf("[Auth] Got client stackdump:\n%s\n",
-                       DS::CryptRecvString(client.m_sock, client.m_crypt).c_str());
-                break;
-            case e_CliToAuth_LogClientDebuggerConnect:
-                // Nobody cares
-                break;
-            case e_CliToAuth_ScoreCreate:
-                cb_scoreCreate(client);
-                break;
-            case e_CliToAuth_ScoreGetScores:
-                cb_scoreGetScores(client);
-                break;
-            case e_CliToAuth_ScoreAddPoints:
-                cb_scoreAddPoints(client);
-                break;
-            case e_CliToAuth_ScoreTransferPoints:
-                cb_scoreTransferPoints(client);
-                break;
-            case e_CliToAuth_ScoreGetHighScores:
-                cb_scoreGetHighScores(client);
-                break;
-            case e_CliToAuth_GetPublicAgeList:
-                cb_getPublicAges(client);
-                break;
-            case e_CliToAuth_SetAgePublic:
-                cb_setAgePublic(client);
-                break;
-            case e_CliToAuth_ClientSetCCRLevel:
-            case e_CliToAuth_AcctSetRolesRequest:
-            case e_CliToAuth_AcctSetBillingTypeRequest:
-            case e_CliToAuth_AcctActivateRequest:
-            case e_CliToAuth_AcctCreateFromKeyRequest:
-            case e_CliToAuth_VaultNodeDelete:
-            case e_CliToAuth_UpgradeVisitorRequest:
-            case e_CliToAuth_SetPlayerBanStatusRequest:
-            case e_CliToAuth_KickPlayer:
-                fprintf(stderr, "[Auth] Got unsupported client message %d from %s\n",
-                        msgId, DS::SockIpAddress(client.m_sock).c_str());
-                DS::CloseSock(client.m_sock);
+            int result = poll(fds, 2, NET_TIMEOUT * 1000);
+            DS_PASSERT(result != -1);
+            if (result == 0 || fds[0].revents & POLLHUP)
                 throw DS::SockHup();
-            default:
-                /* Invalid message */
-                fprintf(stderr, "[Auth] Got invalid message ID %d from %s\n",
-                        msgId, DS::SockIpAddress(client.m_sock).c_str());
-                DS::CloseSock(client.m_sock);
-                throw DS::SockHup();
-            }
+
+            if (fds[0].revents & POLLIN)
+                cb_sockRead(client);
+            if (fds[1].revents & POLLIN)
+                cb_broadcast(client);
         }
     } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
@@ -1000,6 +1031,12 @@ void wk_authWorker(DS::SocketHandle sockp)
     s_authClientMutex.lock();
     s_authClients.remove(&client);
     s_authClientMutex.unlock();
+
+    // Drain the broadcast channel
+    while (client.m_broadcast.hasMessage()) {
+        DS::FifoMessage msg = client.m_broadcast.getMessage();
+        reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
+    }
 
     DS::CryptStateFree(client.m_crypt);
     DS::FreeSock(client.m_sock);

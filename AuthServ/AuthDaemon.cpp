@@ -231,66 +231,54 @@ void dm_auth_login(Auth_LoginInfo* info)
 
 void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
 {
-    uint8_t buffer[22];  // Msg ID, Node ID, Revision Uuid
-    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeChanged;
-    *reinterpret_cast<uint32_t*>(buffer + 2) = nodeIdx;
-    *reinterpret_cast<DS::Uuid*>(buffer + 6) = revision;
+    DS::BufferStream* msg = new DS::BufferStream(nullptr, 20); // Node ID, Revision Uuid
+    msg->write<uint32_t>(nodeIdx);
+    msg->writeBytes(revision.m_bytes, 16);
 
     std::lock_guard<std::mutex> guard(s_authClientMutex);
-    for (auto it = s_authClients.begin(); it != s_authClients.end(); ++it)
-    {
+    for (auto it = s_authClients.begin(); it != s_authClients.end(); ++it) {
         AuthServer_Private* client = *it;
         if (!(v_has_node(client->m_ageNodeId, nodeIdx) || v_has_node(client->m_player.m_playerId, nodeIdx)))
             continue;
-        try {
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 22, DS::e_SendImmediately);
-        } catch (DS::SockHup&) {
-            // Client ignored us.  Return the favor
-        }
+        msg->ref();
+        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeChanged, msg);
     }
+    msg->unref();
 }
 
 void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
 {
-    uint8_t buffer[14];  // Msg ID, Parent, Child, Owner
-    *reinterpret_cast<uint16_t*>(buffer     ) = e_AuthToCli_VaultNodeAdded;
-    *reinterpret_cast<uint32_t*>(buffer +  2) = ref.m_parent;
-    *reinterpret_cast<uint32_t*>(buffer +  6) = ref.m_child;
-    *reinterpret_cast<uint32_t*>(buffer + 10) = ref.m_owner;
+    DS::BufferStream* msg = new DS::BufferStream(nullptr, 12); // Parent, Child, Owner
+    msg->write<uint32_t>(ref.m_parent);
+    msg->write<uint32_t>(ref.m_child);
+    msg->write<uint32_t>(ref.m_owner);
 
     std::lock_guard<std::mutex> guard(s_authClientMutex);
-    for (auto it = s_authClients.begin(); it != s_authClients.end(); ++it)
-    {
+    for (auto it = s_authClients.begin(); it != s_authClients.end(); ++it) {
         AuthServer_Private* client = *it;
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
-        try {
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 14, DS::e_SendImmediately);
-        } catch (DS::SockHup&) {
-            // Client ignored us.  Return the favor
-        }
+        msg->ref();
+        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeAdded, msg);
     }
+    msg->unref();
 }
 
 void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
 {
-    uint8_t buffer[10];  // Msg ID, Parent, Child
-    *reinterpret_cast<uint16_t*>(buffer    ) = e_AuthToCli_VaultNodeRemoved;
-    *reinterpret_cast<uint32_t*>(buffer + 2) = ref.m_parent;
-    *reinterpret_cast<uint32_t*>(buffer + 6) = ref.m_child;
+    DS::BufferStream* msg = new DS::BufferStream(nullptr, 8); // Parent, Child
+    msg->write<uint32_t>(ref.m_parent);
+    msg->write<uint32_t>(ref.m_child);
 
     std::lock_guard<std::mutex> guard(s_authClientMutex);
-    for (auto it = s_authClients.begin(); it != s_authClients.end(); ++it)
-    {
+    for (auto it = s_authClients.begin(); it != s_authClients.end(); ++it) {
         AuthServer_Private* client = *it;
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
-        try {
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt, buffer, 10, DS::e_SendImmediately);
-        } catch (DS::SockHup&) {
-            // Client ignored us.  Return the favor
-        }
+        msg->ref();
+        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeRemoved, msg);
     }
+    msg->unref();
 }
 
 void dm_auth_disconnect(Auth_ClientMessage* msg)

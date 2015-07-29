@@ -47,6 +47,7 @@ namespace DS
 
     String SockIpAddress(const SocketHandle sock);
     uint32_t GetAddress4(const char* lookup);
+    int SockFd(const SocketHandle sock);
 
     void SendBuffer(const SocketHandle sock, const void* buffer,
                     size_t size, SendFlag mode=e_SendDefault);

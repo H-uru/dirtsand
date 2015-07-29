@@ -17,6 +17,7 @@
 
 #include "SockIO.h"
 #include "errors.h"
+#include "settings.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -136,9 +137,7 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
         }
     }
     timeval tv;
-    // Client pings us every 30 seconds. A timeout of 45 gives us some wiggle room
-    // so networks can suck without kicking a client off.
-    tv.tv_sec = 45;
+    tv.tv_sec = NET_TIMEOUT;
     tv.tv_usec = 0;
     setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     // Allow 50ms on blocking sends to account for net suckiness
@@ -187,6 +186,11 @@ uint32_t DS::GetAddress4(const char* lookup)
     freeaddrinfo(addrList);
 
     return ntohl(addr);
+}
+
+int DS::SockFd(const DS::SocketHandle sock)
+{
+    return reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd;
 }
 
 void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size, SendFlag mode)

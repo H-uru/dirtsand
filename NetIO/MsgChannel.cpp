@@ -57,3 +57,9 @@ DS::FifoMessage DS::MsgChannel::getMessage()
     m_queueMutex.unlock();
     return msg;
 }
+
+bool DS::MsgChannel::hasMessage()
+{
+    std::lock_guard<std::mutex> guard(m_queueMutex);
+    return !m_queue.empty();
+}

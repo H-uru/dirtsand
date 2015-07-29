@@ -26,6 +26,8 @@
 
 #define CHUNK_SIZE (0x8000)
 
+#define NET_TIMEOUT (45)
+
 namespace DS
 {
     enum KeyType
