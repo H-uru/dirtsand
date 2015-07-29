@@ -45,7 +45,6 @@ struct SocketHandle_Private
         sockaddr_storage m_addrMax;
     };
     socklen_t m_addrLen;
-    std::mutex m_sendLock;
 
     SocketHandle_Private() : m_addrLen(sizeof(m_addrMax)) { }
 };
@@ -193,32 +192,22 @@ int DS::SockFd(const DS::SocketHandle sock)
     return reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd;
 }
 
-void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size, SendFlag mode)
+void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size)
 {
-    int32_t flags = (mode & DS::e_SendNonBlocking) ? MSG_DONTWAIT : 0;
-    bool retry = !(mode & DS::e_SendNoRetry);
-    std::lock_guard<std::mutex> guard(reinterpret_cast<SocketHandle_Private*>(sock)->m_sendLock);
     do {
         ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
-                             buffer, size, flags);
+                             buffer, size, 0);
         if (bytes < 0) {
-            if (errno == EPIPE || errno == ECONNRESET) {
+            if (errno == EPIPE || errno == ECONNRESET)
                 throw DS::SockHup();
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                if (retry)
-                    continue;
-                else {
-                    CloseSock(sock);
-                    throw DS::SockHup();
-                }
-            }
-        } else if (bytes == 0)
+        } else if (bytes == 0) {
             throw DS::SockHup();
+        }
         DS_PASSERT(bytes > 0);
 
         size -= bytes;
         buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
-    } while ((size > 0) && retry);
+    } while (size > 0);
 
     if (size > 0) {
         CloseSock(sock);
@@ -230,7 +219,6 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
                   int fd, off_t* offset, size_t fdsz)
 {
     SocketHandle_Private* imp = reinterpret_cast<SocketHandle_Private*>(sock);
-    std::lock_guard<std::mutex> guard(imp->m_sendLock);
 
     // Send the prepended buffer
     setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_YES, sizeof(SOCK_YES));
