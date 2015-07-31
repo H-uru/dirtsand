@@ -52,14 +52,9 @@ agemap_t s_ages;
     _msgbuf->seek(4, SEEK_SET); \
     _msgbuf->write<uint32_t>(_msgbuf->size() - 8)
 
-#define DM_WRITEMSG(host, msg) \
-    host->m_buffer.truncate(); \
-    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer); \
-    host->m_buffer.write<uint32_t>(msg->type()); \
-    host->m_buffer.write<uint32_t>(0); \
-    MOUL::Factory::WriteCreatable(&host->m_buffer, msg); \
-    host->m_buffer.seek(6, SEEK_SET); \
-    host->m_buffer.write<uint32_t>(host->m_buffer.size() - 10)
+#define DM_SENDMSG(msg, client) \
+    DM_WRITEBUF(msg); \
+    client->m_broadcast.putMessage(e_GameToCli_PropagateBuffer, _msgbuf)
 
 static inline void check_postgres(GameHost_Private* host)
 {
@@ -311,13 +306,7 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     }
     host->m_gmMutex.unlock();
 
-    DM_WRITEMSG(host, groupMsg);
-    try {
-        DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
-    } catch (DS::SockHup) {
-        // we'll just let this slide. The client thread will figure it out quickly enough.
-    }
+    DM_SENDMSG(groupMsg, msg->m_client);
     groupMsg->unref();
 
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
@@ -356,9 +345,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
         state->m_object.m_type = 1;  // SceneObject
         state->m_object.m_id = 1;
         state->m_sdlBlob = ageSdlBlob;
-        DM_WRITEMSG(host, state);
-        DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
+        DM_SENDMSG(state, client);
         ++states;
     }
 
@@ -370,9 +357,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
             state->m_isAvatar = it->second.m_isAvatar;
             state->m_persistOnServer = it->second.m_persist;
             state->m_sdlBlob = it->second.m_state.toBlob();
-            DM_WRITEMSG(host, state);
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size());
+            DM_SENDMSG(state, client);
             ++states;
         }
     }
@@ -385,10 +370,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
                           | MOUL::NetMessage::e_NeedsReliableSend;
     reply->m_timestamp.setNow();
     reply->m_numStates = states;
-
-    DM_WRITEMSG(host, reply);
-    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
+    DM_SENDMSG(reply, client);
     reply->unref();
 }
 
@@ -399,11 +381,11 @@ void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor,
 
     DS::Blob sdlBlob = state.toBlob();
     PostgresStrings<4> parms;
-    host->m_buffer.truncate();
-    object.write(&host->m_buffer);
+    DS::BufferStream buffer;
+    object.write(&buffer);
     parms.set(0, host->m_serverIdx);
     parms.set(1, descriptor);
-    parms.set(2, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
+    parms.set(2, DS::Base64Encode(buffer.buffer(), buffer.size()));
     parms.set(3, DS::Base64Encode(sdlBlob.buffer(), sdlBlob.size()));
     PGresult* result = PQexecParams(host->m_postgres,
                                     "SELECT idx FROM game.\"AgeStates\""
@@ -558,11 +540,8 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
                              | MOUL::NetMessage::e_NeedsReliableSend;
     netReply->m_timestamp.setNow();
     netReply->m_message = reply;
-
-    DM_WRITEMSG(host, netReply);
+    DM_SENDMSG(netReply, client);
     netReply->unref();
-    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
 }
 
 void dm_send_members(GameHost_Private* host, GameClient_Private* client)
@@ -588,16 +567,12 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     }
     host->m_clientMutex.unlock();
 
-    DM_WRITEMSG(host, members);
-    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
+    DM_SENDMSG(members, client);
     members->unref();
 
     // Load non-avatar clones (ie NPC quabs)
     for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter) {
-        DM_WRITEMSG(host, clone_iter->second);
-        DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
+        DM_SENDMSG(clone_iter->second, client);
     }
 
     // Load clones for players already in the age
@@ -627,10 +602,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
                 && !client->m_clientKey.isNull()) {
                 avatarMsg->m_cloneKey = client_iter->second->m_clientKey;
                 avatarMsg->m_originPlayerId = client_iter->second->m_clientInfo.m_PlayerId;
-
-                DM_WRITEMSG(host, cloneMsg);
-                DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                    host->m_buffer.buffer(), host->m_buffer.size());
+                DM_SENDMSG(cloneMsg, client);
             }
         }
     }
