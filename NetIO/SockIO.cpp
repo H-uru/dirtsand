@@ -139,10 +139,6 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     tv.tv_sec = NET_TIMEOUT;
     tv.tv_usec = 0;
     setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    // Allow 50ms on blocking sends to account for net suckiness
-    tv.tv_sec = 0;
-    tv.tv_usec = (50 * 1000);
-    setsockopt(client->m_sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     // eap-tastic protocols require Nagle's algo be disabled
     setsockopt(client->m_sockfd, IPPROTO_TCP, TCP_NODELAY, &SOCK_YES, sizeof(SOCK_YES));
     return reinterpret_cast<SocketHandle>(client);
