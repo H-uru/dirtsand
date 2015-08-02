@@ -30,7 +30,7 @@ DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
 bool s_restrictLogins = false;
 extern uint32_t s_allPlayers;
-std::unordered_map<ST::string, SDL::State, ST::hash> s_globalStates;
+std::unordered_map<ST::string, SDL::State, ST::hash_i, ST::equal_i> s_globalStates;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
