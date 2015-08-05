@@ -762,6 +762,23 @@ void cb_scoreTransferPoints(AuthServer_Private& client)
     SEND_REPLY();
 }
 
+void cb_scoreSetPoints(AuthServer_Private& client)
+{
+    START_REPLY(e_AuthToCli_ScoreSetPointsReply);
+    uint32_t transId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    client.m_buffer.write<uint32_t>(transId);
+
+    Auth_UpdateScore msg;
+    msg.m_client = &client;
+    msg.m_scoreId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    msg.m_points = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
+    s_authChannel.putMessage(e_AuthSetScorePoints, reinterpret_cast<void*>(&msg));
+
+    DS::FifoMessage reply = client.m_channel.getMessage();
+    client.m_buffer.write<uint32_t>(reply.m_messageType);
+    SEND_REPLY();
+}
+
 void cb_scoreGetHighScores(AuthServer_Private& client)
 {
     START_REPLY(e_AuthToCli_ScoreGetHighScoresReply);
@@ -938,6 +955,9 @@ void cb_sockRead(AuthServer_Private& client)
         break;
     case e_CliToAuth_ScoreTransferPoints:
         cb_scoreTransferPoints(client);
+        break;
+    case e_CliToAuth_ScoreSetPoints:
+        cb_scoreSetPoints(client);
         break;
     case e_CliToAuth_ScoreGetHighScores:
         cb_scoreGetHighScores(client);
