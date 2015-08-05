@@ -896,6 +896,46 @@ void dm_auth_transferScorePoints(Auth_TransferScore* msg)
     SEND_REPLY(msg, (status != 0) ? DS::e_NetSuccess : DS::e_NetScoreNotEnoughPoints);
 }
 
+void dm_auth_setScorePoints(Auth_UpdateScore* msg)
+{
+    PostgresStrings<2> parms;
+    parms.set(0, msg->m_scoreId);
+    PGresult* result = PQexecParams(s_postgres,
+                                   "SELECT \"Type\" FROM auth.\"Scores\" WHERE idx=$1",
+                                    1, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    if (PQntuples(result) != 1) {
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
+        return;
+    }
+    uint32_t scoreType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    PQclear(result);
+    if (scoreType != Auth_UpdateScore::e_Fixed) {
+        SEND_REPLY(msg, DS::e_NetScoreWrongType);
+        return;
+    }
+    parms.set(1, msg->m_points);
+    result = PQexecParams(s_postgres,
+                          "UPDATE auth.\"Scores\" SET \"Points\"=$2 WHERE idx=$1",
+                          2, 0, parms.m_values, 0, 0, 0);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
+                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQclear(result);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
+    PQclear(result);
+    SEND_REPLY(msg, DS::e_NetSuccess);
+}
+
 void dm_auth_getHighScores(Auth_GetHighScores* msg)
 {
     PostgresStrings<3> parms;
@@ -1346,6 +1386,9 @@ void dm_authDaemon()
                 break;
             case e_AuthTransferScorePoints:
                 dm_auth_transferScorePoints(reinterpret_cast<Auth_TransferScore*>(msg.m_payload));
+                break;
+            case e_AuthSetScorePoints:
+                dm_auth_setScorePoints(reinterpret_cast<Auth_UpdateScore*>(msg.m_payload));
                 break;
             case e_AuthGetHighScores:
                 dm_auth_getHighScores(reinterpret_cast<Auth_GetHighScores*>(msg.m_payload));

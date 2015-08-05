@@ -74,7 +74,7 @@ enum AuthDaemonMessages
     e_VaultRefNode, e_VaultUnrefNode, e_VaultFetchNodeTree, e_VaultFindNode,
     e_VaultSendNode, e_VaultInitAge,  e_AuthFindGameServer, e_AuthDisconnect,
     e_AuthAddAcct, e_AuthGetPublic, e_AuthSetPublic, e_AuthCreateScore,
-    e_AuthGetScores, e_AuthAddScorePoints, e_AuthTransferScorePoints,
+    e_AuthGetScores, e_AuthAddScorePoints, e_AuthTransferScorePoints, e_AuthSetScorePoints,
     e_AuthGetHighScores, e_AuthUpdateAgeSrv, e_AuthAcctFlags, e_AuthRestrictLogins,
     e_AuthAddAllPlayers, e_AuthFetchSDL, e_AuthUpdateGlobalSDL
 };
