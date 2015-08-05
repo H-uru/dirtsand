@@ -135,7 +135,6 @@ struct CryptState_Private
 {
     RC4_KEY m_writeKey;
     RC4_KEY m_readKey;
-    std::mutex m_mutex;
 };
 
 DS::CryptState DS::CryptStateInit(const uint8_t* key, size_t size)
@@ -156,7 +155,7 @@ void DS::CryptStateFree(DS::CryptState state)
 }
 
 void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
-                         const void* buffer, size_t size, SendFlag mode)
+                         const void* buffer, size_t size)
 {
 #ifdef DEBUG
     if (s_commdebug) {
@@ -178,16 +177,12 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
         DS::SendBuffer(sock, buffer, size);
     } else if (size > 4096) {
         std::unique_ptr<unsigned char[]> cryptbuf(new unsigned char[size]);
-        statep->m_mutex.lock();
         RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), cryptbuf.get());
-        statep->m_mutex.unlock();
-        DS::SendBuffer(sock, cryptbuf.get(), size, mode);
+        DS::SendBuffer(sock, cryptbuf.get(), size);
     } else {
         unsigned char stack[4096];
-        statep->m_mutex.lock();
         RC4(&statep->m_writeKey, size, reinterpret_cast<const unsigned char*>(buffer), stack);
-        statep->m_mutex.unlock();
-        DS::SendBuffer(sock, stack, size, mode);
+        DS::SendBuffer(sock, stack, size);
     }
 }
 

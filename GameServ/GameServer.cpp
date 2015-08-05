@@ -21,6 +21,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <chrono>
+#include <poll.h>
 
 extern bool s_commdebug;
 
@@ -175,6 +176,44 @@ void cb_gameMgrMsg(GameClient_Private& client)
     fputc('\n', stdout);
 }
 
+void cb_sockRead(GameClient_Private& client)
+{
+    uint16_t msgId = DS::CryptRecvValue<uint16_t>(client.m_sock, client.m_crypt);
+    switch (msgId) {
+    case e_CliToGame_PingRequest:
+        cb_ping(client);
+        break;
+    case e_CliToGame_JoinAgeRequest:
+        cb_join(client);
+        break;
+    case e_CliToGame_Propagatebuffer:
+        DS_PASSERT(client.m_host != 0);
+        cb_netmsg(client);
+        break;
+    case e_CliToGame_GameMgrMsg:
+        DS_PASSERT(client.m_host != 0);
+        cb_gameMgrMsg(client);
+        break;
+    default:
+        /* Invalid message */
+        fprintf(stderr, "[Game] Got invalid message ID %d from %s\n",
+                msgId, DS::SockIpAddress(client.m_sock).c_str());
+        DS::CloseSock(client.m_sock);
+        throw DS::SockHup();
+    }
+}
+
+void cb_broadcast(GameClient_Private& client)
+{
+    DS::FifoMessage bcast = client.m_broadcast.getMessage();
+    DS::BufferStream* msg = reinterpret_cast<DS::BufferStream*>(bcast.m_payload);
+    START_REPLY(bcast.m_messageType);
+    client.m_buffer.writeBytes(msg->buffer(), msg->size());
+    msg->unref();
+    SEND_REPLY();
+}
+
+
 void wk_gameWorker(DS::SocketHandle sockp)
 {
     GameClient_Private client;
@@ -195,30 +234,23 @@ void wk_gameWorker(DS::SocketHandle sockp)
     }
 
     try {
+        // Poll the client socket and the host broadcast channel for messages
+        pollfd fds[2];
+        fds[0].fd = DS::SockFd(sockp);
+        fds[0].events = POLLIN;
+        fds[1].fd = client.m_broadcast.fd();
+        fds[1].events = POLLIN;
+
         for ( ;; ) {
-            uint16_t msgId = DS::CryptRecvValue<uint16_t>(client.m_sock, client.m_crypt);
-            switch (msgId) {
-            case e_CliToGame_PingRequest:
-                cb_ping(client);
-                break;
-            case e_CliToGame_JoinAgeRequest:
-                cb_join(client);
-                break;
-            case e_CliToGame_Propagatebuffer:
-                DS_PASSERT(client.m_host != 0);
-                cb_netmsg(client);
-                break;
-            case e_CliToGame_GameMgrMsg:
-                DS_PASSERT(client.m_host != 0);
-                cb_gameMgrMsg(client);
-                break;
-            default:
-                /* Invalid message */
-                fprintf(stderr, "[Game] Got invalid message ID %d from %s\n",
-                        msgId, DS::SockIpAddress(client.m_sock).c_str());
-                DS::CloseSock(client.m_sock);
+            int result = poll(fds, 2, NET_TIMEOUT * 1000);
+            DS_PASSERT(result != -1);
+            if (result == 0 || fds[0].revents & POLLHUP)
                 throw DS::SockHup();
-            }
+
+            if (fds[0].revents & POLLIN)
+                cb_sockRead(client);
+            if (fds[1].revents & POLLIN)
+                cb_broadcast(client);
         }
     } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
@@ -238,6 +270,12 @@ void wk_gameWorker(DS::SocketHandle sockp)
         msg.m_client = &client;
         client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
         client.m_channel.getMessage();
+    }
+
+    // Drain the broadcast channel
+    while (client.m_broadcast.hasMessage()) {
+        DS::FifoMessage msg = client.m_broadcast.getMessage();
+        reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
     }
 
     DS::CryptStateFree(client.m_crypt);

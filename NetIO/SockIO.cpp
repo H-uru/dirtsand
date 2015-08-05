@@ -17,6 +17,7 @@
 
 #include "SockIO.h"
 #include "errors.h"
+#include "settings.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -44,7 +45,6 @@ struct SocketHandle_Private
         sockaddr_storage m_addrMax;
     };
     socklen_t m_addrLen;
-    std::mutex m_sendLock;
 
     SocketHandle_Private() : m_addrLen(sizeof(m_addrMax)) { }
 };
@@ -136,15 +136,9 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
         }
     }
     timeval tv;
-    // Client pings us every 30 seconds. A timeout of 45 gives us some wiggle room
-    // so networks can suck without kicking a client off.
-    tv.tv_sec = 45;
+    tv.tv_sec = NET_TIMEOUT;
     tv.tv_usec = 0;
     setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    // Allow 50ms on blocking sends to account for net suckiness
-    tv.tv_sec = 0;
-    tv.tv_usec = (50 * 1000);
-    setsockopt(client->m_sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     // eap-tastic protocols require Nagle's algo be disabled
     setsockopt(client->m_sockfd, IPPROTO_TCP, TCP_NODELAY, &SOCK_YES, sizeof(SOCK_YES));
     return reinterpret_cast<SocketHandle>(client);
@@ -189,32 +183,27 @@ uint32_t DS::GetAddress4(const char* lookup)
     return ntohl(addr);
 }
 
-void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size, SendFlag mode)
+int DS::SockFd(const DS::SocketHandle sock)
 {
-    int32_t flags = (mode & DS::e_SendNonBlocking) ? MSG_DONTWAIT : 0;
-    bool retry = !(mode & DS::e_SendNoRetry);
-    std::lock_guard<std::mutex> guard(reinterpret_cast<SocketHandle_Private*>(sock)->m_sendLock);
+    return reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd;
+}
+
+void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size)
+{
     do {
         ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
-                             buffer, size, flags);
+                             buffer, size, 0);
         if (bytes < 0) {
-            if (errno == EPIPE || errno == ECONNRESET) {
+            if (errno == EPIPE || errno == ECONNRESET)
                 throw DS::SockHup();
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                if (retry)
-                    continue;
-                else {
-                    CloseSock(sock);
-                    throw DS::SockHup();
-                }
-            }
-        } else if (bytes == 0)
+        } else if (bytes == 0) {
             throw DS::SockHup();
+        }
         DS_PASSERT(bytes > 0);
 
         size -= bytes;
         buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
-    } while ((size > 0) && retry);
+    } while (size > 0);
 
     if (size > 0) {
         CloseSock(sock);
@@ -226,7 +215,6 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
                   int fd, off_t* offset, size_t fdsz)
 {
     SocketHandle_Private* imp = reinterpret_cast<SocketHandle_Private*>(sock);
-    std::lock_guard<std::mutex> guard(imp->m_sendLock);
 
     // Send the prepended buffer
     setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_YES, sizeof(SOCK_YES));

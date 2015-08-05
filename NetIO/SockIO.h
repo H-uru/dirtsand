@@ -26,17 +26,6 @@
 
 namespace DS
 {
-    enum SendFlag
-    {
-        e_SendDefault,
-        e_SendNonBlocking = (1<<0),
-        e_SendNoRetry = (1<<1),
-        e_SendAllowFailure = (1<<2),
-
-        e_SendImmediately = (e_SendNonBlocking | e_SendNoRetry),
-        e_SendSpam = (e_SendImmediately | e_SendAllowFailure)
-    };
-
     typedef void* SocketHandle;
 
     SocketHandle BindSocket(const char* address, const char* port);
@@ -47,9 +36,9 @@ namespace DS
 
     String SockIpAddress(const SocketHandle sock);
     uint32_t GetAddress4(const char* lookup);
+    int SockFd(const SocketHandle sock);
 
-    void SendBuffer(const SocketHandle sock, const void* buffer,
-                    size_t size, SendFlag mode=e_SendDefault);
+    void SendBuffer(const SocketHandle sock, const void* buffer, size_t size);
     void SendFile(const SocketHandle sock, const void* buffer, size_t bufsz,
                   int fd, off_t* offset, size_t fdsz);
     void RecvBuffer(const SocketHandle sock, void* buffer, size_t size);

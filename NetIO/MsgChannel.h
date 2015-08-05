@@ -18,7 +18,6 @@
 #ifndef _DS_MSGCHANNEL_H
 #define _DS_MSGCHANNEL_H
 
-#include <semaphore.h>
 #include <queue>
 #include <mutex>
 
@@ -36,11 +35,13 @@ namespace DS
         MsgChannel();
         ~MsgChannel();
 
+        int fd() const { return m_semaphore; }
         void putMessage(int type, void* payload = 0);
         FifoMessage getMessage();
+        bool hasMessage();
 
     private:
-        sem_t m_semaphore;
+        int m_semaphore;
         std::mutex m_queueMutex;
         std::queue<FifoMessage> m_queue;
     };

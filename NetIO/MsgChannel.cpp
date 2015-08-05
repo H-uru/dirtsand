@@ -15,22 +15,20 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
+#include <sys/eventfd.h>
+#include <unistd.h>
 #include "MsgChannel.h"
 #include "errors.h"
 
 DS::MsgChannel::MsgChannel()
 {
-    int result;
-
-    result = sem_init(&m_semaphore, 0, 0);
-    DS_PASSERT(result == 0);
+    m_semaphore = eventfd(0, EFD_SEMAPHORE);
+    DS_PASSERT(m_semaphore != -1);
 }
 
 DS::MsgChannel::~MsgChannel()
 {
-    int result;
-
-    result = sem_destroy(&m_semaphore);
+    int result = close(m_semaphore);
     DS_PASSERT(result == 0);
 }
 
@@ -42,15 +40,26 @@ void DS::MsgChannel::putMessage(int type, void* payload)
     msg.m_payload = payload;
     m_queue.push(msg);
     m_queueMutex.unlock();
-    sem_post(&m_semaphore);
+
+    int result = eventfd_write(m_semaphore, 1);
+    DS_PASSERT(result == 0);
 }
 
 DS::FifoMessage DS::MsgChannel::getMessage()
 {
-    sem_wait(&m_semaphore);
+    eventfd_t value;
+    int result = eventfd_read(m_semaphore, &value);
+    DS_PASSERT(result == 0);
+
     m_queueMutex.lock();
     FifoMessage msg = m_queue.front();
     m_queue.pop();
     m_queueMutex.unlock();
     return msg;
+}
+
+bool DS::MsgChannel::hasMessage()
+{
+    std::lock_guard<std::mutex> guard(m_queueMutex);
+    return !m_queue.empty();
 }

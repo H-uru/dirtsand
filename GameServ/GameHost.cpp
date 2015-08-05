@@ -37,14 +37,24 @@ agemap_t s_ages;
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
 
-#define DM_WRITEMSG(host, msg) \
-    host->m_buffer.truncate(); \
-    host->m_buffer.write<uint16_t>(e_GameToCli_PropagateBuffer); \
-    host->m_buffer.write<uint32_t>(msg->type()); \
-    host->m_buffer.write<uint32_t>(0); \
-    MOUL::Factory::WriteCreatable(&host->m_buffer, msg); \
-    host->m_buffer.seek(6, SEEK_SET); \
-    host->m_buffer.write<uint32_t>(host->m_buffer.size() - 10)
+#define DM_SENDBUF(client) \
+    _msgbuf->ref(); \
+    client->m_broadcast.putMessage(e_GameToCli_PropagateBuffer, _msgbuf)
+
+#define DM_UNREFBUF() \
+    _msgbuf->unref()
+
+#define DM_WRITEBUF(msg) \
+    DS::BufferStream* _msgbuf = new DS::BufferStream(); \
+    _msgbuf->write<uint32_t>(msg->type()); \
+    _msgbuf->write<uint32_t>(0); \
+    MOUL::Factory::WriteCreatable(_msgbuf, msg); \
+    _msgbuf->seek(4, SEEK_SET); \
+    _msgbuf->write<uint32_t>(_msgbuf->size() - 8)
+
+#define DM_SENDMSG(msg, client) \
+    DM_WRITEBUF(msg); \
+    client->m_broadcast.putMessage(e_GameToCli_PropagateBuffer, _msgbuf)
 
 static inline void check_postgres(GameHost_Private* host)
 {
@@ -101,8 +111,7 @@ void dm_game_shutdown(GameHost_Private* host)
 
 void dm_broadcast(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender)
 {
-    DM_WRITEMSG(host, msg);
-    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNoRetry : DS::e_SendSpam;
+    DM_WRITEBUF(msg);
 
     std::lock_guard<std::mutex> hostGuard(s_gameHostMutex);
     for (auto host_it = s_gameHosts.begin(); host_it != s_gameHosts.end(); ++host_it) {
@@ -111,41 +120,32 @@ void dm_broadcast(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender
             if (client_it->second->m_clientInfo.m_PlayerId == sender
                 && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
                 continue;
-
-            try {
-                DS::CryptSendBuffer(client_it->second->m_sock, client_it->second->m_crypt,
-                                    host->m_buffer.buffer(), host->m_buffer.size(), mode);
-            } catch (DS::SockHup&) { }
+            DM_SENDBUF(client_it->second);
         }
     }
+
+    DM_UNREFBUF();
 }
 
 void dm_propagate(GameHost_Private* host, MOUL::NetMessage* msg, uint32_t sender)
 {
-    DM_WRITEMSG(host, msg);
+    DM_WRITEBUF(msg);
 
     std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
-    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNoRetry : DS::e_SendSpam;
     for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
         if (client_iter->second->m_clientInfo.m_PlayerId == sender
             && !(msg->m_contentFlags & MOUL::NetMessage::e_EchoBackToSender))
             continue;
-
-        try {
-            DS::CryptSendBuffer(client_iter->second->m_sock, client_iter->second->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size(), mode);
-        } catch (DS::SockHup) {
-            // This is handled below too, but we don't want to skip the rest
-            // of the client list if one hung up
-        }
+        DM_SENDBUF(client_iter->second);
     }
+
+    DM_UNREFBUF();
 }
 
 void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
                      const std::vector<uint32_t>& receivers)
 {
-    DM_WRITEMSG(host, msg);
-    DS::SendFlag mode = (msg->m_contentFlags & MOUL::NetMessage::e_NeedsReliableSend) ? DS::e_SendNoRetry : DS::e_SendSpam;
+    DM_WRITEBUF(msg);
 
     for (auto rcvr_iter = receivers.begin(); rcvr_iter != receivers.end(); ++rcvr_iter) {
         std::lock_guard<std::mutex> hostGuard(s_gameHostMutex);
@@ -153,17 +153,13 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
             std::lock_guard<std::mutex> clientGuard(recv_host->second->m_clientMutex);
             auto client = recv_host->second->m_clients.find(*rcvr_iter);
             if (client != recv_host->second->m_clients.end()) {
-                try {
-                    DS::CryptSendBuffer(client->second->m_sock, client->second->m_crypt,
-                                        host->m_buffer.buffer(), host->m_buffer.size(), mode);
-                } catch (DS::SockHup) {
-                    // This is handled below too, but we don't want to skip the rest
-                    // of the client list if one hung up
-                }
+                DM_SENDBUF(client->second);
                 break; // Don't bother checking the rest of the hosts, we found the one we're looking for
             }
         }
     }
+
+    DM_UNREFBUF();
 }
 
 void dm_local_sdl_update(GameHost_Private* host, const DS::Blob& blob)
@@ -243,7 +239,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
             groupMsg->m_timestamp.setNow();
             groupMsg->m_groups.resize(1);
             groupMsg->m_groups[0].m_own = true;
-            DM_WRITEMSG(host, groupMsg);
+            DM_WRITEBUF(groupMsg);
 
             // This client has already been removed from the map, so we can just
             // pick the 0th client and call him the new owner :)
@@ -251,18 +247,12 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
             if (host->m_clients.size()) {
                 GameClient_Private* newOwner = host->m_clients.begin()->second;
                 host->m_gameMaster = newOwner->m_clientInfo.m_PlayerId;
-                try {
-                    DS::CryptSendBuffer(newOwner->m_sock, newOwner->m_crypt,
-                                        host->m_buffer.buffer(), host->m_buffer.size());
-                } catch (...) {
-                    fprintf(stderr, "[Game] Ownership transfer to %i from %i failed.",
-                            msg->m_client->m_clientInfo.m_PlayerId, newOwner->m_clientInfo.m_PlayerId);
-                    DS_DASSERT(false);
-                }
+                DM_SENDBUF(newOwner);
             } else {
                 host->m_gameMaster = 0;
             }
             groupMsg->unref();
+            DM_UNREFBUF();
         }
     }
 
@@ -316,13 +306,7 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
     }
     host->m_gmMutex.unlock();
 
-    DM_WRITEMSG(host, groupMsg);
-    try {
-        DS::CryptSendBuffer(msg->m_client->m_sock, msg->m_client->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
-    } catch (DS::SockHup) {
-        // we'll just let this slide. The client thread will figure it out quickly enough.
-    }
+    DM_SENDMSG(groupMsg, msg->m_client);
     groupMsg->unref();
 
     MOUL::NetMsgMemberUpdate* memberMsg = MOUL::NetMsgMemberUpdate::Create();
@@ -361,9 +345,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
         state->m_object.m_type = 1;  // SceneObject
         state->m_object.m_id = 1;
         state->m_sdlBlob = ageSdlBlob;
-        DM_WRITEMSG(host, state);
-        DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
+        DM_SENDMSG(state, client);
         ++states;
     }
 
@@ -375,9 +357,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
             state->m_isAvatar = it->second.m_isAvatar;
             state->m_persistOnServer = it->second.m_persist;
             state->m_sdlBlob = it->second.m_state.toBlob();
-            DM_WRITEMSG(host, state);
-            DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size());
+            DM_SENDMSG(state, client);
             ++states;
         }
     }
@@ -390,10 +370,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
                           | MOUL::NetMessage::e_NeedsReliableSend;
     reply->m_timestamp.setNow();
     reply->m_numStates = states;
-
-    DM_WRITEMSG(host, reply);
-    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
+    DM_SENDMSG(reply, client);
     reply->unref();
 }
 
@@ -404,11 +381,11 @@ void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor,
 
     DS::Blob sdlBlob = state.toBlob();
     PostgresStrings<4> parms;
-    host->m_buffer.truncate();
-    object.write(&host->m_buffer);
+    DS::BufferStream buffer;
+    object.write(&buffer);
     parms.set(0, host->m_serverIdx);
     parms.set(1, descriptor);
-    parms.set(2, DS::Base64Encode(host->m_buffer.buffer(), host->m_buffer.size()));
+    parms.set(2, DS::Base64Encode(buffer.buffer(), buffer.size()));
     parms.set(3, DS::Base64Encode(sdlBlob.buffer(), sdlBlob.size()));
     PGresult* result = PQexecParams(host->m_postgres,
                                     "SELECT idx FROM game.\"AgeStates\""
@@ -563,11 +540,8 @@ void dm_test_and_set(GameHost_Private* host, GameClient_Private* client,
                              | MOUL::NetMessage::e_NeedsReliableSend;
     netReply->m_timestamp.setNow();
     netReply->m_message = reply;
-
-    DM_WRITEMSG(host, netReply);
+    DM_SENDMSG(netReply, client);
     netReply->unref();
-    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
 }
 
 void dm_send_members(GameHost_Private* host, GameClient_Private* client)
@@ -593,16 +567,12 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
     }
     host->m_clientMutex.unlock();
 
-    DM_WRITEMSG(host, members);
-    DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                        host->m_buffer.buffer(), host->m_buffer.size());
+    DM_SENDMSG(members, client);
     members->unref();
 
     // Load non-avatar clones (ie NPC quabs)
     for (auto clone_iter = host->m_clones.begin(); clone_iter != host->m_clones.end(); ++clone_iter) {
-        DM_WRITEMSG(host, clone_iter->second);
-        DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                            host->m_buffer.buffer(), host->m_buffer.size());
+        DM_SENDMSG(clone_iter->second, client);
     }
 
     // Load clones for players already in the age
@@ -632,10 +602,7 @@ void dm_send_members(GameHost_Private* host, GameClient_Private* client)
                 && !client->m_clientKey.isNull()) {
                 avatarMsg->m_cloneKey = client_iter->second->m_clientKey;
                 avatarMsg->m_originPlayerId = client_iter->second->m_clientInfo.m_PlayerId;
-
-                DM_WRITEMSG(host, cloneMsg);
-                DS::CryptSendBuffer(client->m_sock, client->m_crypt,
-                                    host->m_buffer.buffer(), host->m_buffer.size());
+                DM_SENDMSG(cloneMsg, client);
             }
         }
     }
@@ -801,17 +768,7 @@ void dm_bcast_agesdl_hook(GameHost_Private* host)
     bcast->m_object.m_id = 1;
     bcast->m_sdlBlob = host->m_ageSdlHook.toBlob();
 
-    std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
-    for (auto client_iter = host->m_clients.begin(); client_iter != host->m_clients.end(); ++client_iter) {
-        try {
-            DM_WRITEMSG(host, bcast);
-            DS::CryptSendBuffer(client_iter->second->m_sock, client_iter->second->m_crypt,
-                                host->m_buffer.buffer(), host->m_buffer.size());
-        } catch (DS::SockHup) {
-            // This is handled below too, but we don't want to skip the rest
-            // of the client list if one hung up
-        }
-    }
+    dm_propagate(host, bcast, 0);
     bcast->unref();
 }
 

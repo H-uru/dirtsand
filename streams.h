@@ -146,8 +146,8 @@ namespace DS
     class BufferStream : public Stream
     {
     public:
-        BufferStream() : m_buffer(0), m_position(0), m_size(0), m_alloc(0) { }
-        BufferStream(const void* data, size_t size) : m_buffer(0) { set(data, size); }
+        BufferStream() : m_buffer(0), m_position(0), m_size(0), m_alloc(0), m_refs(1) { }
+        BufferStream(const void* data, size_t size) : m_buffer(0), m_refs(1) { set(data, size); }
         virtual ~BufferStream() { delete[] m_buffer; }
 
         virtual ssize_t readBytes(void* buffer, size_t count);
@@ -170,10 +170,18 @@ namespace DS
         void set(const void* buffer, size_t size);
         void steal(uint8_t* buffer, size_t size);
 
+        void ref() { ++m_refs; }
+        void unref()
+        {
+            if (--m_refs == 0)
+                delete this;
+        }
+
     private:
         uint8_t* m_buffer;
         size_t m_position;
         size_t m_size, m_alloc;
+        std::atomic_int m_refs;
 
         BufferStream(const BufferStream& copy) { }
         void operator=(const BufferStream& copy) { }

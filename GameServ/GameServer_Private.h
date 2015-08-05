@@ -77,7 +77,6 @@ struct GameHost_Private
     std::mutex m_lockMutex;
     std::mutex m_gmMutex;
     DS::MsgChannel m_channel;
-    DS::BufferStream m_buffer;
 
     PGconn* m_postgres;
     sdlstatemap_t m_states;

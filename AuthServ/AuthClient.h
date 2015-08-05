@@ -29,6 +29,7 @@ struct AuthClient_Private
     DS::SocketHandle m_sock;
     DS::CryptState m_crypt;
     DS::MsgChannel m_channel;
+    DS::MsgChannel m_broadcast;
 };
 
 struct AuthServer_PlayerInfo
