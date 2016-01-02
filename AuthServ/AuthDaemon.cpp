@@ -1145,8 +1145,10 @@ void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
                 case SDL::e_VarShort:
                     var->data()->m_short[0] = static_cast<int16_t>(msg->m_value.toInt());
                     break;
+                case SDL::e_VarString:
+                    var->data()->m_string[0] = msg->m_value;
+                    break;
                 default:
-                    // Global SDL is only plain old ints...
                     SEND_REPLY(msg, DS::e_NetNotSupported);
                     return;
                 }
