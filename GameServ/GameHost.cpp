@@ -914,11 +914,22 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             delete host;
             return 0;
         }
-        if (host->m_localState.update()) {
+        if (!host->m_localState.descriptor()) {
+            // NULL VaultSDL Node (or it doesn't exist) -- maybe there is a descriptor now?
+            SDL::StateDescriptor* desc = SDL::DescriptorDb::FindLatestDescriptor(host->m_ageFilename);
+            if (desc) {
+                host->m_localState = SDL::State(desc);
+                DS::Blob local = host->m_localState.toBlob();
+                dm_local_sdl_update(host, local);
+                host->m_ageSdlHook = SDL::State::FromBlob(local);
+            }
+        } else if (host->m_localState.update()) {
+            // The SDL Descriptor was updated
             DS::Blob local = host->m_localState.toBlob();
             dm_local_sdl_update(host, local);
             host->m_ageSdlHook = SDL::State::FromBlob(local);
         } else {
+            // Perfectly valid old SDL Blob
             host->m_ageSdlHook = SDL::State::FromBlob(sdlFetch.m_localState);
         }
         host->m_ageSdlHook.merge(host->m_globalState);
