@@ -126,7 +126,8 @@ SDL::Token SDL::Parser::next()
                        || *lnp == '\r' || *lnp == '\n') {
                 // Skip whitespace
                 ++lnp;
-            } else if ((*lnp >= '0' && *lnp <= '9') || *lnp == '-') {
+            } else if ((*lnp >= '0' && *lnp <= '9') ||
+                       (*lnp == '-' && (*(lnp+1) >= '0' && *(lnp+1) <= '9'))) {
                 // Numeric constant
                 char* endp = lnp + 1;
                 while (*endp && ((*endp >= '0' && *endp <= '9') || *endp == '.'))
@@ -136,11 +137,11 @@ SDL::Token SDL::Parser::next()
                 m_buffer.push_back(tokbuf);
                 lnp = endp;
             } else if ((*lnp >= 'A' && *lnp <= 'Z') || (*lnp >= 'a' && *lnp <= 'z')
-                        || *lnp == '_') {
+                        || *lnp == '_' || *lnp == '-') {
                 // Identifier or keyword
                 char* endp = lnp + 1;
                 while (*endp && ((*endp >= 'A' && *endp <= 'Z') || (*endp >= 'a' && *endp <= 'z')
-                       || (*endp >= '0' && *endp <= '9') || *endp == '_'))
+                       || (*endp >= '0' && *endp <= '9') || *endp == '_' || *endp == '-'))
                     ++endp;
                 tokbuf.m_value = DS::String::FromRaw(lnp, endp - lnp);
                 tokbuf.m_type = str_to_toktype(tokbuf.m_value);
