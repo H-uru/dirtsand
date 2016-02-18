@@ -29,7 +29,12 @@ DS::MsgChannel::MsgChannel()
 DS::MsgChannel::~MsgChannel()
 {
     int result = close(m_semaphore);
-    DS_PASSERT(result == 0);
+    if (result < 0) {
+        if (errno == EBADF) {
+            return;
+        }
+        DS_PASSERT(result == 0);
+    }
 }
 
 void DS::MsgChannel::putMessage(int type, void* payload)
