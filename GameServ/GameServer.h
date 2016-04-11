@@ -32,7 +32,7 @@ namespace DS
     void GameServer_Add(SocketHandle client);
     void GameServer_Shutdown();
 
-    void GameServer_UpdateGlobalSDL(const DS::String& age);
+    void GameServer_UpdateGlobalSDL(const ST::string& age);
     bool GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId);
 
     void GameServer_DisplayClients();

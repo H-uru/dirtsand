@@ -30,7 +30,7 @@ namespace MOUL
         struct Room
         {
             Location m_location;
-            DS::String m_name;
+            ST::string m_name;
         };
 
         std::vector<Room> m_rooms;

@@ -20,6 +20,7 @@
 #include "Types/Uuid.h"
 #include "settings.h"
 #include "errors.h"
+#include <string_theory/format>
 #include <openssl/rand.h>
 #include <poll.h>
 
@@ -523,8 +524,8 @@ void cb_fileList(AuthServer_Private& client)
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
-    DS::String directory = DS::CryptRecvString(client.m_sock, client.m_crypt);
-    DS::String fileext = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    ST::string directory = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    ST::string fileext = DS::CryptRecvString(client.m_sock, client.m_crypt);
 
     // Manifest may not have any path characters
     if (directory.find(".") != -1 || directory.find("/") != -1
@@ -539,8 +540,8 @@ void cb_fileList(AuthServer_Private& client)
         SEND_REPLY();
         return;
     }
-    DS::String mfsname = DS::String::Format("%s%s_%s.list", DS::Settings::AuthRoot().c_str(),
-                                            directory.c_str(), fileext.c_str());
+    ST::string mfsname = ST::format("{}{}_{}.list", DS::Settings::AuthRoot(),
+                                    directory, fileext);
     DS::AuthManifest mfs;
     DS::NetResultCode result = mfs.loadManifest(mfsname.c_str());
     client.m_buffer.write<uint32_t>(result);
@@ -569,7 +570,7 @@ void cb_downloadStart(AuthServer_Private& client)
     client.m_buffer.write<uint32_t>(transId);
 
     // Download filename
-    DS::String filename = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    ST::string filename = DS::CryptRecvString(client.m_sock, client.m_crypt);
 
     // Ensure filename is jailed to our data path
     if (filename.find("..") != -1) {
@@ -580,7 +581,7 @@ void cb_downloadStart(AuthServer_Private& client)
         SEND_REPLY();
         return;
     }
-    filename.replace("\\", "/");
+    filename = filename.replace("\\", "/");
 
     filename = DS::Settings::AuthRoot() + filename;
     DS::FileStream* stream = new DS::FileStream();
@@ -691,10 +692,10 @@ void write_scoreBuffer(AuthServer_Private& client, const Auth_GetScores& msg,
     } else {
         client.m_buffer.write<uint32_t>(msg.m_scores.size());
         // eap sucks -- need utf16 string length in bytes
-        DS::StringBuffer<char16_t> name = msg.m_name.toUtf16();
+        ST::utf16_buffer name = msg.m_name.to_utf16();
         uint32_t bufsz = msg.m_scores.size() *
                         (Auth_GetScores::GameScore::BaseStride +
-                        ((name.length() + 1) * sizeof(char16_t)));
+                        ((name.size() + 1) * sizeof(char16_t)));
         client.m_buffer.write<uint32_t>(bufsz);
         for (auto& score : msg.m_scores) {
             client.m_buffer.write<uint32_t>(score.m_scoreId);
@@ -703,8 +704,8 @@ void write_scoreBuffer(AuthServer_Private& client, const Auth_GetScores& msg,
             client.m_buffer.write<uint32_t>(score.m_type);
             client.m_buffer.write<uint32_t>(score.m_points);
             // evil string shit
-            client.m_buffer.write<uint32_t>((name.length() + 1) * sizeof(char16_t));
-            client.m_buffer.writeBytes(name.data(), name.length() * sizeof(char16_t));
+            client.m_buffer.write<uint32_t>((name.size() + 1) * sizeof(char16_t));
+            client.m_buffer.writeBytes(name.data(), name.size() * sizeof(char16_t));
             client.m_buffer.write<char16_t>(0);
         }
     }
@@ -820,29 +821,29 @@ void cb_getPublicAges(AuthServer_Private& client)
             client.m_buffer.writeBytes(msg.m_ages[i].m_instance.m_bytes, sizeof(client.m_acctUuid.m_bytes));
 
             char16_t strbuffer[2048];
-            DS::StringBuffer<char16_t> buf;
+            ST::utf16_buffer buf;
             uint32_t copylen;
 
-            buf = msg.m_agename.toUtf16();
-            copylen = buf.length() < 64 ? buf.length() : 63;
+            buf = msg.m_agename.to_utf16();
+            copylen = buf.size() < 64 ? buf.size() : 63;
             memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
-            buf = msg.m_ages[i].m_instancename.toUtf16();
-            copylen = buf.length() < 64 ? buf.length() : 63;
+            buf = msg.m_ages[i].m_instancename.to_utf16();
+            copylen = buf.size() < 64 ? buf.size() : 63;
             memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
-            buf = msg.m_ages[i].m_username.toUtf16();
-            copylen = buf.length() < 64 ? buf.length() : 63;
+            buf = msg.m_ages[i].m_username.to_utf16();
+            copylen = buf.size() < 64 ? buf.size() : 63;
             memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 64 * sizeof(char16_t));
 
-            buf = msg.m_ages[i].m_description.toUtf16();
-            copylen = buf.length() < 1024 ? buf.length() : 1023;
+            buf = msg.m_ages[i].m_description.to_utf16();
+            copylen = buf.size() < 1024 ? buf.size() : 1023;
             memcpy(strbuffer, buf.data(), copylen * sizeof(char16_t));
             strbuffer[copylen] = 0;
             client.m_buffer.writeBytes(strbuffer, 1024 * sizeof(char16_t));
@@ -1107,7 +1108,7 @@ void DS::AuthServer_DisplayClients()
     }
 }
 
-bool DS::AuthServer_AddAcct(const DS::String& acctName, const DS::String& password)
+bool DS::AuthServer_AddAcct(const ST::string& acctName, const ST::string& password)
 {
     AuthClient_Private client;
     Auth_AddAcct req;
@@ -1119,7 +1120,7 @@ bool DS::AuthServer_AddAcct(const DS::String& acctName, const DS::String& passwo
     return reply.m_messageType == DS::e_NetSuccess;
 }
 
-uint32_t DS::AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags)
+uint32_t DS::AuthServer_AcctFlags(const ST::string& acctName, uint32_t flags)
 {
     AuthClient_Private client;
     Auth_AccountFlags req;
@@ -1144,7 +1145,7 @@ bool DS::AuthServer_AddAllPlayersFolder(uint32_t playerId)
     return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
 }
 
-bool DS::AuthServer_ChangeGlobalSDL(const DS::String& ageName, const DS::String& var, const DS::String& value)
+bool DS::AuthServer_ChangeGlobalSDL(const ST::string& ageName, const ST::string& var, const ST::string& value)
 {
     AuthClient_Private client;
     Auth_UpdateGlobalSDL msg;

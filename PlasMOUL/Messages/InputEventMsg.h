@@ -20,7 +20,6 @@
 
 #include "Message.h"
 #include "Types/Math.h"
-#include "strings.h"
 
 namespace MOUL
 {
@@ -47,7 +46,7 @@ namespace MOUL
         bool m_activated;
         float m_controlPercent;
         DS::Vector3 m_turnToPoint;
-        DS::String m_cmd;
+        ST::string m_cmd;
 
         virtual void read(DS::Stream* stream);
         virtual void write(DS::Stream* stream) const;

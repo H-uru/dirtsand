@@ -32,8 +32,8 @@ namespace MOUL
         virtual bool makeSafeForNet() { return false; }
 
     public:
-        DS::String m_target;
-        DS::String m_string;
+        ST::string m_target;
+        ST::string m_string;
 
     protected:
         BackdoorMsg(uint16_t type) : Message(type) { }

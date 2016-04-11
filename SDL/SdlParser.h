@@ -43,7 +43,7 @@ namespace SDL
     struct Token
     {
         TokenType m_type;
-        DS::String m_value;
+        ST::string m_value;
         long m_lineno;
     };
 
@@ -59,7 +59,7 @@ namespace SDL
             if (m_file)
                 fclose(m_file);
             m_file = 0;
-            m_filename = DS::String();
+            m_filename = ST::null;
         }
 
         const char* filename() const { return m_filename.c_str(); }
@@ -71,7 +71,7 @@ namespace SDL
 
     private:
         FILE* m_file;
-        DS::String m_filename;
+        ST::string m_filename;
         long m_lineno;
         std::list<Token> m_buffer;
     };

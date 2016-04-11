@@ -34,7 +34,7 @@ namespace MOUL
         bool m_isPlayer;
         Key m_spawnPoint;
         AvTask* m_initTask;
-        DS::String m_userString;
+        ST::string m_userString;
 
     protected:
         LoadAvatarMsg(uint16_t type)

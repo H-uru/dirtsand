@@ -34,7 +34,7 @@ namespace MOUL
         bool m_smartSeek, m_noSeek;
         uint16_t m_alignType;
         uint8_t m_flags;
-        DS::String m_animName;
+        ST::string m_animName;
         Key m_finishKey;
 
         virtual void read(DS::Stream* stream);
@@ -50,7 +50,7 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AvOneShotMsg)
 
-        DS::String m_oneShotAnimName;
+        ST::string m_oneShotAnimName;
         bool m_drivable, m_reversible;
 
         virtual void read(DS::Stream* stream);

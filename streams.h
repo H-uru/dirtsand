@@ -18,9 +18,11 @@
 #ifndef _DS_STREAMS_H
 #define _DS_STREAMS_H
 
-#include "strings.h"
+#include <string_theory/string>
+#include <atomic>
 #include <exception>
 #include <cstdio>
+#include <cstring>
 
 namespace DS
 {
@@ -37,16 +39,22 @@ namespace DS
     class FileIOException : public std::exception
     {
     public:
-        FileIOException(const char* msg) throw() : m_errmsg(msg) { }
+        FileIOException(const char* msg) throw()
+            : m_errmsg(ST_LITERAL("[FileIOException] ") + msg) { }
         virtual ~FileIOException() throw() { }
 
         virtual const char* what() const throw()
-        { return (DS::String("[FileIOException] ") + m_errmsg).c_str(); }
+        { return m_errmsg.c_str(); }
 
     private:
-        DS::String m_errmsg;
+        ST::string m_errmsg;
     };
 
+    enum StringType
+    {
+        // Type of string to encode/decode from stream sources
+        e_StringRAW8, e_StringUTF8, e_StringUTF16,
+    };
 
     class Stream
     {
@@ -65,36 +73,36 @@ namespace DS
             return value;
         }
 
-        String readString(size_t length, DS::StringType format = e_StringRAW8);
-        String readSafeString(DS::StringType format = e_StringRAW8);
+        ST::string readString(size_t length, DS::StringType format = e_StringRAW8);
+        ST::string readSafeString(DS::StringType format = e_StringRAW8);
 
         template <typename tp> void write(tp value)
         { writeBytes(&value, sizeof(value)); }
 
         template <typename sz_t>
-        String readPString(DS::StringType format = e_StringRAW8)
+        ST::string readPString(DS::StringType format = e_StringRAW8)
         {
             sz_t length = read<sz_t>();
             return readString(length);
         }
 
         template <typename sz_t>
-        void writePString(const String& value, DS::StringType format = e_StringRAW8)
+        void writePString(const ST::string& value, DS::StringType format = e_StringRAW8)
         {
             if (format == e_StringUTF16) {
-                StringBuffer<char16_t> buffer = value.toUtf16();
-                write<sz_t>(buffer.length());
-                writeBytes(buffer.data(), buffer.length() * sizeof(char16_t));
+                ST::utf16_buffer buffer = value.to_utf16();
+                write<sz_t>(buffer.size());
+                writeBytes(buffer.data(), buffer.size() * sizeof(char16_t));
             } else {
-                StringBuffer<char> buffer = (format == e_StringUTF8) ? value.toUtf8()
-                                                                     : value.toRaw();
-                write<sz_t>(buffer.length());
-                writeBytes(buffer.data(), buffer.length() * sizeof(char));
+                ST::char_buffer buffer = (format == e_StringUTF8) ? value.to_utf8()
+                                       : value.to_latin_1(ST::substitute_invalid);
+                write<sz_t>(buffer.size());
+                writeBytes(buffer.data(), buffer.size() * sizeof(char));
             }
         }
 
-        void writeString(const String& value, DS::StringType format = e_StringRAW8);
-        void writeSafeString(const String& value, DS::StringType format = e_StringRAW8);
+        void writeString(const ST::string& value, DS::StringType format = e_StringRAW8);
+        void writeSafeString(const ST::string& value, DS::StringType format = e_StringRAW8);
 
         virtual uint32_t tell() const = 0;
         virtual void seek(int32_t offset, int whence) = 0;
@@ -270,6 +278,9 @@ namespace DS
         Blob m_blob;
         size_t m_position;
     };
+
+    Blob Base64Decode(const ST::string& value);
+    Blob HexDecode(const ST::string& value);
 }
 
 #endif

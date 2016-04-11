@@ -19,6 +19,7 @@
 #include "errors.h"
 #include "settings.h"
 
+#include <string_theory/format>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -157,12 +158,12 @@ void DS::FreeSock(DS::SocketHandle sock)
     delete reinterpret_cast<SocketHandle_Private*>(sock);
 }
 
-DS::String DS::SockIpAddress(const DS::SocketHandle sock)
+ST::string DS::SockIpAddress(const DS::SocketHandle sock)
 {
     char addrbuf[256];
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
     inet_ntop(sockp->m_addr.sa_family, get_in_addr(sockp), addrbuf, 256);
-    return String::Format("%s/%u", addrbuf, get_in_port(sockp));
+    return ST::format("{}/{}", addrbuf, get_in_port(sockp));
 }
 
 uint32_t DS::GetAddress4(const char* lookup)

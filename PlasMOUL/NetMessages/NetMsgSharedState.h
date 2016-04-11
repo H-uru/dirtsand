@@ -39,7 +39,7 @@ namespace MOUL
             bool     m_bool;
             uint8_t  m_byte;
         };
-        DS::String   m_string;
+        ST::string   m_string;
         uint8_t      m_type;
 
         GenericType() : m_type(e_TypeNone) { }
@@ -50,7 +50,7 @@ namespace MOUL
 
     struct GenericVar
     {
-        DS::String  m_name;
+        ST::string  m_name;
         GenericType m_value;
 
         void read(DS::Stream* stream);
@@ -64,7 +64,7 @@ namespace MOUL
 
         // Shared state info
         bool m_serverMayDelete;
-        DS::String m_stateName;
+        ST::string m_stateName;
         std::vector<GenericVar> m_vars;
 
         virtual void read(DS::Stream* stream);

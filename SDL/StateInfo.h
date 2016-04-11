@@ -24,7 +24,6 @@
 #include "Types/UnifiedTime.h"
 #include "Types/Math.h"
 #include "Types/Color.h"
-#include "strings.h"
 
 #define SDL_IOVERSION (6)
 
@@ -109,7 +108,7 @@ namespace SDL
                 double* m_double;
                 bool* m_bool;
 
-                DS::String* m_string;
+                ST::string* m_string;
                 DS::UnifiedTime* m_time;
                 DS::Vector3* m_vector;
                 DS::Quaternion* m_quat;
@@ -122,7 +121,7 @@ namespace SDL
             };
             size_t m_size;
             DS::UnifiedTime m_timestamp;
-            DS::String m_notificationHint;
+            ST::string m_notificationHint;
             uint16_t m_flags;
 
         private:

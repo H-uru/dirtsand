@@ -149,7 +149,7 @@ void cb_manifest(FileServer_Private& client)
     char16_t mfsbuf[260];
     DS::RecvBuffer(client.m_sock, mfsbuf, sizeof(mfsbuf));
     mfsbuf[259] = 0;
-    DS::String mfsname = DS::String::FromUtf16(mfsbuf);
+    ST::string mfsname = ST::string::from_utf16(mfsbuf, ST_AUTO_SIZE, ST::substitute_invalid);
 
     // Build ID
     uint32_t buildId = DS::RecvValue<uint32_t>(client.m_sock);
@@ -215,7 +215,7 @@ void cb_downloadStart(FileServer_Private& client)
     char16_t buffer[260];
     DS::RecvBuffer(client.m_sock, buffer, sizeof(buffer));
     buffer[259] = 0;
-    DS::String filename = DS::String::FromUtf16(buffer);
+    ST::string filename = ST::string::from_utf16(buffer, ST_AUTO_SIZE, ST::substitute_invalid);
 
     // Build ID
     uint32_t buildId = DS::RecvValue<uint32_t>(client.m_sock);
@@ -235,7 +235,7 @@ void cb_downloadStart(FileServer_Private& client)
         SEND_REPLY();
         return;
     }
-    filename.replace("\\", "/");
+    filename = filename.replace("\\", "/");
 
     filename = DS::Settings::FileRoot() + filename;
     int fd = open(filename.c_str(), O_RDONLY);

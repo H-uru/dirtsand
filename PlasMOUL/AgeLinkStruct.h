@@ -42,30 +42,30 @@ namespace MOUL
         void read(DS::Stream* s);
         void write(DS::Stream* s) const;
 
-        DS::String title() const { return m_title; }
-        void setTitle(const DS::String& title)
+        ST::string title() const { return m_title; }
+        void setTitle(const ST::string& title)
         {
             m_title = title;
-            m_flags.set(e_HasTitle, !title.isEmpty());
+            m_flags.set(e_HasTitle, !title.is_empty());
         }
 
-        DS::String name() const { return m_spawnPt; }
-        void setName(const DS::String& name)
+        ST::string name() const { return m_spawnPt; }
+        void setName(const ST::string& name)
         {
             m_spawnPt = name;
-            m_flags.set(e_HasName, !name.isEmpty());
+            m_flags.set(e_HasName, !name.is_empty());
         }
 
-        DS::String cameraStack() const { return m_cameraStack; }
-        void setCameraStack(const DS::String& stack)
+        ST::string cameraStack() const { return m_cameraStack; }
+        void setCameraStack(const ST::string& stack)
         {
             m_cameraStack = stack;
-            m_flags.set(e_HasCameraStack, !stack.isEmpty());
+            m_flags.set(e_HasCameraStack, !stack.is_empty());
         }
 
     protected:
         DS::BitVector m_flags;
-        DS::String m_title, m_spawnPt, m_cameraStack;
+        ST::string m_title, m_spawnPt, m_cameraStack;
     };
 
     class AgeInfoStruct : public Creatable
@@ -76,18 +76,18 @@ namespace MOUL
         virtual void write(DS::Stream* s) const;
 
     public:
-        DS::String filename() const { return m_ageFilename; }
-        void setFilename(const DS::String& filename)
+        ST::string filename() const { return m_ageFilename; }
+        void setFilename(const ST::string& filename)
         {
             m_ageFilename = filename;
-            UPDATEFLAG(e_HasAgeFilename, !filename.isEmpty());
+            UPDATEFLAG(e_HasAgeFilename, !filename.is_empty());
         }
 
-        DS::String instanceName() const { return m_ageInstanceName; }
-        void setInstanceName(const DS::String& name)
+        ST::string instanceName() const { return m_ageInstanceName; }
+        void setInstanceName(const ST::string& name)
         {
             m_ageInstanceName = name;
-            UPDATEFLAG(e_HasAgeInstanceName, !name.isEmpty());
+            UPDATEFLAG(e_HasAgeInstanceName, !name.is_empty());
         }
 
         DS::Uuid instanceUuid() const { return m_ageInstanceUuid; }
@@ -97,11 +97,11 @@ namespace MOUL
             UPDATEFLAG(e_HasAgeInstanceUuid, !uuid.isNull());
         }
 
-        DS::String userDefinedName() const { return m_ageUserDefinedName; }
-        void setUserDefinedName(const DS::String& name)
+        ST::string userDefinedName() const { return m_ageUserDefinedName; }
+        void setUserDefinedName(const ST::string& name)
         {
             m_ageUserDefinedName = name;
-            UPDATEFLAG(e_HasAgeUserDefinedName, !name.isEmpty());
+            UPDATEFLAG(e_HasAgeUserDefinedName, !name.is_empty());
         }
 
         int32_t sequenceNumber() const { return m_ageSequenceNumber; }
@@ -111,11 +111,11 @@ namespace MOUL
             UPDATEFLAG(e_HasAgeSequenceNumber, seq != 0);
         }
 
-        DS::String description() const { return m_ageDescription; }
-        void setDescription(const DS::String& description)
+        ST::string description() const { return m_ageDescription; }
+        void setDescription(const ST::string& description)
         {
             m_ageDescription = description;
-            UPDATEFLAG(e_HasAgeDescription, !description.isEmpty());
+            UPDATEFLAG(e_HasAgeDescription, !description.is_empty());
         }
 
         int32_t language() const { return m_ageLanguage; }
@@ -138,11 +138,11 @@ namespace MOUL
         };
 
         uint8_t m_flags;
-        DS::String m_ageFilename, m_ageInstanceName;
+        ST::string m_ageFilename, m_ageInstanceName;
         DS::Uuid m_ageInstanceUuid;
-        DS::String m_ageUserDefinedName;
+        ST::string m_ageUserDefinedName;
         int32_t m_ageSequenceNumber;
-        DS::String m_ageDescription;
+        ST::string m_ageDescription;
         int32_t m_ageLanguage;
 
         AgeInfoStruct(uint16_t type)
@@ -175,11 +175,11 @@ namespace MOUL
             m_flags |= e_HasAmCCR;
         }
 
-        DS::String parentAgeFilename() const { return m_parentAgeFilename; }
-        void setParentAgeFilename(const DS::String& filename)
+        ST::string parentAgeFilename() const { return m_parentAgeFilename; }
+        void setParentAgeFilename(const ST::string& filename)
         {
             m_parentAgeFilename = filename;
-            UPDATEFLAG(e_HasParentAgeFilename, !filename.isEmpty());
+            UPDATEFLAG(e_HasParentAgeFilename, !filename.is_empty());
         }
 
     protected:
@@ -199,7 +199,7 @@ namespace MOUL
         uint8_t m_linkingRules;
         SpawnPointInfo m_spawnPt;
         bool m_amCcr;
-        DS::String m_parentAgeFilename;
+        ST::string m_parentAgeFilename;
 
         AgeLinkStruct(uint16_t type)
             : Creatable(type), m_flags(e_HasSpawnPt | e_HasAgeInfo),

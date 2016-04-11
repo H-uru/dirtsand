@@ -18,14 +18,15 @@
 #include "AuthServer_Private.h"
 #include "VaultTypes.h"
 #include "SDL/DescriptorDb.h"
-#include "encodings.h"
 #include "errors.h"
 #include "settings.h"
+#include <string_theory/codecs>
+#include <string_theory/format>
 #include <ctime>
 
 static uint32_t s_systemNode = 0;
 extern PGconn* s_postgres;
-extern std::unordered_map<DS::String, SDL::State, DS::StringHash> s_globalStates;
+extern std::unordered_map<ST::string, SDL::State, ST::hash> s_globalStates;
 uint32_t s_allPlayers = 0;
 
 #define SEND_REPLY(msg, result) \
@@ -54,7 +55,7 @@ DS::Uuid gen_uuid()
     return uuid;
 }
 
-DS::Blob gen_default_sdl(const DS::String& filename)
+DS::Blob gen_default_sdl(const ST::string& filename)
 {
     SDL::StateDescriptor* desc = SDL::DescriptorDb::FindDescriptor(filename, -1);
     if (!desc) {
@@ -101,7 +102,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
         age.m_filename = "Neighborhood";
         age.m_instName = DS::Settings::HoodInstanceName();
         age.m_userName = DS::Settings::HoodUserName();
-        age.m_description = DS::String::Format("%s %s",
+        age.m_description = ST::format("{} {}",
                 DS::Settings::HoodUserName(), DS::Settings::HoodInstanceName());
         age.m_seqNumber = -1;   // Auto-generate
         theHoodInfo = std::get<1>(v_create_age(age, e_AgePublic));
@@ -124,7 +125,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
     }
 }
 
-static uint32_t find_public_age_1(const DS::String& filename, const DS::Uuid& uuid=DS::Uuid())
+static uint32_t find_public_age_1(const ST::string& filename, const DS::Uuid& uuid=DS::Uuid())
 {
     PostgresStrings<2> parms;
     parms.set(0, filename);
@@ -156,7 +157,7 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
     AuthServer_AgeInfo age;
     std::list<AuthServer_AgeInfo> configs;
 
-    DS::String filename = DS::Settings::SettingsPath() + "/static_ages.ini";
+    ST::string filename = DS::Settings::SettingsPath() + "/static_ages.ini";
     FILE* cfgfile = fopen(filename.c_str(), "r");
     if (!cfgfile) {
         fprintf(stderr, "Cannot open %s for reading\n", filename.c_str());
@@ -167,18 +168,16 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
         char buffer[4096];
         bool haveAge = false;
         while (fgets(buffer, 4096, cfgfile)) {
-            DS::String line = DS::String(buffer).strip('#');
-            if (line.isEmpty())
+            ST::string line = ST::string(buffer).before_first('#').trim();
+            if (line.is_empty())
                 continue;
 
-            if (line.strip().c_str()[0] == '[') {
+            if (line.trim().char_at(0) == '[') {
                 if (haveAge)
                     configs.push_back(age);
                 age.clear();
 
-                DS::String header = line.strip();
-                header.replace("[","");
-                header.replace("]","");
+                ST::string header = line.trim().replace("[","").replace("]","");
 
                 if (header != "auto")
                     age.m_ageId = DS::Uuid(header.c_str());
@@ -187,15 +186,15 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
                 continue;
             }
 
-            std::vector<DS::String> params = line.split('=', 1);
+            std::vector<ST::string> params = line.split('=', 1);
             if (params.size() != 2) {
                 fprintf(stderr, "Warning: Invalid config line: %s\n", line.c_str());
                 continue;
             }
 
             // Clean any whitespace around the '='
-            params[0] = params[0].strip();
-            params[1] = params[1].strip();
+            params[0] = params[0].trim();
+            params[1] = params[1].trim();
 
             if (params[0] == "Filename") {
                 age.m_filename = params[1];
@@ -339,10 +338,10 @@ bool dm_check_static_ages()
     return true;
 }
 
-bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc)
+bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc)
 {
     // If this isn't an age, we don't care...
-    DS::String agefile = DS::String::Format("%s/%s.age", DS::Settings::AgePath(), name.c_str());
+    ST::string agefile = ST::format("{}/{}.age", DS::Settings::AgePath(), name);
     DS::FileStream fs;
     try {
         fs.open(agefile.c_str(), "r");
@@ -366,7 +365,7 @@ bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc)
         s_globalStates[name] = SDL::State(desc);
         DS::Blob blob = s_globalStates[name].toBlob();
 
-        parms.set(1, DS::Base64Encode(blob.buffer(), blob.size()));
+        parms.set(1, ST::base64_encode(blob.buffer(), blob.size()));
         result = PQexecParams(s_postgres, "INSERT INTO vault.\"GlobalStates\""
                               "    (\"Descriptor\", \"SdlBlob\") VALUES ($1, $2)",
                               2, 0, parms.m_values, 0, 0, 0);
@@ -389,7 +388,7 @@ bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc)
             blob = state.toBlob();
 
             parms.set(0, idx);
-            parms.set(1, DS::Base64Encode(blob.buffer(), blob.size()));
+            parms.set(1, ST::base64_encode(blob.buffer(), blob.size()));
             result = PQexecParams(s_postgres, "UPDATE vault.\"GlobalStates\""
                                   "SET \"SdlBlob\"=$2 WHERE idx=$1",
                                   2, 0, parms.m_values, 0, 0, 0);
@@ -406,7 +405,7 @@ bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc)
     return true;
 }
 
-SDL::State v_find_global_sdl(const DS::String& ageName)
+SDL::State v_find_global_sdl(const ST::string& ageName)
 {
     SDL::StateDescriptor* desc = SDL::DescriptorDb::FindLatestDescriptor(ageName);
     if (!desc)
@@ -504,11 +503,11 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
     if (!age.m_parentId.isNull())
         node.set_Uuid_2(age.m_parentId);
     node.set_String64_2(age.m_filename);
-    if (!age.m_instName.isNull())
+    if (!age.m_instName.is_empty())
         node.set_String64_3(age.m_instName);
-    if (!age.m_userName.isEmpty())
+    if (!age.m_userName.is_empty())
         node.set_String64_4(age.m_userName);
-    if (!age.m_description.isEmpty())
+    if (!age.m_description.is_empty())
         node.set_Text_1(age.m_description);
     uint32_t ageInfoNode = v_create_node(node);
     if (ageInfoNode == 0)
@@ -584,8 +583,8 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
 
     // Register with the server database
     {
-        DS::String agedesc = !age.m_description.isEmpty() ? age.m_description
-                           : !age.m_instName.isEmpty() ? age.m_instName
+        ST::string agedesc = !age.m_description.is_empty() ? age.m_description
+                           : !age.m_instName.is_empty() ? age.m_instName
                            : age.m_filename;
 
         PostgresStrings<5> parms;
@@ -922,15 +921,16 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     if (node.has_Text_2())
         SET_FIELD(Text_2, node.m_Text_2);
     if (node.has_Blob_1())
-        SET_FIELD(Blob_1, DS::Base64Encode(node.m_Blob_1.buffer(), node.m_Blob_1.size()));
+        SET_FIELD(Blob_1, ST::base64_encode(node.m_Blob_1.buffer(), node.m_Blob_1.size()));
     if (node.has_Blob_2())
-        SET_FIELD(Blob_2, DS::Base64Encode(node.m_Blob_2.buffer(), node.m_Blob_2.size()));
+        SET_FIELD(Blob_2, ST::base64_encode(node.m_Blob_2.buffer(), node.m_Blob_2.size()));
     #undef SET_FIELD
 
     DS_DASSERT(fieldp - fieldbuf < 1024);
     *(fieldp - 1) = ')';    // Get rid of the last comma
-    DS::String queryStr = "INSERT INTO vault.\"Nodes\" (";
-    queryStr += fieldbuf;
+    ST::string_stream queryStr;
+    queryStr << "INSERT INTO vault.\"Nodes\" (";
+    queryStr << fieldbuf;
 
     fieldp = fieldbuf;
     for (size_t i=0; i<parmcount; ++i) {
@@ -939,12 +939,12 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     }
     DS_DASSERT(fieldp - fieldbuf < 1024);
     *(fieldp - 1) = ')';    // Get rid of the last comma
-    queryStr += "\n    VALUES (";
-    queryStr += fieldbuf;
-    queryStr += "\n    RETURNING idx";
+    queryStr << "\n    VALUES (";
+    queryStr << fieldbuf;
+    queryStr << "\n    RETURNING idx";
 
     check_postgres();
-    PGresult* result = PQexecParams(s_postgres, queryStr.c_str(),
+    PGresult* result = PQexecParams(s_postgres, queryStr.to_string().c_str(),
                                     parmcount, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
@@ -1058,20 +1058,21 @@ bool v_update_node(const DS::Vault::Node& node)
     if (node.has_Text_2())
         SET_FIELD(Text_2, node.m_Text_2);
     if (node.has_Blob_1())
-        SET_FIELD(Blob_1, DS::Base64Encode(node.m_Blob_1.buffer(), node.m_Blob_1.size()));
+        SET_FIELD(Blob_1, ST::base64_encode(node.m_Blob_1.buffer(), node.m_Blob_1.size()));
     if (node.has_Blob_2())
-        SET_FIELD(Blob_2, DS::Base64Encode(node.m_Blob_2.buffer(), node.m_Blob_2.size()));
+        SET_FIELD(Blob_2, ST::base64_encode(node.m_Blob_2.buffer(), node.m_Blob_2.size()));
     #undef SET_FIELD
 
     DS_DASSERT(fieldp - fieldbuf < 1024);
     *(fieldp - 1) = 0;  // Get rid of the last comma
-    DS::String queryStr = "UPDATE vault.\"Nodes\"\n    SET ";
-    queryStr += fieldbuf;
-    queryStr += "\n    WHERE idx=$1";
+    ST::string_stream queryStr;
+    queryStr << "UPDATE vault.\"Nodes\"\n    SET ";
+    queryStr << fieldbuf;
+    queryStr << "\n    WHERE idx=$1";
     parms.set(0, node.m_NodeIdx);
 
     check_postgres();
-    PGresult* result = PQexecParams(s_postgres, queryStr.c_str(),
+    PGresult* result = PQexecParams(s_postgres, queryStr.to_string().c_str(),
                                     parmcount, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
@@ -1325,20 +1326,21 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     if (nodeTemplate.has_Text_2())
         SET_FIELD(Text_2, nodeTemplate.m_Text_2);
     if (nodeTemplate.has_Blob_1())
-        SET_FIELD(Blob_1, DS::Base64Encode(nodeTemplate.m_Blob_1.buffer(), nodeTemplate.m_Blob_1.size()));
+        SET_FIELD(Blob_1, ST::base64_encode(nodeTemplate.m_Blob_1.buffer(), nodeTemplate.m_Blob_1.size()));
     if (nodeTemplate.has_Blob_2())
-        SET_FIELD(Blob_2, DS::Base64Encode(nodeTemplate.m_Blob_2.buffer(), nodeTemplate.m_Blob_2.size()));
+        SET_FIELD(Blob_2, ST::base64_encode(nodeTemplate.m_Blob_2.buffer(), nodeTemplate.m_Blob_2.size()));
     #undef SET_FIELD
     #undef SET_FIELD_I
 
     DS_DASSERT(parmcount > 0);
     DS_DASSERT(fieldp - fieldbuf < 1024);
     *(fieldp - 5) = 0;  // Get rid of the last ' AND '
-    DS::String queryStr = "SELECT idx FROM vault.\"Nodes\"\n    WHERE ";
-    queryStr += fieldbuf;
+    ST::string_stream queryStr;
+    queryStr << "SELECT idx FROM vault.\"Nodes\"\n    WHERE ";
+    queryStr << fieldbuf;
 
     check_postgres();
-    PGresult* result = PQexecParams(s_postgres, queryStr.c_str(),
+    PGresult* result = PQexecParams(s_postgres, queryStr.to_string().c_str(),
                                     parmcount, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
@@ -1432,7 +1434,7 @@ uint32_t v_count_age_population(const char* uuid)
     return population;
 }
 
-bool v_find_public_ages(const DS::String& ageFilename, std::vector<Auth_PubAgeRequest::NetAgeInfo>& ages)
+bool v_find_public_ages(const ST::string& ageFilename, std::vector<Auth_PubAgeRequest::NetAgeInfo>& ages)
 {
     PostgresStrings<2> parms;
     parms.set(0, DS::Vault::e_NodeAgeInfo);

@@ -63,7 +63,7 @@ namespace MOUL
 
         uint8_t m_command;
         uint32_t m_flags, m_playerId;
-        DS::String m_user, m_string;
+        ST::string m_user, m_string;
         float m_delay;
         int32_t m_value;
 

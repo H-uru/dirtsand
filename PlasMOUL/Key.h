@@ -83,7 +83,7 @@ namespace MOUL
             : m_loadMask(0xFF), m_type(0x8000), m_id(), m_cloneId(),
               m_clonePlayerId() { }
 
-        Uoid(const Location& loc, uint16_t type, const DS::String& name,
+        Uoid(const Location& loc, uint16_t type, const ST::string& name,
              uint32_t id = 0, uint8_t loadMask = 0xFF)
             : m_location(loc), m_loadMask(loadMask), m_type(type),
               m_name(name), m_id(id), m_cloneId(), m_clonePlayerId() { }
@@ -106,7 +106,7 @@ namespace MOUL
         Location m_location;
         uint8_t m_loadMask;
         uint16_t m_type;
-        DS::String m_name;
+        ST::string m_name;
         uint32_t m_id, m_cloneId, m_clonePlayerId;
     };
 
@@ -165,7 +165,7 @@ namespace MOUL
         Location location() const { return m_data ? m_data->m_uoid.m_location : Location::Invalid; }
         uint8_t loadMask() const { return m_data ? m_data->m_uoid.m_loadMask : 0xFF; }
         uint16_t type() const { return m_data ? m_data->m_uoid.m_type : 0x8000; }
-        DS::String name() const { return m_data ? m_data->m_uoid.m_name : DS::String(); }
+        ST::string name() const { return m_data ? m_data->m_uoid.m_name : ST::null; }
         uint32_t id() const { return m_data ? m_data->m_uoid.m_id : 0; }
         uint32_t cloneId() const { return m_data ? m_data->m_uoid.m_cloneId : 0; }
         uint32_t clonePlayerId() const { return m_data ? m_data->m_uoid.m_clonePlayerId : 0; }
@@ -183,11 +183,11 @@ namespace MOUL
         }* m_data;
     };
 
-    struct UoidHash : public DS::StringHash
+    struct UoidHash : public ST::hash
     {
         size_t operator()(const Uoid& value) const
         {
-            return DS::StringHash::operator()(value.m_name)
+            return ST::hash::operator()(value.m_name)
                    ^ (value.m_location.m_sequence + (value.m_type << 8));
         }
     };

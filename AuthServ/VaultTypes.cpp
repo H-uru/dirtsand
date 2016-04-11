@@ -18,21 +18,22 @@
 #include "VaultTypes.h"
 #include "errors.h"
 
-#define READ_VAULT_STRING(string) \
+#define READ_VAULT_STRING(value) \
     { \
         uint32_t length = stream->read<uint32_t>(); \
         DS_PASSERT((length % sizeof(char16_t)) == 0); \
-        char16_t* buffer = new char16_t[length / sizeof(char16_t)]; \
+        ST::utf16_buffer storage; \
+        char16_t* buffer = storage.create_writable_buffer(length / sizeof(char16_t)); \
         stream->readBytes(buffer, length); \
-        string = DS::String::FromUtf16(buffer, (length / sizeof(char16_t))-1); \
-        delete[] buffer; \
+        value = ST::string::from_utf16(buffer, (length / sizeof(char16_t))-1, \
+                                       ST::substitute_invalid); \
     }
 
-#define WRITE_VAULT_STRING(string) \
+#define WRITE_VAULT_STRING(value) \
     { \
-        DS::StringBuffer<char16_t> wbuf = string.toUtf16(); \
-        stream->write<uint32_t>((wbuf.length() + 1) * sizeof(char16_t)); \
-        stream->writeBytes(wbuf.data(), wbuf.length() * sizeof(char16_t)); \
+        ST::utf16_buffer wbuf = value.to_utf16(); \
+        stream->write<uint32_t>((wbuf.size() + 1) * sizeof(char16_t)); \
+        stream->writeBytes(wbuf.data(), wbuf.size() * sizeof(char16_t)); \
         stream->write<char16_t>(0); \
     }
 

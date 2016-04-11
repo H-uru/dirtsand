@@ -53,14 +53,14 @@ namespace MOUL
             bool has_##name() const { return (m_flags & e_Has##name) != 0; }
         CLI_FIELD(DS::Uuid, AcctUuid)
         CLI_FIELD(uint32_t, PlayerId)
-        CLI_FIELD(DS::String, PlayerName)
+        CLI_FIELD(ST::string, PlayerName)
         CLI_FIELD(uint8_t, CCRLevel)
         CLI_FIELD(bool, ProtectedLogin)
         CLI_FIELD(uint8_t, BuildType)
         CLI_FIELD(uint32_t, SrcAddr)
         CLI_FIELD(uint16_t, SrcPort)
         CLI_FIELD(uint16_t, Reserved)
-        CLI_FIELD(DS::String, ClientKey)
+        CLI_FIELD(ST::string, ClientKey)
         #undef CLI_FIELD
 
         void read(DS::Stream* stream);

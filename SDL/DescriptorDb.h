@@ -21,6 +21,7 @@
 #include "StateInfo.h"
 #include <functional>
 #include <vector>
+#include <unordered_map>
 
 namespace SDL
 {
@@ -41,7 +42,7 @@ namespace SDL
             DS::ColorRgba8 m_color8;
         };
         DS::UnifiedTime m_time;
-        DS::String m_string;
+        ST::string m_string;
 
         VarDefault() : m_valid(false) { }
     };
@@ -49,30 +50,30 @@ namespace SDL
     struct VarDescriptor
     {
         VarType m_type;
-        DS::String m_typeName;
-        DS::String m_name;
+        ST::string m_typeName;
+        ST::string m_name;
         int m_size;
         VarDefault m_default;
-        DS::String m_defaultOption, m_displayOption;
+        ST::string m_defaultOption, m_displayOption;
     };
 
     struct StateDescriptor
     {
-        DS::String m_name;
+        ST::string m_name;
         int m_version;
         std::vector<VarDescriptor> m_vars;
-        typedef std::unordered_map<DS::String, int, DS::StringHash> varmap_t;
+        typedef std::unordered_map<ST::string, int, ST::hash> varmap_t;
         varmap_t m_varmap;
     };
 
     class DescriptorDb
     {
     public:
-        typedef std::function<bool(const DS::String&, StateDescriptor*)> descfunc_t;
+        typedef std::function<bool(const ST::string&, StateDescriptor*)> descfunc_t;
 
         static bool LoadDescriptors(const char* sdlpath);
-        static StateDescriptor* FindDescriptor(DS::String name, int version);
-        static StateDescriptor* FindLatestDescriptor(DS::String name);
+        static StateDescriptor* FindDescriptor(const ST::string& name, int version);
+        static StateDescriptor* FindLatestDescriptor(const ST::string& name);
         static bool ForLatestDescriptors(descfunc_t functor);
 
     private:
@@ -81,7 +82,7 @@ namespace SDL
         ~DescriptorDb() = delete;
 
         typedef std::unordered_map<int, StateDescriptor> versionmap_t;
-        typedef std::unordered_map<DS::String, versionmap_t, DS::StringHash> descmap_t;
+        typedef std::unordered_map<ST::string, versionmap_t, ST::hash> descmap_t;
         static descmap_t s_descriptors;
     };
 }

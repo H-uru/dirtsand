@@ -30,11 +30,11 @@ namespace DS
 
     void AuthServer_DisplayClients();
 
-    bool AuthServer_AddAcct(const DS::String&, const DS::String&);
-    uint32_t AuthServer_AcctFlags(const DS::String& acctName, uint32_t flags);
+    bool AuthServer_AddAcct(const ST::string&, const ST::string&);
+    uint32_t AuthServer_AcctFlags(const ST::string& acctName, uint32_t flags);
     bool AuthServer_AddAllPlayersFolder(uint32_t playerId);
-    bool AuthServer_ChangeGlobalSDL(const DS::String& ageName, const DS::String& var,
-                                    const DS::String& value);
+    bool AuthServer_ChangeGlobalSDL(const ST::string& ageName, const ST::string& var,
+                                    const ST::string& value);
 
     class DbException : public std::exception
     {

@@ -17,10 +17,12 @@
 
 #include "AuthServer_Private.h"
 #include "GameServ/GameServer.h"
-#include "encodings.h"
+#include "SDL/DescriptorDb.h"
 #include "settings.h"
 #include "errors.h"
-#include <SDL/DescriptorDb.h>
+#include <string_theory/codecs>
+#include <string_theory/format>
+#include <unordered_map>
 #include <chrono>
 
 std::thread s_authDaemonThread;
@@ -28,7 +30,7 @@ DS::MsgChannel s_authChannel;
 PGconn* s_postgres;
 bool s_restrictLogins = false;
 extern uint32_t s_allPlayers;
-std::unordered_map<DS::String, SDL::State, DS::StringHash> s_globalStates;
+std::unordered_map<ST::string, SDL::State, ST::hash> s_globalStates;
 
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
@@ -61,8 +63,8 @@ void dm_auth_addacct(Auth_AddAcct* msg)
     if (PQntuples(result) == 0) {
         PQclear(result);
 
-        DS::StringBuffer<char> pwBuf = msg->m_acctInfo.m_password.toUtf8();
-        DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.length());
+        ST::char_buffer pwBuf = msg->m_acctInfo.m_password.to_utf8();
+        DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.size());
         PostgresStrings<3> iparms;
         iparms.set(0, gen_uuid().toString());
         iparms.set(1, pwHash.toString());
@@ -203,7 +205,7 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
 
     // Get list of players
-    DS::String uuidString = client->m_acctUuid.toString();
+    ST::string uuidString = client->m_acctUuid.toString();
     parm.m_values[0] = uuidString.c_str();
     result = PQexecParams(s_postgres,
             "SELECT \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\""
@@ -632,7 +634,7 @@ void dm_auth_findAge(Auth_GameAge* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    DS::String ageDesc;
+    ST::string ageDesc;
     if (PQntuples(result) == 0) {
         PQclear(result);
         parms.set(0, msg->m_instanceId.toString());
@@ -1128,22 +1130,22 @@ void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
             var->data()->m_flags |= SDL::Variable::e_HasTimeStamp | SDL::Variable::e_XIsDirty;
             var->data()->m_timestamp.setNow();
 
-            if (msg->m_value.isEmpty()) {
+            if (msg->m_value.is_empty()) {
                 var->setDefault();
             } else {
                 var->data()->m_flags &= ~SDL::Variable::e_SameAsDefault;
                 switch (var->descriptor()->m_type) {
                 case SDL::e_VarBool:
-                    var->data()->m_bool[0] = msg->m_value.toBool();
+                    var->data()->m_bool[0] = msg->m_value.to_bool();
                     break;
                 case SDL::e_VarByte:
-                    var->data()->m_byte[0] = static_cast<int8_t>(msg->m_value.toUint());
+                    var->data()->m_byte[0] = static_cast<int8_t>(msg->m_value.to_uint());
                     break;
                 case SDL::e_VarInt:
-                    var->data()->m_int[0] = msg->m_value.toInt();
+                    var->data()->m_int[0] = msg->m_value.to_int();
                     break;
                 case SDL::e_VarShort:
-                    var->data()->m_short[0] = static_cast<int16_t>(msg->m_value.toInt());
+                    var->data()->m_short[0] = static_cast<int16_t>(msg->m_value.to_int());
                     break;
                 case SDL::e_VarString:
                     var->data()->m_string[0] = msg->m_value;
@@ -1158,7 +1160,7 @@ void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
             DS::Blob blob = state.toBlob();
             PostgresStrings<2> parms;
             parms.set(0, msg->m_ageFilename);
-            parms.set(1, DS::Base64Encode(blob.buffer(), blob.size()));
+            parms.set(1, ST::base64_encode(blob.buffer(), blob.size()));
             PGresult* result = PQexecParams(s_postgres, "UPDATE vault.\"GlobalStates\""
                                             "    SET \"SdlBlob\" = $2"
                                             "    WHERE \"Descriptor\" = $1",
@@ -1182,8 +1184,8 @@ void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
 
 void dm_authDaemon()
 {
-    s_postgres = PQconnectdb(DS::String::Format(
-                    "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
+    s_postgres = PQconnectdb(ST::format(
+                    "host='{}' port='{}' user='{}' password='{}' dbname='{}'",
                     DS::Settings::DbHostname(), DS::Settings::DbPort(),
                     DS::Settings::DbUsername(), DS::Settings::DbPassword(),
                     DS::Settings::DbDbaseName()).c_str());

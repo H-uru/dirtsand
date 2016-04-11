@@ -18,6 +18,7 @@
 #ifndef _DS_FILEMANIFEST_H
 #define _DS_FILEMANIFEST_H
 
+#include "config.h"
 #include "streams.h"
 #include <list>
 
@@ -25,7 +26,7 @@ namespace DS
 {
     struct FileInfo
     {
-        String m_filename, m_downloadName;
+        ST::string m_filename, m_downloadName;
         char16_t m_fileHash[32], m_downloadHash[32];
         uint32_t m_fileSize, m_downloadSize;
         uint32_t m_flags;

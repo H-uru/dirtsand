@@ -48,9 +48,9 @@ namespace MOUL
         void set(float f) { m_float = f; m_dataType = e_Float; }
         void set(double d) { m_double = d; m_dataType = e_Double; }
         void set(bool b) { m_bool = b; m_dataType = e_Bool; }
-        void set(const DS::String& s) { m_string = s; m_dataType = e_String; }
+        void set(const ST::string& s) { m_string = s; m_dataType = e_String; }
         void set(char c) { m_char = c; m_dataType = e_Char; }
-        void setAny(const DS::String& s) { m_string = s; m_dataType = e_Any; }
+        void setAny(const ST::string& s) { m_string = s; m_dataType = e_Any; }
         void reset() { m_dataType = e_None; }
 
         int32_t toInt() const;
@@ -58,14 +58,14 @@ namespace MOUL
         float toFloat() const;
         double toDouble() const;
         bool toBool() const;
-        DS::String toString() const;
+        ST::string toString() const;
         char toChar() const;
 
     protected:
         GenericValue(uint16_t type) : Creatable(type), m_dataType(e_None) { }
 
         uint8_t m_dataType;
-        DS::String m_string;
+        ST::string m_string;
 
         union
         {

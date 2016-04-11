@@ -123,8 +123,8 @@ enum AgeFlags
     e_AgePublic  = (1<<0),
 };
 
-bool v_check_global_sdl(const DS::String& name, SDL::StateDescriptor* desc);
-SDL::State v_find_global_sdl(const DS::String& ageName);
+bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc);
+SDL::State v_find_global_sdl(const ST::string& ageName);
 
 std::tuple<uint32_t, uint32_t>
 v_create_age(AuthServer_AgeInfo age, uint32_t flags);
@@ -143,4 +143,4 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
 DS::Vault::NodeRef v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t senderId);
 
 uint32_t v_count_age_owners(uint32_t ageInfoId);
-bool v_find_public_ages(const DS::String& ageFilename, std::vector<Auth_PubAgeRequest::NetAgeInfo>& ages);
+bool v_find_public_ages(const ST::string& ageFilename, std::vector<Auth_PubAgeRequest::NetAgeInfo>& ages);

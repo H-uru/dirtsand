@@ -74,9 +74,9 @@ namespace DS
         return size;
     }
 
-    DS::String CryptRecvString(const SocketHandle sock, CryptState crypt);
+    ST::string CryptRecvString(const SocketHandle sock, CryptState crypt);
 
-    ShaHash BuggyHashPassword(const String& username, const String& password);
+    ShaHash BuggyHashPassword(const ST::string& username, const ST::string& password);
     ShaHash BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChallenge,
                            uint32_t clientChallenge);
 }

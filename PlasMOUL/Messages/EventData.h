@@ -102,7 +102,7 @@ namespace MOUL
             : EventData(e_EvtVariable), m_dataType(e_DataNone), m_number() { }
 
         int m_dataType;
-        DS::String m_name;
+        ST::string m_name;
         union {
             float f;
             uint32_t i;

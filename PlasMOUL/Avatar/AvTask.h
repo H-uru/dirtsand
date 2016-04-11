@@ -36,7 +36,7 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     public:
-        DS::String m_animName;
+        ST::string m_animName;
         float m_initialBlend, m_targetBlend;
         float m_fadeSpeed, m_setTime;
         bool m_start, m_loop, m_attach;
@@ -63,7 +63,7 @@ namespace MOUL
         virtual void write(DS::Stream* stream) const;
 
     public:
-        DS::String m_animName, m_markerName;
+        ST::string m_animName, m_markerName;
 
     protected:
         AvOneShotLinkTask(uint16_t type) : AvOneShotTask(type) { }
