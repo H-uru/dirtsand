@@ -38,6 +38,12 @@ namespace MOUL
 
     class Creatable
     {
+        static void safe_unref(Creatable* pcre)
+        {
+            if (pcre && --pcre->m_refs)
+                delete pcre;
+        }
+
     public:
         template <class cre_t> cre_t* Cast()
         { return dynamic_cast<cre_t*>(this); }
@@ -48,12 +54,7 @@ namespace MOUL
         uint16_t type() const { return m_type; }
 
         void ref() { ++m_refs; }
-
-        void unref()
-        {
-            if (this && --m_refs == 0)
-                delete this;
-        }
+        void unref() { safe_unref(this); }
 
         virtual void read(DS::Stream* stream) { }
         virtual void write(DS::Stream* stream) const { }
