@@ -27,18 +27,23 @@ struct PostgresStrings
     void set(size_t idx, const ST::string& str)
     {
         m_strings[idx] = str;
-        this->m_values[idx] = str.c_str();
+        _cache(idx);
     }
 
     void set(size_t idx, uint32_t value)
     {
         m_strings[idx] = ST::string::from_uint(value);
-        this->m_values[idx] = m_strings[idx].c_str();
+        _cache(idx);
     }
 
     void set(size_t idx, int value)
     {
         m_strings[idx] = ST::string::from_int(value);
-        this->m_values[idx] = m_strings[idx].c_str();
+        _cache(idx);
+    }
+
+    void _cache(size_t idx)
+    {
+        m_values[idx] = m_strings[idx].c_str();
     }
 };
