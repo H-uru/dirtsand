@@ -294,9 +294,10 @@ Game_AgeInfo age_parse(FILE* stream)
 
     Game_AgeInfo age;
     while (fgets(lnbuffer, 4096, stream)) {
-        std::vector<ST::string> line = ST::string(lnbuffer).before_first('#').trim().split('=');
-        if (line.size() == 0)
+        ST::string trimmed = ST::string(lnbuffer).before_first('#').trim();
+        if (trimmed.is_empty())
             continue;
+        std::vector<ST::string> line = trimmed.split('=');
         if (line.size() != 2) {
             fprintf(stderr, "[Game] Invalid AGE line: %s", lnbuffer);
             continue;
