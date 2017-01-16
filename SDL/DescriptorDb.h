@@ -82,7 +82,7 @@ namespace SDL
         ~DescriptorDb() = delete;
 
         typedef std::unordered_map<int, StateDescriptor> versionmap_t;
-        typedef std::unordered_map<ST::string, versionmap_t, ST::hash> descmap_t;
+        typedef std::unordered_map<ST::string, versionmap_t, ST::hash_i, ST::equal_i> descmap_t;
         static descmap_t s_descriptors;
     };
 }
