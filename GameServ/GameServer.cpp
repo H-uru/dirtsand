@@ -18,6 +18,7 @@
 #include "GameServer_Private.h"
 #include "settings.h"
 #include "errors.h"
+#include <string_theory/format>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <chrono>
@@ -293,23 +294,24 @@ Game_AgeInfo age_parse(FILE* stream)
 
     Game_AgeInfo age;
     while (fgets(lnbuffer, 4096, stream)) {
-        std::vector<DS::String> line = DS::String(lnbuffer).strip('#').split('=');
-        if (line.size() == 0)
+        ST::string trimmed = ST::string(lnbuffer).before_first('#').trim();
+        if (trimmed.is_empty())
             continue;
+        std::vector<ST::string> line = trimmed.split('=');
         if (line.size() != 2) {
             fprintf(stderr, "[Game] Invalid AGE line: %s", lnbuffer);
             continue;
         }
         if (line[0] == "StartDateTime") {
-            age.m_startTime = line[1].toUint(10);
+            age.m_startTime = line[1].to_uint(10);
         } else if (line[0] == "DayLength") {
-            age.m_dayLength = line[1].toDouble();
+            age.m_dayLength = line[1].to_double();
         } else if (line[0] == "MaxCapacity") {
-            age.m_maxCapacity = line[1].toUint(10);
+            age.m_maxCapacity = line[1].to_uint(10);
         } else if (line[0] == "LingerTime") {
-            age.m_lingerTime = line[1].toUint(10);
+            age.m_lingerTime = line[1].to_uint(10);
         } else if (line[0] == "SequencePrefix") {
-            age.m_seqPrefix = line[1].toInt(10);
+            age.m_seqPrefix = line[1].to_int(10);
         } else if (line[0] == "ReleaseVersion" || line[0] == "Page") {
             // Ignored
         } else {
@@ -330,7 +332,7 @@ void DS::GameServer_Init()
         free(dirls);
     } else {
         for (int i=0; i<count; ++i) {
-            DS::String filename = DS::String::Format("%s/%s", DS::Settings::AgePath(), dirls[i]->d_name);
+            ST::string filename = ST::format("{}/{}", DS::Settings::AgePath(), dirls[i]->d_name);
             std::unique_ptr<FILE, std::function<int (FILE*)>> ageFile(fopen(filename.c_str(), "r"), &fclose);
             if (ageFile.get()) {
                 char magic[12];
@@ -342,8 +344,8 @@ void DS::GameServer_Init()
                 }
                 fseek(ageFile.get(), 0, SEEK_SET);
 
-                DS::String ageName = dirls[i]->d_name;
-                ageName = ageName.left(ageName.find(".age"));
+                ST::string ageName = dirls[i]->d_name;
+                ageName = ageName.before_first(".age");
                 Game_AgeInfo age = age_parse(ageFile.get());
                 if (age.m_seqPrefix >= 0)
                     s_ages[ageName] = age;
@@ -387,7 +389,7 @@ void DS::GameServer_Shutdown()
         fputs("[Game] Servers didn't die after 5 seconds!\n", stderr);
 }
 
-void DS::GameServer_UpdateGlobalSDL(const DS::String& age)
+void DS::GameServer_UpdateGlobalSDL(const ST::string& age)
 {
     std::lock_guard<std::mutex> lock(s_gameHostMutex);
     for (auto it = s_gameHosts.begin(); it != s_gameHosts.end(); ++it) {

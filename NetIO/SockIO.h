@@ -34,7 +34,7 @@ namespace DS
     void CloseSock(SocketHandle sock);
     void FreeSock(SocketHandle sock);
 
-    String SockIpAddress(const SocketHandle sock);
+    ST::string SockIpAddress(const SocketHandle sock);
     uint32_t GetAddress4(const char* lookup);
     int SockFd(const SocketHandle sock);
 

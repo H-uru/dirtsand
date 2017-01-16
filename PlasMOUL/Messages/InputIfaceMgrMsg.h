@@ -29,7 +29,7 @@ namespace MOUL
 
         uint8_t m_command;
         uint32_t m_pageId;
-        DS::String m_ageName, m_ageFilename, m_spawnPoint;
+        ST::string m_ageName, m_ageFilename, m_spawnPoint;
         Key m_avatar;
 
         virtual void read(DS::Stream* stream);

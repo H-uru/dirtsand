@@ -36,11 +36,11 @@ DS::NetResultCode DS::AuthManifest::loadManifest(const char* filename)
     long mfsline = 0;
     while (fgets(lnbuf, 4096, mfs)) {
         ++mfsline;
-        String line = String(lnbuf).strip('#');
-        if (line.isEmpty())
+        ST::string line = ST::string(lnbuf).before_first('#').trim();
+        if (line.is_empty())
             continue;
 
-        std::vector<String> parts = line.split(',');
+        std::vector<ST::string> parts = line.split(',');
         if (parts.size() != 2) {
             fprintf(stderr, "Warning:  Ignoring invalid manifest entry on line %ld of %s:\n",
                     mfsline, filename);
@@ -49,7 +49,7 @@ DS::NetResultCode DS::AuthManifest::loadManifest(const char* filename)
 
         AuthFileInfo* info = new AuthFileInfo;
         info->m_filename = parts[0];
-        info->m_fileSize = parts[1].toUint();
+        info->m_fileSize = parts[1].to_uint();
         m_files.push_back(info);
     }
 

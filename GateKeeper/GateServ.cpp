@@ -130,9 +130,9 @@ void cb_fileServIpAddress(GateKeeper_Private& client)
     DS::CryptRecvValue<uint8_t>(client.m_sock, client.m_crypt);
 
     // Address
-    DS::StringBuffer<char16_t> address = DS::Settings::FileServerAddress();
-    client.m_buffer.write<uint16_t>(address.length());
-    client.m_buffer.writeBytes(address.data(), address.length() * sizeof(char16_t));
+    ST::utf16_buffer address = DS::Settings::FileServerAddress();
+    client.m_buffer.write<uint16_t>(address.size());
+    client.m_buffer.writeBytes(address.data(), address.size() * sizeof(char16_t));
 
     SEND_REPLY();
 }
@@ -145,9 +145,9 @@ void cb_authServIpAddress(GateKeeper_Private& client)
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
     // Address
-    DS::StringBuffer<char16_t> address = DS::Settings::AuthServerAddress();
-    client.m_buffer.write<uint16_t>(address.length());
-    client.m_buffer.writeBytes(address.data(), address.length() * sizeof(char16_t));
+    ST::utf16_buffer address = DS::Settings::AuthServerAddress();
+    client.m_buffer.write<uint16_t>(address.size());
+    client.m_buffer.writeBytes(address.data(), address.size() * sizeof(char16_t));
 
     SEND_REPLY();
 }

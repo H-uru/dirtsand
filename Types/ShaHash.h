@@ -42,7 +42,7 @@ namespace DS
         void write(Stream* stream) const;
         void swapBytes();
 
-        String toString() const;
+        ST::string toString() const;
 
         static ShaHash Sha0(const void* data, size_t size);
         static ShaHash Sha1(const void* data, size_t size);

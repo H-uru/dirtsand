@@ -23,10 +23,10 @@
 #include "AuthServ/AuthServer.h"
 #include "GameServ/GameServer.h"
 #include "SDL/DescriptorDb.h"
-#include "strings.h"
 #include "errors.h"
 #include "settings.h"
-#include "encodings.h"
+#include <string_theory/codecs>
+#include <string_theory/stdio>
 #include <readline.h>
 #include <history.h>
 #include <signal.h>
@@ -181,13 +181,13 @@ int main(int argc, char* argv[])
             break;
         }
 
-        std::vector<DS::String> args = DS::String(cmdbuf).strip('#').split();
+        std::vector<ST::string> args = ST::string(cmdbuf).before_first('#').trim().tokenize();
         if (args.size() == 0) {
             free(cmdbuf);
             continue;
         }
         add_history(cmdbuf);
-        DS::String arg_str = DS::String(cmdbuf + args.front().length() + 1);
+        ST::string arg_str = ST::string(cmdbuf + args.front().size() + 1);
         free(cmdbuf);
 
         if (args[0] == "quit") {
@@ -225,38 +225,38 @@ int main(int argc, char* argv[])
 
                 fputs("\n--------------------\n", stdout);
                 fputs("Server keys: (dirtsand.ini)\n", stdout);
-                printf("Key.Auth.N = %s\n", DS::Base64Encode(nbuffer[0], 64).c_str());
-                printf("Key.Auth.K = %s\n", DS::Base64Encode(kbuffer[0], 64).c_str());
-                printf("Key.Game.N = %s\n", DS::Base64Encode(nbuffer[1], 64).c_str());
-                printf("Key.Game.K = %s\n", DS::Base64Encode(kbuffer[1], 64).c_str());
-                printf("Key.Gate.N = %s\n", DS::Base64Encode(nbuffer[2], 64).c_str());
-                printf("Key.Gate.K = %s\n", DS::Base64Encode(kbuffer[2], 64).c_str());
+                ST::printf("Key.Auth.N = {}\n", ST::base64_encode(nbuffer[0], 64));
+                ST::printf("Key.Auth.K = {}\n", ST::base64_encode(kbuffer[0], 64));
+                ST::printf("Key.Game.N = {}\n", ST::base64_encode(nbuffer[1], 64));
+                ST::printf("Key.Game.K = {}\n", ST::base64_encode(kbuffer[1], 64));
+                ST::printf("Key.Gate.N = {}\n", ST::base64_encode(nbuffer[2], 64));
+                ST::printf("Key.Gate.K = {}\n", ST::base64_encode(kbuffer[2], 64));
 
                 fputs("--------------------\n", stdout);
                 fputs("Client keys: (server.ini)\n", stdout);
                 DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
-                printf("Server.Auth.N \"%s\"\n", DS::Base64Encode(nbuffer[0], 64).c_str());
-                printf("Server.Auth.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
+                ST::printf("Server.Auth.N \"{}\"\n", ST::base64_encode(nbuffer[0], 64));
+                ST::printf("Server.Auth.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
                 DS::CryptCalcX(xbuffer, nbuffer[1], kbuffer[1], CRYPT_BASE_GAME);
-                printf("Server.Game.N \"%s\"\n", DS::Base64Encode(nbuffer[1], 64).c_str());
-                printf("Server.Game.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
+                ST::printf("Server.Game.N \"{}\"\n", ST::base64_encode(nbuffer[1], 64));
+                ST::printf("Server.Game.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
                 DS::CryptCalcX(xbuffer, nbuffer[2], kbuffer[2], CRYPT_BASE_GATE);
-                printf("Server.Gate.N \"%s\"\n", DS::Base64Encode(nbuffer[2], 64).c_str());
-                printf("Server.Gate.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
+                ST::printf("Server.Gate.N \"{}\"\n", ST::base64_encode(nbuffer[2], 64));
+                ST::printf("Server.Gate.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
                 fputs("--------------------\n", stdout);
             } else if (args[1] == "show") {
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
                                DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
-                printf("Server.Auth.N \"%s\"\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyAuth_N), 64).c_str());
-                printf("Server.Auth.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
+                ST::printf("Server.Auth.N \"%s\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyAuth_N), 64));
+                ST::printf("Server.Auth.X \"%s\"\n", ST::base64_encode(xbuffer, 64));
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N),
                                DS::Settings::CryptKey(DS::e_KeyGame_K), CRYPT_BASE_GAME);
-                printf("Server.Game.N \"%s\"\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyGame_N), 64).c_str());
-                printf("Server.Game.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
+                ST::printf("Server.Game.N \"%s\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyGame_N), 64));
+                ST::printf("Server.Game.X \"%s\"\n", ST::base64_encode(xbuffer, 64));
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N),
                                DS::Settings::CryptKey(DS::e_KeyGate_K), CRYPT_BASE_GATE);
-                printf("Server.Gate.N \"%s\"\n", DS::Base64Encode(DS::Settings::CryptKey(DS::e_KeyGate_N), 64).c_str());
-                printf("Server.Gate.X \"%s\"\n", DS::Base64Encode(xbuffer, 64).c_str());
+                ST::printf("Server.Gate.N \"%s\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyGate_N), 64));
+                ST::printf("Server.Gate.X \"%s\"\n", ST::base64_encode(xbuffer, 64));
             } else {
                 fputs("Error: keygen parameter should be 'new' or 'show'\n", stderr);
                 continue;
@@ -300,14 +300,14 @@ int main(int argc, char* argv[])
                 else if (args[i] == "beta")
                     flags |= DS::e_AcctBetaTester;
                 else
-                    fprintf(stderr, "Warning: Unrecognized account flag \"%s\"\n", args[i].c_str());
+                    ST::printf(stderr, "Warning: Unrecognized account flag \"{}\"\n", args[i]);
             }
             flags = DS::AuthServer_AcctFlags(args[1], flags);
             if (flags == static_cast<uint32_t>(-1)) {
-                fprintf(stderr, "Error: Failed to set account flags for %s\n", args[1].c_str());
+                ST::printf(stderr, "Error: Failed to set account flags for {}\n", args[1]);
                 continue;
             }
-            fprintf(stdout, "%s:", args[1].c_str());
+            ST::printf("{}:", args[1]);
             if (flags & DS::e_AcctAdmin)
                 fputs(" [admin]", stdout);
             if (flags & DS::e_AcctBanned)
@@ -319,8 +319,7 @@ int main(int argc, char* argv[])
             fputs("\n", stdout);
         } else if (args[0] == "restrict") {
             bool result = DS::AuthServer_RestrictLogins();
-            const char* hint = (result ? "restricted" : "unrestricted");
-            fprintf(stdout, "Logins are %s\n", hint);
+            ST::printf("Logins are {}\n", result ? "restricted" : "unrestricted");
         } else if (args[0] == "welcome") {
             if (!DS::Settings::StatusEnabled())
                 fputs("Warning:  Status server disabled.  "
@@ -331,18 +330,18 @@ int main(int argc, char* argv[])
                 fputs("Usage: addallplayers [playerId]\n", stdout);
                 continue;
             }
-            if (!DS::AuthServer_AddAllPlayersFolder(args[1].toUint()))
-                fprintf(stderr, "Couldn't add the AllPlayers folder to %d", args[1].toUint());
+            if (!DS::AuthServer_AddAllPlayersFolder(args[1].to_uint()))
+                ST::printf(stderr, "Couldn't add the AllPlayers folder to {}", args[1].to_uint());
         } else if (args[0] == "globalsdl") {
             if (args.size() < 3) {
                 fputs("Usage: globalsdl <ageName> <variable> <value>\n", stdout);
                 continue;
             }
-            DS::String value;
+            ST::string value;
             if (args.size() > 3)
                 value = args[3];
             if (!DS::AuthServer_ChangeGlobalSDL(args[1], args[2], value))
-                fprintf(stderr, "Error: Failed to change variable '%s'\n", args[2].c_str());
+                ST::printf(stderr, "Error: Failed to change variable '{}'\n", args[2]);
         } else if (args[0] == "help") {
             fputs("DirtSand v1.0 Console supported commands:\n"
                   "    addacct <user> <password>\n"
@@ -359,7 +358,7 @@ int main(int argc, char* argv[])
                   "    welcome <message>\n",
                   stdout);
         } else {
-            fprintf(stderr, "Error: Unrecognized command: %s\n", args[0].c_str());
+            ST::printf(stderr, "Error: Unrecognized command: {}\n", args[0]);
         }
     }
 

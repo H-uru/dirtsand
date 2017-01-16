@@ -37,17 +37,17 @@ DS::NetResultCode DS::FileManifest::loadManifest(const char* filename)
     long mfsline = 0;
     while (fgets(lnbuf, 4096, mfs)) {
         ++mfsline;
-        String line = String(lnbuf).strip('#');
-        if (line.isEmpty())
+        ST::string line = ST::string(lnbuf).before_first('#').trim();
+        if (line.is_empty())
             continue;
 
-        std::vector<String> parts = line.split(',');
+        std::vector<ST::string> parts = line.split(',');
         if (parts.size() != 7) {
             fprintf(stderr, "Warning:  Ignoring invalid manifest entry on line %ld of %s:\n",
                     mfsline, filename);
             continue;
         }
-        if (parts[2].length() != 32 || parts[3].length() != 32) {
+        if (parts[2].size() != 32 || parts[3].size() != 32) {
             fprintf(stderr, "Warning:  Bad file hash on line %ld of %s:\n",
                     mfsline, filename);
             continue;
@@ -56,11 +56,11 @@ DS::NetResultCode DS::FileManifest::loadManifest(const char* filename)
         FileInfo* info = new FileInfo;
         info->m_filename = parts[0];
         info->m_downloadName = parts[1];
-        memcpy(info->m_fileHash, parts[2].toUtf16().data(), 32 * sizeof(char16_t));
-        memcpy(info->m_downloadHash, parts[3].toUtf16().data(), 32 * sizeof(char16_t));
-        info->m_fileSize = parts[4].toUint();
-        info->m_downloadSize = parts[5].toUint();
-        info->m_flags = parts[6].toUint();
+        memcpy(info->m_fileHash, parts[2].to_utf16().data(), 32 * sizeof(char16_t));
+        memcpy(info->m_downloadHash, parts[3].to_utf16().data(), 32 * sizeof(char16_t));
+        info->m_fileSize = parts[4].to_uint();
+        info->m_downloadSize = parts[5].to_uint();
+        info->m_flags = parts[6].to_uint();
         m_files.push_back(info);
     }
 

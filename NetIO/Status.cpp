@@ -19,10 +19,10 @@
 #include "SockIO.h"
 #include "errors.h"
 #include "settings.h"
-#include "strings.h"
 #include <cstdio>
 #include <list>
 #include <thread>
+#include <string_theory/format>
 
 static std::thread s_httpThread;
 static DS::SocketHandle s_listenSock;
@@ -45,16 +45,16 @@ void dm_htserv()
             if (!client)
                 continue;
 
-            std::list<DS::String> lines;
+            std::list<ST::string> lines;
             for ( ;; ) {
                 std::unique_ptr<char[]> buffer;
-                DS::String scratch;
+                ST::string scratch;
                 try {
                     size_t bufSize = DS::PeekSize(client);
-                    buffer.reset(new char[scratch.length() + bufSize + 1]);
-                    memcpy(buffer.get(), scratch.c_str(), scratch.length());
-                    DS::RecvBuffer(client, buffer.get() + scratch.length(), bufSize);
-                    buffer[scratch.length() + bufSize] = 0;
+                    buffer.reset(new char[scratch.size() + bufSize + 1]);
+                    memcpy(buffer.get(), scratch.c_str(), scratch.size());
+                    DS::RecvBuffer(client, buffer.get() + scratch.size(), bufSize);
+                    buffer[scratch.size() + bufSize] = 0;
                 } catch (const DS::SockHup&) {
                     lines.clear();
                     break;
@@ -69,9 +69,9 @@ void dm_htserv()
                             *cp++ = 0;
                         }
                         *cp++ = 0;
-                        lines.push_back(DS::String(sp));
+                        lines.push_back(ST::string::from_latin_1(sp));
                         sp = cp;
-                        scratch = "";
+                        scratch = ST::null;
                     } else {
                         ++cp;
                     }
@@ -79,7 +79,7 @@ void dm_htserv()
                 if (cp != sp)
                     scratch += sp;
 
-                if (lines.size() && lines.back().isEmpty()) {
+                if (lines.size() && lines.back().is_empty()) {
                     // Got the separator line
                     break;
                 }
@@ -91,7 +91,7 @@ void dm_htserv()
             }
 
             // First line contains the action
-            std::vector<DS::String> action = lines.front().split();
+            std::vector<ST::string> action = lines.front().tokenize();
             if (action.size() < 2) {
                 fprintf(stderr, "[Status] Incorrectly formatted HTTP request: %s\n",
                         lines.front().c_str());
@@ -108,7 +108,7 @@ void dm_htserv()
                 DS::FreeSock(client);
                 continue;
             }
-            DS::String path = action[1];
+            ST::string path = action[1];
             lines.pop_front();
 
             for (auto lniter = lines.begin(); lniter != lines.end(); ++lniter) {
@@ -116,10 +116,10 @@ void dm_htserv()
             }
 
             if (path == "/status") {
-                DS::String json = "{'online':true";
-                DS::String welcome = DS::Settings::WelcomeMsg();
-                welcome.replace("\"", "\\\"");
-                json += DS::String::Format(",'welcome':\"%s\"", welcome.c_str());
+                ST::string json = ST_LITERAL("{'online':true");
+                ST::string welcome = DS::Settings::WelcomeMsg();
+                welcome = welcome.replace("\"", "\\\"");
+                json += ST::format(",'welcome':\"%s\"", welcome);
                 json += "}\r\n";
                 // TODO: Add more status fields (players/ages, etc)
 
@@ -127,38 +127,38 @@ void dm_htserv()
                 SEND_RAW(client, "Server: Dirtsand\r\n");
                 SEND_RAW(client, "Connection: close\r\n");
                 SEND_RAW(client, "Accept-Ranges: bytes\r\n");
-                DS::String lengthParam = DS::String::Format("Content-Length: %u\r\n", json.length());
-                DS::SendBuffer(client, lengthParam.c_str(), lengthParam.length());
+                ST::string lengthParam = ST::format("Content-Length: {}\r\n", json.size());
+                DS::SendBuffer(client, lengthParam.c_str(), lengthParam.size());
                 SEND_RAW(client, "Content-Type: application/json\r\n");
                 SEND_RAW(client, "\r\n");
-                DS::SendBuffer(client, json.c_str(), json.length());
+                DS::SendBuffer(client, json.c_str(), json.size());
                 DS::FreeSock(client);
             } else if (path == "/welcome") {
-                DS::String welcome = DS::Settings::WelcomeMsg();
-                welcome.replace("\\n", "\r\n");
+                ST::string welcome = DS::Settings::WelcomeMsg();
+                welcome = welcome.replace("\\n", "\r\n");
 
                 SEND_RAW(client, "HTTP/1.1 200 OK\r\n");
                 SEND_RAW(client, "Server: Dirtsand\r\n");
                 SEND_RAW(client, "Connection: close\r\n");
                 SEND_RAW(client, "Accept-Ranges: bytes\r\n");
-                DS::String lengthParam = DS::String::Format("Content-Length: %u\r\n", welcome.length());
-                DS::SendBuffer(client, lengthParam.c_str(), lengthParam.length());
+                ST::string lengthParam = ST::format("Content-Length: {}\r\n", welcome.size());
+                DS::SendBuffer(client, lengthParam.c_str(), lengthParam.size());
                 SEND_RAW(client, "Content-Type: text/plain\r\n");
                 SEND_RAW(client, "\r\n");
-                DS::SendBuffer(client, welcome.c_str(), welcome.length());
+                DS::SendBuffer(client, welcome.c_str(), welcome.size());
                 DS::FreeSock(client);
             } else {
-                DS::String content = DS::String::Format("No page found at %s\r\n", path.c_str());
+                ST::string content = ST::format("No page found at {}\r\n", path);
 
                 SEND_RAW(client, "HTTP/1.1 404 NOT FOUND\r\n");
                 SEND_RAW(client, "Server: Dirtsand\r\n");
                 SEND_RAW(client, "Connection: close\r\n");
                 SEND_RAW(client, "Accept-Ranges: bytes\r\n");
-                DS::String lengthParam = DS::String::Format("Content-Length: %u\r\n", content.length());
-                DS::SendBuffer(client, lengthParam.c_str(), lengthParam.length());
+                ST::string lengthParam = ST::format("Content-Length: {}\r\n", content.size());
+                DS::SendBuffer(client, lengthParam.c_str(), lengthParam.size());
                 SEND_RAW(client, "Content-Type: text/plain\r\n");
                 SEND_RAW(client, "\r\n");
-                DS::SendBuffer(client, content.c_str(), content.length());
+                DS::SendBuffer(client, content.c_str(), content.size());
                 DS::FreeSock(client);
             }
         }

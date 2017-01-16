@@ -16,7 +16,9 @@
  ******************************************************************************/
 
 #include "ShaHash.h"
+#include <string_theory/format>
 #include <openssl/sha.h>
+#include <cstdlib>
 
 /* Cyan makes their SHA hashes 5 LE dwords instead of 20 bytes, making our
  * lives more difficult and annoying.
@@ -62,12 +64,12 @@ void DS::ShaHash::swapBytes()
     m_data[4] = SWAP_BYTES(m_data[4]);
 }
 
-DS::String DS::ShaHash::toString() const
+ST::string DS::ShaHash::toString() const
 {
-    return String::Format("%08x%08x%08x%08x%08x",
-                          SWAP_BYTES(m_data[0]), SWAP_BYTES(m_data[1]),
-                          SWAP_BYTES(m_data[2]), SWAP_BYTES(m_data[3]),
-                          SWAP_BYTES(m_data[4]));
+    return ST::format("{08x}{08x}{08x}{08x}{08x}",
+                      SWAP_BYTES(m_data[0]), SWAP_BYTES(m_data[1]),
+                      SWAP_BYTES(m_data[2]), SWAP_BYTES(m_data[3]),
+                      SWAP_BYTES(m_data[4]));
 }
 
 DS::ShaHash DS::ShaHash::Sha0(const void* data, size_t size)

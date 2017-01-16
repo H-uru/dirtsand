@@ -34,7 +34,7 @@ namespace MOUL
 
     public:
         AgeLinkStruct* m_ageLink;
-        DS::String m_linkInAnim;
+        ST::string m_linkInAnim;
         uint8_t m_flags;
 
     protected:

@@ -17,101 +17,102 @@
 
 #include "streams.h"
 #include "errors.h"
+#include <string_theory/codecs>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-DS::String DS::Stream::readString(size_t length, DS::StringType format)
+ST::string DS::Stream::readString(size_t length, DS::StringType format)
 {
-    String result;
     if (format == e_StringUTF16) {
-        char16_t* buffer = new char16_t[length];
+        ST::utf16_buffer result;
+        char16_t* buffer = result.create_writable_buffer(length);
         ssize_t bytes = readBytes(buffer, length * sizeof(char16_t));
         DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char16_t)));
-        result = String::FromUtf16(buffer, length);
-        delete[] buffer;
+        buffer[length] = 0;
+        return ST::string::from_utf16(result, ST::substitute_invalid);
     } else {
-        char* buffer = new char[length];
+        ST::char_buffer result;
+        char* buffer = result.create_writable_buffer(length);
         ssize_t bytes = readBytes(buffer, length * sizeof(char));
         DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char)));
-        result = (format == e_StringUTF8) ? String::FromUtf8(buffer, length)
-                                          : String::FromRaw(buffer, length);
-        delete[] buffer;
+        buffer[length] = 0;
+        return (format == e_StringUTF8) ? ST::string::from_utf8(result, ST::substitute_invalid)
+                                        : ST::string::from_latin_1(result);
     }
-    return result;
 }
 
-DS::String DS::Stream::readSafeString(DS::StringType format)
+ST::string DS::Stream::readSafeString(DS::StringType format)
 {
     uint16_t length = read<uint16_t>();
     if (!(length & 0xF000))
         read<uint16_t>();   // Discarded
     length &= 0x0FFF;
 
-    String result;
     if (format == e_StringUTF16) {
-        uint16_t* buffer = new uint16_t[length];
-        ssize_t bytes = readBytes(buffer, length * sizeof(uint16_t));
-        read<uint16_t>(); // redundant u'\0'
-        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(uint16_t)));
+        ST::utf16_buffer result;
+        char16_t* buffer = result.create_writable_buffer(length);
+        ssize_t bytes = readBytes(buffer, length * sizeof(char16_t));
+        read<char16_t>(); // redundant u'\0'
+        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char16_t)));
         if (length && (buffer[0] & 0x8000)) {
             for (uint16_t i=0; i<length; ++i)
                 buffer[i] = ~buffer[i];
         }
-        result = String::FromUtf16(reinterpret_cast<char16_t*>(buffer), length);
-        delete[] buffer;
+        buffer[length] = 0;
+        return ST::string::from_utf16(result, ST::substitute_invalid);
     } else {
-        uint8_t* buffer = new uint8_t[length];
-        ssize_t bytes = readBytes(buffer, length * sizeof(uint8_t));
-        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(uint8_t)));
+        ST::char_buffer result;
+        char* buffer = result.create_writable_buffer(length);
+        ssize_t bytes = readBytes(buffer, length * sizeof(char));
+        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char)));
         if (length && (buffer[0] & 0x80)) {
             for (uint16_t i=0; i<length; ++i)
                 buffer[i] = ~buffer[i];
         }
-        result = (format == e_StringUTF8)
-               ? String::FromUtf8(reinterpret_cast<char*>(buffer), length)
-               : String::FromRaw(reinterpret_cast<char*>(buffer), length);
-        delete[] buffer;
+        buffer[length] = 0;
+        return (format == e_StringUTF8)
+               ? ST::string::from_utf8(result, ST::substitute_invalid)
+               : ST::string::from_latin_1(result);
     }
-    return result;
 }
 
-void DS::Stream::writeString(const String& value, DS::StringType format)
+void DS::Stream::writeString(const ST::string& value, DS::StringType format)
 {
     if (format == e_StringUTF16) {
-        StringBuffer<char16_t> buffer = value.toUtf16();
-        writeBytes(buffer.data(), buffer.length() * sizeof(char16_t));
+        ST::utf16_buffer buffer = value.to_utf16();
+        writeBytes(buffer.data(), buffer.size() * sizeof(char16_t));
     } else {
-        StringBuffer<char> buffer = (format == e_StringUTF8) ? value.toUtf8()
-                                                             : value.toRaw();
-        writeBytes(buffer.data(), buffer.length() * sizeof(char));
+        ST::char_buffer buffer = (format == e_StringUTF8) ? value.to_utf8()
+                               : value.to_latin_1(ST::substitute_invalid);
+        writeBytes(buffer.data(), buffer.size() * sizeof(char));
     }
 }
 
-void DS::Stream::writeSafeString(const String& value, DS::StringType format)
+void DS::Stream::writeSafeString(const ST::string& value, DS::StringType format)
 {
     if (format == e_StringUTF16) {
-        StringBuffer<char16_t> buffer = value.toUtf16();
-        uint16_t length = value.length() & 0x0FFF;
-        uint16_t* data = new uint16_t[length];
-        memcpy(data, buffer.data(), length * sizeof(uint16_t));
+        ST::utf16_buffer buffer = value.to_utf16();
+        uint16_t length = value.size() & 0x0FFF;
+        ST::utf16_buffer work;
+        char16_t* data = work.create_writable_buffer(length);
+        memcpy(data, buffer.data(), length * sizeof(char16_t));
         for (uint16_t i=0; i<length; ++i)
             data[i] = ~data[i];
         write<uint16_t>(length | 0xF000);
-        writeBytes(data, length * sizeof(uint16_t));
-        write<uint16_t>(0);
-        delete[] data;
+        writeBytes(data, length * sizeof(char16_t));
+        write<char16_t>(0);
     } else {
-        StringBuffer<char> buffer = (format == e_StringUTF8) ? value.toUtf8()
-                                                             : value.toRaw();
-        uint16_t length = value.length() & 0x0FFF;
-        uint8_t* data = new uint8_t[length];
-        memcpy(data, buffer.data(), length * sizeof(uint8_t));
+        ST::char_buffer buffer = (format == e_StringUTF8) ? value.to_utf8()
+                               : value.to_latin_1(ST::substitute_invalid);
+        uint16_t length = value.size() & 0x0FFF;
+        ST::char_buffer work;
+        char* data = work.create_writable_buffer(length);
+        memcpy(data, buffer.data(), length * sizeof(char));
         for (uint16_t i=0; i<length; ++i)
             data[i] = ~data[i];
         write<uint16_t>(length | 0xF000);
         writeBytes(data, length * sizeof(char));
-        delete[] data;
     }
 }
 
@@ -226,4 +227,24 @@ void DS::BlobStream::seek(int32_t offset, int whence)
         m_position = m_blob.size() - offset;
 
     DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_blob.size());
+}
+
+DS::Blob DS::Base64Decode(const ST::string& value)
+{
+    ST_ssize_t resultLen = ST::base64_decode(value, nullptr, 0);
+    DS_PASSERT(resultLen >= 0);
+
+    uint8_t* result = new uint8_t[resultLen];
+    ST::base64_decode(value, result, resultLen);
+    return Blob::Steal(result, resultLen);
+}
+
+DS::Blob DS::HexDecode(const ST::string& value)
+{
+    ST_ssize_t resultLen = ST::hex_decode(value, nullptr, 0);
+    DS_PASSERT(resultLen >= 0);
+
+    uint8_t* result = new uint8_t[resultLen];
+    ST::hex_decode(value, result, resultLen);
+    return Blob::Steal(result, resultLen);
 }

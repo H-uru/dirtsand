@@ -18,6 +18,7 @@
 #ifndef _DS_AUTHMANIFEST_H
 #define _DS_AUTHMANIFEST_H
 
+#include "config.h"
 #include "streams.h"
 #include <list>
 
@@ -25,7 +26,7 @@ namespace DS
 {
     struct AuthFileInfo
     {
-        String m_filename;
+        ST::string m_filename;
         uint32_t m_fileSize;
     };
 

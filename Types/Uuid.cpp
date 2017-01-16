@@ -17,7 +17,8 @@
 
 #include "Uuid.h"
 #include "errors.h"
-#include <cstring>
+#include <string_theory/format>
+#include <cstdlib>
 
 DS::Uuid::Uuid(const char* struuid)
 {
@@ -86,10 +87,10 @@ void DS::Uuid::write(DS::Stream* stream) const
     stream->writeBytes(m_data4, sizeof(m_data4));
 }
 
-DS::String DS::Uuid::toString() const
+ST::string DS::Uuid::toString() const
 {
-    return DS::String::Format("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-                              m_data1, m_data2, m_data3, m_data4[0], m_data4[1],
-                              m_data4[2], m_data4[3], m_data4[4], m_data4[5],
-                              m_data4[6], m_data4[7]);
+    return ST::format("{08x}-{04x}-{04x}-{02x}{02x}-{02x}{02x}{02x}{02x}{02x}{02x}",
+                      m_data1, m_data2, m_data3, m_data4[0], m_data4[1],
+                      m_data4[2], m_data4[3], m_data4[4], m_data4[5],
+                      m_data4[6], m_data4[7]);
 }

@@ -218,27 +218,27 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
 #endif
 }
 
-DS::String DS::CryptRecvString(const SocketHandle sock, CryptState crypt)
+ST::string DS::CryptRecvString(const SocketHandle sock, CryptState crypt)
 {
     uint16_t length = CryptRecvValue<uint16_t>(sock, crypt);
-    std::unique_ptr<char16_t[]> buffer(new char16_t[length]);
-    CryptRecvBuffer(sock, crypt, buffer.get(), length * sizeof(char16_t));
-    String result = String::FromUtf16(buffer.get(), length);
-    return result;
+    ST::utf16_buffer result;
+    char16_t* buffer = result.create_writable_buffer(length);
+    CryptRecvBuffer(sock, crypt, buffer, length * sizeof(char16_t));
+    buffer[length] = 0;
+    return ST::string::from_utf16(result, ST::substitute_invalid);
 }
 
-DS::ShaHash DS::BuggyHashPassword(const String& username, const String& password)
+DS::ShaHash DS::BuggyHashPassword(const ST::string& username, const ST::string& password)
 {
-    StringBuffer<char16_t> wuser = username.toUtf16();
-    StringBuffer<char16_t> wpass = password.toUtf16();
-    char16_t* buffer = new char16_t[wuser.length() + wpass.length()];
-    memcpy(buffer, wpass.data(), wpass.length() * sizeof(char16_t));
-    memcpy(buffer + wpass.length(), wuser.data(), wuser.length() * sizeof(char16_t));
-    buffer[wpass.length() - 1] = 0;
-    buffer[wpass.length() + wuser.length() - 1] = 0;
-    ShaHash hash = ShaHash::Sha0(buffer, (wuser.length() + wpass.length()) * sizeof(char16_t));
-    delete[] buffer;
-    return hash;
+    ST::utf16_buffer wuser = username.to_utf16();
+    ST::utf16_buffer wpass = password.to_utf16();
+    ST::utf16_buffer work;
+    char16_t* buffer = work.create_writable_buffer(wuser.size() + wpass.size());
+    memcpy(buffer, wpass.data(), wpass.size() * sizeof(char16_t));
+    memcpy(buffer + wpass.size(), wuser.data(), wuser.size() * sizeof(char16_t));
+    buffer[wpass.size() - 1] = 0;
+    buffer[wpass.size() + wuser.size() - 1] = 0;
+    return ShaHash::Sha0(buffer, (wuser.size() + wpass.size()) * sizeof(char16_t));
 }
 
 DS::ShaHash DS::BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChallenge,

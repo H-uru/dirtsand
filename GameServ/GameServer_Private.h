@@ -47,7 +47,7 @@ struct GameState
     SDL::State m_state;
 };
 
-typedef std::unordered_map<DS::String, GameState, DS::StringHash> sdlnamemap_t;
+typedef std::unordered_map<ST::string, GameState, ST::hash> sdlnamemap_t;
 typedef std::unordered_map<MOUL::Uoid, sdlnamemap_t, MOUL::UoidHash> sdlstatemap_t;
 typedef std::unordered_map<MOUL::Uoid, uint32_t, MOUL::UoidHash> lockmap_t;
 
@@ -66,7 +66,7 @@ struct GameClient_Private : public AuthClient_Private
 struct GameHost_Private
 {
     DS::Uuid m_instanceId;
-    DS::String m_ageFilename;
+    ST::string m_ageFilename;
     uint32_t m_ageIdx, m_serverIdx;
 
     std::unordered_map<uint32_t, GameClient_Private*> m_clients;
@@ -104,7 +104,7 @@ struct Game_AgeInfo
         : m_startTime(0), m_lingerTime(180), m_dayLength(24), m_maxCapacity(10),
           m_seqPrefix(0) { }
 };
-typedef std::unordered_map<DS::String, Game_AgeInfo, DS::StringHash> agemap_t;
+typedef std::unordered_map<ST::string, Game_AgeInfo, ST::hash> agemap_t;
 extern agemap_t s_ages;
 
 enum GameHostMessages

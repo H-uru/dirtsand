@@ -33,7 +33,7 @@ namespace MOUL
         void writeAux(DS::Stream* stream);
 
     public:
-        DS::String m_animName;
+        ST::string m_animName;
         uint8_t m_notify;
         uint32_t m_forwardType, m_backType;
         uint32_t m_advanceType, m_regressType;

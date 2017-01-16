@@ -68,7 +68,7 @@ void SDL::Variable::_ref::resize(size_t size)
         memset(m_bool, 0, m_size * sizeof(bool));
         break;
     case e_VarString:
-        m_string = new DS::String[m_size];
+        m_string = new ST::string[m_size];
         break;
     case e_VarKey:
         m_key = new MOUL::Uoid[m_size];
@@ -405,7 +405,7 @@ void SDL::Variable::read(DS::Stream* stream)
 void SDL::Variable::write(DS::Stream* stream) const
 {
     uint8_t contents = 0;
-    if (!m_data->m_notificationHint.isNull())
+    if (!m_data->m_notificationHint.is_empty())
         contents |= e_HasNotificationInfo;
     stream->write<uint8_t>(contents);
     if (contents & e_HasNotificationInfo) {
@@ -631,7 +631,7 @@ void SDL::Variable::setDefault()
             if (m_data->m_desc->m_default.m_valid)
                 m_data->m_string[i] = m_data->m_desc->m_default.m_string;
             else
-                m_data->m_string[i] = DS::String();
+                m_data->m_string[i] = ST::null;
             break;
         case e_VarKey:
             m_data->m_key[i] = MOUL::Uoid();
@@ -1012,7 +1012,7 @@ SDL::State SDL::State::Create(DS::Stream* stream)
     uint16_t flags = stream->read<uint16_t>();
     DS_DASSERT((flags & 0x8000) != 0);
 
-    DS::String name = stream->readSafeString();
+    ST::string name = stream->readSafeString();
     int version = stream->read<int16_t>();
     SDL::StateDescriptor* desc = SDL::DescriptorDb::FindDescriptor(name, version);
     State state(desc);

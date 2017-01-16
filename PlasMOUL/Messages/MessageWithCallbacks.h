@@ -63,7 +63,7 @@ namespace MOUL
 
         DS::BitVector m_cmd;
         float m_begin, m_end, m_loopEnd, m_loopBegin, m_speed, m_speedChangeRate, m_time;
-        DS::String m_animName, m_loopName;
+        ST::string m_animName, m_loopName;
 
     protected:
         AnimCmdMsg(uint16_t type)

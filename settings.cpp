@@ -17,7 +17,7 @@
 
 #include "settings.h"
 #include "errors.h"
-#include "encodings.h"
+#include "streams.h"
 #include <vector>
 #include <cstdio>
 
@@ -66,25 +66,25 @@ static struct
 
     /* Servers */
     // TODO: Allow multiple servers for load balancing
-    DS::StringBuffer<char16_t> m_fileServ;
-    DS::StringBuffer<char16_t> m_authServ;
-    DS::String m_gameServ;
+    ST::utf16_buffer m_fileServ;
+    ST::utf16_buffer m_authServ;
+    ST::string m_gameServ;
 
     /* Host configuration */
-    DS::String m_lobbyAddr, m_lobbyPort;
-    DS::String m_statusAddr, m_statusPort;
+    ST::string m_lobbyAddr, m_lobbyPort;
+    ST::string m_statusAddr, m_statusPort;
 
     /* Data locations */
-    DS::String m_fileRoot, m_authRoot;
-    DS::String m_sdlPath, m_agePath;
-    DS::String m_settingsPath;
+    ST::string m_fileRoot, m_authRoot;
+    ST::string m_sdlPath, m_agePath;
+    ST::string m_settingsPath;
 
     /* Database */
-    DS::String m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
+    ST::string m_dbHostname, m_dbPort, m_dbUsername, m_dbPassword, m_dbDbase;
 
     /* Misc */
     bool m_statusEnabled;
-    DS::String m_welcome;
+    ST::string m_welcome;
 } s_settings;
 
 #define DS_LOADBLOB(outbuffer, fixedsize, input) \
@@ -102,7 +102,7 @@ bool DS::Settings::LoadFrom(const char* filename)
     UseDefaults();
 
     s_settings.m_settingsPath = filename;
-    ssize_t slash = s_settings.m_settingsPath.rfind("/");
+    ssize_t slash = s_settings.m_settingsPath.find_last('/');
     if (slash >= 0)
         s_settings.m_settingsPath = s_settings.m_settingsPath.left(slash);
     else
@@ -117,18 +117,18 @@ bool DS::Settings::LoadFrom(const char* filename)
     try {
         char buffer[4096];
         while (fgets(buffer, 4096, cfgfile)) {
-            String line = String(buffer).strip('#');
-            if (line.isEmpty())
+            ST::string line = ST::string(buffer).before_first('#').trim();
+            if (line.is_empty())
                 continue;
-            std::vector<String> params = line.split('=', 1);
+            std::vector<ST::string> params = line.split('=', 1);
             if (params.size() != 2) {
                 fprintf(stderr, "Warning: Invalid config line: %s\n", line.c_str());
                 continue;
             }
 
             // Clean any whitespace around the '='
-            params[0] = params[0].strip();
-            params[1] = params[1].strip();
+            params[0] = params[0].trim();
+            params[1] = params[1].trim();
 
             if (params[0] == "Key.Auth.N") {
                 DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyAuth_N], 64, params[1]);
@@ -150,9 +150,9 @@ bool DS::Settings::LoadFrom(const char* filename)
                 s_settings.m_droidKey[2] = BUF_TO_UINT(data.buffer() +  8);
                 s_settings.m_droidKey[3] = BUF_TO_UINT(data.buffer() + 12);
             } else if (params[0] == "File.Host") {
-                s_settings.m_fileServ = params[1].toUtf16();
+                s_settings.m_fileServ = params[1].to_utf16();
             } else if (params[0] == "Auth.Host") {
-                s_settings.m_authServ = params[1].toUtf16();
+                s_settings.m_authServ = params[1].to_utf16();
             } else if (params[0] == "Game.Host") {
                 s_settings.m_gameServ = params[1];
             } else if (params[0] == "Lobby.Addr") {
@@ -164,13 +164,7 @@ bool DS::Settings::LoadFrom(const char* filename)
             } else if (params[0] == "Status.Port") {
                 s_settings.m_statusPort = params[1];
             } else if (params[0] == "Status.Enabled") {
-                if (params[1].compare("true", e_CaseInsensitive) == 0)
-                    s_settings.m_statusEnabled = true;
-                else if (params[1].compare("false", e_CaseInsensitive) == 0)
-                    s_settings.m_statusEnabled = false;
-                else
-                    fprintf(stderr, "Error: '%s' is not a boolean value\n",
-                            params[1].c_str());
+                s_settings.m_statusEnabled = params[1].to_bool();
             } else if (params[0] == "File.Root") {
                 s_settings.m_fileRoot = params[1];
                 if (s_settings.m_fileRoot.right(1) != "/")
@@ -214,23 +208,23 @@ void DS::Settings::UseDefaults()
     memset(s_settings.m_cryptKeys, 0, sizeof(s_settings.m_cryptKeys));
     memset(s_settings.m_droidKey, 0, sizeof(s_settings.m_droidKey));
 
-    s_settings.m_authServ = String("localhost").toUtf16();
-    s_settings.m_fileServ = String("localhost").toUtf16();
-    s_settings.m_gameServ = "localhost";
-    s_settings.m_lobbyPort = "14617";
-    s_settings.m_statusPort = "8080";
+    s_settings.m_authServ = ST_LITERAL("localhost").to_utf16();
+    s_settings.m_fileServ = ST_LITERAL("localhost").to_utf16();
+    s_settings.m_gameServ = ST_LITERAL("localhost");
+    s_settings.m_lobbyPort = ST_LITERAL("14617");
+    s_settings.m_statusPort = ST_LITERAL("8080");
     s_settings.m_statusEnabled = true;
 
-    s_settings.m_fileRoot = "./data";
-    s_settings.m_authRoot = "./authdata";
-    s_settings.m_sdlPath = "./SDL";
-    s_settings.m_agePath = "./ages";
+    s_settings.m_fileRoot = ST_LITERAL("./data");
+    s_settings.m_authRoot = ST_LITERAL("./authdata");
+    s_settings.m_sdlPath = ST_LITERAL("./SDL");
+    s_settings.m_agePath = ST_LITERAL("./ages");
 
-    s_settings.m_dbHostname = "localhost";
-    s_settings.m_dbPort = "5432";
-    s_settings.m_dbUsername = "dirtsand";
-    s_settings.m_dbPassword = "";
-    s_settings.m_dbDbase = "dirtsand";
+    s_settings.m_dbHostname = ST_LITERAL("localhost");
+    s_settings.m_dbPort = ST_LITERAL("5432");
+    s_settings.m_dbUsername = ST_LITERAL("dirtsand");
+    s_settings.m_dbPassword = ST::null;
+    s_settings.m_dbDbase = ST_LITERAL("dirtsand");
 }
 
 const uint8_t* DS::Settings::CryptKey(DS::KeyType key)
@@ -244,24 +238,24 @@ const uint32_t* DS::Settings::DroidKey()
     return s_settings.m_droidKey;
 }
 
-DS::StringBuffer<char16_t> DS::Settings::FileServerAddress()
+ST::utf16_buffer DS::Settings::FileServerAddress()
 {
     return s_settings.m_fileServ;
 }
 
-DS::StringBuffer<char16_t> DS::Settings::AuthServerAddress()
+ST::utf16_buffer DS::Settings::AuthServerAddress()
 {
     return s_settings.m_authServ;
 }
 
-DS::String DS::Settings::GameServerAddress()
+ST::string DS::Settings::GameServerAddress()
 {
     return s_settings.m_gameServ;
 }
 
 const char* DS::Settings::LobbyAddress()
 {
-    return s_settings.m_lobbyAddr.isEmpty() ? 0 : s_settings.m_lobbyAddr.c_str();
+    return s_settings.m_lobbyAddr.is_empty() ? 0 : s_settings.m_lobbyAddr.c_str();
 }
 
 const char* DS::Settings::LobbyPort()
@@ -276,7 +270,7 @@ bool DS::Settings::StatusEnabled()
 
 const char* DS::Settings::StatusAddress()
 {
-    return s_settings.m_statusAddr.isEmpty() ? 0 : s_settings.m_statusAddr.c_str();
+    return s_settings.m_statusAddr.is_empty() ? 0 : s_settings.m_statusAddr.c_str();
 }
 
 const char* DS::Settings::StatusPort()
@@ -284,12 +278,12 @@ const char* DS::Settings::StatusPort()
     return s_settings.m_statusPort.c_str();
 }
 
-DS::String DS::Settings::FileRoot()
+ST::string DS::Settings::FileRoot()
 {
     return s_settings.m_fileRoot;
 }
 
-DS::String DS::Settings::AuthRoot()
+ST::string DS::Settings::AuthRoot()
 {
     return s_settings.m_authRoot;
 }
@@ -304,7 +298,7 @@ const char* DS::Settings::AgePath()
     return s_settings.m_agePath.c_str();
 }
 
-DS::String DS::Settings::SettingsPath()
+ST::string DS::Settings::SettingsPath()
 {
     return s_settings.m_settingsPath;
 }
@@ -334,12 +328,12 @@ const char* DS::Settings::DbDbaseName()
     return s_settings.m_dbDbase.c_str();
 }
 
-DS::String DS::Settings::WelcomeMsg()
+ST::string DS::Settings::WelcomeMsg()
 {
     return s_settings.m_welcome;
 }
 
-void DS::Settings::SetWelcomeMsg(const DS::String& welcome)
+void DS::Settings::SetWelcomeMsg(const ST::string& welcome)
 {
     s_settings.m_welcome = welcome;
 }

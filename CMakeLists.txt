@@ -38,13 +38,15 @@ find_package(Postgres REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(string_theory 1.3 REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}"
                     "${CMAKE_SOURCE_DIR}/PlasMOUL"
                     "${POSTGRES_INCLUDE_DIR}"
                     "${OPENSSL_INCLUDE_DIR}"
                     "${READLINE_INCLUDE_DIR}"
-                    "${ZLIB_INCLUDE_DIR}")
+                    "${ZLIB_INCLUDE_DIR}"
+                    "${STRING_THEORY_INCLUDE_DIRS}")
 
 try_compile(HAVE_ATOMIC ${dirtsand_BINARY_DIR}
             ${dirtsand_SOURCE_DIR}/cmake/CheckAtomic.cpp
@@ -143,16 +145,15 @@ set(dirtsand_SOURCES
     AuthServ/VaultTypes.cpp
     GameServ/GameServer.cpp
     GameServ/GameHost.cpp
-    strings.cpp
     streams.cpp
     settings.cpp
-    encodings.cpp
     dsmain.cpp
 )
 
 add_executable(dirtsand ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
 target_link_libraries(dirtsand ${POSTGRES_LIBRARY} ${ZLIB_LIBRARY}
-                               ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY})
+                               ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY}
+                               ${STRING_THEORY_LIBRARIES})
 set_target_properties(dirtsand PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin")
 

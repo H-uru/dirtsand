@@ -20,7 +20,6 @@
 
 #include "creatable.h"
 #include "Key.h"
-#include "strings.h"
 
 namespace MOUL
 {
@@ -43,7 +42,7 @@ namespace MOUL
         uint8_t m_hostOfferStage;
         bool m_guestAcceptStage;
         Message* m_acceptMsg;
-        DS::String m_synchBone;
+        ST::string m_synchBone;
         bool m_autoStartGuest;
 
     protected:

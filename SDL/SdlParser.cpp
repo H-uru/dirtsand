@@ -52,7 +52,7 @@ bool SDL::Parser::open(const char* filename)
     return true;
 }
 
-static SDL::TokenType str_to_toktype(DS::String str)
+static SDL::TokenType str_to_toktype(const ST::string& str)
 {
     if (str == "STATEDESC")
         return SDL::e_TokStatedesc;
@@ -133,7 +133,7 @@ SDL::Token SDL::Parser::next()
                 while (*endp && ((*endp >= '0' && *endp <= '9') || *endp == '.'))
                     ++endp;
                 tokbuf.m_type = e_TokNumeric;
-                tokbuf.m_value = DS::String::FromRaw(lnp, endp - lnp);
+                tokbuf.m_value = ST::string::from_latin_1(lnp, endp - lnp);
                 m_buffer.push_back(tokbuf);
                 lnp = endp;
             } else if ((*lnp >= 'A' && *lnp <= 'Z') || (*lnp >= 'a' && *lnp <= 'z')
@@ -143,7 +143,7 @@ SDL::Token SDL::Parser::next()
                 while (*endp && ((*endp >= 'A' && *endp <= 'Z') || (*endp >= 'a' && *endp <= 'z')
                        || (*endp >= '0' && *endp <= '9') || *endp == '_' || *endp == '-'))
                     ++endp;
-                tokbuf.m_value = DS::String::FromRaw(lnp, endp - lnp);
+                tokbuf.m_value = ST::string::from_latin_1(lnp, endp - lnp);
                 tokbuf.m_type = str_to_toktype(tokbuf.m_value);
                 m_buffer.push_back(tokbuf);
                 lnp = endp;
@@ -154,7 +154,7 @@ SDL::Token SDL::Parser::next()
                        || (*endp >= '0' && *endp <= '9') || *endp == '_'))
                     ++endp;
                 tokbuf.m_type = e_TokTypename;
-                tokbuf.m_value = DS::String::FromRaw(lnp + 1, endp - lnp - 1);
+                tokbuf.m_value = ST::string::from_latin_1(lnp + 1, endp - lnp - 1);
                 m_buffer.push_back(tokbuf);
                 lnp = endp;
             } else if (*lnp == '(' || *lnp == ')' || *lnp == '[' || *lnp == ']'
@@ -169,7 +169,7 @@ SDL::Token SDL::Parser::next()
                 while (*endp && *endp != '"')
                     ++endp;
                 tokbuf.m_type = e_TokQuoted;
-                tokbuf.m_value = DS::String::FromRaw(lnp + 1, endp - lnp - 1);
+                tokbuf.m_value = ST::string::from_latin_1(lnp + 1, endp - lnp - 1);
                 m_buffer.push_back(tokbuf);
                 lnp = endp + 1;
             } else {
@@ -562,7 +562,7 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             } else {
                 BAD_TOK(tok.m_type, this);
             }
-            descBuffer.m_name = DS::String();
+            descBuffer.m_name = ST::null;
             descBuffer.m_vars.clear();
             descBuffer.m_version = -1;
             break;
@@ -586,11 +586,11 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
                 BAD_TOK(tok.m_type, this);
             }
             varBuffer.m_type = static_cast<SDL::VarType>(-1);
-            varBuffer.m_typeName = DS::String();
-            varBuffer.m_name = DS::String();
+            varBuffer.m_typeName = ST::null;
+            varBuffer.m_name = ST::null;
             varBuffer.m_size = 0;
             varBuffer.m_default.m_valid = false;
-            varBuffer.m_defaultOption = DS::String();
+            varBuffer.m_defaultOption = ST::null;
             break;
         case e_TokInt:
             TYPE_TOK(e_VarInt);

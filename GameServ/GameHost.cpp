@@ -28,7 +28,8 @@
 #include "SDL/DescriptorDb.h"
 #include "settings.h"
 #include "errors.h"
-#include "encodings.h"
+#include <string_theory/codecs>
+#include <string_theory/format>
 
 hostmap_t s_gameHosts;
 std::mutex s_gameHostMutex;
@@ -374,7 +375,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     reply->unref();
 }
 
-void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor,
+void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
                        const MOUL::Uoid& object, const SDL::State& state)
 {
     check_postgres(host);
@@ -385,8 +386,8 @@ void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor,
     object.write(&buffer);
     parms.set(0, host->m_serverIdx);
     parms.set(1, descriptor);
-    parms.set(2, DS::Base64Encode(buffer.buffer(), buffer.size()));
-    parms.set(3, DS::Base64Encode(sdlBlob.buffer(), sdlBlob.size()));
+    parms.set(2, ST::base64_encode(buffer.buffer(), buffer.size()));
+    parms.set(3, ST::base64_encode(sdlBlob.buffer(), sdlBlob.size()));
     PGresult* result = PQexecParams(host->m_postgres,
                                     "SELECT idx FROM game.\"AgeStates\""
                                     "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
@@ -413,7 +414,7 @@ void dm_save_sdl_state(GameHost_Private* host, const DS::String& descriptor,
         PQclear(result);
     } else {
         DS_DASSERT(PQntuples(result) == 1);
-        parms.set(0, DS::String(PQgetvalue(result, 0, 0)));
+        parms.set(0, ST::string(PQgetvalue(result, 0, 0)));
         parms.set(1, parms.m_strings[3]);   // SDL blob
         PQclear(result);
         result = PQexecParams(host->m_postgres,
@@ -844,8 +845,8 @@ void dm_gameHost(GameHost_Private* host)
 
 GameHost_Private* start_game_host(uint32_t ageMcpId)
 {
-    PGconn* postgres = PQconnectdb(DS::String::Format(
-                    "host='%s' port='%s' user='%s' password='%s' dbname='%s'",
+    PGconn* postgres = PQconnectdb(ST::format(
+                    "host='{}' port='{}' user='{}' password='{}' dbname='{}'",
                     DS::Settings::DbHostname(), DS::Settings::DbPort(),
                     DS::Settings::DbUsername(), DS::Settings::DbPassword(),
                     DS::Settings::DbDbaseName()).c_str());

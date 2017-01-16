@@ -18,6 +18,7 @@
 #include "DescriptorDb.h"
 #include "SdlParser.h"
 #include "errors.h"
+#include <string_theory/format>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -45,7 +46,7 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
 
     SDL::Parser parser;
     for (int i=0; i<count; ++i) {
-        DS::String filename = DS::String::Format("%s/%s", sdlpath, dirls[i]->d_name);
+        ST::string filename = ST::format("{}/{}", sdlpath, dirls[i]->d_name);
         if (parser.open(filename.c_str())) {
             std::list<StateDescriptor> descriptors = parser.parse();
             for (auto it = descriptors.begin(); it != descriptors.end(); ++it) {
@@ -72,7 +73,7 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
     return true;
 }
 
-SDL::StateDescriptor* SDL::DescriptorDb::FindDescriptor(DS::String name, int version)
+SDL::StateDescriptor* SDL::DescriptorDb::FindDescriptor(const ST::string& name, int version)
 {
     descmap_t::iterator namei = s_descriptors.find(name);
     if (namei == s_descriptors.end()) {
@@ -90,7 +91,7 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindDescriptor(DS::String name, int ver
     return &veri->second;
 }
 
-SDL::StateDescriptor* SDL::DescriptorDb::FindLatestDescriptor(DS::String name)
+SDL::StateDescriptor* SDL::DescriptorDb::FindLatestDescriptor(const ST::string& name)
 {
     descmap_t::iterator namei = s_descriptors.find(name);
     if (namei == s_descriptors.end()) {

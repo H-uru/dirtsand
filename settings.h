@@ -18,7 +18,7 @@
 #ifndef _DS_SETTINGS_H
 #define _DS_SETTINGS_H
 
-#include "strings.h"
+#include <string_theory/string>
 
 #define CRYPT_BASE_AUTH (41)
 #define CRYPT_BASE_GAME (73)
@@ -54,9 +54,9 @@ namespace DS
         const uint32_t* DroidKey();
 
         // Optimized for throwing onto the network
-        DS::StringBuffer<char16_t> FileServerAddress();
-        DS::StringBuffer<char16_t> AuthServerAddress();
-        DS::String GameServerAddress();
+        ST::utf16_buffer FileServerAddress();
+        ST::utf16_buffer AuthServerAddress();
+        ST::string GameServerAddress();
 
         const char* LobbyAddress();
         const char* LobbyPort();
@@ -65,11 +65,11 @@ namespace DS
         const char* StatusAddress();
         const char* StatusPort();
 
-        DS::String FileRoot();
-        DS::String AuthRoot();
+        ST::string FileRoot();
+        ST::string AuthRoot();
         const char* SdlPath();
         const char* AgePath();
-        DS::String SettingsPath();
+        ST::string SettingsPath();
 
         const char* DbHostname();
         const char* DbPort();
@@ -77,8 +77,8 @@ namespace DS
         const char* DbPassword();
         const char* DbDbaseName();
 
-        DS::String WelcomeMsg();
-        void SetWelcomeMsg(const DS::String& welcome);
+        ST::string WelcomeMsg();
+        void SetWelcomeMsg(const ST::string& welcome);
 
         bool LoadFrom(const char* filename);
         void UseDefaults();

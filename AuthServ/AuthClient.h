@@ -35,8 +35,8 @@ struct AuthClient_Private
 struct AuthServer_PlayerInfo
 {
     uint32_t m_playerId;
-    DS::String m_playerName;
-    DS::String m_avatarModel;
+    ST::string m_playerName;
+    ST::string m_avatarModel;
     uint32_t m_explorer;
 
     AuthServer_PlayerInfo() : m_playerId(0), m_explorer(1) { }
@@ -45,8 +45,8 @@ struct AuthServer_PlayerInfo
 struct AuthServer_AgeInfo
 {
     DS::Uuid m_ageId, m_parentId;
-    DS::String m_filename, m_instName, m_userName;
-    DS::String m_description;
+    ST::string m_filename, m_instName, m_userName;
+    ST::string m_description;
     int m_seqNumber, m_language;
 
     AuthServer_AgeInfo() : m_seqNumber(0), m_language(-1) { }
@@ -55,10 +55,10 @@ struct AuthServer_AgeInfo
     {
         m_ageId = DS::Uuid();
         m_parentId = DS::Uuid();
-        m_filename = DS::String();
-        m_instName = DS::String();
-        m_userName = DS::String();
-        m_description = DS::String();
+        m_filename = ST::null;
+        m_instName = ST::null;
+        m_userName = ST::null;
+        m_description = ST::null;
         m_seqNumber = 0;
         m_language = -1;
     }
@@ -81,8 +81,8 @@ enum AuthDaemonMessages
 
 struct Auth_AccountInfo
 {
-    DS::String m_acctName;
-    DS::String m_password;
+    ST::string m_acctName;
+    ST::string m_password;
 };
 
 struct Auth_ClientMessage
@@ -93,9 +93,9 @@ struct Auth_ClientMessage
 struct Auth_LoginInfo : public Auth_ClientMessage
 {
     uint32_t m_clientChallenge;
-    DS::String m_acctName;
+    ST::string m_acctName;
     DS::ShaHash m_passHash;
-    DS::String m_token, m_os;
+    ST::string m_token, m_os;
 
     uint32_t m_billingType;
     std::vector<AuthServer_PlayerInfo> m_players;
@@ -150,7 +150,7 @@ struct Auth_NodeFindList : public Auth_ClientMessage
 
 struct Auth_GameAge : public Auth_ClientMessage
 {
-    DS::String m_name;
+    ST::string m_name;
     DS::Uuid m_instanceId;
 
     uint32_t m_mcpId;
@@ -165,11 +165,11 @@ struct Auth_PubAgeRequest : public Auth_ClientMessage
         enum { Stride = 0x9A0 };
 
         DS::Uuid m_instance;
-        DS::String m_instancename, m_username, m_description;
+        ST::string m_instancename, m_username, m_description;
         uint32_t m_sequence, m_language, m_curPopulation, m_population;
     };
 
-    DS::String m_agename;
+    ST::string m_agename;
     std::vector<NetAgeInfo> m_ages;
 };
 
@@ -183,7 +183,7 @@ struct Auth_CreateScore : public Auth_ClientMessage
 {
     uint32_t m_scoreId;
     uint32_t m_owner;
-    DS::String m_name;
+    ST::string m_name;
     uint32_t m_type;
     int32_t m_points;
 };
@@ -203,7 +203,7 @@ struct Auth_GetScores : public Auth_ClientMessage
     };
 
     uint32_t m_owner;
-    DS::String m_name;
+    ST::string m_name;
     std::vector<GameScore> m_scores; // there should only ever be one in DS
 };
 
@@ -234,7 +234,7 @@ struct Auth_UpdateAgeSrv : public Auth_ClientMessage
 
 struct Auth_AccountFlags : public Auth_ClientMessage
 {
-    DS::String m_acctName;
+    ST::string m_acctName;
     uint32_t m_flags;
 };
 
@@ -255,7 +255,7 @@ struct Auth_AddAllPlayers : public Auth_ClientMessage
 
 struct Auth_FetchSDL : public Auth_ClientMessage
 {
-    DS::String m_ageFilename;
+    ST::string m_ageFilename;
     uint32_t m_sdlNodeId;
 
     DS::Blob m_localState;
@@ -264,9 +264,9 @@ struct Auth_FetchSDL : public Auth_ClientMessage
 
 struct Auth_UpdateGlobalSDL : public Auth_ClientMessage
 {
-    DS::String m_ageFilename;
-    DS::String m_variable;
-    DS::String m_value;
+    ST::string m_ageFilename;
+    ST::string m_variable;
+    ST::string m_value;
 };
 
-DS::Blob gen_default_sdl(const DS::String& filename);
+DS::Blob gen_default_sdl(const ST::string& filename);
