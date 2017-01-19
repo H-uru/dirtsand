@@ -40,7 +40,7 @@ namespace MOUL
     {
         static void safe_unref(Creatable* pcre)
         {
-            if (pcre && --pcre->m_refs)
+            if (pcre && --pcre->m_refs == 0)
                 delete pcre;
         }
 
