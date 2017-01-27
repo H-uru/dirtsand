@@ -973,7 +973,9 @@ void cb_sockRead(AuthServer_Private& client)
     case e_CliToAuth_AcctSetRolesRequest:
     case e_CliToAuth_AcctSetBillingTypeRequest:
     case e_CliToAuth_AcctActivateRequest:
+    case e_CliToAuth_AcctCreateRequest:
     case e_CliToAuth_AcctCreateFromKeyRequest:
+    case e_CliToAuth_AcctChangePasswordRequest:
     case e_CliToAuth_VaultNodeDelete:
     case e_CliToAuth_UpgradeVisitorRequest:
     case e_CliToAuth_SetPlayerBanStatusRequest:
