@@ -228,20 +228,23 @@ ST::string DS::CryptRecvString(const SocketHandle sock, CryptState crypt)
     return ST::string::from_utf16(result, ST::substitute_invalid);
 }
 
-#ifndef USE_SHA256_LOGIN_HASH
-DS::ShaHash DS::BuggyHashPassword(const ST::string& username, const ST::string& password)
+#ifdef USE_SHA256_LOGIN_HASH
+DS::Sha256Hash DS::HashLogin256(const ShaHash& passwordHash, uint32_t serverChallenge,
+                                uint32_t clientChallenge)
 {
-    ST::utf16_buffer wuser = username.to_utf16();
-    ST::utf16_buffer wpass = password.to_utf16();
-    ST::utf16_buffer work;
-    char16_t* buffer = work.create_writable_buffer(wuser.size() + wpass.size());
-    memcpy(buffer, wpass.data(), wpass.size() * sizeof(char16_t));
-    memcpy(buffer + wpass.size(), wuser.data(), wuser.size() * sizeof(char16_t));
-    buffer[wpass.size() - 1] = 0;
-    buffer[wpass.size() + wuser.size() - 1] = 0;
-    return ShaHash::Sha0(buffer, (wuser.size() + wpass.size()) * sizeof(char16_t));
-}
+    struct
+    {
+        uint32_t m_clientChallenge, m_serverChallenge;
+        ShaHash m_pwhash;
+    } buffer;
 
+    buffer.m_clientChallenge = clientChallenge;
+    buffer.m_serverChallenge = serverChallenge;
+    buffer.m_pwhash = passwordHash;
+
+    return Sha256Hash::Sha256(&buffer, sizeof(buffer));
+}
+#else
 DS::ShaHash DS::BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChallenge,
                                uint32_t clientChallenge)
 {
@@ -254,6 +257,7 @@ DS::ShaHash DS::BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChall
     buffer.m_clientChallenge = clientChallenge;
     buffer.m_serverChallenge = serverChallenge;
     buffer.m_pwhash = passwordHash;
+
     return ShaHash::Sha0(&buffer, sizeof(buffer));
 }
 #endif

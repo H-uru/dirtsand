@@ -64,11 +64,7 @@ void dm_auth_addacct(Auth_AddAcct* msg)
         PQclear(result);
 
         ST::char_buffer pwBuf = msg->m_acctInfo.m_password.to_utf8();
-#ifdef USE_SHA256_LOGIN_HASH
-        DS::Sha256Hash pwHash = DS::Sha256Hash::Sha256(pwBuf.data(), pwBuf.size());
-#else
         DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.size());
-#endif
         PostgresStrings<3> iparms;
         iparms.set(0, gen_uuid().toString());
         iparms.set(1, pwHash.toString());
@@ -166,9 +162,11 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
 #endif
 
+    DS::ShaHash passhash = PQgetvalue(result, 0, 0);
 #ifdef USE_SHA256_LOGIN_HASH
-    DS::Sha256Hash passhash = PQgetvalue(result, 0, 0);
-    if (passhash != info->m_passHash) {
+    DS::Sha256Hash challengeHash = DS::HashLogin256(passhash,
+            client->m_serverChallenge, info->m_clientChallenge);
+    if (challengeHash != info->m_passHash) {
         printf("[Auth] %s: Failed login to account %s\n",
                DS::SockIpAddress(info->m_client->m_sock).c_str(),
                info->m_acctName.c_str());
@@ -177,7 +175,6 @@ void dm_auth_login(Auth_LoginInfo* info)
         return;
     }
 #else
-    DS::ShaHash passhash = PQgetvalue(result, 0, 0);
     if (info->m_acctName.find("@") != -1 && info->m_acctName.find("@gametap") == -1) {
         DS::ShaHash challengeHash = DS::BuggyHashLogin(passhash,
                 client->m_serverChallenge, info->m_clientChallenge);

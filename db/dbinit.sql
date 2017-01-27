@@ -32,7 +32,7 @@ SET default_with_oids = false;
 CREATE TABLE "Accounts" (
     idx integer NOT NULL,
     "Login" character varying(64) NOT NULL,
-    "PassHash" character(64) NOT NULL,
+    "PassHash" character(40) NOT NULL,
     "AcctUuid" uuid NOT NULL,
     "AcctFlags" integer DEFAULT 0 NOT NULL,
     "BillingType" integer DEFAULT 0 NOT NULL
