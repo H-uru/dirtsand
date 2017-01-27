@@ -41,15 +41,14 @@ find_package(Postgres REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(string_theory 1.3 REQUIRED)
+find_package(string_theory 1.4 REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}"
                     "${CMAKE_SOURCE_DIR}/PlasMOUL"
                     "${POSTGRES_INCLUDE_DIR}"
                     "${OPENSSL_INCLUDE_DIR}"
                     "${READLINE_INCLUDE_DIR}"
-                    "${ZLIB_INCLUDE_DIR}"
-                    "${STRING_THEORY_INCLUDE_DIRS}")
+                    "${ZLIB_INCLUDE_DIR}")
 
 try_compile(HAVE_ATOMIC ${dirtsand_BINARY_DIR}
             ${dirtsand_SOURCE_DIR}/cmake/CheckAtomic.cpp
