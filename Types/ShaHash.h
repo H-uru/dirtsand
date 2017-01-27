@@ -44,11 +44,39 @@ namespace DS
 
         ST::string toString() const;
 
+#ifndef USE_SHA256_LOGIN_HASH
+        // SHA0 is only needed if we're using the old email-based
+        // MOULa-compatible login hashing
         static ShaHash Sha0(const void* data, size_t size);
+#endif
         static ShaHash Sha1(const void* data, size_t size);
 
     public:
         uint32_t m_data[5];
+    };
+
+    class Sha256Hash
+    {
+    public:
+        Sha256Hash() { memset(m_data, 0, sizeof(m_data)); }
+
+        Sha256Hash(const uint8_t* bytes)
+        { memcpy(m_data, bytes, sizeof(m_data)); }
+
+        Sha256Hash(const char* struuid);
+
+        bool operator==(const Sha256Hash& other) const
+        { return memcmp(m_data, other.m_data, sizeof(m_data)) == 0; }
+
+        bool operator!=(const Sha256Hash& other) const
+        { return memcmp(m_data, other.m_data, sizeof(m_data)) != 0; }
+
+        ST::string toString() const;
+
+        static Sha256Hash Sha256(const void* data, size_t size);
+
+    public:
+        uint8_t m_data[32];
     };
 }
 

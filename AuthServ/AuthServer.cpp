@@ -132,7 +132,7 @@ void cb_login(AuthServer_Private& client)
     msg.m_clientChallenge = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
     msg.m_acctName = DS::CryptRecvString(client.m_sock, client.m_crypt);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt,
-                        msg.m_passHash.m_data, sizeof(DS::ShaHash));
+                        msg.m_passHash.m_data, sizeof(msg.m_passHash.m_data));
     msg.m_token = DS::CryptRecvString(client.m_sock, client.m_crypt);
     msg.m_os = DS::CryptRecvString(client.m_sock, client.m_crypt);
     s_authChannel.putMessage(e_AuthClientLogin, reinterpret_cast<void*>(&msg));

@@ -8,6 +8,9 @@ set(PRODUCT_BUILD_TYPE  "50"        CACHE STRING "Build Type")
 set(PRODUCT_UUID        "ea489821-6c35-4bd0-9dae-bb17c585e680"
                                     CACHE STRING "Product UUID")
 
+set(DS_USE_SHA256_LOGIN_HASH OFF CACHE BOOL
+    "Use SHA256 hashes for login instead of SHA0/SHA1 (WARNING: Not compatible with old MOULa clients)")
+
 set(DS_HOOD_USER_NAME       "DS"
     CACHE STRING "Default Neighborhood Name")
 set(DS_HOOD_INST_NAME       "Neighborhood"
@@ -62,6 +65,10 @@ add_definitions(-DPRODUCT_UUID="${PRODUCT_UUID}")
 add_definitions(-DHOOD_USER_NAME="${DS_HOOD_USER_NAME}")
 add_definitions(-DHOOD_INST_NAME="${DS_HOOD_INST_NAME}")
 add_definitions(-DHOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD})
+
+if(DS_USE_SHA256_LOGIN_HASH)
+    add_definitions(-DUSE_SHA256_LOGIN_HASH)
+endif()
 
 set(PlasMOUL_SOURCES
     PlasMOUL/AgeLinkStruct.cpp

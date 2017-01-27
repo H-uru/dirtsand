@@ -94,7 +94,11 @@ struct Auth_LoginInfo : public Auth_ClientMessage
 {
     uint32_t m_clientChallenge;
     ST::string m_acctName;
+#ifdef USE_SHA256_LOGIN_HASH
+    DS::Sha256Hash m_passHash;
+#else
     DS::ShaHash m_passHash;
+#endif
     ST::string m_token, m_os;
 
     uint32_t m_billingType;

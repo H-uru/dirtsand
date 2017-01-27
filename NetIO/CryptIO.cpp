@@ -228,6 +228,7 @@ ST::string DS::CryptRecvString(const SocketHandle sock, CryptState crypt)
     return ST::string::from_utf16(result, ST::substitute_invalid);
 }
 
+#ifndef USE_SHA256_LOGIN_HASH
 DS::ShaHash DS::BuggyHashPassword(const ST::string& username, const ST::string& password)
 {
     ST::utf16_buffer wuser = username.to_utf16();
@@ -255,3 +256,4 @@ DS::ShaHash DS::BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChall
     buffer.m_pwhash = passwordHash;
     return ShaHash::Sha0(&buffer, sizeof(buffer));
 }
+#endif

@@ -17,6 +17,7 @@
 
 #include "ShaHash.h"
 #include <string_theory/format>
+#include <string_theory/codecs>
 #include <openssl/sha.h>
 #include <cstdlib>
 
@@ -66,12 +67,12 @@ void DS::ShaHash::swapBytes()
 
 ST::string DS::ShaHash::toString() const
 {
-    return ST::format("{08x}{08x}{08x}{08x}{08x}",
-                      SWAP_BYTES(m_data[0]), SWAP_BYTES(m_data[1]),
-                      SWAP_BYTES(m_data[2]), SWAP_BYTES(m_data[3]),
-                      SWAP_BYTES(m_data[4]));
+    // Assuming the bytes are already in the right order, we can just
+    // convert them directly as a block of bytes instead of 5 words.
+    return ST::hex_encode(m_data, sizeof(m_data));
 }
 
+#ifndef USE_SHA256_LOGIN_HASH
 DS::ShaHash DS::ShaHash::Sha0(const void* data, size_t size)
 {
     ShaHash result;
@@ -79,11 +80,32 @@ DS::ShaHash DS::ShaHash::Sha0(const void* data, size_t size)
         reinterpret_cast<unsigned char*>(result.m_data));
     return result;
 }
+#endif
 
 DS::ShaHash DS::ShaHash::Sha1(const void* data, size_t size)
 {
     ShaHash result;
     SHA1(reinterpret_cast<const unsigned char*>(data), size,
          reinterpret_cast<unsigned char*>(result.m_data));
+    return result;
+}
+
+
+/* Sha256Hash */
+DS::Sha256Hash::Sha256Hash(const char* struuid)
+{
+    ST::hex_decode(struuid, m_data, sizeof(m_data));
+}
+
+ST::string DS::Sha256Hash::toString() const
+{
+    return ST::hex_encode(m_data, sizeof(m_data));
+}
+
+DS::Sha256Hash DS::Sha256Hash::Sha256(const void* data, size_t size)
+{
+    Sha256Hash result;
+    SHA256(reinterpret_cast<const unsigned char*>(data), size,
+           reinterpret_cast<unsigned char*>(result.m_data));
     return result;
 }

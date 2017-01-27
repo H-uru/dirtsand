@@ -76,9 +76,11 @@ namespace DS
 
     ST::string CryptRecvString(const SocketHandle sock, CryptState crypt);
 
+#ifndef USE_SHA256_LOGIN_HASH
     ShaHash BuggyHashPassword(const ST::string& username, const ST::string& password);
     ShaHash BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChallenge,
                            uint32_t clientChallenge);
+#endif
 }
 
 #endif
