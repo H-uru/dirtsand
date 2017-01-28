@@ -56,6 +56,7 @@ enum AuthServer_MsgIds
     e_CliToAuth_ScoreSetPoints, e_CliToAuth_ScoreGetRanks,
     e_CliToAuth_AcctExistsRequest,
     e_CliToAuth_AgeRequestEx = 0x1000, e_CliToAuth_ScoreGetHighScores,
+    e_CliToAuth_AcctLogin256Request,
 
     e_AuthToCli_PingReply = 0, kAuthToCli_ServerAddr, e_AuthToCli_NotifyNewBuild,
     e_AuthToCli_ClientRegisterReply, e_AuthToCli_AcctLoginReply,

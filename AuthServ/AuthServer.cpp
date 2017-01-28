@@ -881,7 +881,24 @@ void cb_sockRead(AuthServer_Private& client)
         cb_register(client);
         break;
     case e_CliToAuth_AcctLoginRequest:
+#ifdef USE_SHA256_LOGIN_HASH
+        fprintf(stderr, "[Auth] Client %s used incorrect login type\n",
+                DS::SockIpAddress(client.m_sock).c_str());
+        DS::CloseSock(client.m_sock);
+        throw DS::SockHup();
+#else
         cb_login(client);
+#endif
+        break;
+    case e_CliToAuth_AcctLogin256Request:
+#ifdef USE_SHA256_LOGIN_HASH
+        cb_login(client);
+#else
+        fprintf(stderr, "[Auth] Client %s used incorrect login type\n",
+                DS::SockIpAddress(client.m_sock).c_str());
+        DS::CloseSock(client.m_sock);
+        throw DS::SockHup();
+#endif
         break;
     case e_CliToAuth_AcctSetPlayerRequest:
         cb_setPlayer(client);
