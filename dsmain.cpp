@@ -181,13 +181,16 @@ int main(int argc, char* argv[])
             break;
         }
 
-        std::vector<ST::string> args = ST::string(cmdbuf).before_first('#').trim().tokenize();
+        ST::string cmdline = ST::string(cmdbuf).before_first('#').trim();
+        std::vector<ST::string> args = cmdline.tokenize();
         if (args.size() == 0) {
             free(cmdbuf);
             continue;
         }
         add_history(cmdbuf);
-        ST::string arg_str = ST::string(cmdbuf + args.front().size() + 1);
+        ST::string arg_str;
+        if (cmdline.size() > args.front().size() + 1)
+            arg_str = ST::string(cmdbuf + args.front().size() + 1);
         free(cmdbuf);
 
         if (args[0] == "quit") {
