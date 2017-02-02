@@ -119,7 +119,7 @@ void dm_htserv()
                 ST::string json = ST_LITERAL("{'online':true");
                 ST::string welcome = DS::Settings::WelcomeMsg();
                 welcome = welcome.replace("\"", "\\\"");
-                json += ST::format(",'welcome':\"%s\"", welcome);
+                json += ST::format(",'welcome':\"{}\"", welcome);
                 json += "}\r\n";
                 // TODO: Add more status fields (players/ages, etc)
 
