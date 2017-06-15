@@ -16,8 +16,9 @@
  ******************************************************************************/
 
 #include "ShaHash.h"
+#include "errors.h"
 #include <string_theory/format>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <cstdlib>
 
 /* Cyan makes their SHA hashes 5 LE dwords instead of 20 bytes, making our
@@ -75,15 +76,35 @@ ST::string DS::ShaHash::toString() const
 DS::ShaHash DS::ShaHash::Sha0(const void* data, size_t size)
 {
     ShaHash result;
-    SHA(reinterpret_cast<const unsigned char*>(data), size,
-        reinterpret_cast<unsigned char*>(result.m_data));
+    const EVP_MD* sha0_md = EVP_get_digestbyname("sha");
+    DS_PASSERT(sha0_md);
+
+    unsigned int out_len = EVP_MD_size(sha0_md);
+    DS_PASSERT(out_len == sizeof(result.m_data));
+
+    EVP_MD_CTX* sha_ctx = EVP_MD_CTX_create();
+    EVP_DigestInit_ex(sha_ctx, sha0_md, NULL);
+    EVP_DigestUpdate(sha_ctx, data, size);
+    EVP_DigestFinal_ex(sha_ctx, reinterpret_cast<unsigned char *>(result.m_data), &out_len);
+    EVP_MD_CTX_destroy(sha_ctx);
+
     return result;
 }
 
 DS::ShaHash DS::ShaHash::Sha1(const void* data, size_t size)
 {
     ShaHash result;
-    SHA1(reinterpret_cast<const unsigned char*>(data), size,
-         reinterpret_cast<unsigned char*>(result.m_data));
+    const EVP_MD* sha1_md = EVP_get_digestbyname("sha1");
+    DS_PASSERT(sha1_md);
+
+    unsigned int out_len = EVP_MD_size(sha1_md);
+    DS_PASSERT(out_len == sizeof(result.m_data));
+
+    EVP_MD_CTX* sha1_ctx = EVP_MD_CTX_create();
+    EVP_DigestInit_ex(sha1_ctx, sha1_md, NULL);
+    EVP_DigestUpdate(sha1_ctx, data, size);
+    EVP_DigestFinal_ex(sha1_ctx, reinterpret_cast<unsigned char *>(result.m_data), &out_len);
+    EVP_MD_CTX_destroy(sha1_ctx);
+
     return result;
 }
