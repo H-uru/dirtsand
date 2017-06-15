@@ -21,8 +21,9 @@
 #include <string_theory/format>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <chrono>
 #include <poll.h>
+#include <chrono>
+#include <functional>
 
 extern bool s_commdebug;
 
