@@ -27,6 +27,7 @@
 #include "settings.h"
 #include <string_theory/codecs>
 #include <string_theory/stdio>
+#include <openssl/evp.h>
 #include <readline.h>
 #include <history.h>
 #include <signal.h>
@@ -126,6 +127,8 @@ int main(int argc, char* argv[])
         fputs("Do not run this server as root!\n", stderr);
         return 1;
     }
+
+    OpenSSL_add_all_digests();
 
     // Preset some arguments
     const char* settings = 0;
