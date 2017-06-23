@@ -210,7 +210,7 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
 
         if (haveAge)
             configs.push_back(age);
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
         fclose(cfgfile);
@@ -345,7 +345,7 @@ bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc)
     DS::FileStream fs;
     try {
         fs.open(agefile.c_str(), "r");
-    } catch (DS::FileIOException&) {
+    } catch (const DS::FileIOException&) {
         return true;
     }
 
