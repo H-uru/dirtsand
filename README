@@ -15,11 +15,12 @@ Building the code
 -----------------
 
 Prerequisites:
-* GCC 4.6+ (might work with other C++11 compliant compilers, but untested)
+* GCC 4.7+ (might work with other C++11 compliant compilers, but untested)
 * Postgres (libpq) -- the actual database server can reside anywhere
 * OpenSSL
 * libreadline
 * zlib
+* string_theory (https://github.com/zrax/string_theory)
 * git (to get the sources)
 
 
