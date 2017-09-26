@@ -31,9 +31,12 @@
 #include <readline.h>
 #include <history.h>
 #include <signal.h>
-#include <execinfo.h>
 #include <unistd.h>
 #include <cstdio>
+
+#ifdef __GLIBC__
+#include <execinfo.h>
+#endif
 
 #ifdef DEBUG
 extern bool s_commdebug;
@@ -80,6 +83,7 @@ static char** console_completer(const char* text, int start, int end)
     return dup_strlist(text, matches.data(), matches.size());
 }
 
+#ifdef __GLIBC__
 static void print_trace(const char* text)
 {
     const size_t max_depth = 100;
@@ -114,6 +118,7 @@ static void exception_filter()
     print_trace("Unhandled exception");
     exit(4);
 }
+#endif
 
 static void sigh_term(int)
 {
@@ -151,13 +156,17 @@ int main(int argc, char* argv[])
         fputs("Warning: No config file specified. Using defaults...\n", stderr);
     }
 
+#ifdef __GLIBC__
     // Show a stackdump in case we crash
     std::set_terminate(&exception_filter);
-    signal(SIGTERM, &sigh_term);
     signal(SIGSEGV, &sigh_crash);
     signal(SIGABRT, &sigh_crash);
     signal(SIGBUS, &sigh_crash);
     signal(SIGFPE, &sigh_crash);
+#endif
+
+    // Close the read pipe to gracefully trigger shutdown
+    signal(SIGTERM, &sigh_term);
 
     // Ignore sigpipe and force send() to return EPIPE
     signal(SIGPIPE, SIG_IGN);
