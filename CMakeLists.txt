@@ -38,7 +38,7 @@ find_package(Postgres REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(string_theory 1.3 REQUIRED)
+find_package(string_theory 1.7 REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}"
                     "${CMAKE_SOURCE_DIR}/PlasMOUL"
