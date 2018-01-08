@@ -39,6 +39,7 @@ find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(string_theory 1.7 REQUIRED)
+add_definitions(-DST_NO_2_0_DEPRECATION)
 
 include_directories("${CMAKE_SOURCE_DIR}"
                     "${CMAKE_SOURCE_DIR}/PlasMOUL"
