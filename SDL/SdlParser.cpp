@@ -233,7 +233,7 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
             return state;
         }
 
-        switch (tok.m_type) {
+        switch ((int)tok.m_type) {
         case '(':
             if (state == e_State_Default) {
                 state = e_State_LS_I;
@@ -491,7 +491,7 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             break;
         }
 
-        switch (tok.m_type) {
+        switch ((int)tok.m_type) {
         case '(':
             if (state == e_State_Default) {
                 push(tok);
