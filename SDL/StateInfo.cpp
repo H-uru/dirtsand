@@ -520,6 +520,9 @@ void SDL::Variable::copy(const SDL::Variable& rhs) {
             m_data->m_child[i].update();
         }
         break;
+    case e_VarAgeTimeOfDay:
+        /* No extra data to copy */
+        break;
     }
 }
 

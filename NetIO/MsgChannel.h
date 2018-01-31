@@ -33,7 +33,7 @@ namespace DS
     {
     public:
         MsgChannel();
-        ~MsgChannel();
+        ~MsgChannel() noexcept(false);
 
         int fd() const { return m_semaphore; }
         void putMessage(int type, void* payload = 0);

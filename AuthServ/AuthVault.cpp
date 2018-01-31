@@ -934,7 +934,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
 
     fieldp = fieldbuf;
     for (size_t i=0; i<parmcount; ++i) {
-        sprintf(fieldp, "$%Zu,", i+1);
+        sprintf(fieldp, "$%zu,", i+1);
         fieldp += strlen(fieldp);
     }
     DS_DASSERT(fieldp - fieldbuf < 1024);
@@ -999,7 +999,7 @@ bool v_update_node(const DS::Vault::Node& node)
     #define SET_FIELD(name, value) \
         { \
             parms.set(parmcount++, value); \
-            fieldp += sprintf(fieldp, "\"" #name "\"=$%Zu,", parmcount); \
+            fieldp += sprintf(fieldp, "\"" #name "\"=$%zu,", parmcount); \
         }
     int now = time(0);
     SET_FIELD(ModifyTime, now);
@@ -1260,12 +1260,12 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     #define SET_FIELD(name, value) \
         { \
             parms.set(parmcount++, value); \
-            fieldp += sprintf(fieldp, "\"" #name "\"=$%Zu AND ", parmcount); \
+            fieldp += sprintf(fieldp, "\"" #name "\"=$%zu AND ", parmcount); \
         }
     #define SET_FIELD_I(name, value) \
         { \
             parms.set(parmcount++, value); \
-            fieldp += sprintf(fieldp, "LOWER(\"" #name "\")=LOWER($%Zu) AND ", parmcount); \
+            fieldp += sprintf(fieldp, "LOWER(\"" #name "\")=LOWER($%zu) AND ", parmcount); \
         }
     if (nodeTemplate.has_CreateTime())
         SET_FIELD(CreateTime, nodeTemplate.m_CreateTime);

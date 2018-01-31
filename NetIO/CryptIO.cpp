@@ -57,14 +57,14 @@ void DS::GenPrimeKeys(uint8_t* K, uint8_t* N)
     init_rand();
 
     while (BN_num_bytes(bn_key) != 64) {
-        BN_generate_prime(bn_key, 512, 1, 0, 0, 0, 0);
+        BN_generate_prime_ex(bn_key, 512, 1, nullptr, nullptr, nullptr);
         putc('.', stdout);
         fflush(stdout);
     }
     BN_bn2bin(bn_key, reinterpret_cast<unsigned char*>(K));
     BN_set_word(bn_key, 0);
     while (BN_num_bytes(bn_key) != 64) {
-        BN_generate_prime(bn_key, 512, 1, 0, 0, 0, 0);
+        BN_generate_prime_ex(bn_key, 512, 1, nullptr, nullptr, nullptr);
         putc('.', stdout);
         fflush(stdout);
     }

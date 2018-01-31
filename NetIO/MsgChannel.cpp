@@ -26,7 +26,7 @@ DS::MsgChannel::MsgChannel()
     DS_PASSERT(m_semaphore != -1);
 }
 
-DS::MsgChannel::~MsgChannel()
+DS::MsgChannel::~MsgChannel() noexcept(false)
 {
     int result = close(m_semaphore);
     if (result < 0) {

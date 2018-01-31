@@ -26,7 +26,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_C_FLAGS "-pthread ${WARN_FLAGS} ${CMAKE_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${WARN_FLAGS} ${CMAKE_CXX_FLAGS}")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(WARN_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-format-invalid-specifier")
+    set(WARN_FLAGS "-Wall -Wextra -Wno-unused-parameter")
     set(CMAKE_C_FLAGS "-pthread ${WARN_FLAGS} ${CMAKE_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "-std=c++11 -pthread ${WARN_FLAGS} ${CMAKE_CXX_FLAGS}")
 endif()
@@ -39,6 +39,7 @@ find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(string_theory 1.7 REQUIRED)
+add_definitions(-DST_NO_2_0_DEPRECATION)
 
 include_directories("${CMAKE_SOURCE_DIR}"
                     "${CMAKE_SOURCE_DIR}/PlasMOUL"
