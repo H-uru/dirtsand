@@ -38,7 +38,7 @@ void dm_htserv()
             DS::SocketHandle client;
             try {
                 client = DS::AcceptSock(s_listenSock);
-            } catch (DS::SockHup) {
+            } catch (const DS::SockHup&) {
                 break;
             }
 
@@ -162,7 +162,7 @@ void dm_htserv()
                 DS::FreeSock(client);
             }
         }
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Status] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
     }

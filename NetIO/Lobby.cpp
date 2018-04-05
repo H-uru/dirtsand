@@ -55,7 +55,7 @@ void dm_lobby()
             DS::SocketHandle client;
             try {
                 client = DS::AcceptSock(s_listenSock);
-            } catch (DS::SockHup) {
+            } catch (const DS::SockHup&) {
                 break;
             }
 
@@ -96,11 +96,11 @@ void dm_lobby()
                     DS::FreeSock(client);
                     break;
                 }
-            } catch (DS::SockHup hup) {
+            } catch (const DS::SockHup& hup) {
                 DS::FreeSock(client);
             }
         }
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Lobby] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
     }

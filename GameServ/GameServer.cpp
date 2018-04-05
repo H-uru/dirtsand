@@ -226,11 +226,11 @@ void wk_gameWorker(DS::SocketHandle sockp)
 
     try {
         game_client_init(client);
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
         return;
-    } catch (DS::SockHup) {
+    } catch (const DS::SockHup&) {
         // Socket closed...
         return;
     }

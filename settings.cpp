@@ -194,7 +194,7 @@ bool DS::Settings::LoadFrom(const char* filename)
                         params[0].c_str());
             }
         }
-    } catch (DS::AssertException ex) {
+    } catch (const DS::AssertException& ex) {
         fprintf(stderr, "[Lobby] Assertion failed at %s:%ld:  %s\n",
                 ex.m_file, ex.m_line, ex.m_cond);
         return false;
