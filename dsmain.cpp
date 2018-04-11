@@ -262,16 +262,16 @@ int main(int argc, char* argv[])
             } else if (args[1] == "show") {
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
                                DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
-                ST::printf("Server.Auth.N \"%s\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyAuth_N), 64));
-                ST::printf("Server.Auth.X \"%s\"\n", ST::base64_encode(xbuffer, 64));
+                ST::printf("Server.Auth.N \"{}\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyAuth_N), 64));
+                ST::printf("Server.Auth.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGame_N),
                                DS::Settings::CryptKey(DS::e_KeyGame_K), CRYPT_BASE_GAME);
-                ST::printf("Server.Game.N \"%s\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyGame_N), 64));
-                ST::printf("Server.Game.X \"%s\"\n", ST::base64_encode(xbuffer, 64));
+                ST::printf("Server.Game.N \"{}\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyGame_N), 64));
+                ST::printf("Server.Game.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyGate_N),
                                DS::Settings::CryptKey(DS::e_KeyGate_K), CRYPT_BASE_GATE);
-                ST::printf("Server.Gate.N \"%s\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyGate_N), 64));
-                ST::printf("Server.Gate.X \"%s\"\n", ST::base64_encode(xbuffer, 64));
+                ST::printf("Server.Gate.N \"{}\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyGate_N), 64));
+                ST::printf("Server.Gate.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
             } else {
                 fputs("Error: keygen parameter should be 'new' or 'show'\n", stderr);
                 continue;
