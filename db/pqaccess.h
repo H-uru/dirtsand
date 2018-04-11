@@ -47,3 +47,44 @@ struct PostgresStrings
         m_values[idx] = m_strings[idx].c_str();
     }
 };
+
+class PGresultRef
+{
+public:
+    constexpr PGresultRef() noexcept : m_result() { }
+    constexpr PGresultRef(PGresult* result) noexcept : m_result(result) { }
+
+    void reset(PGresult* result = nullptr) noexcept
+    {
+        if (m_result && m_result != result)
+            PQclear(m_result);
+        m_result = result;
+    }
+
+    ~PGresultRef() noexcept { reset(); }
+
+    PGresultRef& operator=(PGresult* result) noexcept
+    {
+        reset(result);
+        return *this;
+    }
+
+    operator PGresult*() noexcept { return m_result; }
+    operator const PGresult*() const noexcept { return m_result; }
+
+    PGresultRef(const PGresultRef&) = delete;
+    PGresultRef& operator=(const PGresultRef&) = delete;
+
+    PGresultRef(PGresultRef&& move) noexcept
+        : m_result(move.m_result) { move.m_result = nullptr; }
+
+    PGresultRef& operator=(PGresultRef&& move) noexcept
+    {
+        reset(move.m_result);
+        move.m_result = nullptr;
+        return *this;
+    }
+
+private:
+    PGresult* m_result;
+};
