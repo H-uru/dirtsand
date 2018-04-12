@@ -388,18 +388,16 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
     parms.set(1, descriptor);
     parms.set(2, ST::base64_encode(buffer.buffer(), buffer.size()));
     parms.set(3, ST::base64_encode(sdlBlob.buffer(), sdlBlob.size()));
-    PGresult* result = PQexecParams(host->m_postgres,
-                                    "SELECT idx FROM game.\"AgeStates\""
-                                    "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
-                                    3, 0, parms.m_values, 0, 0, 0);
+    PGresultRef result = PQexecParams(host->m_postgres,
+                                      "SELECT idx FROM game.\"AgeStates\""
+                                      "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
+                                      3, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-        PQclear(result);
         return;
     }
     if (PQntuples(result) == 0) {
-        PQclear(result);
         result = PQexecParams(host->m_postgres,
                               "INSERT INTO game.\"AgeStates\""
                               "    (\"ServerIdx\", \"Descriptor\", \"ObjectKey\", \"SdlBlob\")"
@@ -408,15 +406,12 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
             fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
                     __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-            PQclear(result);
             return;
         }
-        PQclear(result);
     } else {
         DS_DASSERT(PQntuples(result) == 1);
         parms.set(0, ST::string(PQgetvalue(result, 0, 0)));
         parms.set(1, parms.m_strings[3]);   // SDL blob
-        PQclear(result);
         result = PQexecParams(host->m_postgres,
                               "UPDATE game.\"AgeStates\""
                               "    SET \"SdlBlob\"=$2 WHERE idx=$1",
@@ -424,10 +419,8 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
             fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                     __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
-            PQclear(result);
             return;
         }
-        PQclear(result);
     }
 }
 
@@ -858,20 +851,20 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
 
     PostgresStrings<1> parms;
     parms.set(0, ageMcpId);
-    PGresult* result = PQexecParams(postgres,
+    PGresultRef result = PQexecParams(postgres,
             "SELECT \"AgeUuid\", \"AgeFilename\", \"AgeIdx\", \"SdlIdx\", \"Temporary\""
             "    FROM game.\"Servers\" WHERE idx=$1",
             1, 0, parms.m_values, 0, 0, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(postgres));
-        PQclear(result);
+        result.reset();
         PQfinish(postgres);
         return 0;
     }
     if (PQntuples(result) == 0) {
         fprintf(stderr, "[Game] Age MCP %u not found\n", ageMcpId);
-        PQclear(result);
+        result.reset();
         PQfinish(postgres);
         return 0;
     } else {
@@ -892,7 +885,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         sdlFetch.m_client = &fakeClient;
         sdlFetch.m_ageFilename = host->m_ageFilename;
         sdlFetch.m_sdlNodeId = strtoul(PQgetvalue(result, 0, 3), 0, 10);
-        PQclear(result);
+        result.reset();
 
         s_authChannel.putMessage(e_AuthFetchSDL, reinterpret_cast<void*>(&sdlFetch));
         DS::FifoMessage reply = fakeClient.m_channel.getMessage();
@@ -942,7 +935,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         // Fetch initial server state
         PostgresStrings<1> parms;
         parms.set(0, host->m_serverIdx);
-        PGresult* result = PQexecParams(host->m_postgres,
+        result = PQexecParams(host->m_postgres,
                 "SELECT \"Descriptor\", \"ObjectKey\", \"SdlBlob\""
                 "    FROM game.\"AgeStates\" WHERE \"ServerIdx\"=$1",
                 1, 0, parms.m_values, 0, 0, 0);
@@ -972,7 +965,6 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                 }
             }
         }
-        PQclear(result);
 
         std::thread threadh(&dm_gameHost, host);
         threadh.detach();
