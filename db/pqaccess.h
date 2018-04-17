@@ -18,73 +18,102 @@
 #include "Types/Uuid.h"
 #include <libpq-fe.h>
 
-template <size_t count>
-struct PostgresStrings
+namespace DS
 {
-    const char* m_values[count];
-    ST::string m_strings[count];
-
-    void set(size_t idx, const ST::string& str)
+    template <size_t count>
+    class PostgresStrings
     {
-        m_strings[idx] = str;
-        _cache(idx);
-    }
+    public:
+        const char* m_values[count];
+        ST::string m_strings[count];
 
-    void set(size_t idx, uint32_t value)
+        void set(size_t idx, const ST::string& str)
+        {
+            m_strings[idx] = str;
+            _cache(idx);
+        }
+
+        void set(size_t idx, uint32_t value)
+        {
+            m_strings[idx] = ST::string::from_uint(value);
+            _cache(idx);
+        }
+
+        void set(size_t idx, int value)
+        {
+            m_strings[idx] = ST::string::from_int(value);
+            _cache(idx);
+        }
+
+        template <typename... ArgsT>
+        void set_all(ArgsT&&... args)
+        {
+            _set_many(0, std::forward<ArgsT>(args)...);
+        }
+
+    private:
+        void _set_many(size_t idx) { }
+
+        template <typename ArgN, typename... ArgsT>
+        void _set_many(size_t idx, ArgN&& arg, ArgsT&&... args)
+        {
+            set(idx, std::forward<ArgN>(arg));
+            _set_many(idx + 1, std::forward<ArgsT>(args)...);
+        }
+
+        void _cache(size_t idx)
+        {
+            m_values[idx] = m_strings[idx].c_str();
+        }
+    };
+
+    class PGresultRef
     {
-        m_strings[idx] = ST::string::from_uint(value);
-        _cache(idx);
-    }
+    public:
+        constexpr PGresultRef() noexcept : m_result() { }
+        constexpr PGresultRef(PGresult* result) noexcept : m_result(result) { }
 
-    void set(size_t idx, int value)
+        void reset(PGresult* result = nullptr) noexcept
+        {
+            if (m_result && m_result != result)
+                PQclear(m_result);
+            m_result = result;
+        }
+
+        ~PGresultRef() noexcept { reset(); }
+
+        PGresultRef& operator=(PGresult* result) noexcept
+        {
+            reset(result);
+            return *this;
+        }
+
+        operator PGresult*() noexcept { return m_result; }
+        operator const PGresult*() const noexcept { return m_result; }
+
+        PGresultRef(const PGresultRef&) = delete;
+        PGresultRef& operator=(const PGresultRef&) = delete;
+
+        PGresultRef(PGresultRef&& move) noexcept
+            : m_result(move.m_result) { move.m_result = nullptr; }
+
+        PGresultRef& operator=(PGresultRef&& move) noexcept
+        {
+            reset(move.m_result);
+            move.m_result = nullptr;
+            return *this;
+        }
+
+    private:
+        PGresult* m_result;
+    };
+
+    template <typename... ArgsT>
+    PGresultRef PQexecVA(PGconn* conn, const char* command, ArgsT&&... args)
     {
-        m_strings[idx] = ST::string::from_int(value);
-        _cache(idx);
+        PostgresStrings<sizeof...(args)> params;
+        params.set_all(std::forward<ArgsT>(args)...);
+        return PQexecParams(conn, command, sizeof...(args), nullptr,
+                            params.m_values, nullptr, nullptr, 0);
     }
-
-    void _cache(size_t idx)
-    {
-        m_values[idx] = m_strings[idx].c_str();
-    }
-};
-
-class PGresultRef
-{
-public:
-    constexpr PGresultRef() noexcept : m_result() { }
-    constexpr PGresultRef(PGresult* result) noexcept : m_result(result) { }
-
-    void reset(PGresult* result = nullptr) noexcept
-    {
-        if (m_result && m_result != result)
-            PQclear(m_result);
-        m_result = result;
-    }
-
-    ~PGresultRef() noexcept { reset(); }
-
-    PGresultRef& operator=(PGresult* result) noexcept
-    {
-        reset(result);
-        return *this;
-    }
-
-    operator PGresult*() noexcept { return m_result; }
-    operator const PGresult*() const noexcept { return m_result; }
-
-    PGresultRef(const PGresultRef&) = delete;
-    PGresultRef& operator=(const PGresultRef&) = delete;
-
-    PGresultRef(PGresultRef&& move) noexcept
-        : m_result(move.m_result) { move.m_result = nullptr; }
-
-    PGresultRef& operator=(PGresultRef&& move) noexcept
-    {
-        reset(move.m_result);
-        move.m_result = nullptr;
-        return *this;
-    }
-
-private:
-    PGresult* m_result;
-};
+}
