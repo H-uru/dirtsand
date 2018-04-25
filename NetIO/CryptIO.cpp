@@ -121,7 +121,8 @@ void DS::CryptEstablish(uint8_t* seed, uint8_t* key, const uint8_t* N,
 
     /* Apply server seed for establishing crypt state with client */
     uint8_t keybuf[64];
-    DS_DASSERT(BN_num_bytes(bn_seed) <= 64);
+    if (BN_num_bytes(bn_seed) > 64)
+        throw DS::InvalidConnectionHeader();
     size_t outBytes = BN_bn2bin(bn_seed, reinterpret_cast<unsigned char*>(keybuf));
     BYTE_SWAP_BUFFER(keybuf, outBytes);
     for (size_t i=0; i<7; ++i)

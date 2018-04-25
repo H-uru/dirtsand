@@ -107,7 +107,8 @@ void file_init(FileServer_Private& client)
 {
     /* File server header:  size, buildId, serverType */
     uint32_t size = DS::RecvValue<uint32_t>(client.m_sock);
-    DS_PASSERT(size == 12);
+    if (size != 12)
+        throw DS::InvalidConnectionHeader();
     DS::RecvValue<uint32_t>(client.m_sock);
     DS::RecvValue<uint32_t>(client.m_sock);
 }

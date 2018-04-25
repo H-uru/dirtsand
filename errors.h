@@ -45,6 +45,13 @@ namespace DS
         MalformedData()
             : std::runtime_error("Malformed stream data from client") { }
     };
+
+    class InvalidConnectionHeader : public std::runtime_error
+    {
+    public:
+        InvalidConnectionHeader()
+            : std::runtime_error("Invalid connection header received from client") { }
+    };
 }
 
 #define DS_PASSERT(cond) \

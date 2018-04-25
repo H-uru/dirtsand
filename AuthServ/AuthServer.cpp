@@ -43,7 +43,8 @@ void auth_init(AuthServer_Private& client)
 {
     /* Auth server header:  size, null uuid */
     uint32_t size = DS::RecvValue<uint32_t>(client.m_sock);
-    DS_PASSERT(size == 20);
+    if (size != 20)
+        throw DS::InvalidConnectionHeader();
     DS::Uuid uuid;
     DS::RecvBuffer(client.m_sock, uuid.m_bytes, sizeof(uuid.m_bytes));
 
@@ -53,7 +54,8 @@ void auth_init(AuthServer_Private& client)
 
     /* Establish encryption, and write reply body */
     uint8_t msgId = DS::RecvValue<uint8_t>(client.m_sock);
-    DS_PASSERT(msgId == DS::e_CliToServConnect);
+    if (msgId != DS::e_CliToServConnect)
+        throw DS::InvalidConnectionHeader();
     uint8_t msgSize = DS::RecvValue<uint8_t>(client.m_sock);
     if (msgSize == 2) {
         // no seed... client wishes unencrypted connection (that's okay, nobody
@@ -63,7 +65,8 @@ void auth_init(AuthServer_Private& client)
     } else {
         uint8_t Y[64];
         memset(Y, 0, sizeof(Y));
-        DS_PASSERT(msgSize <= 66);
+        if (msgSize > 66)
+            throw DS::InvalidConnectionHeader();
         DS::RecvBuffer(client.m_sock, Y, 64 - (66 - msgSize));
         BYTE_SWAP_BUFFER(Y, 64);
 

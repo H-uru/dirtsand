@@ -39,7 +39,8 @@ void game_client_init(GameClient_Private& client)
 {
     /* Game client header:  size, account uuid, age instance uuid */
     uint32_t size = DS::RecvValue<uint32_t>(client.m_sock);
-    DS_PASSERT(size == 36);
+    if (size != 36)
+        throw DS::InvalidConnectionHeader();
     DS::Uuid clientUuid, connUuid;
     DS::RecvBuffer(client.m_sock, clientUuid.m_bytes, sizeof(clientUuid.m_bytes));
     DS::RecvBuffer(client.m_sock, connUuid.m_bytes, sizeof(connUuid.m_bytes));
@@ -50,7 +51,8 @@ void game_client_init(GameClient_Private& client)
 
     /* Establish encryption, and write reply body */
     uint8_t msgId = DS::RecvValue<uint8_t>(client.m_sock);
-    DS_PASSERT(msgId == DS::e_CliToServConnect);
+    if (msgId != DS::e_CliToServConnect)
+        throw DS::InvalidConnectionHeader();
     uint8_t msgSize = DS::RecvValue<uint8_t>(client.m_sock);
     if (msgSize == 2) {
         // no seed... client wishes unencrypted connection (that's okay, nobody
@@ -60,7 +62,8 @@ void game_client_init(GameClient_Private& client)
     } else {
         uint8_t Y[64];
         memset(Y, 0, sizeof(Y));
-        DS_PASSERT(msgSize <= 66);
+        if (msgSize > 66)
+            throw DS::InvalidConnectionHeader();
         DS::RecvBuffer(client.m_sock, Y, 64 - (66 - msgSize));
         BYTE_SWAP_BUFFER(Y, 64);
 
@@ -226,9 +229,9 @@ void wk_gameWorker(DS::SocketHandle sockp)
 
     try {
         game_client_init(client);
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
+    } catch (const DS::InvalidConnectionHeader& ex) {
+        fprintf(stderr, "[Game] Invalid connection header from %s\n",
+                DS::SockIpAddress(sockp).c_str());
         return;
     } catch (const DS::SockHup&) {
         // Socket closed...
