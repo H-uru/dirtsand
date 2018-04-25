@@ -35,16 +35,9 @@ std::unordered_map<ST::string, SDL::State, ST::hash_i, ST::equal_i> s_globalStat
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
 
-static inline void check_postgres()
-{
-    if (PQstatus(s_postgres) == CONNECTION_BAD)
-        PQreset(s_postgres);
-    DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
-}
-
 void dm_auth_addacct(Auth_AddAcct* msg)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT idx, \"AcctUuid\" FROM auth.\"Accounts\""
@@ -108,7 +101,7 @@ void dm_auth_shutdown()
 
 void dm_auth_login(Auth_LoginInfo* info)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
 #ifdef DEBUG
     printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
@@ -265,7 +258,7 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
     if (client->m_player.m_playerId) {
         // Mark player as offline
-        check_postgres();
+        check_postgres(s_postgres);
         DS::PGresultRef result = DS::PQexecVA(s_postgres,
                 "UPDATE vault.\"Nodes\" SET"
                 "    \"Int32_1\"=0, \"String64_1\"='',"
@@ -292,7 +285,7 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
 
 void dm_auth_setPlayer(Auth_ClientMessage* msg)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
@@ -930,7 +923,7 @@ void dm_auth_acctFlags(Auth_AccountFlags* msg)
 
 void dm_auth_addAllPlayers(Auth_AddAllPlayers* msg)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
     if (v_has_node(msg->m_playerId, s_allPlayers)) {
         if (!v_unref_node(msg->m_playerId, s_allPlayers)) {

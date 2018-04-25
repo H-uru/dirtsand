@@ -57,13 +57,6 @@ agemap_t s_ages;
     DM_WRITEBUF(msg); \
     client->m_broadcast.putMessage(e_GameToCli_PropagateBuffer, _msgbuf)
 
-static inline void check_postgres(GameHost_Private* host)
-{
-    if (PQstatus(host->m_postgres) == CONNECTION_BAD)
-        PQreset(host->m_postgres);
-    DS_DASSERT(PQstatus(host->m_postgres) == CONNECTION_OK);
-}
-
 void dm_game_shutdown(GameHost_Private* host)
 {
     {
@@ -325,7 +318,7 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
 
 void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
-    check_postgres(host);
+    check_postgres(host->m_postgres);
 
     MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
     state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
@@ -376,7 +369,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
                        const MOUL::Uoid& object, const SDL::State& state)
 {
-    check_postgres(host);
+    check_postgres(host->m_postgres);
 
     DS::Blob sdlBlob = state.toBlob();
     DS::BufferStream buffer;

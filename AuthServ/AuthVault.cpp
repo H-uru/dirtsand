@@ -32,16 +32,9 @@ uint32_t s_allPlayers = 0;
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
 
-static inline void check_postgres()
-{
-    if (PQstatus(s_postgres) == CONNECTION_BAD)
-        PQreset(s_postgres);
-    DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
-}
-
 DS::Uuid gen_uuid()
 {
-    check_postgres();
+    check_postgres(s_postgres);
     DS::PGresultRef result = PQexec(s_postgres, "SELECT uuid_generate_v4()");
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
@@ -374,7 +367,7 @@ SDL::State v_find_global_sdl(const ST::string& ageName)
     SDL::StateDescriptor* desc = SDL::DescriptorDb::FindLatestDescriptor(ageName);
     if (!desc)
         return nullptr;
-    check_postgres();
+    check_postgres(s_postgres);
 
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT \"SdlBlob\" FROM vault.\"GlobalStates\""
@@ -398,7 +391,7 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
         age.m_ageId = gen_uuid();
     int seqNumber = age.m_seqNumber;
     if (seqNumber < 0) {
-        check_postgres();
+        check_postgres(s_postgres);
 
         DS::PGresultRef result = PQexec(s_postgres, "SELECT nextval('game.\"AgeSeqNumber\"'::regclass)");
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -887,7 +880,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     queryStr << fieldbuf;
     queryStr << "\n    RETURNING idx";
 
-    check_postgres();
+    check_postgres(s_postgres);
     DS::PGresultRef result = PQexecParams(s_postgres, queryStr.to_string().c_str(),
                                           parmcount, nullptr, parms.m_values,
                                           nullptr, nullptr, 0);
@@ -908,7 +901,7 @@ bool v_has_node(uint32_t parentId, uint32_t childId)
     if (parentId == childId)
         return true;
 
-    check_postgres();
+    check_postgres(s_postgres);
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT vault.has_node($1, $2)",
             parentId, childId);
@@ -1008,7 +1001,7 @@ bool v_update_node(const DS::Vault::Node& node)
     queryStr << "\n    WHERE idx=$1";
     parms.set(0, node.m_NodeIdx);
 
-    check_postgres();
+    check_postgres(s_postgres);
     DS::PGresultRef result = PQexecParams(s_postgres, queryStr.to_string().c_str(),
                                           parmcount, nullptr, parms.m_values,
                                           nullptr, nullptr, 0);
@@ -1255,7 +1248,7 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     queryStr << "SELECT idx FROM vault.\"Nodes\"\n    WHERE ";
     queryStr << fieldbuf;
 
-    check_postgres();
+    check_postgres(s_postgres);
     DS::PGresultRef result = PQexecParams(s_postgres, queryStr.to_string().c_str(),
                                           parmcount, nullptr, parms.m_values,
                                           nullptr, nullptr, 0);
