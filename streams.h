@@ -20,34 +20,24 @@
 
 #include <string_theory/string>
 #include <atomic>
-#include <exception>
+#include <stdexcept>
 #include <cstdio>
 #include <cstring>
 
 namespace DS
 {
-    class EofException : public std::exception
+    class EofException : public std::runtime_error
     {
     public:
-        EofException() throw() { }
-        virtual ~EofException() throw() { }
-
-        virtual const char* what() const throw()
-        { return "[EofException] Unexpected end of stream"; }
+        EofException()
+            : std::runtime_error("[EofException] Unexpected end of stream") { }
     };
 
-    class FileIOException : public std::exception
+    class FileIOException : public std::runtime_error
     {
     public:
-        FileIOException(const char* msg) throw()
-            : m_errmsg(ST_LITERAL("[FileIOException] ") + msg) { }
-        virtual ~FileIOException() throw() { }
-
-        virtual const char* what() const throw()
-        { return m_errmsg.c_str(); }
-
-    private:
-        ST::string m_errmsg;
+        explicit FileIOException(const char* msg)
+            : std::runtime_error(std::string("[FileIOException] ") + msg) { }
     };
 
     enum StringType

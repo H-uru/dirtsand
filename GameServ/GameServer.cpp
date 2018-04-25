@@ -188,7 +188,7 @@ void cb_sockRead(GameClient_Private& client)
     case e_CliToGame_JoinAgeRequest:
         cb_join(client);
         break;
-    case e_CliToGame_Propagatebuffer:
+    case e_CliToGame_PropagateBuffer:
         DS_PASSERT(client.m_host != 0);
         cb_netmsg(client);
         break;
