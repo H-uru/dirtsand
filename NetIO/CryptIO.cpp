@@ -43,7 +43,11 @@ static void init_rand()
         _random.mypid = getpid();
         gettimeofday(&_random.now, 0);
         FILE* urand = fopen("/dev/urandom", "rb");
-        DS_PASSERT(urand != 0);
+        if (!urand) {
+            fprintf(stderr, "FATAL: Could not open /dev/urandom: %s\n",
+                    strerror(errno));
+            exit(1);
+        }
         fread(_random.buffer, 1, sizeof(_random.buffer), urand);
         fclose(urand);
         RAND_seed(&_random, sizeof(_random));

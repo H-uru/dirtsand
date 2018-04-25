@@ -17,23 +17,26 @@
 
 #include <sys/eventfd.h>
 #include <unistd.h>
+#include <errno.h>
+#include <cstring>
 #include "MsgChannel.h"
-#include "errors.h"
 
 DS::MsgChannel::MsgChannel()
 {
     m_semaphore = eventfd(0, EFD_SEMAPHORE);
-    DS_PASSERT(m_semaphore != -1);
+    if (m_semaphore < 0) {
+        fprintf(stderr, "FATAL: Failed to create event semaphore: %s\n",
+                strerror(errno));
+        exit(1);
+    }
 }
 
-DS::MsgChannel::~MsgChannel() noexcept(false)
+DS::MsgChannel::~MsgChannel()
 {
     int result = close(m_semaphore);
-    if (result < 0) {
-        if (errno == EBADF) {
-            return;
-        }
-        DS_PASSERT(result == 0);
+    if (result < 0 && errno != EBADF) {
+        fprintf(stderr, "WARNING: Failed to close event semaphore: %s\n",
+                strerror(errno));
     }
 }
 
@@ -47,14 +50,22 @@ void DS::MsgChannel::putMessage(int type, void* payload)
     m_queueMutex.unlock();
 
     int result = eventfd_write(m_semaphore, 1);
-    DS_PASSERT(result == 0);
+    if (result < 0) {
+        fprintf(stderr, "FATAL: Failed to write to event semaphore: %s\n",
+                strerror(errno));
+        exit(1);
+    }
 }
 
 DS::FifoMessage DS::MsgChannel::getMessage()
 {
     eventfd_t value;
     int result = eventfd_read(m_semaphore, &value);
-    DS_PASSERT(result == 0);
+    if (result < 0) {
+        fprintf(stderr, "FATAL: Failed to read from event semaphore: %s\n",
+                strerror(errno));
+        exit(1);
+    }
 
     m_queueMutex.lock();
     FifoMessage msg = m_queue.front();

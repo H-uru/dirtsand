@@ -77,7 +77,16 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
 
     addrinfo* addrList;
     result = getaddrinfo(address, port, &info, &addrList);
-    DS_PASSERT(result == 0);
+    if (result != 0) {
+        if (result == EAI_SYSTEM) {
+            fprintf(stderr, "Failed to bind to %s:%s: %s\n",
+                    address, port, strerror(errno));
+        } else {
+            fprintf(stderr, "Failed to bind to %s:%s: %s\n",
+                    address, port, gai_strerror(result));
+        }
+        exit(1);
+    }
 
     addrinfo* addr_iter;
     for (addr_iter = addrList; addr_iter != 0; addr_iter = addr_iter->ai_next) {
@@ -99,14 +108,19 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
     freeaddrinfo(addrList);
 
     // Die if we didn't get a successful socket
-    DS_PASSERT(addr_iter);
+    if (!addr_iter) {
+        fprintf(stderr, "Failed to bind a usable socket on %s:%s\n", address, port);
+        exit(1);
+    }
 
     SocketHandle_Private* sockinfo = new SocketHandle_Private();
     sockinfo->m_sockfd = sockfd;
     result = getsockname(sockfd, &sockinfo->m_addr, &sockinfo->m_addrLen);
     if (result != 0) {
+        fprintf(stderr, "Failed to get bound socket address: %s\n",
+                strerror(errno));
         delete sockinfo;
-        DS_PASSERT(0);
+        exit(1);
     }
     return reinterpret_cast<SocketHandle>(sockinfo);
 }
@@ -115,7 +129,12 @@ void DS::ListenSock(const DS::SocketHandle sock, int backlog)
 {
     DS_DASSERT(sock);
     int result = listen(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, backlog);
-    DS_PASSERT(result == 0);
+    if (result < 0) {
+        const char *error_text = strerror(errno);
+        fprintf(stderr, "Failed to listen on %s: %s\n",
+                DS::SockIpAddress(sock).c_str(), error_text);
+        exit(1);
+    }
 }
 
 DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
@@ -130,10 +149,11 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
         if (errno == EINVAL) {
             throw DS::SockHup();
         } else if (errno == ECONNABORTED) {
-            return 0;
+            return nullptr;
         } else {
-            fprintf(stderr, "Socket closed: %s\n", strerror(errno));
-            DS_DASSERT(0);
+            fprintf(stderr, "Failed to accept incoming connection: %s\n",
+                    strerror(errno));
+            exit(1);
         }
     }
     timeval tv;
