@@ -56,8 +56,7 @@ void dm_auth_addacct(Auth_AddAcct* msg)
         result = DS::PQexecVA(s_postgres,
                 "INSERT INTO auth.\"Accounts\""
                 "    (\"AcctUuid\", \"PassHash\", \"Login\", \"AcctFlags\", \"BillingType\")"
-                "    VALUES ($1, $2, $3, 0, 1)"
-                "    returning idx",
+                "    VALUES ($1, $2, $3, 0, 1)",
                 gen_uuid().toString(), pwHash.toString(),
                 msg->m_acctInfo.m_acctName);
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -66,7 +65,6 @@ void dm_auth_addacct(Auth_AddAcct* msg)
             SEND_REPLY(msg, DS::e_NetInternalError);
             return;
         }
-        DS_DASSERT(PQntuples(result) == 1);
         SEND_REPLY(msg, DS::e_NetSuccess);
     } else {
         fprintf(stderr, "Error: Account already exists (ID %s; UUID %s)\n",
@@ -407,8 +405,7 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     result = DS::PQexecVA(s_postgres,
             "INSERT INTO auth.\"Players\""
             "    (\"AcctUuid\", \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\")"
-            "    VALUES ($1, $2, $3, $4, $5)"
-            "    RETURNING idx",
+            "    VALUES ($1, $2, $3, $4, $5)",
             client->m_acctUuid.toString(), msg->m_player.m_playerId,
             msg->m_player.m_playerName, msg->m_player.m_avatarModel,
             msg->m_player.m_explorer);
@@ -418,7 +415,6 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    DS_DASSERT(PQntuples(result) == 1);
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
@@ -1013,7 +1009,6 @@ void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
                 fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                         __FILE__, __LINE__, PQerrorMessage(s_postgres));
                 // This doesn't block continuing...
-                DS_DASSERT(false);
             }
 
             DS::GameServer_UpdateGlobalSDL(msg->m_ageFilename);
@@ -1067,7 +1062,6 @@ void dm_authDaemon()
         fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                  __FILE__, __LINE__, PQerrorMessage(s_postgres));
         // This doesn't block continuing...
-        DS_DASSERT(false);
     }
 
     for ( ;; ) {

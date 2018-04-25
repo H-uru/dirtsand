@@ -354,7 +354,6 @@ bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc)
                 fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                         __FILE__, __LINE__, PQerrorMessage(s_postgres));
                 // This doesn't block continuing...
-                DS_DASSERT(false);
             }
         }
         s_globalStates[name] = state;
@@ -1034,7 +1033,6 @@ DS::Vault::Node v_fetch_node(uint32_t nodeIdx)
     if (PQntuples(result) == 0) {
         return DS::Vault::Node();
     }
-    DS_DASSERT(PQntuples(result) == 1);
 
     DS::Vault::Node node;
     node.set_NodeIdx(strtoul(PQgetvalue(result, 0, 0), 0, 10));
