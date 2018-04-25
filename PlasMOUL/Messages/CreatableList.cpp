@@ -62,7 +62,8 @@ void MOUL::CreatableList::read(DS::Stream* stream)
         uint16_t id = ram.read<uint16_t>();
         uint16_t type = ram.read<uint16_t>();
         Creatable* cre = Factory::Create(type);
-        DS_PASSERT(cre);
+        if (!cre)
+            throw DS::MalformedData();
         cre->read(&ram);
         m_items[id] = cre;
     }

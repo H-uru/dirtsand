@@ -50,7 +50,7 @@ static DS::SocketHandle s_listenSock;
 void dm_lobby()
 {
     printf("[Lobby] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
-    try {
+    {
         for ( ;; ) {
             DS::SocketHandle client;
             try {
@@ -98,11 +98,12 @@ void dm_lobby()
                 }
             } catch (const DS::SockHup& hup) {
                 DS::FreeSock(client);
+            } catch (const std::exception& ex) {
+                fprintf(stderr, "[Lobby] %s - Exception while processing incoming client: %s\n",
+                        DS::SockIpAddress(client).c_str(), ex.what());
+                DS::FreeSock(client);
             }
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Lobby] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
     }
 
     DS::FreeSock(s_listenSock);

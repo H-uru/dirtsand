@@ -440,8 +440,8 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
     SDL::State update;
     try {
         update = SDL::State::FromBlob(state->m_sdlBlob);
-    } catch (const DS::EofException&) {
-        fputs("[SDL] Error parsing state\n", stderr);
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[SDL] Error parsing state: %s\n", ex.what());
         return;
     }
 
@@ -633,11 +633,6 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                 msg->m_messageType);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-        SEND_REPLY(msg, DS::e_NetInternalError);
-        return;
     } catch (const std::exception& ex) {
         // magickal code to print out the name of the offending plMessage
         MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
@@ -645,13 +640,13 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             switch (gameMsg->m_message->type()) {
 #define CREATABLE_TYPE(id, name) \
             case id: \
-                fprintf(stderr, "[Game] Unknown exception reading " #name ": %s\n", ex.what()); \
+                fprintf(stderr, "[Game] Exception reading " #name ": %s\n", ex.what()); \
                 break;
 #include "creatable_types.inl"
 #undef CREATABLE_TYPE
             }
         } else {
-            fprintf(stderr, "[Game] Unknown exception reading net message: %s\n",
+            fprintf(stderr, "[Game] Exception reading net message: %s\n",
                     ex.what());
         }
         SEND_REPLY(msg, DS::e_NetInternalError);
@@ -809,9 +804,9 @@ void dm_gameHost(GameHost_Private* host)
                 DS_DASSERT(0);
                 break;
             }
-        } catch (const DS::AssertException& ex) {
-            fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                    ex.m_file, ex.m_line, ex.m_cond);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] Exception raised processing message: %s\n",
+                    ex.what());
             if (msg.m_payload) {
                 // Keep clients from blocking on a reply
                 SEND_REPLY(reinterpret_cast<Game_ClientMessage*>(msg.m_payload),
@@ -820,7 +815,8 @@ void dm_gameHost(GameHost_Private* host)
         }
     }
 
-    dm_game_shutdown(host);
+    // This line should be unreachable
+    DS_PASSERT(false);
 }
 
 GameHost_Private* start_game_host(uint32_t ageMcpId)
@@ -886,9 +882,9 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         // Load the local state and see if it needs to be updated
         try {
             host->m_localState = SDL::State::FromBlob(sdlFetch.m_localState);
-        } catch (const DS::EofException&) {
-            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
-                    host->m_ageFilename.c_str());
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s: %s\n",
+                    host->m_ageFilename.c_str(), ex.what());
             PQfinish(postgres);
             delete host;
             return 0;
@@ -942,9 +938,10 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                     gs.m_persist = true;
                     gs.m_state = state;
                     host->m_states[key][PQgetvalue(result, i, 0)] = gs;
-                } catch (const DS::EofException&) {
-                    fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s\n",
-                            PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str());
+                } catch (const std::exception& ex) {
+                    fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s: %s\n",
+                            PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str(),
+                            ex.what());
                 }
             }
         }

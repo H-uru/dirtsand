@@ -1257,19 +1257,17 @@ void dm_authDaemon()
                 DS_DASSERT(0);
                 break;
             }
-        } catch (const DS::AssertException& ex) {
-            fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
-                    ex.m_file, ex.m_line, ex.m_cond);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] Exception raised processing message: %s\n",
+                    ex.what());
             if (msg.m_payload) {
                 // Keep clients from blocking on a reply
                 SEND_REPLY(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload),
                            DS::e_NetInternalError);
             }
-        } catch (const DS::PacketSizeOutOfBounds& ex) {
-            fprintf(stderr, "[Auth] Client packet size too large: Requested %u bytes\n",
-                    ex.requestedSize());
         }
     }
 
-    dm_auth_shutdown();
+    // This line should be unreachable
+    DS_PASSERT(false);
 }

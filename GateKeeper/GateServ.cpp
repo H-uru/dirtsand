@@ -185,14 +185,11 @@ void wk_gateKeeper(DS::SocketHandle sockp)
                 throw DS::SockHup();
             }
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[GateKeeper] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-    } catch (const DS::PacketSizeOutOfBounds& ex) {
-        fprintf(stderr, "[GateKeeper] Client packet size too large: Requested %u bytes\n",
-                ex.requestedSize());
     } catch (const DS::SockHup&) {
         // Socket closed...
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[GateKeeper] Error processing client message from %s: %s\n",
+                DS::SockIpAddress(sockp).c_str(), ex.what());
     }
 
     s_clientMutex.lock();

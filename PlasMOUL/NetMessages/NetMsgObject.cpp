@@ -28,7 +28,8 @@ void MOUL::NetMsgStream::read(DS::Stream* stream)
     stream->readBytes(buffer, size);
 
     if (m_compression == e_CompressZlib) {
-        DS_PASSERT(size >= 2);
+        if (size < 2)
+            throw DS::MalformedData();
 
         uint8_t* zbuf = new uint8_t[uncompressedSize];
         uLongf zlength = uncompressedSize - 2;
@@ -52,7 +53,8 @@ void MOUL::NetMsgStream::write(DS::Stream* stream) const
     stream->write<uint8_t>(m_compression);
 
     if (m_compression == e_CompressZlib) {
-        DS_PASSERT(m_stream.size() >= 2);
+        if (m_stream.size() < 2)
+            throw DS::MalformedData();
 
         uLongf zlength = compressBound(m_stream.size() - 2);
         uint8_t* zbuf = new uint8_t[zlength + 2];

@@ -233,7 +233,8 @@ void DS::BlobStream::seek(int32_t offset, int whence)
 DS::Blob DS::Base64Decode(const ST::string& value)
 {
     ST_ssize_t resultLen = ST::base64_decode(value, nullptr, 0);
-    DS_PASSERT(resultLen >= 0);
+    if (resultLen < 0)
+        throw DS::MalformedData();
 
     uint8_t* result = new uint8_t[resultLen];
     ST::base64_decode(value, result, resultLen);
@@ -243,7 +244,8 @@ DS::Blob DS::Base64Decode(const ST::string& value)
 DS::Blob DS::HexDecode(const ST::string& value)
 {
     ST_ssize_t resultLen = ST::hex_decode(value, nullptr, 0);
-    DS_PASSERT(resultLen >= 0);
+    if (resultLen < 0)
+        throw DS::MalformedData();
 
     uint8_t* result = new uint8_t[resultLen];
     ST::hex_decode(value, result, resultLen);

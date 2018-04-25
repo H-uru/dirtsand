@@ -81,8 +81,10 @@ void MOUL::AgeInfoStruct::write(DS::Stream* s) const
 void MOUL::AgeLinkStruct::read(DS::Stream* s)
 {
     m_flags = s->read<uint16_t>();
-    DS_PASSERT(!(m_flags & e_HasSpawnPtInline)); // Trolololololololo
-    DS_PASSERT(!(m_flags & e_HasSpawnPtLegacy)); // Ahahahahahahahaha
+    if (m_flags & (e_HasSpawnPtInline | e_HasSpawnPtLegacy)) {
+        // Trolololololololo
+        throw DS::MalformedData();
+    }
 
     if (m_flags & e_HasAgeInfo)
         m_ageInfo->read(s);
@@ -98,9 +100,8 @@ void MOUL::AgeLinkStruct::read(DS::Stream* s)
 
 void MOUL::AgeLinkStruct::write(DS::Stream* s) const
 {
-    DS_PASSERT(!(m_flags & e_HasSpawnPtInline)); // Trolololololololo
-    DS_PASSERT(!(m_flags & e_HasSpawnPtLegacy)); // Ahahahahahahahaha
-    s->write<uint16_t>(m_flags);
+    const uint16_t supportedFlags = m_flags & ~(e_HasSpawnPtLegacy | e_HasSpawnPtInline);
+    s->write<uint16_t>(supportedFlags);
 
     if (m_flags & e_HasAgeInfo)
         m_ageInfo->write(s);

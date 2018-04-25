@@ -33,18 +33,18 @@ static DS::SocketHandle s_listenSock;
 void dm_htserv()
 {
     printf("[Status] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
-    try {
-        for ( ;; ) {
-            DS::SocketHandle client;
-            try {
-                client = DS::AcceptSock(s_listenSock);
-            } catch (const DS::SockHup&) {
-                break;
-            }
+    for ( ;; ) {
+        DS::SocketHandle client;
+        try {
+            client = DS::AcceptSock(s_listenSock);
+        } catch (const DS::SockHup&) {
+            break;
+        }
 
-            if (!client)
-                continue;
+        if (!client)
+            continue;
 
+        try {
             std::list<ST::string> lines;
             for ( ;; ) {
                 std::unique_ptr<char[]> buffer;
@@ -161,10 +161,11 @@ void dm_htserv()
                 DS::SendBuffer(client, content.c_str(), content.size());
                 DS::FreeSock(client);
             }
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Status] Exception occurred serving HTTP to %s: %s\n",
+                    DS::SockIpAddress(client).c_str(), ex.what());
+            DS::FreeSock(client);
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Status] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
     }
 
     DS::FreeSock(s_listenSock);

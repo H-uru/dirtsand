@@ -19,7 +19,7 @@
 #define _DS_ERRORS_H
 
 #include "errno.h"
-#include <exception>
+#include <stdexcept>
 
 namespace DS
 {
@@ -37,6 +37,13 @@ namespace DS
         const char* m_cond;
         const char* m_file;
         long m_line;
+    };
+
+    class MalformedData : public std::runtime_error
+    {
+    public:
+        MalformedData()
+            : std::runtime_error("Malformed stream data from client") { }
     };
 }
 

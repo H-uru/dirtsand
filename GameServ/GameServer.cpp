@@ -254,14 +254,11 @@ void wk_gameWorker(DS::SocketHandle sockp)
             if (fds[1].revents & POLLIN)
                 cb_broadcast(client);
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-    } catch (const DS::PacketSizeOutOfBounds& ex) {
-        fprintf(stderr, "[Game] Client packet size too large: Requested %u bytes\n",
-                ex.requestedSize());
     } catch (const DS::SockHup&) {
         // Socket closed...
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Game] Error processing client message from %s: %s\n",
+                DS::SockIpAddress(sockp).c_str(), ex.what());
     }
 
     if (client.m_host) {
