@@ -18,60 +18,6 @@
 #include "GenericValue.h"
 #include "errors.h"
 
-int32_t MOUL::GenericValue::toInt() const
-{
-    DS_PASSERT(m_dataType == e_Int || m_dataType == e_Any);
-    if (m_dataType == e_Any)
-        return m_string.to_int();
-    return m_int;
-}
-
-uint32_t MOUL::GenericValue::toUint() const
-{
-    DS_PASSERT(m_dataType == e_UInt || m_dataType == e_Any);
-    if (m_dataType == e_Any)
-        return m_string.to_uint();
-    return m_uint;
-}
-
-float MOUL::GenericValue::toFloat() const
-{
-    DS_PASSERT(m_dataType == e_Float || m_dataType == e_Any);
-    if (m_dataType == e_Any)
-        return m_string.to_float();
-    return m_float;
-}
-
-double MOUL::GenericValue::toDouble() const
-{
-    DS_PASSERT(m_dataType == e_Double || m_dataType == e_Any);
-    if (m_dataType == e_Any)
-        return m_string.to_double();
-    return m_double;
-}
-
-bool MOUL::GenericValue::toBool() const
-{
-    DS_PASSERT(m_dataType == e_Bool || m_dataType == e_Any);
-    if (m_dataType == e_Any)
-        return m_string.to_bool();
-    return m_bool;
-}
-
-ST::string MOUL::GenericValue::toString() const
-{
-    DS_PASSERT(m_dataType == e_String || m_dataType == e_Any);
-    return m_string;
-}
-
-char MOUL::GenericValue::toChar() const
-{
-    DS_PASSERT(m_dataType == e_Char || m_dataType == e_Any);
-    if (m_dataType == e_Any)
-        return m_string.c_str()[0];
-    return m_char;
-}
-
 void MOUL::GenericValue::read(DS::Stream* stream)
 {
     m_dataType = stream->read<uint8_t>();
