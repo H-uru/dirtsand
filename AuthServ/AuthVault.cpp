@@ -41,7 +41,7 @@ DS::Uuid gen_uuid()
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         return DS::Uuid();
     }
-    DS_DASSERT(PQntuples(result) == 1);
+    DS_ASSERT(PQntuples(result) == 1);
     DS::Uuid uuid(PQgetvalue(result, 0, 0));
     return uuid;
 }
@@ -410,7 +410,7 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
                     __FILE__, __LINE__, PQerrorMessage(s_postgres));
             return std::make_pair(0, 0);
         }
-        DS_DASSERT(PQntuples(result) == 1);
+        DS_ASSERT(PQntuples(result) == 1);
         seqNumber = strtol(PQgetvalue(result, 0, 0), 0, 10);
     }
 
@@ -883,7 +883,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
         SET_FIELD(Blob_2, ST::base64_encode(node.m_Blob_2.buffer(), node.m_Blob_2.size()));
     #undef SET_FIELD
 
-    DS_DASSERT(fieldp < fieldbuf + sizeof(fieldbuf));
+    DS_ASSERT(fieldp > fieldbuf && fieldp < fieldbuf + sizeof(fieldbuf));
     *(fieldp - 1) = ')';    // Get rid of the last comma
     ST::string_stream queryStr;
     queryStr << "INSERT INTO vault.\"Nodes\" (";
@@ -892,7 +892,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
     fieldp = fieldbuf;
     for (size_t i=0; i<parmcount; ++i)
         fieldp += sprintf(fieldp, "$%zu,", i+1);
-    DS_DASSERT(fieldp < fieldbuf + sizeof(fieldbuf));
+    DS_ASSERT(fieldp > fieldbuf && fieldp < fieldbuf + sizeof(fieldbuf));
     *(fieldp - 1) = ')';    // Get rid of the last comma
     queryStr << "\n    VALUES (";
     queryStr << fieldbuf;
@@ -907,7 +907,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         return 0;
     }
-    DS_DASSERT(PQntuples(result) == 1);
+    DS_ASSERT(PQntuples(result) == 1);
     uint32_t idx = strtoul(PQgetvalue(result, 0, 0), 0, 10);
     return idx;
 }
@@ -928,7 +928,9 @@ bool v_has_node(uint32_t parentId, uint32_t childId)
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         return false;
     }
-    DS_DASSERT(PQntuples(result) == 1);
+    // If this assertion fails, it is a problem in the implementation of
+    // vault.has_node(), not in the vault data itself
+    DS_ASSERT(PQntuples(result) == 1);
     bool retval = (*PQgetvalue(result, 0, 0) == 't');
     return retval != 0;
 }
@@ -1011,7 +1013,7 @@ bool v_update_node(const DS::Vault::Node& node)
         SET_FIELD(Blob_2, ST::base64_encode(node.m_Blob_2.buffer(), node.m_Blob_2.size()));
     #undef SET_FIELD
 
-    DS_DASSERT(fieldp < fieldbuf + sizeof(fieldbuf));
+    DS_ASSERT(fieldp > fieldbuf && fieldp < fieldbuf + sizeof(fieldbuf));
     *(fieldp - 1) = 0;  // Get rid of the last comma
     ST::string_stream queryStr;
     queryStr << "UPDATE vault.\"Nodes\"\n    SET ";
@@ -1260,7 +1262,7 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
 
     if (parmcount == 0)
         return false;
-    DS_DASSERT(fieldp < fieldbuf + sizeof(fieldbuf));
+    DS_ASSERT(fieldp >= fieldbuf + 5 && fieldp < fieldbuf + sizeof(fieldbuf));
     *(fieldp - 5) = 0;  // Get rid of the last ' AND '
     ST::string_stream queryStr;
     queryStr << "SELECT idx FROM vault.\"Nodes\"\n    WHERE ";

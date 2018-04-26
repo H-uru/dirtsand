@@ -212,7 +212,7 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
                 uint16_t type = stream->read<uint16_t>();
                 if (type != 0x8000) {
                     m_creatable[i] = MOUL::Factory::Create(type);
-                    DS_DASSERT(m_creatable[i] != 0);
+                    DS_ASSERT(m_creatable[i]);
                     const uint32_t endp = stream->tell() + stream->read<uint32_t>();
                     m_creatable[i]->read(stream);
                     if (stream->tell() != endp) {
@@ -265,10 +265,16 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
             m_color8[i].m_A = stream->read<uint8_t>();
             break;
         case e_VarStateDesc:
-            DS_DASSERT(0);
+            // This should be handled elsewhere
+            DS_ASSERT(false);
+            break;
+        case e_VarAgeTimeOfDay:
+            // No data to read
             break;
         default:
-            break;
+            fprintf(stderr, "Invalid SDL variable type %d during read\n",
+                    static_cast<int>(m_desc->m_type));
+            throw DS::MalformedData();
         }
     }
 }
@@ -354,10 +360,16 @@ void SDL::Variable::_ref::write(DS::Stream* stream) const
             stream->write<uint8_t>(m_color8[i].m_A);
             break;
         case e_VarStateDesc:
-            DS_DASSERT(0);
+            // This should be handled elsewhere
+            DS_ASSERT(false);
+            break;
+        case e_VarAgeTimeOfDay:
+            // No data to write
             break;
         default:
-            break;
+            fprintf(stderr, "Invalid SDL variable type %d during write\n",
+                    static_cast<int>(m_desc->m_type));
+            throw DS::MalformedData();
         }
     }
 }
@@ -537,7 +549,7 @@ void SDL::Variable::copy(const SDL::Variable& rhs) {
 #ifdef DEBUG
 void SDL::Variable::debug()
 {
-    DS_DASSERT(m_data != 0);
+    DS_ASSERT(m_data);
 
     for (size_t i=0; i<m_data->m_size; ++i) {
         switch (m_data->m_desc->m_type) {
@@ -616,7 +628,7 @@ void SDL::Variable::debug()
 
 void SDL::Variable::setDefault()
 {
-    DS_DASSERT(m_data != 0);
+    DS_ASSERT(m_data);
 
     for (size_t i=0; i<m_data->m_size; ++i) {
         switch (m_data->m_desc->m_type) {
@@ -730,7 +742,7 @@ void SDL::Variable::setDefault()
 
 bool SDL::Variable::isDefault() const
 {
-    DS_DASSERT(m_data != 0);
+    DS_ASSERT(m_data);
 
     // Variable length vars are never at the default!
     // Why? The count is read/written in a !default block.

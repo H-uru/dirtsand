@@ -116,7 +116,7 @@ void DS::CryptEstablish(uint8_t* seed, uint8_t* key, const uint8_t* N,
     BN_bin2bn(reinterpret_cast<const unsigned char*>(Y), 64, bn_Y);
     BN_bin2bn(reinterpret_cast<const unsigned char*>(N), 64, bn_N);
     BN_bin2bn(reinterpret_cast<const unsigned char*>(K), 64, bn_K);
-    DS_PASSERT(!BN_is_zero(bn_N));
+    DS_ASSERT(!BN_is_zero(bn_N));
     BN_mod_exp(bn_seed, bn_Y, bn_K, bn_N, ctx);
 
     /* Apply server seed for establishing crypt state with client */

@@ -101,11 +101,9 @@ void dm_auth_login(Auth_LoginInfo* info)
 {
     check_postgres(s_postgres);
 
-#ifdef DEBUG
-    printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
-           info->m_acctName.c_str(), info->m_passHash.toString().c_str(),
-           info->m_token.c_str(), info->m_os.c_str());
-#endif
+    DEBUG_printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
+                 info->m_acctName.c_str(), info->m_passHash.toString().c_str(),
+                 info->m_token.c_str(), info->m_os.c_str());
 
     // Reset UUID in case authentication fails
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(info->m_client);
@@ -298,9 +296,9 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
         return;
     }
     if (PQntuples(result) == 0) {
-        printf("[Auth] {%s} requested invalid player ID (%u)\n",
-               client->m_acctUuid.toString().c_str(),
-               client->m_player.m_playerId);
+        fprintf(stderr, "[Auth] {%s} requested invalid player ID (%u)\n",
+                client->m_acctUuid.toString().c_str(),
+                client->m_player.m_playerId);
         client->m_player.m_playerId = 0;
         SEND_REPLY(msg, DS::e_NetPlayerNotFound);
         return;
@@ -422,11 +420,9 @@ void dm_auth_deletePlayer(Auth_PlayerDelete* msg)
 {
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
 
-#ifdef DEBUG
-    printf("[Auth] {%s} requesting deletion of PlayerId (%d)\n",
-            client->m_acctUuid.toString().c_str(),
-            msg->m_playerId);
-#endif
+    DEBUG_printf("[Auth] {%s} requesting deletion of PlayerId (%d)\n",
+                 client->m_acctUuid.toString().c_str(),
+                 msg->m_playerId);
 
     // Check for existing player
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
@@ -538,13 +534,11 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
 
 void dm_auth_findAge(Auth_GameAge* msg)
 {
-#ifdef DEBUG
-    printf("[Auth] %s Requesting game server {%s} %s\n",
-           DS::SockIpAddress(msg->m_client->m_sock).c_str(),
-           msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
-#endif
-
     const ST::string instanceIdString = msg->m_instanceId.toString();
+    DEBUG_printf("[Auth] %s Requesting game server {%s} %s\n",
+                 DS::SockIpAddress(msg->m_client->m_sock).c_str(),
+                 instanceIdString.c_str(), msg->m_name.c_str());
+
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT idx, \"AgeIdx\", \"DisplayName\" FROM game.\"Servers\""
             "    WHERE \"AgeUuid\"=$1",
@@ -1280,5 +1274,5 @@ void dm_authDaemon()
     }
 
     // This line should be unreachable
-    DS_PASSERT(false);
+    DS_ASSERT(false);
 }

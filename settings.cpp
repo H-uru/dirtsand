@@ -235,7 +235,7 @@ void DS::Settings::UseDefaults()
 
 const uint8_t* DS::Settings::CryptKey(DS::KeyType key)
 {
-    DS_DASSERT(static_cast<int>(key) >= 0 && static_cast<int>(key) < e_KeyMaxTypes);
+    DS_ASSERT(static_cast<int>(key) >= 0 && static_cast<int>(key) < e_KeyMaxTypes);
     return s_settings.m_cryptKeys[key];
 }
 

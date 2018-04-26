@@ -817,7 +817,7 @@ void dm_gameHost(GameHost_Private* host)
     }
 
     // This line should be unreachable
-    DS_PASSERT(false);
+    DS_ASSERT(false);
 }
 
 GameHost_Private* start_game_host(uint32_t ageMcpId)

@@ -18,26 +18,21 @@
 #ifndef _DS_ERRORS_H
 #define _DS_ERRORS_H
 
-#include "errno.h"
+#include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
 
 namespace DS
 {
-    class AssertException : public std::exception
+    __attribute__((noreturn))
+    inline void AssertionFailure(const char *condition, const char *file, long line)
+        noexcept
     {
-    public:
-        AssertException(const char* cond, const char* file, long line) throw()
-            : m_cond(cond), m_file(file), m_line(line) { }
-        virtual ~AssertException() throw() { }
-
-        virtual const char* what() const throw()
-        { return "[AssertException] Assertion Failed"; }
-
-    public:
-        const char* m_cond;
-        const char* m_file;
-        long m_line;
-    };
+        fprintf(stderr, "FATAL: Assertion Failure at %s:%ld: %s\n",
+                file, line, condition);
+        // Exit code 3 not used anywhere else...
+        exit(3);
+    }
 
     class MalformedData : public std::runtime_error
     {
@@ -54,13 +49,13 @@ namespace DS
     };
 }
 
-#define DS_PASSERT(cond) \
-    if (!(cond)) throw DS::AssertException(#cond, __FILE__, __LINE__)
+#define DS_ASSERT(cond) \
+    if (!(cond)) DS::AssertionFailure(#cond, __FILE__, __LINE__)
 
 #ifdef DEBUG
-#define DS_DASSERT(cond) DS_PASSERT(cond)
+#define DEBUG_printf(...)   printf(__VA_ARGS__)
 #else
-#define DS_DASSERT(cond)
+#define DEBUG_printf(...)   ((void)0)
 #endif
 
 #endif

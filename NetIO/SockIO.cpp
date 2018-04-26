@@ -127,7 +127,7 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
 
 void DS::ListenSock(const DS::SocketHandle sock, int backlog)
 {
-    DS_DASSERT(sock);
+    DS_ASSERT(sock);
     int result = listen(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, backlog);
     if (result < 0) {
         const char *error_text = strerror(errno);
@@ -139,7 +139,7 @@ void DS::ListenSock(const DS::SocketHandle sock, int backlog)
 
 DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
 {
-    DS_DASSERT(sock);
+    DS_ASSERT(sock);
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
 
     SocketHandle_Private* client = new SocketHandle_Private();
