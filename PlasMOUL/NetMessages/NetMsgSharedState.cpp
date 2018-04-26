@@ -101,7 +101,11 @@ void MOUL::NetMsgSharedState::read(DS::Stream* stream)
 
     for (size_t i=0; i<m_vars.size(); ++i)
         m_vars[i].read(&msgStream.m_stream);
-    DS_DASSERT(msgStream.m_stream.atEof());
+    if (!msgStream.m_stream.atEof()) {
+        fprintf(stderr, "WARNING: %u bytes left over in stream after parsing "
+                        "NetMsgSharedState state variables\n",
+                msgStream.m_stream.size() - msgStream.m_stream.tell());
+    }
 
     m_lockRequest = stream->read<uint8_t>();
 }

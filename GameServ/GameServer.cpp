@@ -109,9 +109,9 @@ void cb_join(GameClient_Private& client)
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
+    // Look up the server after we finish receiving the message, so we can
+    // correctly send a reply if the server isn't found.
     uint32_t mcpId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    client.m_host = find_game_host(mcpId);
-    DS_PASSERT(client.m_host != 0);
 
     Game_ClientMessage msg;
     msg.m_client = &client;
@@ -120,6 +120,14 @@ void cb_join(GameClient_Private& client)
     client.m_clientInfo.set_PlayerId(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
     if (client.m_clientInfo.m_PlayerId == 0) {
         client.m_buffer.write<uint32_t>(DS::e_NetInvalidParameter);
+        SEND_REPLY();
+        return;
+    }
+
+    client.m_host = find_game_host(mcpId);
+    if (!client.m_host) {
+        fprintf(stderr, "Could not find a game host for %u\n", mcpId);
+        client.m_buffer.write<uint32_t>(DS::e_NetInternalError);
         SEND_REPLY();
         return;
     }
@@ -160,8 +168,14 @@ void cb_netmsg(GameClient_Private& client)
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer.get(), size);
     msg.m_message = DS::Blob::Steal(buffer.release(), size);
-    client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
-    client.m_channel.getMessage();
+    if (client.m_host) {
+        client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
+        client.m_channel.getMessage();
+    } else {
+        fprintf(stderr, "Client %s sent a game message with no game host connection\n",
+                DS::SockIpAddress(client.m_sock).c_str());
+        throw DS::SockHup();
+    }
 }
 
 void cb_gameMgrMsg(GameClient_Private& client)
@@ -170,6 +184,7 @@ void cb_gameMgrMsg(GameClient_Private& client)
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer.get(), size);
 
+#ifdef DEBUG
     fputs("GAME MGR MSG", stdout);
     for (size_t i=0; i<size; ++i) {
         if ((i % 16) == 0)
@@ -179,6 +194,7 @@ void cb_gameMgrMsg(GameClient_Private& client)
         printf("%02X ", buffer[i]);
     }
     fputc('\n', stdout);
+#endif
 }
 
 void cb_sockRead(GameClient_Private& client)
@@ -192,18 +208,15 @@ void cb_sockRead(GameClient_Private& client)
         cb_join(client);
         break;
     case e_CliToGame_PropagateBuffer:
-        DS_PASSERT(client.m_host != 0);
         cb_netmsg(client);
         break;
     case e_CliToGame_GameMgrMsg:
-        DS_PASSERT(client.m_host != 0);
         cb_gameMgrMsg(client);
         break;
     default:
         /* Invalid message */
         fprintf(stderr, "[Game] Got invalid message ID %d from %s\n",
                 msgId, DS::SockIpAddress(client.m_sock).c_str());
-        DS::CloseSock(client.m_sock);
         throw DS::SockHup();
     }
 }
@@ -248,7 +261,11 @@ void wk_gameWorker(DS::SocketHandle sockp)
 
         for ( ;; ) {
             int result = poll(fds, 2, NET_TIMEOUT * 1000);
-            DS_PASSERT(result != -1);
+            if (result < 0) {
+                fprintf(stderr, "[Game] Failed to poll for events: %s\n",
+                        strerror(errno));
+                throw DS::SockHup();
+            }
             if (result == 0 || fds[0].revents & POLLHUP)
                 throw DS::SockHup();
 

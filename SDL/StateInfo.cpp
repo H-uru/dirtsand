@@ -213,9 +213,13 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
                 if (type != 0x8000) {
                     m_creatable[i] = MOUL::Factory::Create(type);
                     DS_DASSERT(m_creatable[i] != 0);
-                    uint32_t endp = stream->tell() + stream->read<uint32_t>();
+                    const uint32_t endp = stream->tell() + stream->read<uint32_t>();
                     m_creatable[i]->read(stream);
-                    DS_DASSERT(stream->tell() == endp);
+                    if (stream->tell() != endp) {
+                        fprintf(stderr, "[SDL] Warning: Creatable %04X was not fully parsed in SDL blob "
+                                        " (%u bytes remain)\n",
+                                type, endp - stream->tell());
+                    }
                 }
             }
             break;
@@ -954,7 +958,16 @@ void SDL::State::merge(const SDL::State& state)
     if (!m_data)
         return;
 
-    DS_DASSERT(state.m_data->m_desc == m_data->m_desc);
+    if (state.m_data->m_desc != m_data->m_desc) {
+        if (state.m_data->m_desc && m_data->m_desc) {
+            fprintf(stderr, "Stubbornly refusing to merge unrelated SDL states %s and %s\n",
+                    state.m_data->m_desc->m_name.c_str(), m_data->m_desc->m_name.c_str());
+        } else {
+            fputs("Stubbornly refusing to merge SDL states with NULL descriptors\n",
+                  stderr);
+        }
+        return;
+    }
     for (size_t i=0; i < m_data->m_vars.size(); ++i) {
         if (state.m_data->m_vars[i].data()->m_timestamp > m_data->m_vars[i].data()->m_timestamp)
             m_data->m_vars[i] = state.m_data->m_vars[i];

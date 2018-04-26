@@ -143,7 +143,7 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
         return configs;
     }
 
-    try {
+    {
         char buffer[4096];
         bool haveAge = false;
         while (fgets(buffer, 4096, cfgfile)) {
@@ -158,8 +158,13 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
 
                 ST::string header = line.trim().replace("[","").replace("]","");
 
-                if (header != "auto")
-                    age.m_ageId = DS::Uuid(header.c_str());
+                if (header != "auto") {
+                    try {
+                        age.m_ageId = DS::Uuid(header.c_str());
+                    } catch (DS::MalformedData&) {
+                        // Error message already printed by constructor...
+                    }
+                }
 
                 haveAge = true;
                 continue;
@@ -189,11 +194,6 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
 
         if (haveAge)
             configs.push_back(age);
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-        fclose(cfgfile);
-        return configs;
     }
 
     fclose(cfgfile);
@@ -232,7 +232,11 @@ bool dm_vault_init()
         if (!v_ref_node(s_systemNode, globalInbox, 0))
             return false;
     } else {
-        DS_DASSERT(count == 1);
+        if (count > 1) {
+            fprintf(stderr, "[Vault] WARNING: Found %d System nodes. "
+                            "The vault is almost certainly corrupt at this point.",
+                    count);
+        }
         s_systemNode = strtoul(PQgetvalue(result, 0, 0), 0, 10);
     }
 
@@ -255,7 +259,10 @@ bool dm_all_players_init()
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         return false;
     } else if (PQntuples(result) > 0) {
-        DS_DASSERT(PQntuples(result) == 1);
+        if (PQntuples(result) != 1) {
+            fprintf(stderr, "[Vault] WARNING: Found %d AllPlayers folders\n",
+                    PQntuples(result));
+        }
         s_allPlayers = strtoul(PQgetvalue(result, 0, 0), 0, 10);
         return true;
     }
@@ -377,8 +384,13 @@ SDL::State v_find_global_sdl(const ST::string& ageName)
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         return nullptr;
     }
+    if (PQntuples(result) == 0) {
+        return nullptr;
+    } else if (PQntuples(result) != 1) {
+        fprintf(stderr, "[Auth] WARNING: Found multiple global SDL blobs for %s\n",
+                ageName.c_str());
+    }
 
-    DS_PASSERT(PQntuples(result) == 1);
     DS::Blob blob = DS::Base64Decode(PQgetvalue(result, 0, 0));
     return SDL::State::FromBlob(blob);
 }
@@ -726,7 +738,14 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
                     __FILE__, __LINE__, PQerrorMessage(s_postgres));
             return std::make_tuple(0, 0, 0);
         }
-        DS_DASSERT(PQntuples(result) == 1);
+        if (PQntuples(result) == 0) {
+            fprintf(stderr, "Did not find AgeOwnersFolder for %u\n",
+                    std::get<1>(reltoAge));
+            return std::make_tuple(0, 0, 0);
+        } else if (PQntuples(result) != 1) {
+            fprintf(stderr, "WARNING: Multiple AgeOwnersFolders found for %u\n",
+                    std::get<1>(reltoAge));
+        }
         uint32_t ownerFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
 
         if (!v_ref_node(ownerFolder, playerInfoNode, 0))
@@ -1239,7 +1258,8 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
     #undef SET_FIELD
     #undef SET_FIELD_I
 
-    DS_DASSERT(parmcount > 0);
+    if (parmcount == 0)
+        return false;
     DS_DASSERT(fieldp < fieldbuf + sizeof(fieldbuf));
     *(fieldp - 5) = 0;  // Get rid of the last ' AND '
     ST::string_stream queryStr;
@@ -1274,7 +1294,10 @@ DS::Vault::NodeRef v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t send
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         return ref;
     }
-    DS_DASSERT(PQntuples(result) == 1);
+    if (PQntuples(result) == 0) {
+        fprintf(stderr, "[Auth] Could not find Inbox folder for %u\n", playerId);
+        return ref;
+    }
     uint32_t inbox = strtoul(PQgetvalue(result, 0, 0), 0, 10);
 
     if (v_ref_node(inbox, nodeId, senderId)) {

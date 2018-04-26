@@ -298,7 +298,10 @@ void cb_nodeCreate(AuthServer_Private& client)
     Auth_NodeInfo msg;
     msg.m_client = &client;
     msg.m_node.read(&nodeStream);
-    DS_PASSERT(nodeStream.atEof());
+    if (!nodeStream.atEof()) {
+        fprintf(stderr, "WARNING: Ignoring %u bytes of unread data at end of node stream\n",
+                nodeStream.size() - nodeStream.tell());
+    }
     s_authChannel.putMessage(e_VaultCreateNode, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();
@@ -359,7 +362,10 @@ void cb_nodeUpdate(AuthServer_Private& client)
     DS::BlobStream nodeStream(nodeData);
 
     msg.m_node.read(&nodeStream);
-    DS_PASSERT(nodeStream.atEof());
+    if (!nodeStream.atEof()) {
+        fprintf(stderr, "WARNING: Ignoring %u bytes of unread data at end of node stream\n",
+                nodeStream.size() - nodeStream.tell());
+    }
     msg.m_node.m_NodeIdx = m_nodeId;
     msg.m_internal = false;
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&msg));
@@ -455,7 +461,10 @@ void cb_nodeFind(AuthServer_Private& client)
     DS::BlobStream nodeStream(nodeData);
 
     msg.m_template.read(&nodeStream);
-    DS_PASSERT(nodeStream.atEof());
+    if (!nodeStream.atEof()) {
+        fprintf(stderr, "WARNING: Ignoring %u bytes of unread data at end of node stream\n",
+                nodeStream.size() - nodeStream.tell());
+    }
     s_authChannel.putMessage(e_VaultFindNode, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();
@@ -1028,7 +1037,10 @@ void wk_authWorker(DS::SocketHandle sockp)
 
         for ( ;; ) {
             int result = poll(fds, 2, NET_TIMEOUT * 1000);
-            DS_PASSERT(result != -1);
+            if (result < 0) {
+                fprintf(stderr, "[Auth] Failure in poll: %s\n", strerror(errno));
+                throw DS::SockHup();
+            }
             if (result == 0 || fds[0].revents & POLLHUP)
                 throw DS::SockHup();
 

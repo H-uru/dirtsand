@@ -28,14 +28,16 @@ ST::string DS::Stream::readString(size_t length, DS::StringType format)
         ST::utf16_buffer result;
         char16_t* buffer = result.create_writable_buffer(length);
         ssize_t bytes = readBytes(buffer, length * sizeof(char16_t));
-        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char16_t)));
+        if (bytes != static_cast<ssize_t>(length * sizeof(char16_t)))
+            throw EofException();
         buffer[length] = 0;
         return ST::string::from_utf16(result, ST::substitute_invalid);
     } else {
         ST::char_buffer result;
         char* buffer = result.create_writable_buffer(length);
         ssize_t bytes = readBytes(buffer, length * sizeof(char));
-        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char)));
+        if (bytes != static_cast<ssize_t>(length * sizeof(char)))
+            throw EofException();
         buffer[length] = 0;
         return (format == e_StringUTF8) ? ST::string::from_utf8(result, ST::substitute_invalid)
                                         : ST::string::from_latin_1(result);
@@ -54,7 +56,8 @@ ST::string DS::Stream::readSafeString(DS::StringType format)
         char16_t* buffer = result.create_writable_buffer(length);
         ssize_t bytes = readBytes(buffer, length * sizeof(char16_t));
         read<char16_t>(); // redundant u'\0'
-        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char16_t)));
+        if (bytes != static_cast<ssize_t>(length * sizeof(char16_t)))
+            throw EofException();
         if (length && (buffer[0] & 0x8000)) {
             for (uint16_t i=0; i<length; ++i)
                 buffer[i] = ~buffer[i];
@@ -65,7 +68,8 @@ ST::string DS::Stream::readSafeString(DS::StringType format)
         ST::char_buffer result;
         char* buffer = result.create_writable_buffer(length);
         ssize_t bytes = readBytes(buffer, length * sizeof(char));
-        DS_DASSERT(bytes == static_cast<ssize_t>(length * sizeof(char)));
+        if (bytes != static_cast<ssize_t>(length * sizeof(char)))
+            throw EofException();
         if (length && (buffer[0] & 0x80)) {
             for (uint16_t i=0; i<length; ++i)
                 buffer[i] = ~buffer[i];
@@ -178,7 +182,10 @@ void DS::BufferStream::seek(int32_t offset, int whence)
     else if (whence == SEEK_END)
         m_position = m_size - offset;
 
-    DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_size);
+    if (static_cast<int32_t>(m_position) < 0)
+        m_position = 0;
+    else if (m_position > m_size)
+        m_position = m_size;
 }
 
 void DS::BufferStream::set(const void* data, size_t size)
@@ -227,7 +234,10 @@ void DS::BlobStream::seek(int32_t offset, int whence)
     else if (whence == SEEK_END)
         m_position = m_blob.size() - offset;
 
-    DS_PASSERT(static_cast<int32_t>(m_position) >= 0 && m_position <= m_blob.size());
+    if (static_cast<int32_t>(m_position) < 0)
+        m_position = 0;
+    else if (m_position > m_blob.size())
+        m_position = m_blob.size();
 }
 
 DS::Blob DS::Base64Decode(const ST::string& value)

@@ -153,7 +153,7 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
         } else {
             fprintf(stderr, "Failed to accept incoming connection: %s\n",
                     strerror(errno));
-            exit(1);
+            return nullptr;
         }
     }
     timeval tv;
@@ -167,7 +167,10 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
 
 void DS::CloseSock(DS::SocketHandle sock)
 {
-    DS_DASSERT(sock);
+    if (!sock) {
+        fputs("WARNING: Tried to close invalid socket\n", stderr);
+        return;
+    }
     shutdown(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, SHUT_RDWR);
     close(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd);
 }
@@ -182,7 +185,11 @@ ST::string DS::SockIpAddress(const DS::SocketHandle sock)
 {
     char addrbuf[256];
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
-    inet_ntop(sockp->m_addr.sa_family, get_in_addr(sockp), addrbuf, 256);
+    if (!inet_ntop(sockp->m_addr.sa_family, get_in_addr(sockp), addrbuf, 256)) {
+        fprintf(stderr, "Failed to get socket address: %s\n",
+                strerror(errno));
+        return ST_LITERAL("???");
+    }
     return ST::format("{}/{}", addrbuf, get_in_port(sockp));
 }
 
@@ -195,9 +202,21 @@ uint32_t DS::GetAddress4(const char* lookup)
     info.ai_flags = 0;
 
     addrinfo* addrList;
-    int result = getaddrinfo(lookup, 0, &info, &addrList);
-    DS_PASSERT(result == 0);
-    DS_PASSERT(addrList != 0);
+    int result = getaddrinfo(lookup, nullptr, &info, &addrList);
+    if (result != 0) {
+        if (result == EAI_SYSTEM) {
+            fprintf(stderr, "WARNING: Failed to get address of %s: %s\n",
+                    lookup, strerror(errno));
+        } else {
+            fprintf(stderr, "WARNING: Failed to get address of %s: %s\n",
+                    lookup, gai_strerror(result));
+        }
+        return 0;
+    }
+    if (!addrList) {
+        fprintf(stderr, "WARNING: No address info found for %s\n", lookup);
+        return 0;
+    }
     uint32_t addr = reinterpret_cast<sockaddr_in*>(addrList->ai_addr)->sin_addr.s_addr;
     freeaddrinfo(addrList);
 
@@ -215,21 +234,20 @@ void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size
         ssize_t bytes = send(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                              buffer, size, 0);
         if (bytes < 0) {
-            if (errno == EPIPE || errno == ECONNRESET)
-                throw DS::SockHup();
+            if (errno != EPIPE && errno != ECONNRESET) {
+                const char *error_text = strerror(errno);
+                fprintf(stderr, "Failed to send to %s: %s\n",
+                        DS::SockIpAddress(sock).c_str(), error_text);
+            }
+            throw DS::SockHup();
         } else if (bytes == 0) {
+            // Connection closed without error
             throw DS::SockHup();
         }
-        DS_PASSERT(bytes > 0);
 
         size -= bytes;
         buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
     } while (size > 0);
-
-    if (size > 0) {
-        CloseSock(sock);
-        throw DS::SockHup();
-    }
 }
 
 void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
@@ -241,11 +259,17 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
     setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_YES, sizeof(SOCK_YES));
     while (bufsz > 0) {
         ssize_t bytes = send(imp->m_sockfd, buffer, bufsz, 0);
-        if (bytes < 0 && (errno == EPIPE || errno == ECONNRESET))
+        if (bytes < 0) {
+            if (errno != EPIPE && errno != ECONNRESET) {
+                const char *error_text = strerror(errno);
+                fprintf(stderr, "Failed to send to %s: %s\n",
+                        DS::SockIpAddress(sock).c_str(), error_text);
+            }
             throw DS::SockHup();
-        else if (bytes == 0)
+        } else if (bytes == 0) {
+            // Connection closed without error
             throw DS::SockHup();
-        DS_PASSERT(bytes > 0);
+        }
 
         bufsz -= bytes;
         buffer = reinterpret_cast<const void*>(reinterpret_cast<const uint8_t*>(buffer) + bytes);
@@ -254,13 +278,18 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
     // Now send the file data via a system call
     while (fdsz > 0) {
         ssize_t bytes = sendfile(imp->m_sockfd, fd, offset, fdsz);
-        if (bytes < 0 && (errno == EAGAIN))
-            continue;
-        else if (bytes < 0 && (errno == EPIPE || errno == ECONNRESET))
+        if (bytes < 0) {
+            if (errno == EAGAIN) {
+                continue;
+            } else if (errno != EPIPE && errno != ECONNRESET) {
+                const char *error_text = strerror(errno);
+                fprintf(stderr, "Failed to send to %s: %s\n",
+                        DS::SockIpAddress(sock).c_str(), error_text);
+            }
             throw DS::SockHup();
-        else if (bytes == 0)
+        } else if (bytes == 0) {
             throw DS::SockHup();
-        DS_PASSERT(bytes > 0);
+        }
         fdsz -= bytes;
     }
     setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_NO, sizeof(SOCK_NO));
@@ -271,13 +300,19 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
     while (size > 0) {
         ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                              buffer, size, 0);
-        if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK || errno == EPIPE))
+        if (bytes < 0) {
+            if (errno == EINTR) {
+                continue;
+            } else if (errno != ECONNRESET && errno != EAGAIN
+                       && errno != EWOULDBLOCK && errno != EPIPE) {
+                const char *error_text = strerror(errno);
+                fprintf(stderr, "Failed to recv from %s: %s\n",
+                        DS::SockIpAddress(sock).c_str(), error_text);
+            }
             throw DS::SockHup();
-        if (bytes < 0 && errno == EINTR)
-            continue;
-        else if (bytes == 0)
+        } else if (bytes == 0) {
             throw DS::SockHup();
-        DS_PASSERT(bytes > 0);
+        }
 
         size -= bytes;
         buffer = reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(buffer) + bytes);
@@ -290,11 +325,16 @@ size_t DS::PeekSize(const SocketHandle sock)
     ssize_t bytes = recv(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd,
                          buffer, 256, MSG_PEEK | MSG_TRUNC);
 
-    if (bytes < 0 && (errno == ECONNRESET || errno == EAGAIN || errno == EWOULDBLOCK))
+    if (bytes < 0) {
+        if (errno != ECONNRESET && errno != EAGAIN && errno != EWOULDBLOCK) {
+            const char *error_text = strerror(errno);
+            fprintf(stderr, "Failed to peek from %s: %s\n",
+                    DS::SockIpAddress(sock).c_str(), error_text);
+        }
         throw DS::SockHup();
-    else if (bytes == 0)
+    } else if (bytes == 0) {
         throw DS::SockHup();
-    DS_PASSERT(bytes > 0);
+    }
 
     return static_cast<size_t>(bytes);
 }

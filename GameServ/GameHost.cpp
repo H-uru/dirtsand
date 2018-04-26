@@ -397,7 +397,8 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
             return;
         }
     } else {
-        DS_DASSERT(PQntuples(result) == 1);
+        if (PQntuples(result) != 1)
+            fputs("Warning: Multiple rows returned for age state\n", stderr);
         const ST::string stateIdx(PQgetvalue(result, 0, 0));
         result = DS::PQexecVA(host->m_postgres,
                               "UPDATE game.\"AgeStates\""
@@ -652,14 +653,12 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-#ifdef DEBUG
     if (!stream.atEof()) {
         fprintf(stderr, "[Game] Incomplete parse of %04X\n", netmsg->type());
         netmsg->unref();
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-#endif
 
     try {
         switch (msg->m_messageType) {
@@ -801,7 +800,9 @@ void dm_gameHost(GameHost_Private* host)
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
-                DS_DASSERT(0);
+                fprintf(stderr, "[Game] Invalid message (%d) in message queue\n",
+                        msg.m_messageType);
+                exit(1);
                 break;
             }
         } catch (const std::exception& ex) {
@@ -849,7 +850,10 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         PQfinish(postgres);
         return 0;
     } else {
-        DS_DASSERT(PQntuples(result) == 1);
+        if (PQntuples(result) != 1) {
+            fprintf(stderr, "[Game] WARNING: Multiple servers found for MCP %u\n",
+                    ageMcpId);
+        }
 
         GameHost_Private* host = new GameHost_Private();
         host->m_instanceId = PQgetvalue(result, 0, 0);

@@ -87,10 +87,15 @@ static struct
     ST::string m_welcome;
 } s_settings;
 
-#define DS_LOADBLOB(outbuffer, fixedsize, input) \
+#define DS_LOADBLOB(outbuffer, fixedsize, params) \
     { \
-        Blob data = Base64Decode(input); \
-        DS_PASSERT(data.size() == fixedsize); \
+        Blob data = Base64Decode(params[1]); \
+        if (data.size() != fixedsize) { \
+            fprintf(stderr, "Invalid base64 blob size for %s: " \
+                            "Expected %u bytes, got %zu bytes\n", \
+                    params[0].c_str(), fixedsize, data.size()); \
+            return false; \
+        } \
         memcpy(outbuffer, data.buffer(), fixedsize); \
     }
 
@@ -114,7 +119,7 @@ bool DS::Settings::LoadFrom(const char* filename)
         return false;
     }
 
-    try {
+    {
         char buffer[4096];
         while (fgets(buffer, 4096, cfgfile)) {
             ST::string line = ST::string(buffer).before_first('#').trim();
@@ -131,20 +136,25 @@ bool DS::Settings::LoadFrom(const char* filename)
             params[1] = params[1].trim();
 
             if (params[0] == "Key.Auth.N") {
-                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyAuth_N], 64, params[1]);
+                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyAuth_N], 64, params);
             } else if (params[0] == "Key.Auth.K") {
-                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyAuth_K], 64, params[1]);
+                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyAuth_K], 64, params);
             } else if (params[0] == "Key.Game.N") {
-                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGame_N], 64, params[1]);
+                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGame_N], 64, params);
             } else if (params[0] == "Key.Game.K") {
-                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGame_K], 64, params[1]);
+                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGame_K], 64, params);
             } else if (params[0] == "Key.Gate.N") {
-                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_N], 64, params[1]);
+                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_N], 64, params);
             } else if (params[0] == "Key.Gate.K") {
-                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_K], 64, params[1]);
+                DS_LOADBLOB(s_settings.m_cryptKeys[e_KeyGate_K], 64, params);
             } else if (params[0] == "Key.Droid") {
                 Blob data = HexDecode(params[1]);
-                DS_PASSERT(data.size() == 16);
+                if (data.size() != 16) {
+                    fprintf(stderr, "Invalid key size for Key.Droid: "
+                                    "Expected 16 bytes, got %zu bytes\n",
+                            data.size());
+                    return false;
+                }
                 s_settings.m_droidKey[0] = BUF_TO_UINT(data.buffer()     );
                 s_settings.m_droidKey[1] = BUF_TO_UINT(data.buffer() +  4);
                 s_settings.m_droidKey[2] = BUF_TO_UINT(data.buffer() +  8);
@@ -194,10 +204,6 @@ bool DS::Settings::LoadFrom(const char* filename)
                         params[0].c_str());
             }
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Lobby] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-        return false;
     }
     fclose(cfgfile);
     return true;
