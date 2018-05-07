@@ -91,8 +91,8 @@ the server settings as described in the "configure dirtsand" step.
    or uuid-ossp bundle, you can get it and build it yourself from the
    sources provided at:  http://www.ossp.org/pkg/lib/uuid/
 
-   Once you have the ossp, you can add it to the dirtsand database by
-   running the import script:
+   In versions of Postgres **older than** 9.x, you will need to use the
+   import script to add the uuid extension to the dirtsand database:
 
    ```
    $ sudo -u postgres psql -d dirtsand < /path/to/uuid-ossp.sql
@@ -101,13 +101,13 @@ the server settings as described in the "configure dirtsand" step.
    $ sudo -u postgres psql -d dirtsand < /usr/share/postgresql/8.4/contrib/uuid-ossp.sql
    ```
 
-   In PostgreSQL 9.x, UUID may be included as an extension, or it may be
-   available from a user repository.  To add it to the Dirtsand database,
-   execute the following command:
+   In PostgreSQL 9.x and newer, simply use the "CREATE EXTENSION" syntax to
+   add the uuid-ossp extension it to the Dirtsand database:
 
    ```
    $ sudo -u postgres psql -d dirtsand
    dirtsand=# CREATE EXTENSION "uuid-ossp";
+   dirtsand=# \q
    ```
 
 3) Set up the dirtsand database:
