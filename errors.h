@@ -47,6 +47,15 @@ namespace DS
         InvalidConnectionHeader()
             : std::runtime_error("Invalid connection header received from client") { }
     };
+
+    // A "catchable" system error
+    class SystemError : public std::runtime_error
+    {
+    public:
+        SystemError(const char *message, const char *error)
+            : std::runtime_error(std::string(message) + ": " + std::string(error))
+        { }
+    };
 }
 
 #define DS_ASSERT(cond) \

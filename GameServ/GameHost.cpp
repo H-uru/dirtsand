@@ -777,8 +777,9 @@ void dm_global_sdl_update(GameHost_Private* host)
 void dm_gameHost(GameHost_Private* host)
 {
     for ( ;; ) {
-        DS::FifoMessage msg = host->m_channel.getMessage();
+        DS::FifoMessage msg { -1, nullptr };
         try {
+            msg = host->m_channel.getMessage();
             switch (msg.m_messageType) {
             case e_GameShutdown:
                 dm_game_shutdown(host);

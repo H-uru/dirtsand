@@ -211,7 +211,11 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
         if (!(v_has_node(client->m_ageNodeId, nodeIdx) || v_has_node(client->m_player.m_playerId, nodeIdx)))
             continue;
         msg->ref();
-        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeChanged, msg);
+        try {
+            client->m_broadcast.putMessage(e_AuthToCli_VaultNodeChanged, msg);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+        }
     }
     msg->unref();
 }
@@ -229,7 +233,11 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
         msg->ref();
-        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeAdded, msg);
+        try {
+            client->m_broadcast.putMessage(e_AuthToCli_VaultNodeAdded, msg);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+        }
     }
     msg->unref();
 }
@@ -246,7 +254,11 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
         msg->ref();
-        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeRemoved, msg);
+        try {
+            client->m_broadcast.putMessage(e_AuthToCli_VaultNodeRemoved, msg);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+        }
     }
     msg->unref();
 }
@@ -1068,8 +1080,9 @@ void dm_authDaemon()
     }
 
     for ( ;; ) {
-        DS::FifoMessage msg = s_authChannel.getMessage();
+        DS::FifoMessage msg { -1, nullptr };
         try {
+            msg = s_authChannel.getMessage();
             switch (msg.m_messageType) {
             case e_AuthShutdown:
                 dm_auth_shutdown();

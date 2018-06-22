@@ -89,7 +89,12 @@ GameHost_Private* find_game_host(uint32_t ageMcpId)
         if (host_iter != s_gameHosts.end())
             return host_iter->second;
     }
-    return start_game_host(ageMcpId);
+    try {
+        return start_game_host(ageMcpId);
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Game] ERROR: %s\n", ex.what());
+    }
+    return nullptr;
 }
 
 void cb_ping(GameClient_Private& client)
@@ -287,14 +292,22 @@ void wk_gameWorker(DS::SocketHandle sockp)
         client.m_host->m_clientMutex.unlock();
         Game_ClientMessage msg;
         msg.m_client = &client;
-        client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
-        client.m_channel.getMessage();
+        try {
+            client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
+            client.m_channel.getMessage();
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+        }
     }
 
     // Drain the broadcast channel
-    while (client.m_broadcast.hasMessage()) {
-        DS::FifoMessage msg = client.m_broadcast.getMessage();
-        reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
+    try {
+        while (client.m_broadcast.hasMessage()) {
+            DS::FifoMessage msg = client.m_broadcast.getMessage();
+            reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
+        }
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
     }
 
     DS::CryptStateFree(client.m_crypt);
@@ -390,8 +403,13 @@ void DS::GameServer_Shutdown()
     {
         std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
         hostmap_t::iterator host_iter;
-        for (host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter)
-            host_iter->second->m_channel.putMessage(e_GameShutdown);
+        for (host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter) {
+            try {
+                host_iter->second->m_channel.putMessage(e_GameShutdown);
+            } catch (const std::exception& ex) {
+                fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+            }
+        }
     }
 
     bool complete = false;
@@ -413,7 +431,11 @@ void DS::GameServer_UpdateGlobalSDL(const ST::string& age)
     for (auto it = s_gameHosts.begin(); it != s_gameHosts.end(); ++it) {
         if (!it->second || it->second->m_ageFilename != age)
             continue;
-        it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, 0);
+        try {
+            it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, 0);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+        }
     }
 }
 
@@ -430,8 +452,12 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
     if (host) {
         Game_SdlMessage* msg = new Game_SdlMessage;
         msg->m_node = node;
-        host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
-        return true;
+        try {
+            host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
+            return true;
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+        }
     }
     return false;
 }
