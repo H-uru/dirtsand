@@ -1,5 +1,23 @@
+# This file is part of dirtsand.
+#
+# dirtsand is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# dirtsand is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.
+
+cmake_minimum_required(VERSION 3.4)
 project(dirtsand)
-cmake_minimum_required(VERSION 2.6)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set up Product Identification parameters (NOTE: Should match plClient)
 set(PRODUCT_BRANCH_ID   "1"         CACHE STRING "Branch ID")
@@ -15,51 +33,15 @@ set(DS_HOOD_INST_NAME       "Neighborhood"
 set(DS_HOOD_POP_THRESHOLD   "20"
     CACHE STRING "Default Neighborhood Max Population")
 
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-                    OUTPUT_VARIABLE GCC_VERSION)
-    if(GCC_VERSION VERSION_LESS 4.7)
-        message(FATAL_ERROR "GCC version >= 4.7 required")
-    endif()
-endif()
+add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 
-set(WARN_FLAGS "-Wall -Wextra -Wno-unused-parameter")
-set(CMAKE_C_FLAGS "-pthread ${WARN_FLAGS} ${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-std=c++11 -pthread ${WARN_FLAGS} ${CMAKE_CXX_FLAGS}")
-
-set(CMAKE_C_FLAGS_DEBUG "-DDEBUG ${CMAKE_C_FLAGS_DEBUG}")
-set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
-
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-find_package(Postgres REQUIRED)
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/cmake")
+find_package(PostgreSQL REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(string_theory 1.7 REQUIRED)
-add_definitions(-DST_NO_2_0_DEPRECATION)
-
-include_directories("${CMAKE_SOURCE_DIR}"
-                    "${CMAKE_SOURCE_DIR}/PlasMOUL"
-                    "${POSTGRES_INCLUDE_DIR}"
-                    "${OPENSSL_INCLUDE_DIR}"
-                    "${READLINE_INCLUDE_DIR}"
-                    "${ZLIB_INCLUDE_DIR}"
-                    "${STRING_THEORY_INCLUDE_DIRS}")
-
-try_compile(HAVE_ATOMIC ${dirtsand_BINARY_DIR}
-            ${dirtsand_SOURCE_DIR}/cmake/CheckAtomic.cpp
-            OUTPUT_VARIABLE OUTPUT)
-if(HAVE_ATOMIC)
-    add_definitions(-DHAVE_ATOMIC)
-endif()
-
-add_definitions(-DPRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID})
-add_definitions(-DPRODUCT_BUILD_ID=${PRODUCT_BUILD_ID})
-add_definitions(-DPRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE})
-add_definitions(-DPRODUCT_UUID="${PRODUCT_UUID}")
-add_definitions(-DHOOD_USER_NAME="${DS_HOOD_USER_NAME}")
-add_definitions(-DHOOD_INST_NAME="${DS_HOOD_INST_NAME}")
-add_definitions(-DHOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD})
+find_package(Threads REQUIRED)
 
 set(PlasMOUL_SOURCES
     PlasMOUL/AgeLinkStruct.cpp
@@ -149,11 +131,36 @@ set(dirtsand_SOURCES
 )
 
 add_executable(dirtsand ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
-target_link_libraries(dirtsand ${POSTGRES_LIBRARY} ${ZLIB_LIBRARY}
-                               ${OPENSSL_CRYPTO_LIBRARIES} ${READLINE_LIBRARY}
-                               ${STRING_THEORY_LIBRARIES})
 set_target_properties(dirtsand PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin")
+
+target_compile_definitions(dirtsand PRIVATE
+    $<$<CONFIG:Debug>:DEBUG>
+    ST_NO_2_0_DEPRECATION
+    PRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID}
+    PRODUCT_BUILD_ID=${PRODUCT_BUILD_ID}
+    PRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE}
+    PRODUCT_UUID="${PRODUCT_UUID}"
+    HOOD_USER_NAME="${DS_HOOD_USER_NAME}"
+    HOOD_INST_NAME="${DS_HOOD_INST_NAME}"
+    HOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD}
+)
+
+target_include_directories(dirtsand PRIVATE
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/PlasMOUL"
+    "${PostgreSQL_INCLUDE_DIRS}"
+    "${STRING_THEORY_INCLUDE_DIRS}"
+)
+
+target_link_libraries(dirtsand PRIVATE
+    ${PostgreSQL_LIBRARIES}
+    OpenSSL::Crypto
+    ZLIB::ZLIB
+    Readline::Readline
+    ${STRING_THEORY_LIBRARIES}
+    Threads::Threads
+)
 
 install(TARGETS dirtsand
         RUNTIME DESTINATION "bin")
@@ -170,6 +177,8 @@ if(ENABLE_TESTS)
     target_compile_definitions(test_sha PRIVATE DS_BUILD_SHA0_TESTS)
     # Dependencies needed for ShaHash
     target_sources(test_sha PRIVATE streams.cpp streams.h errors.h)
+    target_compile_definitions(test_sha PRIVATE ST_NO_2_0_DEPRECATION)
+    target_include_directories(test_sha PRIVATE "${CMAKE_SOURCE_DIR}")
     target_link_libraries(test_sha PRIVATE ${OPENSSL_CRYPTO_LIBRARIES}
                                            ${STRING_THEORY_LIBRARIES})
 endif()
