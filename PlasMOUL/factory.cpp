@@ -64,10 +64,10 @@ MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
     case id: return new cre(id);
 #include "creatable_types.inl"
 #undef CREATABLE_TYPE
-    case 0x8000: return static_cast<Creatable*>(0);
+    case 0x8000: return nullptr;
     default:
         fprintf(stderr, "[Factory] Tried to create unknown type %04X\n", type);
-        throw FactoryException(FactoryException::e_UnknownType);
+        throw FactoryException();
     }
 }
 

@@ -19,7 +19,7 @@
 #define _DS_SOCKIO_H
 
 #include "streams.h"
-#include <exception>
+#include <stdexcept>
 
 // Don't allow the client to send payloads > 128KB in size
 #define MAX_PAYLOAD_SIZE (128 * 1024)
@@ -52,15 +52,12 @@ namespace DS
         return value;
     }
 
-    class PacketSizeOutOfBounds : public std::exception
+    class PacketSizeOutOfBounds : public std::runtime_error
     {
     public:
-        PacketSizeOutOfBounds(uint32_t requestedSize) throw()
-            : m_requestedSize(requestedSize) { }
-        virtual ~PacketSizeOutOfBounds() throw() { }
-
-        virtual const char* what() const throw()
-        { return "Packet size is too large"; }
+        explicit PacketSizeOutOfBounds(uint32_t requestedSize)
+            : std::runtime_error("Packet size is too large"),
+              m_requestedSize(requestedSize) { }
 
         uint32_t requestedSize() const { return m_requestedSize; }
 
@@ -76,14 +73,10 @@ namespace DS
         return size;
     }
 
-    class SockHup : public std::exception
+    class SockHup : public std::runtime_error
     {
     public:
-        SockHup() throw() { }
-        virtual ~SockHup() throw() { }
-
-        virtual const char* what() const throw()
-        { return "Socket closed"; }
+        SockHup() : std::runtime_error("Socket closed") { }
     };
 }
 

@@ -34,7 +34,7 @@
 enum GameServer_MsgIds
 {
     e_CliToGame_PingRequest = 0, e_CliToGame_JoinAgeRequest,
-    e_CliToGame_Propagatebuffer, e_CliToGame_GameMgrMsg,
+    e_CliToGame_PropagateBuffer, e_CliToGame_GameMgrMsg,
 
     e_GameToCli_PingReply = 0, e_GameToCli_JoinAgeReply,
     e_GameToCli_PropagateBuffer, e_GameToCli_GameMgrMsg,

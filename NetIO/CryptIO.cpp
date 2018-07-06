@@ -43,7 +43,11 @@ static void init_rand()
         _random.mypid = getpid();
         gettimeofday(&_random.now, 0);
         FILE* urand = fopen("/dev/urandom", "rb");
-        DS_PASSERT(urand != 0);
+        if (!urand) {
+            fprintf(stderr, "FATAL: Could not open /dev/urandom: %s\n",
+                    strerror(errno));
+            exit(1);
+        }
         fread(_random.buffer, 1, sizeof(_random.buffer), urand);
         fclose(urand);
         RAND_seed(&_random, sizeof(_random));
@@ -112,12 +116,13 @@ void DS::CryptEstablish(uint8_t* seed, uint8_t* key, const uint8_t* N,
     BN_bin2bn(reinterpret_cast<const unsigned char*>(Y), 64, bn_Y);
     BN_bin2bn(reinterpret_cast<const unsigned char*>(N), 64, bn_N);
     BN_bin2bn(reinterpret_cast<const unsigned char*>(K), 64, bn_K);
-    DS_PASSERT(!BN_is_zero(bn_N));
+    DS_ASSERT(!BN_is_zero(bn_N));
     BN_mod_exp(bn_seed, bn_Y, bn_K, bn_N, ctx);
 
     /* Apply server seed for establishing crypt state with client */
     uint8_t keybuf[64];
-    DS_DASSERT(BN_num_bytes(bn_seed) <= 64);
+    if (BN_num_bytes(bn_seed) > 64)
+        throw DS::InvalidConnectionHeader();
     size_t outBytes = BN_bn2bin(bn_seed, reinterpret_cast<unsigned char*>(keybuf));
     BYTE_SWAP_BUFFER(keybuf, outBytes);
     for (size_t i=0; i<7; ++i)

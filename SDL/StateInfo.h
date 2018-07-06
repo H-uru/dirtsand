@@ -204,10 +204,8 @@ namespace SDL
             DS::BlobStream bs(blob);
             State state = Create(&bs);
             state.read(&bs);
-#ifdef DEBUG
             if (!bs.atEof())
-                fprintf(stderr, "[SDL] Did not fully parse SDL blob! (@0x%x)\n", bs.tell());
-#endif
+                fprintf(stderr, "[SDL] WARNING: Did not fully parse SDL blob! (@0x%x)\n", bs.tell());
             return state;
         }
 

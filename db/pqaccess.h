@@ -117,3 +117,17 @@ namespace DS
                             params.m_values, nullptr, nullptr, 0);
     }
 }
+
+static inline void check_postgres(PGconn* postgres)
+{
+    auto status = PQstatus(postgres);
+    if (status == CONNECTION_BAD) {
+        PQreset(postgres);
+        status = PQstatus(postgres);
+    }
+    if (status != CONNECTION_OK) {
+        fprintf(stderr, "WARNING: Failed to reset postgres session.  Status = %d\n",
+                static_cast<int>(status));
+        fputs("The next postgres transaction is likely to fail...\n", stderr);
+    }
+}

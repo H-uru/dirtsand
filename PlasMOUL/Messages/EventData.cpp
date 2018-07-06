@@ -21,7 +21,8 @@
 MOUL::EventData* MOUL::EventData::Read(DS::Stream* stream)
 {
     EventData* data;
-    switch (stream->read<uint32_t>()) {
+    const uint32_t type = stream->read<uint32_t>();
+    switch (type) {
     case e_EvtCollision:
         data = new CollisionEventData();
         break;
@@ -71,7 +72,8 @@ MOUL::EventData* MOUL::EventData::Read(DS::Stream* stream)
         data = new ClimbingBlockerHitEventData();
         break;
     default:
-        DS_PASSERT(0);
+        fprintf(stderr, "Got unsupported EventData type %u\n", type);
+        throw DS::MalformedData();
     }
 
     try {

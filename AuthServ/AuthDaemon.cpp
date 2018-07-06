@@ -35,16 +35,9 @@ std::unordered_map<ST::string, SDL::State, ST::hash_i, ST::equal_i> s_globalStat
 #define SEND_REPLY(msg, result) \
     msg->m_client->m_channel.putMessage(result)
 
-static inline void check_postgres()
-{
-    if (PQstatus(s_postgres) == CONNECTION_BAD)
-        PQreset(s_postgres);
-    DS_DASSERT(PQstatus(s_postgres) == CONNECTION_OK);
-}
-
 void dm_auth_addacct(Auth_AddAcct* msg)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT idx, \"AcctUuid\" FROM auth.\"Accounts\""
@@ -63,8 +56,7 @@ void dm_auth_addacct(Auth_AddAcct* msg)
         result = DS::PQexecVA(s_postgres,
                 "INSERT INTO auth.\"Accounts\""
                 "    (\"AcctUuid\", \"PassHash\", \"Login\", \"AcctFlags\", \"BillingType\")"
-                "    VALUES ($1, $2, $3, 0, 1)"
-                "    returning idx",
+                "    VALUES ($1, $2, $3, 0, 1)",
                 gen_uuid().toString(), pwHash.toString(),
                 msg->m_acctInfo.m_acctName);
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -73,7 +65,6 @@ void dm_auth_addacct(Auth_AddAcct* msg)
             SEND_REPLY(msg, DS::e_NetInternalError);
             return;
         }
-        DS_DASSERT(PQntuples(result) == 1);
         SEND_REPLY(msg, DS::e_NetSuccess);
     } else {
         fprintf(stderr, "Error: Account already exists (ID %s; UUID %s)\n",
@@ -108,13 +99,11 @@ void dm_auth_shutdown()
 
 void dm_auth_login(Auth_LoginInfo* info)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
-#ifdef DEBUG
-    printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
-           info->m_acctName.c_str(), info->m_passHash.toString().c_str(),
-           info->m_token.c_str(), info->m_os.c_str());
-#endif
+    DEBUG_printf("[Auth] Login U:%s P:%s T:%s O:%s\n",
+                 info->m_acctName.c_str(), info->m_passHash.toString().c_str(),
+                 info->m_token.c_str(), info->m_os.c_str());
 
     // Reset UUID in case authentication fails
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(info->m_client);
@@ -139,12 +128,14 @@ void dm_auth_login(Auth_LoginInfo* info)
         // security flaw...
         SEND_REPLY(info, DS::e_NetAuthenticationFailed);
         return;
+    } else if (PQntuples(result) != 1) {
+        fprintf(stderr, "[AUTH] %s: Username %s matches multiple accounts\n",
+                DS::SockIpAddress(info->m_client->m_sock).c_str(),
+                info->m_acctName.c_str());
+        // Deny login, since we clearly have corrupt data or lookup.
+        SEND_REPLY(info, DS::e_NetAuthenticationFailed);
+        return;
     }
-#ifdef DEBUG
-    if (PQntuples(result) != 1) {
-        DS_PASSERT(0);
-    }
-#endif
 
     DS::ShaHash passhash = PQgetvalue(result, 0, 0);
     if (info->m_acctName.find("@") != -1 && info->m_acctName.find("@gametap") == -1) {
@@ -220,7 +211,11 @@ void dm_auth_bcast_node(uint32_t nodeIdx, const DS::Uuid& revision)
         if (!(v_has_node(client->m_ageNodeId, nodeIdx) || v_has_node(client->m_player.m_playerId, nodeIdx)))
             continue;
         msg->ref();
-        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeChanged, msg);
+        try {
+            client->m_broadcast.putMessage(e_AuthToCli_VaultNodeChanged, msg);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+        }
     }
     msg->unref();
 }
@@ -238,7 +233,11 @@ void dm_auth_bcast_ref(const DS::Vault::NodeRef& ref)
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
         msg->ref();
-        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeAdded, msg);
+        try {
+            client->m_broadcast.putMessage(e_AuthToCli_VaultNodeAdded, msg);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+        }
     }
     msg->unref();
 }
@@ -255,7 +254,11 @@ void dm_auth_bcast_unref(const DS::Vault::NodeRef& ref)
         if (!(v_has_node(client->m_ageNodeId, ref.m_parent) || v_has_node(client->m_player.m_playerId, ref.m_parent)))
             continue;
         msg->ref();
-        client->m_broadcast.putMessage(e_AuthToCli_VaultNodeRemoved, msg);
+        try {
+            client->m_broadcast.putMessage(e_AuthToCli_VaultNodeRemoved, msg);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+        }
     }
     msg->unref();
 }
@@ -265,7 +268,7 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
     if (client->m_player.m_playerId) {
         // Mark player as offline
-        check_postgres();
+        check_postgres(s_postgres);
         DS::PGresultRef result = DS::PQexecVA(s_postgres,
                 "UPDATE vault.\"Nodes\" SET"
                 "    \"Int32_1\"=0, \"String64_1\"='',"
@@ -278,13 +281,10 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
                     __FILE__, __LINE__, PQerrorMessage(s_postgres));
             // This doesn't block continuing...
         }
-        if (PQntuples(result) == 1) {
-            uint32_t nodeid = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        const int count = PQntuples(result);
+        for (int i = 0; i < count; ++i) {
+            uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), 0, 10);
             dm_auth_bcast_node(nodeid, gen_uuid());
-        } else {
-            fprintf(stderr, "%s:%d:\n    Could not get PlayerInfoNode idx on disconnect",
-                    __FILE__, __LINE__);
-            // This doesn't block continuing
         }
     }
     SEND_REPLY(msg, DS::e_NetSuccess);
@@ -292,7 +292,7 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
 
 void dm_auth_setPlayer(Auth_ClientMessage* msg)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
@@ -308,20 +308,19 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
         return;
     }
     if (PQntuples(result) == 0) {
-        printf("[Auth] {%s} requested invalid player ID (%u)\n",
-               client->m_acctUuid.toString().c_str(),
-               client->m_player.m_playerId);
+        fprintf(stderr, "[Auth] {%s} requested invalid player ID (%u)\n",
+                client->m_acctUuid.toString().c_str(),
+                client->m_player.m_playerId);
         client->m_player.m_playerId = 0;
         SEND_REPLY(msg, DS::e_NetPlayerNotFound);
         return;
-    }
-
-#ifdef DEBUG
-    if (PQntuples(result) != 1) {
+    } else if (PQntuples(result) != 1) {
+        fprintf(stderr, "[Auth] Player ID %u matched multiple players\n",
+                client->m_player.m_playerId);
         client->m_player.m_playerId = 0;
-        DS_PASSERT(0);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
     }
-#endif
 
     {
         std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
@@ -354,13 +353,15 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         // This doesn't block continuing...
     }
-    if (PQntuples(result) == 1) {
-        uint32_t nodeid = strtoul(PQgetvalue(result, 0, 0), 0, 10);
-        dm_auth_bcast_node(nodeid, gen_uuid());
-    } else {
-        fprintf(stderr, "%s:%d:\n    Could not get PlayerInfoNode idx on setPlayer",
-                __FILE__, __LINE__);
+    const int count = PQntuples(result);
+    if (count == 0) {
+        fprintf(stderr, "[Auth] Could not get PlayerInfoNode idx for player ID %u",
+                client->m_player.m_playerId);
         // This doesn't block continuing
+    }
+    for (int i = 0; i < count; ++i) {
+        uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        dm_auth_bcast_node(nodeid, gen_uuid());
     }
 
     printf("[Auth] {%s} signed in as %s (%u)\n",
@@ -414,8 +415,7 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
     result = DS::PQexecVA(s_postgres,
             "INSERT INTO auth.\"Players\""
             "    (\"AcctUuid\", \"PlayerIdx\", \"PlayerName\", \"AvatarShape\", \"Explorer\")"
-            "    VALUES ($1, $2, $3, $4, $5)"
-            "    RETURNING idx",
+            "    VALUES ($1, $2, $3, $4, $5)",
             client->m_acctUuid.toString(), msg->m_player.m_playerId,
             msg->m_player.m_playerName, msg->m_player.m_avatarModel,
             msg->m_player.m_explorer);
@@ -425,7 +425,6 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    DS_DASSERT(PQntuples(result) == 1);
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
@@ -433,11 +432,9 @@ void dm_auth_deletePlayer(Auth_PlayerDelete* msg)
 {
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
 
-#ifdef DEBUG
-    printf("[Auth] {%s} requesting deletion of PlayerId (%d)\n",
-            client->m_acctUuid.toString().c_str(),
-            msg->m_playerId);
-#endif
+    DEBUG_printf("[Auth] {%s} requesting deletion of PlayerId (%d)\n",
+                 client->m_acctUuid.toString().c_str(),
+                 msg->m_playerId);
 
     // Check for existing player
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
@@ -481,7 +478,12 @@ void dm_auth_deletePlayer(Auth_PlayerDelete* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    DS_PASSERT(PQntuples(result) == 1);
+    if (PQntuples(result) == 0) {
+        fprintf(stderr, "[Auth] Could not find PlayerInfo node for %u\n",
+                msg->m_playerId);
+        SEND_REPLY(msg, DS::e_NetInternalError);
+        return;
+    }
     uint32_t playerInfo = strtoul(PQgetvalue(result, 0, 0), 0, 10);
 
     result = DS::PQexecVA(s_postgres,
@@ -511,7 +513,7 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    if (PQntuples(result) == 1) {
+    if (PQntuples(result) != 0) {
         std::get<0>(ageNodes) = strtoul(PQgetvalue(result, 0, 0), 0, 10);
         result = DS::PQexecVA(s_postgres,
                 "SELECT idx FROM vault.\"Nodes\""
@@ -519,20 +521,19 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
                 ageIdString, DS::Vault::e_NodeAgeInfo);
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
             fprintf(stderr, "%s:%d\n    Postgres SELECT error: %s\n",
-            __FILE__, __LINE__, PQerrorMessage(s_postgres));
+                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
             SEND_REPLY(msg, DS::e_NetInternalError);
             return;
         }
-        if (PQntuples(result) == 1) {
+        if (PQntuples(result) != 0) {
             std::get<1>(ageNodes) = strtoul(PQgetvalue(result, 0, 0), 0, 10);
         } else {
             fprintf(stderr, "%s:%d\n    Got age but not age info? WTF?\n",
-            __FILE__, __LINE__);
+                    __FILE__, __LINE__);
             SEND_REPLY(msg, DS::e_NetInternalError);
             return;
         }
-    }
-    else {
+    } else {
         ageNodes = v_create_age(msg->m_age, 0);
     }
     if (std::get<0>(ageNodes) == 0)
@@ -545,13 +546,11 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
 
 void dm_auth_findAge(Auth_GameAge* msg)
 {
-#ifdef DEBUG
-    printf("[Auth] %s Requesting game server {%s} %s\n",
-           DS::SockIpAddress(msg->m_client->m_sock).c_str(),
-           msg->m_instanceId.toString().c_str(), msg->m_name.c_str());
-#endif
-
     const ST::string instanceIdString = msg->m_instanceId.toString();
+    DEBUG_printf("[Auth] %s Requesting game server {%s} %s\n",
+                 DS::SockIpAddress(msg->m_client->m_sock).c_str(),
+                 instanceIdString.c_str(), msg->m_name.c_str());
+
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT idx, \"AgeIdx\", \"DisplayName\" FROM game.\"Servers\""
             "    WHERE \"AgeUuid\"=$1",
@@ -575,8 +574,11 @@ void dm_auth_findAge(Auth_GameAge* msg)
                     __FILE__, __LINE__, PQerrorMessage(s_postgres));
             return;
         }
+    } else  if (PQntuples(result) != 1) {
+        fprintf(stderr, "[Auth] WARNING: Age {%s} %s matched %d servers.\n",
+                instanceIdString.c_str(), msg->m_name.c_str(),
+                PQntuples(result));
     }
-    DS_DASSERT(PQntuples(result) == 1);
     msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), 0, 10);
     msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
     msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress().c_str());
@@ -595,13 +597,10 @@ void dm_auth_findAge(Auth_GameAge* msg)
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         // This doesn't block continuing...
     }
-    if (PQntuples(result) == 1) {
-        uint32_t nodeid = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    const int count = PQntuples(result);
+    for (int i = 0; i < count; ++i) {
+        uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), 0, 10);
         dm_auth_bcast_node(nodeid, gen_uuid());
-    } else {
-        fprintf(stderr, "%s:%d:\n    Could not get PlayerInfoNode idx on findAge",
-                __FILE__, __LINE__);
-        // This doesn't block continuing
     }
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
@@ -829,7 +828,12 @@ void dm_auth_getHighScores(Auth_GetHighScores* msg)
             SEND_REPLY(msg, DS::e_NetInternalError);
             return;
         }
-        DS_PASSERT(PQntuples(result) == 1);
+        if (PQntuples(result) == 0) {
+            fprintf(stderr, "[Auth] Could not find AgeOwnersFolder for %u\n",
+                    msg->m_owner);
+            SEND_REPLY(msg, DS::e_NetInvalidParameter);
+            return;
+        }
         uint32_t ageOwnersFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
 
         result = DS::PQexecVA(s_postgres,
@@ -930,7 +934,7 @@ void dm_auth_acctFlags(Auth_AccountFlags* msg)
 
 void dm_auth_addAllPlayers(Auth_AddAllPlayers* msg)
 {
-    check_postgres();
+    check_postgres(s_postgres);
 
     if (v_has_node(msg->m_playerId, s_allPlayers)) {
         if (!v_unref_node(msg->m_playerId, s_allPlayers)) {
@@ -1020,7 +1024,6 @@ void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
                 fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                         __FILE__, __LINE__, PQerrorMessage(s_postgres));
                 // This doesn't block continuing...
-                DS_DASSERT(false);
             }
 
             DS::GameServer_UpdateGlobalSDL(msg->m_ageFilename);
@@ -1074,12 +1077,12 @@ void dm_authDaemon()
         fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
                  __FILE__, __LINE__, PQerrorMessage(s_postgres));
         // This doesn't block continuing...
-        DS_DASSERT(false);
     }
 
     for ( ;; ) {
-        DS::FifoMessage msg = s_authChannel.getMessage();
+        DS::FifoMessage msg { -1, nullptr };
         try {
+            msg = s_authChannel.getMessage();
             switch (msg.m_messageType) {
             case e_AuthShutdown:
                 dm_auth_shutdown();
@@ -1267,22 +1270,22 @@ void dm_authDaemon()
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
-                DS_DASSERT(0);
+                fprintf(stderr, "[Auth] Invalid auth message (%d) in message queue\n",
+                        msg.m_messageType);
+                exit(1);
                 break;
             }
-        } catch (const DS::AssertException& ex) {
-            fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
-                    ex.m_file, ex.m_line, ex.m_cond);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Auth] Exception raised processing message: %s\n",
+                    ex.what());
             if (msg.m_payload) {
                 // Keep clients from blocking on a reply
                 SEND_REPLY(reinterpret_cast<Auth_ClientMessage*>(msg.m_payload),
                            DS::e_NetInternalError);
             }
-        } catch (const DS::PacketSizeOutOfBounds& ex) {
-            fprintf(stderr, "[Auth] Client packet size too large: Requested %u bytes\n",
-                    ex.requestedSize());
         }
     }
 
-    dm_auth_shutdown();
+    // This line should be unreachable
+    DS_ASSERT(false);
 }

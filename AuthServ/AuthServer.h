@@ -35,16 +35,6 @@ namespace DS
     bool AuthServer_AddAllPlayersFolder(uint32_t playerId);
     bool AuthServer_ChangeGlobalSDL(const ST::string& ageName, const ST::string& var,
                                     const ST::string& value);
-
-    class DbException : public std::exception
-    {
-    public:
-        DbException() throw() { }
-        virtual ~DbException() throw() { }
-
-        virtual const char* what() const throw()
-        { return "[DbException] Postgres error"; }
-    };
 }
 
 #endif

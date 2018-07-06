@@ -43,7 +43,8 @@ void auth_init(AuthServer_Private& client)
 {
     /* Auth server header:  size, null uuid */
     uint32_t size = DS::RecvValue<uint32_t>(client.m_sock);
-    DS_PASSERT(size == 20);
+    if (size != 20)
+        throw DS::InvalidConnectionHeader();
     DS::Uuid uuid;
     DS::RecvBuffer(client.m_sock, uuid.m_bytes, sizeof(uuid.m_bytes));
 
@@ -53,7 +54,8 @@ void auth_init(AuthServer_Private& client)
 
     /* Establish encryption, and write reply body */
     uint8_t msgId = DS::RecvValue<uint8_t>(client.m_sock);
-    DS_PASSERT(msgId == DS::e_CliToServConnect);
+    if (msgId != DS::e_CliToServConnect)
+        throw DS::InvalidConnectionHeader();
     uint8_t msgSize = DS::RecvValue<uint8_t>(client.m_sock);
     if (msgSize == 2) {
         // no seed... client wishes unencrypted connection (that's okay, nobody
@@ -63,7 +65,8 @@ void auth_init(AuthServer_Private& client)
     } else {
         uint8_t Y[64];
         memset(Y, 0, sizeof(Y));
-        DS_PASSERT(msgSize <= 66);
+        if (msgSize > 66)
+            throw DS::InvalidConnectionHeader();
         DS::RecvBuffer(client.m_sock, Y, 64 - (66 - msgSize));
         BYTE_SWAP_BUFFER(Y, 64);
 
@@ -295,7 +298,10 @@ void cb_nodeCreate(AuthServer_Private& client)
     Auth_NodeInfo msg;
     msg.m_client = &client;
     msg.m_node.read(&nodeStream);
-    DS_PASSERT(nodeStream.atEof());
+    if (!nodeStream.atEof()) {
+        fprintf(stderr, "WARNING: Ignoring %u bytes of unread data at end of node stream\n",
+                nodeStream.size() - nodeStream.tell());
+    }
     s_authChannel.putMessage(e_VaultCreateNode, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();
@@ -356,7 +362,10 @@ void cb_nodeUpdate(AuthServer_Private& client)
     DS::BlobStream nodeStream(nodeData);
 
     msg.m_node.read(&nodeStream);
-    DS_PASSERT(nodeStream.atEof());
+    if (!nodeStream.atEof()) {
+        fprintf(stderr, "WARNING: Ignoring %u bytes of unread data at end of node stream\n",
+                nodeStream.size() - nodeStream.tell());
+    }
     msg.m_node.m_NodeIdx = m_nodeId;
     msg.m_internal = false;
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&msg));
@@ -452,7 +461,10 @@ void cb_nodeFind(AuthServer_Private& client)
     DS::BlobStream nodeStream(nodeData);
 
     msg.m_template.read(&nodeStream);
-    DS_PASSERT(nodeStream.atEof());
+    if (!nodeStream.atEof()) {
+        fprintf(stderr, "WARNING: Ignoring %u bytes of unread data at end of node stream\n",
+                nodeStream.size() - nodeStream.tell());
+    }
     s_authChannel.putMessage(e_VaultFindNode, reinterpret_cast<void*>(&msg));
 
     DS::FifoMessage reply = client.m_channel.getMessage();
@@ -1025,7 +1037,10 @@ void wk_authWorker(DS::SocketHandle sockp)
 
         for ( ;; ) {
             int result = poll(fds, 2, NET_TIMEOUT * 1000);
-            DS_PASSERT(result != -1);
+            if (result < 0) {
+                fprintf(stderr, "[Auth] Failure in poll: %s\n", strerror(errno));
+                throw DS::SockHup();
+            }
             if (result == 0 || fds[0].revents & POLLHUP)
                 throw DS::SockHup();
 
@@ -1034,29 +1049,34 @@ void wk_authWorker(DS::SocketHandle sockp)
             if (fds[1].revents & POLLIN)
                 cb_broadcast(client);
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Auth] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-    } catch (const DS::PacketSizeOutOfBounds& ex) {
-        fprintf(stderr, "[Auth] Client packet size too large: Requested %u bytes\n",
-                ex.requestedSize());
     } catch (const DS::SockHup&) {
         // Socket closed...
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] Error processing client message from %s: %s\n",
+                DS::SockIpAddress(sockp).c_str(), ex.what());
     }
 
     Auth_ClientMessage disconMsg;
     disconMsg.m_client = &client;
-    s_authChannel.putMessage(e_AuthDisconnect, reinterpret_cast<void*>(&disconMsg));
-    client.m_channel.getMessage();
+    try {
+        s_authChannel.putMessage(e_AuthDisconnect, reinterpret_cast<void*>(&disconMsg));
+        client.m_channel.getMessage();
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+    }
 
     s_authClientMutex.lock();
     s_authClients.remove(&client);
     s_authClientMutex.unlock();
 
     // Drain the broadcast channel
-    while (client.m_broadcast.hasMessage()) {
-        DS::FifoMessage msg = client.m_broadcast.getMessage();
-        reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
+    try {
+        while (client.m_broadcast.hasMessage()) {
+            DS::FifoMessage msg = client.m_broadcast.getMessage();
+            reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
+        }
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
     }
 
     DS::CryptStateFree(client.m_crypt);
@@ -1066,8 +1086,13 @@ void wk_authWorker(DS::SocketHandle sockp)
 void DS::AuthServer_Init(bool restrictLogins)
 {
     s_authDaemonThread = std::thread(&dm_authDaemon);
-    if (restrictLogins)
-        s_authChannel.putMessage(e_AuthRestrictLogins);
+    if (restrictLogins) {
+        try {
+            s_authChannel.putMessage(e_AuthRestrictLogins);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "Warning: Could not restrict logins: %s\n", ex.what());
+        }
+    }
 }
 
 void DS::AuthServer_Add(DS::SocketHandle client)
@@ -1086,14 +1111,24 @@ bool DS::AuthServer_RestrictLogins()
     AuthClient_Private client;
     Auth_RestrictLogins msg;
     msg.m_client = &client;
-    s_authChannel.putMessage(e_AuthRestrictLogins, &msg);
-    client.m_channel.getMessage();
-    return msg.m_status;
+    try {
+        s_authChannel.putMessage(e_AuthRestrictLogins, &msg);
+        client.m_channel.getMessage();
+        return msg.m_status;
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+    }
+    return false;
 }
 
 void DS::AuthServer_Shutdown()
 {
-    s_authChannel.putMessage(e_AuthShutdown);
+    try {
+        s_authChannel.putMessage(e_AuthShutdown);
+    } catch (const std::exception& ex) {
+        // NOTE: This will probably cause the join to hang
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+    }
     s_authDaemonThread.join();
 }
 
@@ -1115,9 +1150,14 @@ bool DS::AuthServer_AddAcct(const ST::string& acctName, const ST::string& passwo
     req.m_client = &client;
     req.m_acctInfo.m_acctName = acctName;
     req.m_acctInfo.m_password = password;
-    s_authChannel.putMessage(e_AuthAddAcct, &req);
-    DS::FifoMessage reply = client.m_channel.getMessage();
-    return reply.m_messageType == DS::e_NetSuccess;
+    try {
+        s_authChannel.putMessage(e_AuthAddAcct, &req);
+        DS::FifoMessage reply = client.m_channel.getMessage();
+        return reply.m_messageType == DS::e_NetSuccess;
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+    }
+    return false;
 }
 
 uint32_t DS::AuthServer_AcctFlags(const ST::string& acctName, uint32_t flags)
@@ -1127,12 +1167,15 @@ uint32_t DS::AuthServer_AcctFlags(const ST::string& acctName, uint32_t flags)
     req.m_client = &client;
     req.m_acctName = acctName;
     req.m_flags = flags;
-    s_authChannel.putMessage(e_AuthAcctFlags, &req);
-    DS::FifoMessage reply = client.m_channel.getMessage();
-    if (reply.m_messageType == DS::e_NetSuccess)
-        return req.m_flags;
-    else
-        return static_cast<uint32_t>(-1);
+    try {
+        s_authChannel.putMessage(e_AuthAcctFlags, &req);
+        DS::FifoMessage reply = client.m_channel.getMessage();
+        if (reply.m_messageType == DS::e_NetSuccess)
+            return req.m_flags;
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+    }
+    return static_cast<uint32_t>(-1);
 }
 
 bool DS::AuthServer_AddAllPlayersFolder(uint32_t playerId)
@@ -1141,8 +1184,13 @@ bool DS::AuthServer_AddAllPlayersFolder(uint32_t playerId)
     Auth_AddAllPlayers msg;
     msg.m_client = &client;
     msg.m_playerId = playerId;
-    s_authChannel.putMessage(e_AuthAddAllPlayers, &msg);
-    return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
+    try {
+        s_authChannel.putMessage(e_AuthAddAllPlayers, &msg);
+        return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+    }
+    return false;
 }
 
 bool DS::AuthServer_ChangeGlobalSDL(const ST::string& ageName, const ST::string& var, const ST::string& value)
@@ -1153,6 +1201,11 @@ bool DS::AuthServer_ChangeGlobalSDL(const ST::string& ageName, const ST::string&
     msg.m_ageFilename = ageName;
     msg.m_variable = var;
     msg.m_value = value;
-    s_authChannel.putMessage(e_AuthUpdateGlobalSDL, &msg);
-    return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
+    try {
+        s_authChannel.putMessage(e_AuthUpdateGlobalSDL, &msg);
+        return (client.m_channel.getMessage().m_messageType == DS::e_NetSuccess);
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Auth] WARNING: %s\n", ex.what());
+    }
+    return false;
 }

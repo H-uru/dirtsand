@@ -18,31 +18,29 @@
 #include "NetMsgObject.h"
 #include "errors.h"
 #include <zlib.h>
+#include <memory>
 
 void MOUL::NetMsgStream::read(DS::Stream* stream)
 {
     uint32_t uncompressedSize = stream->read<uint32_t>();
     m_compression = static_cast<Compression>(stream->read<uint8_t>());
     uint32_t size = stream->read<uint32_t>();
-    uint8_t* buffer = new uint8_t[size];
-    stream->readBytes(buffer, size);
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
+    stream->readBytes(buffer.get(), size);
 
     if (m_compression == e_CompressZlib) {
-        DS_PASSERT(size >= 2);
+        if (size < 2)
+            throw DS::MalformedData();
 
-        uint8_t* zbuf = new uint8_t[uncompressedSize];
+        std::unique_ptr<uint8_t[]> zbuf(new uint8_t[uncompressedSize]);
         uLongf zlength = uncompressedSize - 2;
-        memcpy(zbuf, buffer, 2);
-        int result = uncompress(zbuf + 2, &zlength, buffer + 2, size - 2);
-        if (result != Z_OK) {
-            delete[] zbuf;
-            delete[] buffer;
-            DS_PASSERT(0);
-        }
-        m_stream.steal(zbuf, uncompressedSize);
-        delete[] buffer;
+        memcpy(zbuf.get(), buffer.get(), 2);
+        int result = uncompress(zbuf.get() + 2, &zlength, buffer.get() + 2, size - 2);
+        if (result != Z_OK)
+            throw DS::MalformedData();
+        m_stream.steal(zbuf.release(), uncompressedSize);
     } else {
-        m_stream.steal(buffer, size);
+        m_stream.steal(buffer.release(), size);
     }
 }
 
@@ -52,19 +50,18 @@ void MOUL::NetMsgStream::write(DS::Stream* stream) const
     stream->write<uint8_t>(m_compression);
 
     if (m_compression == e_CompressZlib) {
-        DS_PASSERT(m_stream.size() >= 2);
+        if (m_stream.size() < 2)
+            throw DS::MalformedData();
 
         uLongf zlength = compressBound(m_stream.size() - 2);
-        uint8_t* zbuf = new uint8_t[zlength + 2];
-        memcpy(zbuf, m_stream.buffer(), 2);
-        int result = compress(zbuf + 2, &zlength, m_stream.buffer() + 2, m_stream.size() - 2);
-        if (result != Z_OK) {
-            delete[] zbuf;
-            DS_PASSERT(0);
-        }
+        std::unique_ptr<uint8_t[]> zbuf(new uint8_t[zlength + 2]);
+        memcpy(zbuf.get(), m_stream.buffer(), 2);
+        int result = compress(zbuf.get() + 2, &zlength, m_stream.buffer() + 2,
+                              m_stream.size() - 2);
+        if (result != Z_OK)
+            throw DS::MalformedData();
         stream->write<uint32_t>(zlength + 2);
-        stream->writeBytes(zbuf, zlength + 2);
-        delete[] zbuf;
+        stream->writeBytes(zbuf.get(), zlength + 2);
     } else {
         stream->write<uint32_t>(m_stream.size());
         stream->writeBytes(m_stream.buffer(), m_stream.size());

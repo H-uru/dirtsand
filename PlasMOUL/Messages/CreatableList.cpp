@@ -19,6 +19,7 @@
 #include "factory.h"
 #include "errors.h"
 #include <zlib.h>
+#include <memory>
 
 #define COMPRESSION_THRESHOLD 255
 
@@ -36,33 +37,30 @@ void MOUL::CreatableList::read(DS::Stream* stream)
     m_flags = stream->read<uint8_t>();
 
     uint32_t bufSz = stream->read<uint32_t>();
-    uint8_t* buf = new uint8_t[bufSz];
+    std::unique_ptr<uint8_t[]> buf(new uint8_t[bufSz]);
 
     if (m_flags & e_Compressed) {
         uint32_t zBufSz = stream->read<uint32_t>();
-        uint8_t* zBuf = new uint8_t[zBufSz];
-        stream->readBytes(zBuf, zBufSz);
+        std::unique_ptr<uint8_t[]> zBuf(new uint8_t[zBufSz]);
+        stream->readBytes(zBuf.get(), zBufSz);
         uLongf zLen;
-        int result = uncompress(buf, &zLen, zBuf, zBufSz);
-        delete[] zBuf;
-        if (result != Z_OK) {
-            delete[] buf;
-            DS_PASSERT(0);
-        }
-        DS_PASSERT(zLen == bufSz);
+        int result = uncompress(buf.get(), &zLen, zBuf.get(), zBufSz);
+        if (result != Z_OK || zLen != bufSz)
+            throw DS::MalformedData();
         m_flags &= ~e_Compressed;
     } else {
-        stream->readBytes(buf, bufSz);
+        stream->readBytes(buf.get(), bufSz);
     }
 
     DS::BufferStream ram;
-    ram.steal(buf, bufSz);
+    ram.steal(buf.release(), bufSz);
     uint16_t numItems = ram.read<uint16_t>();
     for (uint16_t i = 0; i < numItems; i++) {
         uint16_t id = ram.read<uint16_t>();
         uint16_t type = ram.read<uint16_t>();
         Creatable* cre = Factory::Create(type);
-        DS_PASSERT(cre);
+        if (!cre)
+            throw DS::MalformedData();
         cre->read(&ram);
         m_items[id] = cre;
     }
@@ -84,22 +82,19 @@ void MOUL::CreatableList::write(DS::Stream* stream) const
 
     uint32_t bufSz = ram.tell();
     ram.seek(0, SEEK_SET);
-    uint8_t* buf = new uint8_t[bufSz];
-    ram.readBytes(buf, bufSz);
+    std::unique_ptr<uint8_t[]> buf(new uint8_t[bufSz]);
+    ram.readBytes(buf.get(), bufSz);
     uLongf zBufSz;
 
     uint8_t flags = m_flags & ~e_Compressed;
     if (flags & e_WantCompression && bufSz > COMPRESSION_THRESHOLD) {
-        uint8_t* zBuf = new uint8_t[bufSz];
-        int result = compress(zBuf, &zBufSz, buf, bufSz);
-        if (result != Z_OK) {
-            delete[] buf;
-            delete[] zBuf;
-            DS_PASSERT(0);
+        std::unique_ptr<uint8_t[]> zBuf(new uint8_t[bufSz]);
+        int result = compress(zBuf.get(), &zBufSz, buf.get(), bufSz);
+        if (result == Z_OK) {
+            memcpy(buf.get(), zBuf.get(), zBufSz);
+            flags |= e_Compressed;
         }
-        memcpy(buf, zBuf, zBufSz);
-        delete[] zBuf;
-        flags |= e_Compressed;
+        // If compression failed, just write the uncompressed list...
     }
 
     ram.truncate();
@@ -111,7 +106,6 @@ void MOUL::CreatableList::write(DS::Stream* stream) const
         ram.write<uint32_t>(bufSz);
     }
 
-    ram.writeBytes(buf, bufSz);
-    delete[] buf;
+    ram.writeBytes(buf.get(), bufSz);
     stream->writeBytes(ram.buffer(), ram.tell());
 }

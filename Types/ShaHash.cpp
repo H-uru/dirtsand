@@ -77,10 +77,10 @@ DS::ShaHash DS::ShaHash::Sha0(const void* data, size_t size)
 {
     ShaHash result;
     const EVP_MD* sha0_md = EVP_get_digestbyname("sha");
-    DS_PASSERT(sha0_md);
+    DS_ASSERT(sha0_md);
 
     unsigned int out_len = EVP_MD_size(sha0_md);
-    DS_PASSERT(out_len == sizeof(result.m_data));
+    DS_ASSERT(out_len == sizeof(result.m_data));
 
     EVP_MD_CTX* sha_ctx = EVP_MD_CTX_create();
     EVP_DigestInit_ex(sha_ctx, sha0_md, NULL);
@@ -95,10 +95,10 @@ DS::ShaHash DS::ShaHash::Sha1(const void* data, size_t size)
 {
     ShaHash result;
     const EVP_MD* sha1_md = EVP_get_digestbyname("sha1");
-    DS_PASSERT(sha1_md);
+    DS_ASSERT(sha1_md);
 
     unsigned int out_len = EVP_MD_size(sha1_md);
-    DS_PASSERT(out_len == sizeof(result.m_data));
+    DS_ASSERT(out_len == sizeof(result.m_data));
 
     EVP_MD_CTX* sha1_ctx = EVP_MD_CTX_create();
     EVP_DigestInit_ex(sha1_ctx, sha1_md, NULL);

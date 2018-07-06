@@ -57,13 +57,6 @@ agemap_t s_ages;
     DM_WRITEBUF(msg); \
     client->m_broadcast.putMessage(e_GameToCli_PropagateBuffer, _msgbuf)
 
-static inline void check_postgres(GameHost_Private* host)
-{
-    if (PQstatus(host->m_postgres) == CONNECTION_BAD)
-        PQreset(host->m_postgres);
-    DS_DASSERT(PQstatus(host->m_postgres) == CONNECTION_OK);
-}
-
 void dm_game_shutdown(GameHost_Private* host)
 {
     {
@@ -325,7 +318,7 @@ void dm_game_join(GameHost_Private* host, Game_ClientMessage* msg)
 
 void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 {
-    check_postgres(host);
+    check_postgres(host->m_postgres);
 
     MOUL::NetMsgSDLState* state = MOUL::NetMsgSDLState::Create();
     state->m_contentFlags = MOUL::NetMessage::e_HasTimeSent
@@ -376,7 +369,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
 void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
                        const MOUL::Uoid& object, const SDL::State& state)
 {
-    check_postgres(host);
+    check_postgres(host->m_postgres);
 
     DS::Blob sdlBlob = state.toBlob();
     DS::BufferStream buffer;
@@ -404,7 +397,8 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
             return;
         }
     } else {
-        DS_DASSERT(PQntuples(result) == 1);
+        if (PQntuples(result) != 1)
+            fputs("Warning: Multiple rows returned for age state\n", stderr);
         const ST::string stateIdx(PQgetvalue(result, 0, 0));
         result = DS::PQexecVA(host->m_postgres,
                               "UPDATE game.\"AgeStates\""
@@ -447,8 +441,8 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
     SDL::State update;
     try {
         update = SDL::State::FromBlob(state->m_sdlBlob);
-    } catch (const DS::EofException&) {
-        fputs("[SDL] Error parsing state\n", stderr);
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[SDL] Error parsing state: %s\n", ex.what());
         return;
     }
 
@@ -640,11 +634,6 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
                 msg->m_messageType);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-        SEND_REPLY(msg, DS::e_NetInternalError);
-        return;
     } catch (const std::exception& ex) {
         // magickal code to print out the name of the offending plMessage
         MOUL::NetMsgGameMessage* gameMsg = netmsg->Cast<MOUL::NetMsgGameMessage>();
@@ -652,26 +641,24 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             switch (gameMsg->m_message->type()) {
 #define CREATABLE_TYPE(id, name) \
             case id: \
-                fprintf(stderr, "[Game] Unknown exception reading " #name ": %s\n", ex.what()); \
+                fprintf(stderr, "[Game] Exception reading " #name ": %s\n", ex.what()); \
                 break;
 #include "creatable_types.inl"
 #undef CREATABLE_TYPE
             }
         } else {
-            fprintf(stderr, "[Game] Unknown exception reading net message: %s\n",
+            fprintf(stderr, "[Game] Exception reading net message: %s\n",
                     ex.what());
         }
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-#ifdef DEBUG
     if (!stream.atEof()) {
         fprintf(stderr, "[Game] Incomplete parse of %04X\n", netmsg->type());
         netmsg->unref();
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-#endif
 
     try {
         switch (msg->m_messageType) {
@@ -790,8 +777,9 @@ void dm_global_sdl_update(GameHost_Private* host)
 void dm_gameHost(GameHost_Private* host)
 {
     for ( ;; ) {
-        DS::FifoMessage msg = host->m_channel.getMessage();
+        DS::FifoMessage msg { -1, nullptr };
         try {
+            msg = host->m_channel.getMessage();
             switch (msg.m_messageType) {
             case e_GameShutdown:
                 dm_game_shutdown(host);
@@ -813,12 +801,14 @@ void dm_gameHost(GameHost_Private* host)
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
-                DS_DASSERT(0);
+                fprintf(stderr, "[Game] Invalid message (%d) in message queue\n",
+                        msg.m_messageType);
+                exit(1);
                 break;
             }
-        } catch (const DS::AssertException& ex) {
-            fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                    ex.m_file, ex.m_line, ex.m_cond);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] Exception raised processing message: %s\n",
+                    ex.what());
             if (msg.m_payload) {
                 // Keep clients from blocking on a reply
                 SEND_REPLY(reinterpret_cast<Game_ClientMessage*>(msg.m_payload),
@@ -827,7 +817,8 @@ void dm_gameHost(GameHost_Private* host)
         }
     }
 
-    dm_game_shutdown(host);
+    // This line should be unreachable
+    DS_ASSERT(false);
 }
 
 GameHost_Private* start_game_host(uint32_t ageMcpId)
@@ -860,7 +851,10 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         PQfinish(postgres);
         return 0;
     } else {
-        DS_DASSERT(PQntuples(result) == 1);
+        if (PQntuples(result) != 1) {
+            fprintf(stderr, "[Game] WARNING: Multiple servers found for MCP %u\n",
+                    ageMcpId);
+        }
 
         GameHost_Private* host = new GameHost_Private();
         host->m_instanceId = PQgetvalue(result, 0, 0);
@@ -893,9 +887,9 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         // Load the local state and see if it needs to be updated
         try {
             host->m_localState = SDL::State::FromBlob(sdlFetch.m_localState);
-        } catch (const DS::EofException&) {
-            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s\n",
-                    host->m_ageFilename.c_str());
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s: %s\n",
+                    host->m_ageFilename.c_str(), ex.what());
             PQfinish(postgres);
             delete host;
             return 0;
@@ -949,9 +943,10 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                     gs.m_persist = true;
                     gs.m_state = state;
                     host->m_states[key][PQgetvalue(result, i, 0)] = gs;
-                } catch (const DS::EofException&) {
-                    fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s\n",
-                            PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str());
+                } catch (const std::exception& ex) {
+                    fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s: %s\n",
+                            PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str(),
+                            ex.what());
                 }
             }
         }

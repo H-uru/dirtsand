@@ -43,24 +43,6 @@ namespace MOUL
             e_None = 0xFF,
         };
 
-        void set(int32_t i) { m_int = i; m_dataType = e_Int; }
-        void set(uint32_t i) { m_uint = i; m_dataType = e_UInt; }
-        void set(float f) { m_float = f; m_dataType = e_Float; }
-        void set(double d) { m_double = d; m_dataType = e_Double; }
-        void set(bool b) { m_bool = b; m_dataType = e_Bool; }
-        void set(const ST::string& s) { m_string = s; m_dataType = e_String; }
-        void set(char c) { m_char = c; m_dataType = e_Char; }
-        void setAny(const ST::string& s) { m_string = s; m_dataType = e_Any; }
-        void reset() { m_dataType = e_None; }
-
-        int32_t toInt() const;
-        uint32_t toUint() const;
-        float toFloat() const;
-        double toDouble() const;
-        bool toBool() const;
-        ST::string toString() const;
-        char toChar() const;
-
     protected:
         GenericValue(uint16_t type) : Creatable(type), m_dataType(e_None) { }
 

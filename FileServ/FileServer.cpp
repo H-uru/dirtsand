@@ -107,7 +107,8 @@ void file_init(FileServer_Private& client)
 {
     /* File server header:  size, buildId, serverType */
     uint32_t size = DS::RecvValue<uint32_t>(client.m_sock);
-    DS_PASSERT(size == 12);
+    if (size != 12)
+        throw DS::InvalidConnectionHeader();
     DS::RecvValue<uint32_t>(client.m_sock);
     DS::RecvValue<uint32_t>(client.m_sock);
 }
@@ -332,14 +333,11 @@ void wk_fileServ(DS::SocketHandle sockp)
                 throw DS::SockHup();
             }
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[File] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-    } catch (const DS::PacketSizeOutOfBounds& ex) {
-        fprintf(stderr, "[File] Client packet size too large: Requested %u bytes\n",
-                ex.requestedSize());
     } catch (const DS::SockHup&) {
         // Socket closed...
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[File] Error processing client message from %s: %s\n",
+                DS::SockIpAddress(sockp).c_str(), ex.what());
     }
 
     s_clientMutex.lock();

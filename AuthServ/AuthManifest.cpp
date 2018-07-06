@@ -71,6 +71,10 @@ uint32_t DS::AuthManifest::encodeToStream(DS::Stream* stream) const
     }
     stream->write<uint16_t>(0);
 
-    DS_DASSERT((stream->tell() - start) % sizeof(char16_t) == 0);
+    if ((stream->tell() - start) % sizeof(char16_t) != 0) {
+        fputs("WARNING: Encoded manifest data was not evenly divisible by "
+              "UTF-16 character size.  The recipient client may crash...\n",
+              stderr);
+    }
     return (stream->tell() - start) / sizeof(char16_t);
 }

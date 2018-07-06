@@ -39,7 +39,8 @@ void game_client_init(GameClient_Private& client)
 {
     /* Game client header:  size, account uuid, age instance uuid */
     uint32_t size = DS::RecvValue<uint32_t>(client.m_sock);
-    DS_PASSERT(size == 36);
+    if (size != 36)
+        throw DS::InvalidConnectionHeader();
     DS::Uuid clientUuid, connUuid;
     DS::RecvBuffer(client.m_sock, clientUuid.m_bytes, sizeof(clientUuid.m_bytes));
     DS::RecvBuffer(client.m_sock, connUuid.m_bytes, sizeof(connUuid.m_bytes));
@@ -50,7 +51,8 @@ void game_client_init(GameClient_Private& client)
 
     /* Establish encryption, and write reply body */
     uint8_t msgId = DS::RecvValue<uint8_t>(client.m_sock);
-    DS_PASSERT(msgId == DS::e_CliToServConnect);
+    if (msgId != DS::e_CliToServConnect)
+        throw DS::InvalidConnectionHeader();
     uint8_t msgSize = DS::RecvValue<uint8_t>(client.m_sock);
     if (msgSize == 2) {
         // no seed... client wishes unencrypted connection (that's okay, nobody
@@ -60,7 +62,8 @@ void game_client_init(GameClient_Private& client)
     } else {
         uint8_t Y[64];
         memset(Y, 0, sizeof(Y));
-        DS_PASSERT(msgSize <= 66);
+        if (msgSize > 66)
+            throw DS::InvalidConnectionHeader();
         DS::RecvBuffer(client.m_sock, Y, 64 - (66 - msgSize));
         BYTE_SWAP_BUFFER(Y, 64);
 
@@ -86,7 +89,12 @@ GameHost_Private* find_game_host(uint32_t ageMcpId)
         if (host_iter != s_gameHosts.end())
             return host_iter->second;
     }
-    return start_game_host(ageMcpId);
+    try {
+        return start_game_host(ageMcpId);
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Game] ERROR: %s\n", ex.what());
+    }
+    return nullptr;
 }
 
 void cb_ping(GameClient_Private& client)
@@ -106,9 +114,9 @@ void cb_join(GameClient_Private& client)
     // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
+    // Look up the server after we finish receiving the message, so we can
+    // correctly send a reply if the server isn't found.
     uint32_t mcpId = DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt);
-    client.m_host = find_game_host(mcpId);
-    DS_PASSERT(client.m_host != 0);
 
     Game_ClientMessage msg;
     msg.m_client = &client;
@@ -117,6 +125,14 @@ void cb_join(GameClient_Private& client)
     client.m_clientInfo.set_PlayerId(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
     if (client.m_clientInfo.m_PlayerId == 0) {
         client.m_buffer.write<uint32_t>(DS::e_NetInvalidParameter);
+        SEND_REPLY();
+        return;
+    }
+
+    client.m_host = find_game_host(mcpId);
+    if (!client.m_host) {
+        fprintf(stderr, "Could not find a game host for %u\n", mcpId);
+        client.m_buffer.write<uint32_t>(DS::e_NetInternalError);
         SEND_REPLY();
         return;
     }
@@ -157,8 +173,14 @@ void cb_netmsg(GameClient_Private& client)
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer.get(), size);
     msg.m_message = DS::Blob::Steal(buffer.release(), size);
-    client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
-    client.m_channel.getMessage();
+    if (client.m_host) {
+        client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
+        client.m_channel.getMessage();
+    } else {
+        fprintf(stderr, "Client %s sent a game message with no game host connection\n",
+                DS::SockIpAddress(client.m_sock).c_str());
+        throw DS::SockHup();
+    }
 }
 
 void cb_gameMgrMsg(GameClient_Private& client)
@@ -167,6 +189,7 @@ void cb_gameMgrMsg(GameClient_Private& client)
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
     DS::CryptRecvBuffer(client.m_sock, client.m_crypt, buffer.get(), size);
 
+#ifdef DEBUG
     fputs("GAME MGR MSG", stdout);
     for (size_t i=0; i<size; ++i) {
         if ((i % 16) == 0)
@@ -176,6 +199,7 @@ void cb_gameMgrMsg(GameClient_Private& client)
         printf("%02X ", buffer[i]);
     }
     fputc('\n', stdout);
+#endif
 }
 
 void cb_sockRead(GameClient_Private& client)
@@ -188,19 +212,16 @@ void cb_sockRead(GameClient_Private& client)
     case e_CliToGame_JoinAgeRequest:
         cb_join(client);
         break;
-    case e_CliToGame_Propagatebuffer:
-        DS_PASSERT(client.m_host != 0);
+    case e_CliToGame_PropagateBuffer:
         cb_netmsg(client);
         break;
     case e_CliToGame_GameMgrMsg:
-        DS_PASSERT(client.m_host != 0);
         cb_gameMgrMsg(client);
         break;
     default:
         /* Invalid message */
         fprintf(stderr, "[Game] Got invalid message ID %d from %s\n",
                 msgId, DS::SockIpAddress(client.m_sock).c_str());
-        DS::CloseSock(client.m_sock);
         throw DS::SockHup();
     }
 }
@@ -226,9 +247,9 @@ void wk_gameWorker(DS::SocketHandle sockp)
 
     try {
         game_client_init(client);
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
+    } catch (const DS::InvalidConnectionHeader& ex) {
+        fprintf(stderr, "[Game] Invalid connection header from %s\n",
+                DS::SockIpAddress(sockp).c_str());
         return;
     } catch (const DS::SockHup&) {
         // Socket closed...
@@ -245,7 +266,11 @@ void wk_gameWorker(DS::SocketHandle sockp)
 
         for ( ;; ) {
             int result = poll(fds, 2, NET_TIMEOUT * 1000);
-            DS_PASSERT(result != -1);
+            if (result < 0) {
+                fprintf(stderr, "[Game] Failed to poll for events: %s\n",
+                        strerror(errno));
+                throw DS::SockHup();
+            }
             if (result == 0 || fds[0].revents & POLLHUP)
                 throw DS::SockHup();
 
@@ -254,14 +279,11 @@ void wk_gameWorker(DS::SocketHandle sockp)
             if (fds[1].revents & POLLIN)
                 cb_broadcast(client);
         }
-    } catch (const DS::AssertException& ex) {
-        fprintf(stderr, "[Game] Assertion failed at %s:%ld:  %s\n",
-                ex.m_file, ex.m_line, ex.m_cond);
-    } catch (const DS::PacketSizeOutOfBounds& ex) {
-        fprintf(stderr, "[Game] Client packet size too large: Requested %u bytes\n",
-                ex.requestedSize());
     } catch (const DS::SockHup&) {
         // Socket closed...
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Game] Error processing client message from %s: %s\n",
+                DS::SockIpAddress(sockp).c_str(), ex.what());
     }
 
     if (client.m_host) {
@@ -270,14 +292,22 @@ void wk_gameWorker(DS::SocketHandle sockp)
         client.m_host->m_clientMutex.unlock();
         Game_ClientMessage msg;
         msg.m_client = &client;
-        client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
-        client.m_channel.getMessage();
+        try {
+            client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
+            client.m_channel.getMessage();
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+        }
     }
 
     // Drain the broadcast channel
-    while (client.m_broadcast.hasMessage()) {
-        DS::FifoMessage msg = client.m_broadcast.getMessage();
-        reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
+    try {
+        while (client.m_broadcast.hasMessage()) {
+            DS::FifoMessage msg = client.m_broadcast.getMessage();
+            reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
+        }
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
     }
 
     DS::CryptStateFree(client.m_crypt);
@@ -373,8 +403,13 @@ void DS::GameServer_Shutdown()
     {
         std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
         hostmap_t::iterator host_iter;
-        for (host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter)
-            host_iter->second->m_channel.putMessage(e_GameShutdown);
+        for (host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter) {
+            try {
+                host_iter->second->m_channel.putMessage(e_GameShutdown);
+            } catch (const std::exception& ex) {
+                fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+            }
+        }
     }
 
     bool complete = false;
@@ -396,7 +431,11 @@ void DS::GameServer_UpdateGlobalSDL(const ST::string& age)
     for (auto it = s_gameHosts.begin(); it != s_gameHosts.end(); ++it) {
         if (!it->second || it->second->m_ageFilename != age)
             continue;
-        it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, 0);
+        try {
+            it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, 0);
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+        }
     }
 }
 
@@ -413,8 +452,12 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
     if (host) {
         Game_SdlMessage* msg = new Game_SdlMessage;
         msg->m_node = node;
-        host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
-        return true;
+        try {
+            host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
+            return true;
+        } catch (const std::exception& ex) {
+            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+        }
     }
     return false;
 }

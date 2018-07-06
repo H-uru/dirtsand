@@ -212,10 +212,14 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
                 uint16_t type = stream->read<uint16_t>();
                 if (type != 0x8000) {
                     m_creatable[i] = MOUL::Factory::Create(type);
-                    DS_DASSERT(m_creatable[i] != 0);
-                    uint32_t endp = stream->tell() + stream->read<uint32_t>();
+                    DS_ASSERT(m_creatable[i]);
+                    const uint32_t endp = stream->tell() + stream->read<uint32_t>();
                     m_creatable[i]->read(stream);
-                    DS_DASSERT(stream->tell() == endp);
+                    if (stream->tell() != endp) {
+                        fprintf(stderr, "[SDL] Warning: Creatable %04X was not fully parsed in SDL blob "
+                                        " (%u bytes remain)\n",
+                                type, endp - stream->tell());
+                    }
                 }
             }
             break;
@@ -261,10 +265,16 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
             m_color8[i].m_A = stream->read<uint8_t>();
             break;
         case e_VarStateDesc:
-            DS_DASSERT(0);
+            // This should be handled elsewhere
+            DS_ASSERT(false);
+            break;
+        case e_VarAgeTimeOfDay:
+            // No data to read
             break;
         default:
-            break;
+            fprintf(stderr, "Invalid SDL variable type %d during read\n",
+                    static_cast<int>(m_desc->m_type));
+            throw DS::MalformedData();
         }
     }
 }
@@ -350,10 +360,16 @@ void SDL::Variable::_ref::write(DS::Stream* stream) const
             stream->write<uint8_t>(m_color8[i].m_A);
             break;
         case e_VarStateDesc:
-            DS_DASSERT(0);
+            // This should be handled elsewhere
+            DS_ASSERT(false);
+            break;
+        case e_VarAgeTimeOfDay:
+            // No data to write
             break;
         default:
-            break;
+            fprintf(stderr, "Invalid SDL variable type %d during write\n",
+                    static_cast<int>(m_desc->m_type));
+            throw DS::MalformedData();
         }
     }
 }
@@ -370,7 +386,8 @@ void SDL::Variable::read(DS::Stream* stream)
     if (m_data->m_desc->m_type == e_VarStateDesc) {
         if (m_data->m_desc->m_size == -1) {
             size_t count = stream->read<uint32_t>();
-            DS_DASSERT(count < 10000);
+            if (count >= 10000)
+                throw DS::MalformedData();
             m_data->resize(count);
         }
         size_t stupid = m_data->m_desc->m_size == -1 ? 0 : m_data->m_size;
@@ -378,7 +395,8 @@ void SDL::Variable::read(DS::Stream* stream)
         bool useIndices = (count != m_data->m_size);
         for (size_t i=0; i<count; ++i) {
             size_t idx = useIndices ? stupidLengthRead(stream, stupid) : i;
-            DS_PASSERT(idx < m_data->m_size);
+            if (idx >= m_data->m_size)
+                throw DS::MalformedData();
             m_data->m_child[idx].read(stream);
         }
     } else {
@@ -393,7 +411,8 @@ void SDL::Variable::read(DS::Stream* stream)
         if (!(m_data->m_flags & e_SameAsDefault)) {
             if (m_data->m_desc->m_size == -1) {
                 size_t count = stream->read<uint32_t>();
-                DS_DASSERT(count < 10000);
+                if (count >= 10000)
+                    throw DS::MalformedData();
                 m_data->resize(count);
             }
             m_data->read(stream);
@@ -450,7 +469,8 @@ void SDL::Variable::write(DS::Stream* stream) const
 
 void SDL::Variable::copy(const SDL::Variable& rhs) {
     // TODO: Should we support certain type conversions?
-    DS_PASSERT(m_data->m_desc->m_type == rhs.m_data->m_desc->m_type);
+    if (m_data->m_desc->m_type != rhs.m_data->m_desc->m_type)
+        throw DS::MalformedData();
 
     size_t minsize;
     if (m_data->m_desc->m_size == -1) {
@@ -529,7 +549,7 @@ void SDL::Variable::copy(const SDL::Variable& rhs) {
 #ifdef DEBUG
 void SDL::Variable::debug()
 {
-    DS_DASSERT(m_data != 0);
+    DS_ASSERT(m_data);
 
     for (size_t i=0; i<m_data->m_size; ++i) {
         switch (m_data->m_desc->m_type) {
@@ -608,7 +628,7 @@ void SDL::Variable::debug()
 
 void SDL::Variable::setDefault()
 {
-    DS_DASSERT(m_data != 0);
+    DS_ASSERT(m_data);
 
     for (size_t i=0; i<m_data->m_size; ++i) {
         switch (m_data->m_desc->m_type) {
@@ -722,7 +742,7 @@ void SDL::Variable::setDefault()
 
 bool SDL::Variable::isDefault() const
 {
-    DS_DASSERT(m_data != 0);
+    DS_ASSERT(m_data);
 
     // Variable length vars are never at the default!
     // Why? The count is read/written in a !default block.
@@ -858,13 +878,14 @@ void SDL::State::read(DS::Stream* stream)
 
     m_data->m_flags = stream->read<uint16_t>();
     if (stream->read<uint8_t>() != SDL_IOVERSION)
-        DS_PASSERT(0);
+        throw DS::MalformedData();
 
     size_t count = stupidLengthRead(stream, m_data->m_desc->m_vars.size());
     bool useIndices = (count != m_data->m_simpleVars.size());
     for (size_t i=0; i<count; ++i) {
         size_t idx = useIndices ? stupidLengthRead(stream, m_data->m_desc->m_vars.size()) : i;
-        DS_PASSERT(idx < m_data->m_simpleVars.size());
+        if (idx >= m_data->m_simpleVars.size())
+            throw DS::MalformedData();
         m_data->m_simpleVars[idx]->read(stream);
     }
 
@@ -872,7 +893,8 @@ void SDL::State::read(DS::Stream* stream)
     useIndices = (count != m_data->m_sdVars.size());
     for (size_t i=0; i<count; ++i) {
         size_t idx = useIndices ? stupidLengthRead(stream, m_data->m_desc->m_vars.size()) : i;
-        DS_PASSERT(idx < m_data->m_sdVars.size());
+        if (idx >= m_data->m_sdVars.size())
+            throw DS::MalformedData();
         m_data->m_sdVars[idx]->read(stream);
     }
 }
@@ -935,7 +957,8 @@ void SDL::State::add(const SDL::State& state)
     if (!m_data)
         return;
 
-    DS_DASSERT(state.m_data->m_desc == m_data->m_desc);
+    if (state.m_data->m_desc != m_data->m_desc)
+        throw DS::MalformedData();
     for (size_t i=0; i<m_data->m_vars.size(); ++i) {
         if (state.m_data->m_vars[i].data()->m_flags & Variable::e_XIsDirty)
             m_data->m_vars[i] = state.m_data->m_vars[i];
@@ -947,7 +970,16 @@ void SDL::State::merge(const SDL::State& state)
     if (!m_data)
         return;
 
-    DS_DASSERT(state.m_data->m_desc == m_data->m_desc);
+    if (state.m_data->m_desc != m_data->m_desc) {
+        if (state.m_data->m_desc && m_data->m_desc) {
+            fprintf(stderr, "Stubbornly refusing to merge unrelated SDL states %s and %s\n",
+                    state.m_data->m_desc->m_name.c_str(), m_data->m_desc->m_name.c_str());
+        } else {
+            fputs("Stubbornly refusing to merge SDL states with NULL descriptors\n",
+                  stderr);
+        }
+        return;
+    }
     for (size_t i=0; i < m_data->m_vars.size(); ++i) {
         if (state.m_data->m_vars[i].data()->m_timestamp > m_data->m_vars[i].data()->m_timestamp)
             m_data->m_vars[i] = state.m_data->m_vars[i];
@@ -1013,7 +1045,8 @@ bool SDL::State::isDirty() const
 SDL::State SDL::State::Create(DS::Stream* stream)
 {
     uint16_t flags = stream->read<uint16_t>();
-    DS_DASSERT((flags & 0x8000) != 0);
+    if ((flags & 0x8000) == 0)
+        throw DS::MalformedData();
 
     ST::string name = stream->readSafeString();
     int version = stream->read<int16_t>();

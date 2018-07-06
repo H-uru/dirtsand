@@ -57,24 +57,11 @@ namespace MOUL
         }
     };
 
-    class FactoryException : public std::exception
+    class FactoryException : public std::runtime_error
     {
     public:
-        enum Type { e_UnknownType };
-
-        FactoryException(Type type) throw() : m_type(type) { }
-        virtual ~FactoryException() throw() { }
-
-        virtual const char* what() const throw()
-        {
-            static const char* _messages[] = {
-                "[FactoryException] Unknown creatable ID"
-            };
-            return _messages[m_type];
-        }
-
-    private:
-        Type m_type;
+        FactoryException()
+            : std::runtime_error("[FactoryException] Unknown creatable ID") { }
     };
 }
 

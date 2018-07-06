@@ -32,10 +32,10 @@ namespace DS
     class MsgChannel
     {
     public:
-        MsgChannel();
-        ~MsgChannel() noexcept(false);
+        MsgChannel() : m_semaphore(-1) { }
+        ~MsgChannel();
 
-        int fd() const { return m_semaphore; }
+        int fd();
         void putMessage(int type, void* payload = 0);
         FifoMessage getMessage();
         bool hasMessage();

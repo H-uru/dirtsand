@@ -15,26 +15,35 @@
  * along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.          *
  ******************************************************************************/
 
+#include "MsgChannel.h"
+
 #include <sys/eventfd.h>
 #include <unistd.h>
-#include "MsgChannel.h"
+#include <errno.h>
+#include <cstring>
 #include "errors.h"
 
-DS::MsgChannel::MsgChannel()
+DS::MsgChannel::~MsgChannel()
 {
-    m_semaphore = eventfd(0, EFD_SEMAPHORE);
-    DS_PASSERT(m_semaphore != -1);
+    if (m_semaphore < 0)
+        return;
+
+    int result = close(m_semaphore);
+    if (result < 0 && errno != EBADF) {
+        fprintf(stderr, "WARNING: Failed to close event semaphore: %s\n",
+                strerror(errno));
+    }
 }
 
-DS::MsgChannel::~MsgChannel() noexcept(false)
+int DS::MsgChannel::fd()
 {
-    int result = close(m_semaphore);
-    if (result < 0) {
-        if (errno == EBADF) {
-            return;
-        }
-        DS_PASSERT(result == 0);
-    }
+    if (m_semaphore >= 0)
+        return m_semaphore;
+
+    m_semaphore = eventfd(0, EFD_SEMAPHORE);
+    if (m_semaphore < 0)
+        throw SystemError("Failed to create event semaphore", strerror(errno));
+    return m_semaphore;
 }
 
 void DS::MsgChannel::putMessage(int type, void* payload)
@@ -46,15 +55,17 @@ void DS::MsgChannel::putMessage(int type, void* payload)
     m_queue.push(msg);
     m_queueMutex.unlock();
 
-    int result = eventfd_write(m_semaphore, 1);
-    DS_PASSERT(result == 0);
+    int result = eventfd_write(fd(), 1);
+    if (result < 0)
+        throw SystemError("Failed to write to event semaphore", strerror(errno));
 }
 
 DS::FifoMessage DS::MsgChannel::getMessage()
 {
     eventfd_t value;
-    int result = eventfd_read(m_semaphore, &value);
-    DS_PASSERT(result == 0);
+    int result = eventfd_read(fd(), &value);
+    if (result < 0)
+        throw SystemError("Failed to read from event semaphore", strerror(errno));
 
     m_queueMutex.lock();
     FifoMessage msg = m_queue.front();

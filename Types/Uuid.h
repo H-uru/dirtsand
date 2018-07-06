@@ -25,8 +25,7 @@ namespace DS
     class Uuid
     {
     public:
-        Uuid() : m_data1(0), m_data2(0), m_data3(0)
-        { memset(m_data4, 0, sizeof(m_data4)); }
+        Uuid() { memset(m_bytes, 0, sizeof(m_bytes)); }
 
         Uuid(uint32_t data1, uint16_t data2, uint16_t data3, const uint8_t* data4)
             : m_data1(data1), m_data2(data2), m_data3(data3)

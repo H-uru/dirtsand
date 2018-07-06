@@ -18,35 +18,53 @@
 #ifndef _DS_ERRORS_H
 #define _DS_ERRORS_H
 
-#include "errno.h"
-#include <exception>
+#include <cstdio>
+#include <cstdlib>
+#include <stdexcept>
 
 namespace DS
 {
-    class AssertException : public std::exception
+    __attribute__((noreturn))
+    inline void AssertionFailure(const char *condition, const char *file, long line)
+        noexcept
+    {
+        fprintf(stderr, "FATAL: Assertion Failure at %s:%ld: %s\n",
+                file, line, condition);
+        // Exit code 3 not used anywhere else...
+        exit(3);
+    }
+
+    class MalformedData : public std::runtime_error
     {
     public:
-        AssertException(const char* cond, const char* file, long line) throw()
-            : m_cond(cond), m_file(file), m_line(line) { }
-        virtual ~AssertException() throw() { }
+        MalformedData()
+            : std::runtime_error("Malformed stream data from client") { }
+    };
 
-        virtual const char* what() const throw()
-        { return "[AssertException] Assertion Failed"; }
-
+    class InvalidConnectionHeader : public std::runtime_error
+    {
     public:
-        const char* m_cond;
-        const char* m_file;
-        long m_line;
+        InvalidConnectionHeader()
+            : std::runtime_error("Invalid connection header received from client") { }
+    };
+
+    // A "catchable" system error
+    class SystemError : public std::runtime_error
+    {
+    public:
+        SystemError(const char *message, const char *error)
+            : std::runtime_error(std::string(message) + ": " + std::string(error))
+        { }
     };
 }
 
-#define DS_PASSERT(cond) \
-    if (!(cond)) throw DS::AssertException(#cond, __FILE__, __LINE__)
+#define DS_ASSERT(cond) \
+    if (!(cond)) DS::AssertionFailure(#cond, __FILE__, __LINE__)
 
 #ifdef DEBUG
-#define DS_DASSERT(cond) DS_PASSERT(cond)
+#define DEBUG_printf(...)   printf(__VA_ARGS__)
 #else
-#define DS_DASSERT(cond)
+#define DEBUG_printf(...)   ((void)0)
 #endif
 
 #endif
