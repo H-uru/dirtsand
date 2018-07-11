@@ -419,7 +419,7 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
             client->m_acctUuid.toString(), msg->m_player.m_playerId,
             msg->m_player.m_playerName, msg->m_player.m_avatarModel,
             msg->m_player.m_explorer);
-    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
         fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         SEND_REPLY(msg, DS::e_NetInternalError);
