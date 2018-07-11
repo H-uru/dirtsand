@@ -1,0 +1,40 @@
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libpq-dev
+            - libssl-dev
+            - libreadline-dev
+            - zlib1g-dev
+    - os: linux
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libpq-dev
+            - libssl-dev
+            - libreadline-dev
+            - zlib1g-dev
+
+script:
+  - mkdir -p build_deps && cd build_deps
+  - git clone https://github.com/zrax/string_theory
+  - mkdir -p string_theory/build && cd string_theory/build
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DST_BUILD_TESTS=OFF
+      -DCMAKE_INSTALL_PREFIX="${TRAVIS_BUILD_DIR}/build_deps/prefix" ..
+  - make -j2 && make install
+
+  - cd "${TRAVIS_BUILD_DIR}"
+  - mkdir -p build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_PREFIX_PATH="${TRAVIS_BUILD_DIR}/build_deps/prefix" ..
+  - make -j2
