@@ -161,3 +161,15 @@ install(PROGRAMS ${CMAKE_SOURCE_DIR}/bin/dsData.sh
         DESTINATION "bin")
 install(FILES static_ages.ini
         DESTINATION ".")
+
+# TODO: Build proper unit test framework...
+option(ENABLE_TESTS "Enable building and running unit tests" ON)
+
+if(ENABLE_TESTS)
+    add_executable(test_sha Types/ShaHash.cpp Types/ShaHash.h)
+    target_compile_definitions(test_sha PRIVATE DS_BUILD_SHA0_TESTS)
+    # Dependencies needed for ShaHash
+    target_sources(test_sha PRIVATE streams.cpp streams.h errors.h)
+    target_link_libraries(test_sha PRIVATE ${OPENSSL_CRYPTO_LIBRARIES}
+                                           ${STRING_THEORY_LIBRARIES})
+endif()
