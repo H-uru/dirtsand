@@ -38,3 +38,4 @@ script:
   - cmake -DCMAKE_BUILD_TYPE=Debug
       -DCMAKE_PREFIX_PATH="${TRAVIS_BUILD_DIR}/build_deps/prefix" ..
   - make -j2
+  - ./test_sha

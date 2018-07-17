@@ -243,6 +243,8 @@ int main()
 {
     int test_fails = 0;
 
+    OpenSSL_add_all_digests();
+
     // Sanity check EXPECT_SHA with known-good SHA-1 implementation
     EXPECT_SHA("da39a3ee5e6b4b0d3255bfef95601890afd80709",
                DS::ShaHash::Sha1("", 0));
