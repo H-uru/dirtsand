@@ -123,20 +123,6 @@ constexpr uint32_t rol32(uint32_t value, unsigned int n)
 
 static DS::ShaHash _ds_internal_sha0(const void* data, size_t size)
 {
-    static const uint32_t K[] = {
-        0x5a827999,
-        0x6ed9eba1,
-        0x8f1bbcdc,
-        0xca62c1d6
-    };
-
-    static const std::function<uint32_t (uint32_t*)> F[] = {
-        [](uint32_t* hv) { return (hv[1] & hv[2]) | (~hv[1] & hv[3]); },
-        [](uint32_t* hv) { return (hv[1] ^ hv[2] ^ hv[3]); },
-        [](uint32_t* hv) { return (hv[1] & hv[2]) | (hv[1] & hv[3]) | (hv[2] & hv[3]); },
-        [](uint32_t* hv) { return (hv[1] ^ hv[2] ^ hv[3]); }
-    };
-
     uint32_t hash[5] = {
         0x67452301,
         0xefcdab89,
@@ -186,10 +172,40 @@ static DS::ShaHash _ds_internal_sha0(const void* data, size_t size)
         memcpy(hv, hash, sizeof(hv));
 
         // Main SHA loop
-        for (size_t i = 0; i < 80; ++i) {
-            const size_t stage = i / 20;
-            const uint32_t f = F[stage](hv);
-            const uint32_t temp = rol32(hv[0], 5) + f + hv[4] + K[stage] + work[i];
+        for (size_t i = 0; i < 20; ++i) {
+            constexpr uint32_t K = 0x5a827999;
+            const uint32_t f = (hv[1] & hv[2]) | (~hv[1] & hv[3]);
+            const uint32_t temp = rol32(hv[0], 5) + f + hv[4] + K + work[i];
+            hv[4] = hv[3];
+            hv[3] = hv[2];
+            hv[2] = rol32(hv[1], 30);
+            hv[1] = hv[0];
+            hv[0] = temp;
+        }
+        for (size_t i = 20; i < 40; ++i) {
+            constexpr uint32_t K = 0x6ed9eba1;
+            const uint32_t f = (hv[1] ^ hv[2] ^ hv[3]);
+            const uint32_t temp = rol32(hv[0], 5) + f + hv[4] + K + work[i];
+            hv[4] = hv[3];
+            hv[3] = hv[2];
+            hv[2] = rol32(hv[1], 30);
+            hv[1] = hv[0];
+            hv[0] = temp;
+        }
+        for (size_t i = 40; i < 60; ++i) {
+            constexpr uint32_t K = 0x8f1bbcdc;
+            const uint32_t f = (hv[1] & hv[2]) | (hv[1] & hv[3]) | (hv[2] & hv[3]);
+            const uint32_t temp = rol32(hv[0], 5) + f + hv[4] + K + work[i];
+            hv[4] = hv[3];
+            hv[3] = hv[2];
+            hv[2] = rol32(hv[1], 30);
+            hv[1] = hv[0];
+            hv[0] = temp;
+        }
+        for (size_t i = 60; i < 80; ++i) {
+            constexpr uint32_t K = 0xca62c1d6;
+            const uint32_t f = (hv[1] ^ hv[2] ^ hv[3]);
+            const uint32_t temp = rol32(hv[0], 5) + f + hv[4] + K + work[i];
             hv[4] = hv[3];
             hv[3] = hv[2];
             hv[2] = rol32(hv[1], 30);
