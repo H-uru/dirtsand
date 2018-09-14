@@ -18,6 +18,8 @@
 #include "settings.h"
 #include "errors.h"
 #include "streams.h"
+
+#include <string_theory/stdio>
 #include <vector>
 #include <cstdio>
 
@@ -91,9 +93,9 @@ static struct
     { \
         Blob data = Base64Decode(params[1]); \
         if (data.size() != fixedsize) { \
-            fprintf(stderr, "Invalid base64 blob size for %s: " \
-                            "Expected %u bytes, got %zu bytes\n", \
-                    params[0].c_str(), fixedsize, data.size()); \
+            ST::printf(stderr, "Invalid base64 blob size for {}: " \
+                               "Expected {} bytes, got {} bytes\n", \
+                       params[0], fixedsize, data.size()); \
             return false; \
         } \
         memcpy(outbuffer, data.buffer(), fixedsize); \
@@ -102,7 +104,7 @@ static struct
 #define BUF_TO_UINT(bufptr) \
     ((bufptr)[0] << 24) | ((bufptr)[1] << 16) | ((bufptr)[2] << 8) | (bufptr)[3]
 
-bool DS::Settings::LoadFrom(const char* filename)
+bool DS::Settings::LoadFrom(const ST::string& filename)
 {
     UseDefaults();
 
@@ -113,9 +115,9 @@ bool DS::Settings::LoadFrom(const char* filename)
     else
         s_settings.m_settingsPath = ".";
 
-    FILE* cfgfile = fopen(filename, "r");
+    FILE* cfgfile = fopen(filename.c_str(), "r");
     if (!cfgfile) {
-        fprintf(stderr, "Cannot open %s for reading\n", filename);
+        ST::printf(stderr, "Cannot open {} for reading\n", filename);
         return false;
     }
 
@@ -127,7 +129,7 @@ bool DS::Settings::LoadFrom(const char* filename)
                 continue;
             std::vector<ST::string> params = line.split('=', 1);
             if (params.size() != 2) {
-                fprintf(stderr, "Warning: Invalid config line: %s\n", line.c_str());
+                ST::printf(stderr, "Warning: Invalid config line: {}\n", line);
                 continue;
             }
 
@@ -200,8 +202,7 @@ bool DS::Settings::LoadFrom(const char* filename)
             } else if (params[0] == "Welcome.Msg") {
                 s_settings.m_welcome = params[1];
             } else {
-                fprintf(stderr, "Warning: Unknown setting '%s' ignored\n",
-                        params[0].c_str());
+                ST::printf(stderr, "Warning: Unknown setting '{}' ignored\n", params[0]);
             }
         }
     }

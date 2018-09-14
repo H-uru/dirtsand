@@ -80,7 +80,7 @@ namespace DS
         ST::string WelcomeMsg();
         void SetWelcomeMsg(const ST::string& welcome);
 
-        bool LoadFrom(const char* filename);
+        bool LoadFrom(const ST::string& filename);
         void UseDefaults();
     }
 }
