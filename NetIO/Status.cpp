@@ -173,14 +173,22 @@ void dm_htserv()
 
 void DS::StartStatusHTTP()
 {
-    s_listenSock = DS::BindSocket(DS::Settings::StatusAddress(),
-                                  DS::Settings::StatusPort());
-    DS::ListenSock(s_listenSock);
+    try {
+        s_listenSock = DS::BindSocket(DS::Settings::StatusAddress(),
+                                      DS::Settings::StatusPort());
+        DS::ListenSock(s_listenSock);
+    } catch (const SystemError &err) {
+        fprintf(stderr, "[Status] WARNING: Could not start the HTTP server: %s\n",
+                err.what());
+        return;
+    }
     s_httpThread = std::thread(&dm_htserv);
 }
 
 void DS::StopStatusHTTP()
 {
-    DS::CloseSock(s_listenSock);
-    s_httpThread.join();
+    if (s_httpThread.joinable()) {
+        DS::CloseSock(s_listenSock);
+        s_httpThread.join();
+    }
 }

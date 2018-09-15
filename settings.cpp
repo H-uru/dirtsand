@@ -262,7 +262,9 @@ ST::string DS::Settings::GameServerAddress()
 
 const char* DS::Settings::LobbyAddress()
 {
-    return s_settings.m_lobbyAddr.is_empty() ? 0 : s_settings.m_lobbyAddr.c_str();
+    return s_settings.m_lobbyAddr.is_empty()
+                ? "127.0.0.1"   /* Not useful for external connections */
+                : s_settings.m_lobbyAddr.c_str();
 }
 
 const char* DS::Settings::LobbyPort()
@@ -277,7 +279,9 @@ bool DS::Settings::StatusEnabled()
 
 const char* DS::Settings::StatusAddress()
 {
-    return s_settings.m_statusAddr.is_empty() ? 0 : s_settings.m_statusAddr.c_str();
+    return s_settings.m_statusAddr.is_empty()
+                ? "127.0.0.1"   /* Not useful for external connections */
+                : s_settings.m_statusAddr.c_str();
 }
 
 const char* DS::Settings::StatusPort()

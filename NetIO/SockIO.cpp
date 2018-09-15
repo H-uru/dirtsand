@@ -78,14 +78,10 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
     addrinfo* addrList;
     result = getaddrinfo(address, port, &info, &addrList);
     if (result != 0) {
-        if (result == EAI_SYSTEM) {
-            fprintf(stderr, "Failed to bind to %s:%s: %s\n",
-                    address, port, strerror(errno));
-        } else {
-            fprintf(stderr, "Failed to bind to %s:%s: %s\n",
-                    address, port, gai_strerror(result));
-        }
-        exit(1);
+        const char *error_text = (result == EAI_SYSTEM)
+                               ? strerror(errno) : gai_strerror(result);
+        auto message = ST::format("Failed to bind to {}:{}", address, port);
+        throw SystemError(message.c_str(), error_text);
     }
 
     addrinfo* addr_iter;
@@ -109,18 +105,17 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
 
     // Die if we didn't get a successful socket
     if (!addr_iter) {
-        fprintf(stderr, "Failed to bind a usable socket on %s:%s\n", address, port);
-        exit(1);
+        auto message = ST::format("Failed to bind to a usable socket on {}:{}", address, port);
+        throw SystemError(message.c_str());
     }
 
     SocketHandle_Private* sockinfo = new SocketHandle_Private();
     sockinfo->m_sockfd = sockfd;
     result = getsockname(sockfd, &sockinfo->m_addr, &sockinfo->m_addrLen);
     if (result != 0) {
-        fprintf(stderr, "Failed to get bound socket address: %s\n",
-                strerror(errno));
+        const char *error_text = strerror(errno);
         delete sockinfo;
-        exit(1);
+        throw SystemError("Failed to get bound socket address", error_text);
     }
     return reinterpret_cast<SocketHandle>(sockinfo);
 }
@@ -131,9 +126,8 @@ void DS::ListenSock(const DS::SocketHandle sock, int backlog)
     int result = listen(reinterpret_cast<SocketHandle_Private*>(sock)->m_sockfd, backlog);
     if (result < 0) {
         const char *error_text = strerror(errno);
-        fprintf(stderr, "Failed to listen on %s: %s\n",
-                DS::SockIpAddress(sock).c_str(), error_text);
-        exit(1);
+        auto message = ST::format("Failed to listen on {}", DS::SockIpAddress(sock));
+        throw SystemError(message.c_str(), error_text);
     }
 }
 
