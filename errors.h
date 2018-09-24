@@ -52,6 +52,10 @@ namespace DS
     class SystemError : public std::runtime_error
     {
     public:
+        explicit SystemError(const char *message)
+            : std::runtime_error(std::string(message))
+        { }
+
         SystemError(const char *message, const char *error)
             : std::runtime_error(std::string(message) + ": " + std::string(error))
         { }

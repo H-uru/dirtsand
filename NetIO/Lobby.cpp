@@ -111,9 +111,14 @@ void dm_lobby()
 
 void DS::StartLobby()
 {
-    s_listenSock = DS::BindSocket(DS::Settings::LobbyAddress(),
-                                  DS::Settings::LobbyPort());
-    DS::ListenSock(s_listenSock);
+    try {
+        s_listenSock = DS::BindSocket(DS::Settings::LobbyAddress(),
+                                      DS::Settings::LobbyPort());
+        DS::ListenSock(s_listenSock);
+    } catch (const SystemError &err) {
+        fputs(err.what(), stderr);
+        exit(1);
+    }
     s_lobbyThread = std::thread(&dm_lobby);
 }
 

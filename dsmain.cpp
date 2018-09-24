@@ -125,6 +125,40 @@ static void sigh_term(int)
     fclose(stdin);
 }
 
+static ST::string get_install_directory()
+{
+    // Assume we're running as <install_directory>/bin/dirtsand
+    char path[PATH_MAX];
+    if (readlink("/proc/self/exe", path, sizeof(path)) > 0) {
+        ST::string spath(path);
+        ST_ssize_t slash = spath.find_last('/');
+        if (slash >= 0) {
+            spath = spath.left(slash);
+            if (spath.ends_with("/bin"))
+                return spath.left(spath.size() - 4);
+            return spath;
+        }
+    }
+
+    // Couldn't get it from /proc -- try assuming cwd
+    if (getcwd(path, sizeof(path)))
+        return ST::string(path);
+
+    // The OS is returning nonsense -- just use "."
+    return ST_LITERAL(".");
+}
+
+static void do_help()
+{
+    puts("dirtsand - D'ni in Real Time Server and Network Daemon");
+    puts("");
+    puts("Usage:  /path/to/dirtsand [options] [/path/to/dirtsand.ini]");
+    puts("");
+    puts("Options:");
+    puts("    --help              Show this information.");
+    puts("    --restrict-logins   Run the server with logins restricted.");
+}
+
 int main(int argc, char* argv[])
 {
     // refuse to run as root
@@ -136,24 +170,27 @@ int main(int argc, char* argv[])
     OpenSSL_add_all_digests();
 
     // Preset some arguments
-    const char* settings = 0;
+    ST::string settings = get_install_directory() + "/dirtsand.ini";
     bool restrictLogins = false;
 
     // Poor man command parser
     for (int i = 1; i < argc; ++i) {
         const char* arg = argv[i];
-        if (strcasecmp(arg, "--restrict-logins") == 0)
-            restrictLogins = true;
-        else
+        if (arg[0] == '-') {
+            if (strcmp(arg, "--restrict-logins") == 0) {
+                restrictLogins = true;
+            } else if (strcmp(arg, "--help") == 0) {
+                do_help();
+                exit(0);
+            }
+        } else {
             settings = arg;
+        }
     }
 
-    if (settings) {
-        if (!DS::Settings::LoadFrom(settings))
-            return 1;
-    } else {
+    if (!DS::Settings::LoadFrom(settings)) {
+        fputs("Warning: Failed to load config file. Using defaults...\n", stderr);
         DS::Settings::UseDefaults();
-        fputs("Warning: No config file specified. Using defaults...\n", stderr);
     }
 
 #ifdef __GLIBC__
