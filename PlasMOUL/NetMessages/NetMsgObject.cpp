@@ -23,7 +23,7 @@
 void MOUL::NetMsgStream::read(DS::Stream* stream)
 {
     uint32_t uncompressedSize = stream->read<uint32_t>();
-    m_compression = static_cast<Compression>(stream->read<uint8_t>());
+    m_compression = stream->read<Compression, uint8_t>();
     uint32_t size = stream->read<uint32_t>();
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
     stream->readBytes(buffer.get(), size);
@@ -47,7 +47,7 @@ void MOUL::NetMsgStream::read(DS::Stream* stream)
 void MOUL::NetMsgStream::write(DS::Stream* stream) const
 {
     stream->write<uint32_t>(m_stream.size());
-    stream->write<uint8_t>(m_compression);
+    stream->write<Compression, uint8_t>(m_compression);
 
     if (m_compression == e_CompressZlib) {
         if (m_stream.size() < 2)

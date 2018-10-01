@@ -21,7 +21,7 @@
 MOUL::EventData* MOUL::EventData::Read(DS::Stream* stream)
 {
     EventData* data;
-    const uint32_t type = stream->read<uint32_t>();
+    const EventType type = stream->read<EventType, uint32_t>();
     switch (type) {
     case e_EvtCollision:
         data = new CollisionEventData();
@@ -87,7 +87,7 @@ MOUL::EventData* MOUL::EventData::Read(DS::Stream* stream)
 
 void MOUL::EventData::Write(DS::Stream* stream, MOUL::EventData* data)
 {
-    stream->write<uint32_t>(data->m_type);
+    stream->write<EventType, uint32_t>(data->m_type);
     data->write(stream);
 }
 
@@ -136,7 +136,7 @@ void MOUL::ControlKeyEventData::write(DS::Stream* stream) const
 void MOUL::VariableEventData::read(DS::Stream* stream)
 {
     m_name = stream->readSafeString();
-    m_dataType = stream->read<uint32_t>();
+    m_dataType = stream->read<EventDataType, uint32_t>();
     switch(m_dataType) {
     case e_DataFloat:
         m_number.f = stream->read<float>();
@@ -153,7 +153,7 @@ void MOUL::VariableEventData::read(DS::Stream* stream)
 void MOUL::VariableEventData::write(DS::Stream* stream) const
 {
     stream->writeSafeString(m_name);
-    stream->write<uint32_t>(m_dataType);
+    stream->write<EventDataType, uint32_t>(m_dataType);
     switch(m_dataType) {
     case e_DataFloat:
         stream->write<float>(m_number.f);

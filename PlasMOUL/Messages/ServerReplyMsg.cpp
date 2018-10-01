@@ -20,11 +20,11 @@
 void MOUL::ServerReplyMsg::read(DS::Stream* stream)
 {
     Message::read(stream);
-    m_reply = static_cast<Type>(stream->read<int32_t>());
+    m_reply = stream->read<Type, int32_t>();
 }
 
 void MOUL::ServerReplyMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
-    stream->write<int32_t>(m_reply);
+    stream->write<Type, int32_t>(m_reply);
 }

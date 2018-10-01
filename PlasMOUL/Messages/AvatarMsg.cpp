@@ -23,7 +23,7 @@ void MOUL::AvBrainGenericMsg::read(DS::Stream* stream)
 {
     Message::read(stream);
 
-    m_type = static_cast<Type>(stream->read<uint32_t>());
+    m_type = stream->read<Type, uint32_t>();
     m_stage = stream->read<int32_t>();
     m_setTime = stream->read<bool>();
     m_newTime = stream->read<float>();
@@ -36,7 +36,7 @@ void MOUL::AvBrainGenericMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 
-    stream->write<uint32_t>(m_type);
+    stream->write<Type, uint32_t>(m_type);
     stream->write<int32_t>(m_stage);
     stream->write<bool>(m_setTime);
     stream->write<float>(m_newTime);
@@ -53,10 +53,10 @@ void MOUL::AvCoopMsg::read(DS::Stream* s)
     if (s->read<bool>())
         m_coordinator = Factory::Read<CoopCoordinator>(s);
     else
-        m_coordinator = 0;
+        m_coordinator = nullptr;
     m_initiatorId = s->read<uint32_t>();
     m_initiatorSerial = s->read<uint16_t>();
-    m_command = (Command)s->read<uint16_t>();
+    m_command = s->read<Command, uint16_t>();
 }
 
 void MOUL::AvCoopMsg::write(DS::Stream* s) const
@@ -68,7 +68,7 @@ void MOUL::AvCoopMsg::write(DS::Stream* s) const
         Factory::WriteCreatable(s, m_coordinator);
     s->write<uint32_t>(m_initiatorId);
     s->write<uint16_t>(m_initiatorSerial);
-    s->write<uint16_t>(m_command);
+    s->write<Command, uint16_t>(m_command);
 }
 
 bool MOUL::AvCoopMsg::makeSafeForNet()

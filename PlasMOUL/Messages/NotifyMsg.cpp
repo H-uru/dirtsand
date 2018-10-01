@@ -27,7 +27,7 @@ void MOUL::NotifyMsg::read(DS::Stream* stream)
 {
     Message::read(stream);
 
-    m_type = static_cast<Type>(stream->read<uint32_t>());
+    m_type = stream->read<Type, uint32_t>();
     m_state = stream->read<float>();
     m_id = stream->read<int32_t>();
 
@@ -43,7 +43,7 @@ void MOUL::NotifyMsg::write(DS::Stream* stream) const
 {
     Message::write(stream);
 
-    stream->write<uint32_t>(m_type);
+    stream->write<Type, uint32_t>(m_type);
     stream->write<float>(m_state);
     stream->write<int32_t>(m_id);
 
