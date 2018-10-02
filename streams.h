@@ -55,19 +55,22 @@ namespace DS
         virtual ssize_t readBytes(void* buffer, size_t count) = 0;
         virtual ssize_t writeBytes(const void* buffer, size_t count) = 0;
 
-        template <typename tp> tp read()
+        template <typename tp, typename stream_type = tp> tp read()
         {
-            tp value;
+            stream_type value;
             if (readBytes(&value, sizeof(value)) != sizeof(value))
                 throw EofException();
-            return value;
+            return static_cast<tp>(value);
         }
 
         ST::string readString(size_t length, DS::StringType format = e_StringRAW8);
         ST::string readSafeString(DS::StringType format = e_StringRAW8);
 
-        template <typename tp> void write(tp value)
-        { writeBytes(&value, sizeof(value)); }
+        template <typename tp, typename stream_type = tp> void write(tp value)
+        {
+            auto svalue = static_cast<stream_type>(value);
+            writeBytes(&svalue, sizeof(svalue));
+        }
 
         template <typename sz_t>
         ST::string readPString(DS::StringType format = e_StringRAW8)

@@ -40,7 +40,7 @@ namespace MOUL
     class EventData
     {
     public:
-        int m_type;
+        EventType m_type;
 
         static EventData* Read(DS::Stream* stream);
         static void Write(DS::Stream* stream, EventData* data);
@@ -48,7 +48,7 @@ namespace MOUL
         virtual ~EventData() { }
 
     protected:
-        EventData(int type) : m_type(type) { }
+        EventData(EventType type) : m_type(type) { }
 
         virtual void read(DS::Stream* stream) { }
         virtual void write(DS::Stream* stream) const { }
@@ -101,7 +101,7 @@ namespace MOUL
         VariableEventData()
             : EventData(e_EvtVariable), m_dataType(e_DataNone), m_number() { }
 
-        int m_dataType;
+        EventDataType m_dataType;
         ST::string m_name;
         union {
             float f;

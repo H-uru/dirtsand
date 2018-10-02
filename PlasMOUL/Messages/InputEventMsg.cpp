@@ -33,7 +33,7 @@ void MOUL::ControlEventMsg::read(DS::Stream* stream)
 {
     MOUL::InputEventMsg::read(stream);
     m_controlCode = stream->read<int32_t>();
-    m_activated = static_cast<bool>(stream->read<uint32_t>());
+    m_activated = stream->read<bool, uint32_t>();
     m_controlPercent = stream->read<float>();
     m_turnToPoint = stream->read<DS::Vector3>();
     m_cmd = stream->readPString<uint16_t>();
@@ -43,7 +43,7 @@ void MOUL::ControlEventMsg::write(DS::Stream* stream) const
 {
     MOUL::InputEventMsg::write(stream);
     stream->write<int32_t>(m_controlCode);
-    stream->write<uint32_t>(static_cast<uint32_t>(m_activated));
+    stream->write<bool, uint32_t>(m_activated);
     stream->write<float>(m_controlPercent);
     stream->write<DS::Vector3>(m_turnToPoint);
     stream->writePString<uint16_t>(m_cmd);
