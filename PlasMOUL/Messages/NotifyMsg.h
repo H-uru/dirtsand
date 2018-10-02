@@ -39,12 +39,12 @@ namespace MOUL
         float m_state;
         std::vector<EventData*> m_events;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NotifyMsg(uint16_t type) : Message(type), m_type(), m_id(), m_state() { }
-        virtual ~NotifyMsg();
+        ~NotifyMsg() override;
     };
 }
 

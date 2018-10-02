@@ -67,10 +67,10 @@ namespace MOUL
         float m_delay;
         int32_t m_value;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
-        virtual bool makeSafeForNet();
+        bool makeSafeForNet() override;
 
     protected:
         KIMessage(uint16_t type)

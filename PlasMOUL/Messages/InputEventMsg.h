@@ -29,10 +29,10 @@ namespace MOUL
 
         int32_t m_event;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
-        virtual bool makeSafeForNet() { return false; }
+        bool makeSafeForNet() override { return false; }
 
     protected:
         InputEventMsg(uint16_t type) : Message(type), m_event() { }
@@ -48,8 +48,8 @@ namespace MOUL
         DS::Vector3 m_turnToPoint;
         ST::string m_cmd;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         ControlEventMsg(uint16_t type)

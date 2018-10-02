@@ -63,8 +63,8 @@ namespace MOUL
         Key m_hitter, m_hittee;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class PickedEventData : public EventData
@@ -77,8 +77,8 @@ namespace MOUL
         DS::Vector3 m_hitPoint;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class ControlKeyEventData : public EventData
@@ -91,8 +91,8 @@ namespace MOUL
         bool m_down;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class VariableEventData : public EventData
@@ -110,8 +110,8 @@ namespace MOUL
         Key m_key;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class FacingEventData : public EventData
@@ -124,8 +124,8 @@ namespace MOUL
         bool m_enabled;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class ContainedEventData : public EventData
@@ -137,8 +137,8 @@ namespace MOUL
         Key m_contained, m_container;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class ActivateEventData : public EventData
@@ -150,8 +150,8 @@ namespace MOUL
         bool m_active, m_activate;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class CallbackEventData : public EventData
@@ -162,8 +162,8 @@ namespace MOUL
         int32_t m_callbackType;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class ResponderStateEventData : public EventData
@@ -174,8 +174,8 @@ namespace MOUL
         int32_t m_state;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class MultiStageEventData : public EventData
@@ -188,8 +188,8 @@ namespace MOUL
         Key m_avatar;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class SpawnedEventData : public EventData
@@ -200,8 +200,8 @@ namespace MOUL
         Key m_spawner, m_spanee;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class ClickDragEventData : public EventData
@@ -219,8 +219,8 @@ namespace MOUL
         uint16_t m_serial;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class OfferLinkBookEventData : public EventData
@@ -233,8 +233,8 @@ namespace MOUL
         uint32_t m_targetAge, m_offeree;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class BookEventData : public EventData
@@ -245,8 +245,8 @@ namespace MOUL
         uint32_t m_event, m_linkId;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 
     class ClimbingBlockerHitEventData : public EventData
@@ -257,8 +257,8 @@ namespace MOUL
         Key m_blocker;
 
     protected:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
     };
 }
 

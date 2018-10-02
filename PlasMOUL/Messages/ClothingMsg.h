@@ -46,8 +46,8 @@ namespace MOUL
         uint8_t m_layer, m_delta;
         float m_weight;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         ClothingMsg(uint16_t type)

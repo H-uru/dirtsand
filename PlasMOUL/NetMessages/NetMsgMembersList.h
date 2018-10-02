@@ -95,8 +95,8 @@ namespace MOUL
 
         std::vector<NetMsgMemberInfo> m_members;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgMembersList(uint16_t type) : NetMsgServerToClient(type) { }
@@ -109,8 +109,8 @@ namespace MOUL
         NetMsgMemberInfo m_member;
         bool m_addMember;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgMemberUpdate(uint16_t type)

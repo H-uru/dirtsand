@@ -27,8 +27,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(SetNetGroupIdMsg);
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         SetNetGroupIdMsg(uint16_t type) : Message(type) { }

@@ -32,8 +32,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AvAnimTask)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         ST::string m_animName;
@@ -59,8 +59,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AvOneShotLinkTask)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         ST::string m_animName, m_markerName;
@@ -81,8 +81,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AvTaskBrain)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         ArmatureBrain* m_brain;
@@ -90,7 +90,7 @@ namespace MOUL
     protected:
         AvTaskBrain(uint16_t type) : AvTask(type), m_brain() { }
 
-        virtual ~AvTaskBrain() { m_brain->unref(); }
+        ~AvTaskBrain() override { m_brain->unref(); }
     };
 
     class AvTaskSeek : public AvTask

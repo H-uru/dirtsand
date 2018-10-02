@@ -29,8 +29,8 @@ namespace MOUL
         enum Type { e_Invalid = -1, e_Deny, e_Affirm };
         Type m_reply;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         ServerReplyMsg(uint16_t type) : Message(type), m_reply(e_Invalid) { }

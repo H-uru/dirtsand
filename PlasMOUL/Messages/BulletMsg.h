@@ -27,8 +27,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(BulletMsg)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         enum { e_Stop, e_Shot, e_Spray };

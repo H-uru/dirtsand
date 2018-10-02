@@ -33,8 +33,8 @@ namespace MOUL
             kPhysical, kAudible, kAll, kByType
         };
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         DS::BitVector m_cmd;

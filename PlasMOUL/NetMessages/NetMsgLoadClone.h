@@ -30,8 +30,8 @@ namespace MOUL
         MOUL::Uoid m_object;
         bool m_isPlayer, m_isLoading, m_isInitialState;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgLoadClone(uint16_t type)

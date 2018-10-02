@@ -114,7 +114,7 @@ namespace DS
     {
     public:
         FileStream() : m_file(0) { }
-        virtual ~FileStream() { close(); }
+        ~FileStream() override { close(); }
 
         void open(const char* filename, const char* mode);
         void close()
@@ -124,17 +124,17 @@ namespace DS
             m_file = 0;
         }
 
-        virtual ssize_t readBytes(void* buffer, size_t count)
+        ssize_t readBytes(void* buffer, size_t count) override
         { return fread(buffer, 1, count, m_file); }
 
-        virtual ssize_t writeBytes(const void* buffer, size_t count)
+        ssize_t writeBytes(const void* buffer, size_t count) override
         { return fwrite(buffer, 1, count, m_file); }
 
-        virtual uint32_t tell() const { return static_cast<uint32_t>(ftell(m_file)); }
-        virtual void seek(int32_t offset, int whence) { fseek(m_file, offset, whence); }
-        virtual uint32_t size() const;
-        virtual bool atEof();
-        virtual void flush() { fflush(m_file); }
+        uint32_t tell() const override { return static_cast<uint32_t>(ftell(m_file)); }
+        void seek(int32_t offset, int whence) override { fseek(m_file, offset, whence); }
+        uint32_t size() const override;
+        bool atEof() override;
+        void flush() override { fflush(m_file); }
 
     private:
         FILE* m_file;
@@ -146,16 +146,16 @@ namespace DS
     public:
         BufferStream() : m_buffer(0), m_position(0), m_size(0), m_alloc(0), m_refs(1) { }
         BufferStream(const void* data, size_t size) : m_buffer(0), m_refs(1) { set(data, size); }
-        virtual ~BufferStream() { delete[] m_buffer; }
+        ~BufferStream() override { delete[] m_buffer; }
 
-        virtual ssize_t readBytes(void* buffer, size_t count);
-        virtual ssize_t writeBytes(const void* buffer, size_t count);
+        ssize_t readBytes(void* buffer, size_t count) override;
+        ssize_t writeBytes(const void* buffer, size_t count) override;
 
-        virtual uint32_t tell() const { return static_cast<uint32_t>(m_position); }
-        virtual void seek(int32_t offset, int whence);
-        virtual uint32_t size() const { return m_size; }
-        virtual bool atEof() { return m_position >= m_size; }
-        virtual void flush() { }
+        uint32_t tell() const override { return static_cast<uint32_t>(m_position); }
+        void seek(int32_t offset, int whence) override;
+        uint32_t size() const override { return m_size; }
+        bool atEof() override { return m_position >= m_size; }
+        void flush() override { }
 
         void truncate()
         {
@@ -253,16 +253,16 @@ namespace DS
     {
     public:
         BlobStream(Blob blob) : m_blob(blob), m_position(0) { }
-        virtual ~BlobStream() { }
+        ~BlobStream() override { }
 
-        virtual ssize_t readBytes(void* buffer, size_t count);
-        virtual ssize_t writeBytes(const void* buffer, size_t count);
+        ssize_t readBytes(void* buffer, size_t count) override;
+        ssize_t writeBytes(const void* buffer, size_t count) override;
 
-        virtual uint32_t tell() const { return static_cast<uint32_t>(m_position); }
-        virtual void seek(int32_t offset, int whence);
-        virtual uint32_t size() const { return static_cast<uint32_t>(m_blob.size()); }
-        virtual bool atEof() { return tell() >= size(); }
-        virtual void flush() { }
+        uint32_t tell() const override { return static_cast<uint32_t>(m_position); }
+        void seek(int32_t offset, int whence) override;
+        uint32_t size() const override { return static_cast<uint32_t>(m_blob.size()); }
+        bool atEof() override { return tell() >= size(); }
+        void flush() override { }
 
     private:
         Blob m_blob;

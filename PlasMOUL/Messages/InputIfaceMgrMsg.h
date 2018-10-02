@@ -32,8 +32,8 @@ namespace MOUL
         ST::string m_ageName, m_ageFilename, m_spawnPoint;
         Key m_avatar;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         InputIfaceMgrMsg(uint16_t type)

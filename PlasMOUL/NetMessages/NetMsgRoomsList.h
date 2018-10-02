@@ -35,8 +35,8 @@ namespace MOUL
 
         std::vector<Room> m_rooms;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgRoomsList(uint16_t type) : NetMessage(type) { }
@@ -46,8 +46,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(NetMsgPagingRoom)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
         enum PagingFlags
         {

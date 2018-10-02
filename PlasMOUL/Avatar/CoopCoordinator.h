@@ -32,8 +32,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(CoopCoordinator)
 
-        virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s) const;
+        void read(DS::Stream* s) override;
+        void write(DS::Stream* s) const override;
 
     public:
         Key m_hostKey, m_guestKey;
@@ -51,7 +51,7 @@ namespace MOUL
               m_hostOfferStage(), m_guestAcceptStage(), m_acceptMsg(),
               m_autoStartGuest() { }
 
-        virtual ~CoopCoordinator();
+        ~CoopCoordinator() override;
     };
 };
 
