@@ -29,13 +29,13 @@ namespace MOUL
 
         AvTask* m_task;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         AvTaskMsg(uint16_t type) : AvatarMsg(type), m_task() { }
 
-        virtual ~AvTaskMsg() { m_task->unref(); }
+        ~AvTaskMsg() override { m_task->unref(); }
     };
 
     class AvPushBrainMsg : public AvTaskMsg
@@ -44,13 +44,13 @@ namespace MOUL
 
         ArmatureBrain* m_brain;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         AvPushBrainMsg(uint16_t type) : AvTaskMsg(type), m_brain() { }
 
-        virtual ~AvPushBrainMsg() { m_brain->unref(); }
+        ~AvPushBrainMsg() override { m_brain->unref(); }
     };
 
     class AvPopBrainMsg : public AvTaskMsg

@@ -61,8 +61,8 @@ namespace MOUL
         uint32_t m_context, m_transId, m_playerId;
         DS::Uuid m_acctId;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMessage(uint16_t type)

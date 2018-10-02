@@ -27,8 +27,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(LoadAvatarMsg)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         bool m_isPlayer;
@@ -40,7 +40,7 @@ namespace MOUL
         LoadAvatarMsg(uint16_t type)
             : LoadCloneMsg(type), m_isPlayer(true), m_initTask() { }
 
-        virtual ~LoadAvatarMsg() { m_initTask->unref(); }
+        ~LoadAvatarMsg() override { m_initTask->unref(); }
     };
 }
 

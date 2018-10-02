@@ -31,15 +31,15 @@ namespace MOUL
         MOUL::Message* m_message;
         DS::UnifiedTime m_deliveryTime;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgGameMessage(uint16_t type)
             : NetMessage(type), m_compression(NetMsgStream::e_CompressNone),
               m_message() { }
 
-        virtual ~NetMsgGameMessage() { m_message->unref(); }
+        ~NetMsgGameMessage() override { m_message->unref(); }
     };
 
     class NetMsgGameMessageDirected : public NetMsgGameMessage
@@ -48,8 +48,8 @@ namespace MOUL
 
         std::vector<uint32_t> m_receivers;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgGameMessageDirected(uint16_t type) : NetMsgGameMessage(type) { }

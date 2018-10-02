@@ -30,8 +30,8 @@ namespace MOUL
         bool m_unload;
         MOUL::Uoid m_uoid;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgPlayerPage(uint16_t type) : NetMessage(type), m_unload() { }

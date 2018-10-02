@@ -26,10 +26,10 @@ namespace MOUL
     {
         FACTORY_CREATABLE(BackdoorMsg)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
-        virtual bool makeSafeForNet() { return false; }
+        bool makeSafeForNet() override { return false; }
 
     public:
         ST::string m_target;

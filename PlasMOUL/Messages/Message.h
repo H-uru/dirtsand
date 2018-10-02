@@ -54,8 +54,8 @@ namespace MOUL
         double m_timestamp;
         uint32_t m_bcastFlags;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
         virtual bool makeSafeForNet() { return true; }
 

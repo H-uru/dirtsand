@@ -30,8 +30,8 @@ namespace MOUL
         bool m_leaving;
         Key m_linkKey, m_animKey;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         LinkEffectsTriggerMsg(uint16_t type)

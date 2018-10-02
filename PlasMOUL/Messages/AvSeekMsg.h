@@ -37,8 +37,8 @@ namespace MOUL
         ST::string m_animName;
         Key m_finishKey;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         AvSeekMsg(uint16_t type)
@@ -53,8 +53,8 @@ namespace MOUL
         ST::string m_oneShotAnimName;
         bool m_drivable, m_reversible;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         AvOneShotMsg(uint16_t type)

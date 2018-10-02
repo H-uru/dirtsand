@@ -25,8 +25,8 @@ namespace MOUL
     class ArmatureBrain : public Creatable
     {
     public:
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         ArmatureBrain(uint16_t type) : Creatable(type) { }
@@ -38,8 +38,8 @@ namespace MOUL
 
         bool m_isCustomAvatar;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         AvBrainHuman(uint16_t type) : ArmatureBrain(type), m_isCustomAvatar() { }

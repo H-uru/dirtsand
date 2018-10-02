@@ -29,8 +29,8 @@ namespace MOUL
         DS::Blob m_sdlBlob;
         bool m_isInitial, m_persistOnServer, m_isAvatar;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgSDLState(uint16_t type)

@@ -28,10 +28,10 @@ namespace MOUL
     {
         FACTORY_CREATABLE(MessageWithCallbacks)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
-        virtual bool makeSafeForNet();
+        bool makeSafeForNet() override;
 
     public:
         std::vector<Message*> m_callbacks;
@@ -39,15 +39,15 @@ namespace MOUL
     protected:
         MessageWithCallbacks(uint16_t type) : Message(type) { }
 
-        virtual ~MessageWithCallbacks();
+        ~MessageWithCallbacks() override;
     };
 
     class AnimCmdMsg : public MessageWithCallbacks
     {
         FACTORY_CREATABLE(AnimCmdMsg)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         enum

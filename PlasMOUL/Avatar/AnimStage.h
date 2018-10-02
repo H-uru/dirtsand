@@ -26,8 +26,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AnimStage)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
         void readAux(DS::Stream* stream);
         void writeAux(DS::Stream* stream);

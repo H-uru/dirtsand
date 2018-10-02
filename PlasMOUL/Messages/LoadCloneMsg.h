@@ -26,8 +26,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(LoadCloneMsg)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         Key m_cloneKey, m_requestorKey;
@@ -40,7 +40,7 @@ namespace MOUL
             : Message(type), m_validMsg(), m_isLoading(),
               m_userData(), m_originPlayerId(), m_triggerMsg() { }
 
-        virtual ~LoadCloneMsg() { m_triggerMsg->unref(); }
+        ~LoadCloneMsg() override { m_triggerMsg->unref(); }
     };
 }
 

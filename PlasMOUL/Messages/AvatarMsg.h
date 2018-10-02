@@ -45,8 +45,8 @@ namespace MOUL
         bool m_newDirection;
         bool m_setTime, m_setDirection;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         AvBrainGenericMsg(uint16_t type)
@@ -59,9 +59,9 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AvCoopMsg)
 
-        virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s) const;
-        virtual bool makeSafeForNet();
+        void read(DS::Stream* s) override;
+        void write(DS::Stream* s) const override;
+        bool makeSafeForNet() override;
 
     public:
         enum Command
@@ -79,7 +79,7 @@ namespace MOUL
             : Message(type), m_coordinator(), m_initiatorId(),
               m_initiatorSerial(), m_command(e_None) { }
 
-        virtual ~AvCoopMsg() { m_coordinator->unref(); }
+        ~AvCoopMsg() override { m_coordinator->unref(); }
     };
 
     class AvTaskSeekDoneMsg : public AvatarMsg
@@ -88,8 +88,8 @@ namespace MOUL
 
         bool m_aborted;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         AvTaskSeekDoneMsg(uint16_t type) : AvatarMsg(type), m_aborted() { }

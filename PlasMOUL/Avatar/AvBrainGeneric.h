@@ -28,8 +28,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AvBrainGeneric)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     public:
         std::vector<AnimStage*> m_stages;
@@ -48,7 +48,7 @@ namespace MOUL
             : ArmatureBrain(type), m_curStage(), m_type(), m_exitFlags(),
               m_mode(), m_forward(), m_startMessage(), m_endMessage(),
               m_fadeIn(), m_fadeOut(), m_moveMode(), m_bodyUsage() { }
-        virtual ~AvBrainGeneric();
+        ~AvBrainGeneric() override;
     };
 }
 

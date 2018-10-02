@@ -172,6 +172,9 @@ install(FILES static_ages.ini
 # TODO: Build proper unit test framework...
 option(ENABLE_TESTS "Enable building and running unit tests" ON)
 
+# clang-tidy related rules and targets
+include(Tidy-CMake.txt.in)
+
 if(ENABLE_TESTS)
     add_executable(test_sha Types/ShaHash.cpp Types/ShaHash.h)
     target_compile_definitions(test_sha PRIVATE DS_BUILD_SHA0_TESTS)

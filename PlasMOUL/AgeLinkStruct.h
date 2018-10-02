@@ -72,8 +72,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AgeInfoStruct)
 
-        virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s) const;
+        void read(DS::Stream* s) override;
+        void write(DS::Stream* s) const override;
 
     public:
         ST::string filename() const { return m_ageFilename; }
@@ -154,8 +154,8 @@ namespace MOUL
     {
         FACTORY_CREATABLE(AgeLinkStruct)
 
-        virtual void read(DS::Stream* s);
-        virtual void write(DS::Stream* s) const;
+        void read(DS::Stream* s) override;
+        void write(DS::Stream* s) const override;
 
     public:
         SpawnPointInfo& spawnPt() { return m_spawnPt; }
@@ -205,7 +205,7 @@ namespace MOUL
             : Creatable(type), m_flags(e_HasSpawnPt | e_HasAgeInfo),
               m_ageInfo(AgeInfoStruct::Create()), m_linkingRules(), m_amCcr() { }
 
-        virtual ~AgeLinkStruct() { m_ageInfo->unref(); }
+        ~AgeLinkStruct() override { m_ageInfo->unref(); }
     };
 };
 

@@ -46,8 +46,8 @@ namespace MOUL
         MOUL::Uoid m_object;
         NetMsgStream::Compression m_compression;
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
     protected:
         NetMsgObject(uint16_t type)

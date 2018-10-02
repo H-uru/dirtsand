@@ -27,10 +27,10 @@ namespace MOUL
     {
         FACTORY_CREATABLE(WarpMsg)
 
-        virtual void read(DS::Stream* stream);
-        virtual void write(DS::Stream* stream) const;
+        void read(DS::Stream* stream) override;
+        void write(DS::Stream* stream) const override;
 
-        virtual bool makeSafeForNet() { return false; }
+        bool makeSafeForNet() override { return false; }
 
     public:
         DS::Matrix44 m_transform;
