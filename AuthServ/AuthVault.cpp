@@ -74,7 +74,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
     }
     uint32_t theHoodInfo = 0;
     for (int i = 0; i < PQntuples(result); ++i) {
-        uint32_t ageInfoId = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        uint32_t ageInfoId = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
         uint32_t owners = v_count_age_owners(ageInfoId);
         if (owners < DS::Settings::HoodPopThreshold()) {
             theHoodInfo = ageInfoId;
@@ -99,7 +99,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
     result = DS::PQexecVA(s_postgres, "SELECT idx FROM vault.find_folder($1, $2);",
                           theHoodInfo, DS::Vault::e_AgeOwnersFolder);
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
-        uint32_t ownersFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        uint32_t ownersFolder = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
         return std::make_tuple(theHoodInfo, ownersFolder);
     } else {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
@@ -123,7 +123,7 @@ static uint32_t find_public_age_1(const ST::string& filename, const DS::Uuid& uu
     uint32_t ageInfoId = 0;
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
         if (PQntuples(result) > 0)
-            ageInfoId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+            ageInfoId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     } else {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
@@ -237,7 +237,7 @@ bool dm_vault_init()
                             "The vault is almost certainly corrupt at this point.",
                     count);
         }
-        s_systemNode = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        s_systemNode = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     }
 
     return true;
@@ -263,7 +263,7 @@ bool dm_all_players_init()
             fprintf(stderr, "[Vault] WARNING: Found %d AllPlayers folders\n",
                     PQntuples(result));
         }
-        s_allPlayers = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        s_allPlayers = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
         return true;
     }
 
@@ -278,7 +278,7 @@ bool dm_all_players_init()
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
         return false;
     }
-    s_allPlayers = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    s_allPlayers = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
 
     // add the already existing players
     result = DS::PQexecVA(s_postgres,
@@ -290,7 +290,7 @@ bool dm_all_players_init()
         return false;
     }
     for (int i = 0; i < PQntuples(result); ++i)
-        v_ref_node(s_allPlayers, strtoul(PQgetvalue(result, i, 0), 0, 10), 0);
+        v_ref_node(s_allPlayers, strtoul(PQgetvalue(result, i, 0), nullptr, 10), 0);
     return true;
 }
 
@@ -344,7 +344,7 @@ bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc)
             return false;
         }
     } else {
-        uint32_t idx = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        uint32_t idx = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
         DS::Blob blob = DS::Base64Decode(PQgetvalue(result, 0, 1));
         SDL::State state = SDL::State::FromBlob(blob);
 
@@ -411,7 +411,7 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
             return std::make_pair(0, 0);
         }
         DS_ASSERT(PQntuples(result) == 1);
-        seqNumber = strtol(PQgetvalue(result, 0, 0), 0, 10);
+        seqNumber = strtol(PQgetvalue(result, 0, 0), nullptr, 10);
     }
 
     DS::Vault::Node node;
@@ -746,7 +746,7 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
             fprintf(stderr, "WARNING: Multiple AgeOwnersFolders found for %u\n",
                     std::get<1>(reltoAge));
         }
-        uint32_t ownerFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        uint32_t ownerFolder = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
 
         if (!v_ref_node(ownerFolder, playerInfoNode, 0))
             return std::make_tuple(0, 0, 0);
@@ -908,7 +908,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
         return 0;
     }
     DS_ASSERT(PQntuples(result) == 1);
-    uint32_t idx = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t idx = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     return idx;
 }
 
@@ -1056,9 +1056,9 @@ DS::Vault::Node v_fetch_node(uint32_t nodeIdx)
     }
 
     DS::Vault::Node node;
-    node.set_NodeIdx(strtoul(PQgetvalue(result, 0, 0), 0, 10));
-    node.set_CreateTime(strtoul(PQgetvalue(result, 0, 1), 0, 10));
-    node.set_ModifyTime(strtoul(PQgetvalue(result, 0, 2), 0, 10));
+    node.set_NodeIdx(strtoul(PQgetvalue(result, 0, 0), nullptr, 10));
+    node.set_CreateTime(strtoul(PQgetvalue(result, 0, 1), nullptr, 10));
+    node.set_ModifyTime(strtoul(PQgetvalue(result, 0, 2), nullptr, 10));
     if (!PQgetisnull(result, 0, 3))
         node.set_CreateAgeName(PQgetvalue(result, 0, 3));
     if (!PQgetisnull(result, 0, 4))
@@ -1066,24 +1066,24 @@ DS::Vault::Node v_fetch_node(uint32_t nodeIdx)
     if (!PQgetisnull(result, 0, 5))
         node.set_CreatorUuid(PQgetvalue(result, 0, 5));
     if (!PQgetisnull(result, 0, 6))
-        node.set_CreatorIdx(strtoul(PQgetvalue(result, 0, 6), 0, 10));
-    node.set_NodeType(strtoul(PQgetvalue(result, 0, 7), 0, 10));
+        node.set_CreatorIdx(strtoul(PQgetvalue(result, 0, 6), nullptr, 10));
+    node.set_NodeType(strtoul(PQgetvalue(result, 0, 7), nullptr, 10));
     if (!PQgetisnull(result, 0, 8))
-        node.set_Int32_1(strtol(PQgetvalue(result, 0, 8), 0, 10));
+        node.set_Int32_1(strtol(PQgetvalue(result, 0, 8), nullptr, 10));
     if (!PQgetisnull(result, 0, 9))
-        node.set_Int32_2(strtol(PQgetvalue(result, 0, 9), 0, 10));
+        node.set_Int32_2(strtol(PQgetvalue(result, 0, 9), nullptr, 10));
     if (!PQgetisnull(result, 0, 10))
-        node.set_Int32_3(strtol(PQgetvalue(result, 0, 10), 0, 10));
+        node.set_Int32_3(strtol(PQgetvalue(result, 0, 10), nullptr, 10));
     if (!PQgetisnull(result, 0, 11))
-        node.set_Int32_4(strtol(PQgetvalue(result, 0, 11), 0, 10));
+        node.set_Int32_4(strtol(PQgetvalue(result, 0, 11), nullptr, 10));
     if (!PQgetisnull(result, 0, 12))
-        node.set_Uint32_1(strtoul(PQgetvalue(result, 0, 12), 0, 10));
+        node.set_Uint32_1(strtoul(PQgetvalue(result, 0, 12), nullptr, 10));
     if (!PQgetisnull(result, 0, 13))
-        node.set_Uint32_2(strtoul(PQgetvalue(result, 0, 13), 0, 10));
+        node.set_Uint32_2(strtoul(PQgetvalue(result, 0, 13), nullptr, 10));
     if (!PQgetisnull(result, 0, 14))
-        node.set_Uint32_3(strtoul(PQgetvalue(result, 0, 14), 0, 10));
+        node.set_Uint32_3(strtoul(PQgetvalue(result, 0, 14), nullptr, 10));
     if (!PQgetisnull(result, 0, 15))
-        node.set_Uint32_4(strtoul(PQgetvalue(result, 0, 15), 0, 10));
+        node.set_Uint32_4(strtoul(PQgetvalue(result, 0, 15), nullptr, 10));
     if (!PQgetisnull(result, 0, 16))
         node.set_Uuid_1(PQgetvalue(result, 0, 16));
     if (!PQgetisnull(result, 0, 17))
@@ -1163,10 +1163,10 @@ bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs)
 
     refs.resize(PQntuples(result));
     for (size_t i=0; i<refs.size(); ++i) {
-        refs[i].m_parent = strtoul(PQgetvalue(result, i, 0), 0, 10);
-        refs[i].m_child = strtoul(PQgetvalue(result, i, 1), 0, 10);
-        refs[i].m_owner = strtoul(PQgetvalue(result, i, 2), 0, 10);
-        refs[i].m_seen = strtoul(PQgetvalue(result, i, 3), 0, 10);
+        refs[i].m_parent = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
+        refs[i].m_child = strtoul(PQgetvalue(result, i, 1), nullptr, 10);
+        refs[i].m_owner = strtoul(PQgetvalue(result, i, 2), nullptr, 10);
+        refs[i].m_seen = strtoul(PQgetvalue(result, i, 3), nullptr, 10);
     }
     return true;
 }
@@ -1280,7 +1280,7 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
 
     nodes.resize(PQntuples(result));
     for (size_t i=0; i<nodes.size(); ++i)
-        nodes[i] = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        nodes[i] = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
     return true;
 }
 
@@ -1300,7 +1300,7 @@ DS::Vault::NodeRef v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t send
         fprintf(stderr, "[Auth] Could not find Inbox folder for %u\n", playerId);
         return ref;
     }
-    uint32_t inbox = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t inbox = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
 
     if (v_ref_node(inbox, nodeId, senderId)) {
         ref.m_child = nodeId;
@@ -1326,7 +1326,7 @@ uint32_t v_count_age_owners(uint32_t ageInfoId)
             "SELECT COUNT(*) FROM vault.\"NodeRefs\" WHERE \"ParentIdx\"=$1",
             parentIdx);
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
-        owners = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        owners = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     } else {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
@@ -1342,7 +1342,7 @@ uint32_t v_count_age_population(const char* uuid)
             DS::Vault::e_NodePlayerInfo, uuid);
     uint32_t population = 0;
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
-        population = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        population = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     } else {
         fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
                 __FILE__, __LINE__, PQerrorMessage(s_postgres));
@@ -1370,10 +1370,10 @@ bool v_find_public_ages(const ST::string& ageFilename, std::vector<Auth_PubAgeRe
         ai.m_instancename = PQgetvalue(result, i, 2);
         ai.m_username = PQgetvalue(result, i, 3);
         ai.m_description = PQgetvalue(result, i, 4);
-        ai.m_sequence = strtoul(PQgetvalue(result, i, 5), 0, 10);
-        ai.m_language = strtoul(PQgetvalue(result, i, 6), 0, 10);
+        ai.m_sequence = strtoul(PQgetvalue(result, i, 5), nullptr, 10);
+        ai.m_language = strtoul(PQgetvalue(result, i, 6), nullptr, 10);
         ai.m_curPopulation = v_count_age_population(PQgetvalue(result, i, 1));
-        ai.m_population = v_count_age_owners(strtoul(PQgetvalue(result, i, 0), 0 , 10));
+        ai.m_population = v_count_age_owners(strtoul(PQgetvalue(result, i, 0), nullptr , 10));
         ages.push_back(ai);
     }
     return true;

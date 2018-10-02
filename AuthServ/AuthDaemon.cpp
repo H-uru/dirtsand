@@ -161,8 +161,8 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
 
     client->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));
-    client->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), 0, 10);
-    info->m_billingType = strtoul(PQgetvalue(result, 0, 3), 0, 10);
+    client->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), nullptr, 10);
+    info->m_billingType = strtoul(PQgetvalue(result, 0, 3), nullptr, 10);
     printf("[Auth] %s logged in as %s {%s}\n",
            DS::SockIpAddress(info->m_client->m_sock).c_str(),
            info->m_acctName.c_str(), client->m_acctUuid.toString().c_str());
@@ -190,10 +190,10 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
     info->m_players.resize(PQntuples(result));
     for (size_t i = 0; i < info->m_players.size(); ++i) {
-        info->m_players[i].m_playerId = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        info->m_players[i].m_playerId = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
         info->m_players[i].m_playerName = PQgetvalue(result, i, 1);
         info->m_players[i].m_avatarModel = PQgetvalue(result, i, 2);
-        info->m_players[i].m_explorer = strtoul(PQgetvalue(result, i, 3), 0, 10);
+        info->m_players[i].m_explorer = strtoul(PQgetvalue(result, i, 3), nullptr, 10);
     }
 
     SEND_REPLY(info, DS::e_NetSuccess);
@@ -283,7 +283,7 @@ void dm_auth_disconnect(Auth_ClientMessage* msg)
         }
         const int count = PQntuples(result);
         for (int i = 0; i < count; ++i) {
-            uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), 0, 10);
+            uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
             dm_auth_bcast_node(nodeid, gen_uuid());
         }
     }
@@ -338,7 +338,7 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
 
     client->m_player.m_playerName = PQgetvalue(result, 0, 0);
     client->m_player.m_avatarModel = PQgetvalue(result, 0, 1);
-    client->m_player.m_explorer = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+    client->m_player.m_explorer = strtoul(PQgetvalue(result, 0, 2), nullptr, 10);
 
     // Mark player as online
     result = DS::PQexecVA(s_postgres,
@@ -360,7 +360,7 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
         // This doesn't block continuing
     }
     for (int i = 0; i < count; ++i) {
-        uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
         dm_auth_bcast_node(nodeid, gen_uuid());
     }
 
@@ -484,7 +484,7 @@ void dm_auth_deletePlayer(Auth_PlayerDelete* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    uint32_t playerInfo = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t playerInfo = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
 
     result = DS::PQexecVA(s_postgres,
                           "DELETE FROM vault.\"NodeRefs\""
@@ -514,7 +514,7 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
         return;
     }
     if (PQntuples(result) != 0) {
-        std::get<0>(ageNodes) = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        std::get<0>(ageNodes) = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
         result = DS::PQexecVA(s_postgres,
                 "SELECT idx FROM vault.\"Nodes\""
                 "   WHERE \"Uuid_1\"=$1 AND \"NodeType\"=$2",
@@ -526,7 +526,7 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
             return;
         }
         if (PQntuples(result) != 0) {
-            std::get<1>(ageNodes) = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+            std::get<1>(ageNodes) = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
         } else {
             fprintf(stderr, "%s:%d\n    Got age but not age info? WTF?\n",
                     __FILE__, __LINE__);
@@ -579,8 +579,8 @@ void dm_auth_findAge(Auth_GameAge* msg)
                 instanceIdString.c_str(), msg->m_name.c_str(),
                 PQntuples(result));
     }
-    msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), 0, 10);
-    msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), nullptr, 10);
+    msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     msg->m_serverAddress = DS::GetAddress4(DS::Settings::GameServerAddress().c_str());
     ageDesc = PQgetvalue(result, 0, 2);
 
@@ -599,7 +599,7 @@ void dm_auth_findAge(Auth_GameAge* msg)
     }
     const int count = PQntuples(result);
     for (int i = 0; i < count; ++i) {
-        uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        uint32_t nodeid = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
         dm_auth_bcast_node(nodeid, gen_uuid());
     }
     SEND_REPLY(msg, DS::e_NetSuccess);
@@ -668,7 +668,7 @@ void dm_auth_createScore(Auth_CreateScore* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    msg->m_scoreId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    msg->m_scoreId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     if (msg->m_scoreId == static_cast<uint32_t>(-1))
         SEND_REPLY(msg, DS::e_NetScoreAlreadyExists);
     else
@@ -691,11 +691,11 @@ void dm_auth_getScores(Auth_GetScores* msg)
     msg->m_scores.reserve(PQntuples(result));
     for (int i = 0; i < PQntuples(result); ++i) {
         Auth_GetScores::GameScore score;
-        score.m_scoreId = strtoul(PQgetvalue(result, i, 0), 0, 10);
+        score.m_scoreId = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
         score.m_owner = msg->m_owner;
-        score.m_createTime = strtoul(PQgetvalue(result, i, 1), 0, 10);
-        score.m_type = strtoul(PQgetvalue(result, i, 2), 0, 10);
-        score.m_points = strtoul(PQgetvalue(result, i, 3), 0, 10);
+        score.m_createTime = strtoul(PQgetvalue(result, i, 1), nullptr, 10);
+        score.m_type = strtoul(PQgetvalue(result, i, 2), nullptr, 10);
+        score.m_points = strtoul(PQgetvalue(result, i, 3), nullptr, 10);
         msg->m_scores.push_back(score);
     }
     SEND_REPLY(msg, DS::e_NetSuccess);
@@ -716,7 +716,7 @@ void dm_auth_addScorePoints(Auth_UpdateScore* msg)
         SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
         return;
     }
-    uint32_t scoreType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t scoreType = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     if (scoreType == Auth_UpdateScore::e_Fixed) {
         SEND_REPLY(msg, DS::e_NetScoreWrongType);
         return;
@@ -753,8 +753,8 @@ void dm_auth_transferScorePoints(Auth_TransferScore* msg)
         SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
         return;
     }
-    uint32_t srcType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
-    uint32_t dstType = strtoul(PQgetvalue(result, 1, 0), 0, 10);
+    uint32_t srcType = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
+    uint32_t dstType = strtoul(PQgetvalue(result, 1, 0), nullptr, 10);
     uint32_t allowNegative = 0;
     if (srcType == Auth_UpdateScore::e_Fixed || dstType == Auth_UpdateScore::e_Fixed) {
         SEND_REPLY(msg, DS::e_NetScoreWrongType);
@@ -773,7 +773,7 @@ void dm_auth_transferScorePoints(Auth_TransferScore* msg)
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
-    uint32_t status = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t status = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     SEND_REPLY(msg, (status != 0) ? DS::e_NetSuccess : DS::e_NetScoreNotEnoughPoints);
 }
 
@@ -792,7 +792,7 @@ void dm_auth_setScorePoints(Auth_UpdateScore* msg)
         SEND_REPLY(msg, DS::e_NetScoreNoDataFound);
         return;
     }
-    uint32_t scoreType = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t scoreType = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     if (scoreType != Auth_UpdateScore::e_Fixed) {
         SEND_REPLY(msg, DS::e_NetScoreWrongType);
         return;
@@ -834,7 +834,7 @@ void dm_auth_getHighScores(Auth_GetHighScores* msg)
             SEND_REPLY(msg, DS::e_NetInvalidParameter);
             return;
         }
-        uint32_t ageOwnersFolder = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+        uint32_t ageOwnersFolder = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
 
         result = DS::PQexecVA(s_postgres,
                               "SELECT idx, \"OwnerIdx\", \"CreateTime\", \"Type\", \"Points\""
@@ -853,11 +853,11 @@ void dm_auth_getHighScores(Auth_GetHighScores* msg)
     msg->m_scores.reserve(PQntuples(result));
     for (int i = 0; i < PQntuples(result); ++i) {
         Auth_GetScores::GameScore score;
-        score.m_scoreId = strtoul(PQgetvalue(result, i, 0), 0, 10);
-        score.m_owner = strtoul(PQgetvalue(result, i, 1), 0, 10);
-        score.m_createTime = strtoul(PQgetvalue(result, i, 2), 0, 10);
-        score.m_type = strtoul(PQgetvalue(result, i, 3), 0, 10);
-        score.m_points = strtoul(PQgetvalue(result, i, 4), 0, 10);
+        score.m_scoreId = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
+        score.m_owner = strtoul(PQgetvalue(result, i, 1), nullptr, 10);
+        score.m_createTime = strtoul(PQgetvalue(result, i, 2), nullptr, 10);
+        score.m_type = strtoul(PQgetvalue(result, i, 3), nullptr, 10);
+        score.m_points = strtoul(PQgetvalue(result, i, 4), nullptr, 10);
         msg->m_scores.push_back(score);
     }
     SEND_REPLY(msg, DS::e_NetSuccess);
@@ -901,7 +901,7 @@ void dm_auth_acctFlags(Auth_AccountFlags* msg)
         return;
     }
 
-    uint32_t acctFlags = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+    uint32_t acctFlags = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
 
     /* Thar be moar majick */
 #define TOGGLE_FLAG(flag) \
@@ -1046,7 +1046,7 @@ void dm_authDaemon()
     if (PQstatus(s_postgres) != CONNECTION_OK) {
         fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(s_postgres));
         PQfinish(s_postgres);
-        s_postgres = 0;
+        s_postgres = nullptr;
         return;
     }
 
@@ -1136,7 +1136,7 @@ void dm_authDaemon()
                             break;
                         }
                         if (PQntuples(result) != 0) {
-                            uint32_t ageMcpId = strtoul(PQgetvalue(result, 0, 0), 0, 10);
+                            uint32_t ageMcpId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
                             if (DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId)) {
                                 SEND_REPLY(info, DS::e_NetSuccess);
                                 break;

@@ -284,7 +284,7 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
     case SDL::e_VarBool:
         CHECK_PARAMS(1);
         if (values[0].m_type == SDL::e_TokNumeric) {
-            var->m_default.m_bool = (strtol(values[0].m_value.c_str(), 0, 0) != 0);
+            var->m_default.m_bool = (strtol(values[0].m_value.c_str(), nullptr, 0) != 0);
         } else if (values[0].m_type == SDL::e_TokIdent) {
             if (values[0].m_value == "true") {
                 var->m_default.m_bool = true;
@@ -306,7 +306,7 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
     case SDL::e_VarShort:
         CHECK_PARAMS(1);
         if (values[0].m_type == SDL::e_TokNumeric) {
-            var->m_default.m_int = strtol(values[0].m_value.c_str(), 0, 0);
+            var->m_default.m_int = strtol(values[0].m_value.c_str(), nullptr, 0);
         } else {
             BAD_TOK(values[0].m_type, parser);
         }
@@ -314,7 +314,7 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
     case SDL::e_VarFloat:
         CHECK_PARAMS(1);
         if (values[0].m_type == SDL::e_TokNumeric) {
-            var->m_default.m_float = strtof(values[0].m_value.c_str(), 0);
+            var->m_default.m_float = strtof(values[0].m_value.c_str(), nullptr);
         } else {
             BAD_TOK(values[0].m_type, parser);
         }
@@ -322,7 +322,7 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
     case SDL::e_VarDouble:
         CHECK_PARAMS(1);
         if (values[0].m_type == SDL::e_TokNumeric) {
-            var->m_default.m_double = strtod(values[0].m_value.c_str(), 0);
+            var->m_default.m_double = strtod(values[0].m_value.c_str(), nullptr);
         } else {
             BAD_TOK(values[0].m_type, parser);
         }
@@ -338,7 +338,7 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
     case SDL::e_VarTime:
         CHECK_PARAMS(1);
         if (values[0].m_type == SDL::e_TokNumeric) {
-            var->m_default.m_time.m_secs = strtoul(values[0].m_value.c_str(), 0, 0);
+            var->m_default.m_time.m_secs = strtoul(values[0].m_value.c_str(), nullptr, 0);
             var->m_default.m_time.m_micros = 0;
         } else {
             BAD_TOK(values[0].m_type, parser);
@@ -354,9 +354,9 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[2].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[2].m_type, parser);
         } else {
-            var->m_default.m_vector.m_X = strtof(values[0].m_value.c_str(), 0);
-            var->m_default.m_vector.m_Y = strtof(values[1].m_value.c_str(), 0);
-            var->m_default.m_vector.m_Z = strtof(values[2].m_value.c_str(), 0);
+            var->m_default.m_vector.m_X = strtof(values[0].m_value.c_str(), nullptr);
+            var->m_default.m_vector.m_Y = strtof(values[1].m_value.c_str(), nullptr);
+            var->m_default.m_vector.m_Z = strtof(values[2].m_value.c_str(), nullptr);
         }
         break;
     case SDL::e_VarQuaternion:
@@ -370,10 +370,10 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[3].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[3].m_type, parser);
         } else {
-            var->m_default.m_quat.m_X = strtof(values[0].m_value.c_str(), 0);
-            var->m_default.m_quat.m_Y = strtof(values[1].m_value.c_str(), 0);
-            var->m_default.m_quat.m_Z = strtof(values[2].m_value.c_str(), 0);
-            var->m_default.m_quat.m_W = strtof(values[3].m_value.c_str(), 0);
+            var->m_default.m_quat.m_X = strtof(values[0].m_value.c_str(), nullptr);
+            var->m_default.m_quat.m_Y = strtof(values[1].m_value.c_str(), nullptr);
+            var->m_default.m_quat.m_Z = strtof(values[2].m_value.c_str(), nullptr);
+            var->m_default.m_quat.m_W = strtof(values[3].m_value.c_str(), nullptr);
         }
         break;
     case SDL::e_VarRgb:
@@ -385,9 +385,9 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[2].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[2].m_type, parser);
         } else {
-            var->m_default.m_color.m_R = strtof(values[0].m_value.c_str(), 0);
-            var->m_default.m_color.m_G = strtof(values[1].m_value.c_str(), 0);
-            var->m_default.m_color.m_B = strtof(values[2].m_value.c_str(), 0);
+            var->m_default.m_color.m_R = strtof(values[0].m_value.c_str(), nullptr);
+            var->m_default.m_color.m_G = strtof(values[1].m_value.c_str(), nullptr);
+            var->m_default.m_color.m_B = strtof(values[2].m_value.c_str(), nullptr);
             var->m_default.m_color.m_A = 1.0f;
         }
         break;
@@ -402,10 +402,10 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[3].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[3].m_type, parser);
         } else {
-            var->m_default.m_color.m_R = strtof(values[0].m_value.c_str(), 0);
-            var->m_default.m_color.m_G = strtof(values[1].m_value.c_str(), 0);
-            var->m_default.m_color.m_B = strtof(values[2].m_value.c_str(), 0);
-            var->m_default.m_color.m_A = strtof(values[3].m_value.c_str(), 0);
+            var->m_default.m_color.m_R = strtof(values[0].m_value.c_str(), nullptr);
+            var->m_default.m_color.m_G = strtof(values[1].m_value.c_str(), nullptr);
+            var->m_default.m_color.m_B = strtof(values[2].m_value.c_str(), nullptr);
+            var->m_default.m_color.m_A = strtof(values[3].m_value.c_str(), nullptr);
         }
         break;
     case SDL::e_VarRgb8:
@@ -417,9 +417,9 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[2].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[2].m_type, parser);
         } else {
-            var->m_default.m_color8.m_R = strtoul(values[0].m_value.c_str(), 0, 0);
-            var->m_default.m_color8.m_G = strtoul(values[1].m_value.c_str(), 0, 0);
-            var->m_default.m_color8.m_B = strtoul(values[2].m_value.c_str(), 0, 0);
+            var->m_default.m_color8.m_R = strtoul(values[0].m_value.c_str(), nullptr, 0);
+            var->m_default.m_color8.m_G = strtoul(values[1].m_value.c_str(), nullptr, 0);
+            var->m_default.m_color8.m_B = strtoul(values[2].m_value.c_str(), nullptr, 0);
             var->m_default.m_color8.m_A = 255;
         }
         break;
@@ -434,10 +434,10 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         } else if (values[3].m_type != SDL::e_TokNumeric) {
             BAD_TOK(values[3].m_type, parser);
         } else {
-            var->m_default.m_color8.m_R = strtoul(values[0].m_value.c_str(), 0, 0);
-            var->m_default.m_color8.m_G = strtoul(values[1].m_value.c_str(), 0, 0);
-            var->m_default.m_color8.m_B = strtoul(values[2].m_value.c_str(), 0, 0);
-            var->m_default.m_color8.m_A = strtoul(values[3].m_value.c_str(), 0, 0);
+            var->m_default.m_color8.m_R = strtoul(values[0].m_value.c_str(), nullptr, 0);
+            var->m_default.m_color8.m_G = strtoul(values[1].m_value.c_str(), nullptr, 0);
+            var->m_default.m_color8.m_B = strtoul(values[2].m_value.c_str(), nullptr, 0);
+            var->m_default.m_color8.m_A = strtoul(values[3].m_value.c_str(), nullptr, 0);
         }
         break;
     case SDL::e_VarKey:
@@ -689,10 +689,10 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             break;
         case e_TokNumeric:
             if (state == e_State_Version_N) {
-                descBuffer.m_version = strtol(tok.m_value.c_str(), 0, 0);
+                descBuffer.m_version = strtol(tok.m_value.c_str(), nullptr, 0);
                 state = e_State_Statedesc;
             } else if (state == e_State_SZ_N) {
-                varBuffer.m_size = strtol(tok.m_value.c_str(), 0, 0);
+                varBuffer.m_size = strtol(tok.m_value.c_str(), nullptr, 0);
                 state = e_State_SZ_X;
             } else if (state == e_State_Default) {
                 push(tok);

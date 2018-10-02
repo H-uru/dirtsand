@@ -241,8 +241,8 @@ void wk_gameWorker(DS::SocketHandle sockp)
 {
     GameClient_Private client;
     client.m_sock = sockp;
-    client.m_host = 0;
-    client.m_crypt = 0;
+    client.m_host = nullptr;
+    client.m_crypt = nullptr;
     client.m_isLoaded = false;
 
     try {
@@ -432,7 +432,7 @@ void DS::GameServer_UpdateGlobalSDL(const ST::string& age)
         if (!it->second || it->second->m_ageFilename != age)
             continue;
         try {
-            it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, 0);
+            it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, nullptr);
         } catch (const std::exception& ex) {
             fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
         }
@@ -444,7 +444,7 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
 {
     s_gameHostMutex.lock();
     hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
-    GameHost_Private* host = 0;
+    GameHost_Private* host = nullptr;
     if (host_iter != s_gameHosts.end())
         host = host_iter->second;
     s_gameHostMutex.unlock();

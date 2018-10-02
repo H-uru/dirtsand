@@ -53,7 +53,7 @@ void MOUL::AvCoopMsg::read(DS::Stream* s)
     if (s->read<bool>())
         m_coordinator = Factory::Read<CoopCoordinator>(s);
     else
-        m_coordinator = 0;
+        m_coordinator = nullptr;
     m_initiatorId = s->read<uint32_t>();
     m_initiatorSerial = s->read<uint16_t>();
     m_command = (Command)s->read<uint16_t>();

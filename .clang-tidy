@@ -1,2 +1,2 @@
-Checks: '-*,modernize-use-override'
+Checks: '-*,modernize-use-override,modernize-use-nullptr'
 HeaderFilterRegex: '.*'

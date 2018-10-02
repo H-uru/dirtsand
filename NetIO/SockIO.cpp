@@ -85,7 +85,7 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
     }
 
     addrinfo* addr_iter;
-    for (addr_iter = addrList; addr_iter != 0; addr_iter = addr_iter->ai_next) {
+    for (addr_iter = addrList; addr_iter != nullptr; addr_iter = addr_iter->ai_next) {
         sockfd = socket(addr_iter->ai_family, addr_iter->ai_socktype,
                         addr_iter->ai_protocol);
         if (sockfd == -1)
