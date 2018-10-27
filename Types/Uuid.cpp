@@ -32,45 +32,45 @@ DS::Uuid::Uuid(const char* struuid)
     /* First segment */
     memcpy(hexbuf, struuid, 8);
     hexbuf[8] = 0;
-    m_data1 = strtoul(hexbuf, 0, 16);
+    m_data1 = strtoul(hexbuf, nullptr, 16);
 
     /* Second segment */
     memcpy(hexbuf, struuid + 9, 4);
     hexbuf[4] = 0;
-    m_data2 = strtoul(hexbuf, 0, 16);
+    m_data2 = strtoul(hexbuf, nullptr, 16);
 
     /* Third segment */
     memcpy(hexbuf, struuid + 14, 4);
     hexbuf[4] = 0;
-    m_data3 = strtoul(hexbuf, 0, 16);
+    m_data3 = strtoul(hexbuf, nullptr, 16);
 
     /* Fourth segment */
     memcpy(hexbuf, struuid + 19, 2);
     hexbuf[2] = 0;
-    m_data4[0] = strtoul(hexbuf, 0, 16);
+    m_data4[0] = strtoul(hexbuf, nullptr, 16);
     memcpy(hexbuf, struuid + 21, 2);
     hexbuf[2] = 0;
-    m_data4[1] = strtoul(hexbuf, 0, 16);
+    m_data4[1] = strtoul(hexbuf, nullptr, 16);
 
     /* Fifth segment */
     memcpy(hexbuf, struuid + 24, 2);
     hexbuf[2] = 0;
-    m_data4[2] = strtoul(hexbuf, 0, 16);
+    m_data4[2] = strtoul(hexbuf, nullptr, 16);
     memcpy(hexbuf, struuid + 26, 2);
     hexbuf[2] = 0;
-    m_data4[3] = strtoul(hexbuf, 0, 16);
+    m_data4[3] = strtoul(hexbuf, nullptr, 16);
     memcpy(hexbuf, struuid + 28, 2);
     hexbuf[2] = 0;
-    m_data4[4] = strtoul(hexbuf, 0, 16);
+    m_data4[4] = strtoul(hexbuf, nullptr, 16);
     memcpy(hexbuf, struuid + 30, 2);
     hexbuf[2] = 0;
-    m_data4[5] = strtoul(hexbuf, 0, 16);
+    m_data4[5] = strtoul(hexbuf, nullptr, 16);
     memcpy(hexbuf, struuid + 32, 2);
     hexbuf[2] = 0;
-    m_data4[6] = strtoul(hexbuf, 0, 16);
+    m_data4[6] = strtoul(hexbuf, nullptr, 16);
     memcpy(hexbuf, struuid + 34, 2);
     hexbuf[2] = 0;
-    m_data4[7] = strtoul(hexbuf, 0, 16);
+    m_data4[7] = strtoul(hexbuf, nullptr, 16);
 }
 
 void DS::Uuid::read(DS::Stream* stream)

@@ -689,7 +689,7 @@ void cb_scoreCreate(AuthServer_Private& client)
         client.m_buffer.write<uint32_t>(0); // Create Time
     } else {
         client.m_buffer.write<uint32_t>(msg.m_scoreId);
-        client.m_buffer.write<uint32_t>((uint32_t)time(0)); // close enough.
+        client.m_buffer.write<uint32_t>((uint32_t)time(nullptr)); // close enough.
     }
     SEND_REPLY();
 }
@@ -1016,7 +1016,7 @@ void cb_broadcast(AuthServer_Private& client)
 void wk_authWorker(DS::SocketHandle sockp)
 {
     AuthServer_Private client;
-    client.m_crypt = 0;
+    client.m_crypt = nullptr;
     client.m_sock = sockp;
 
     try {

@@ -33,7 +33,7 @@ void DS::UnifiedTime::write(DS::Stream* stream) const
 void DS::UnifiedTime::setNow()
 {
     timeval now;
-    gettimeofday(&now, 0);
+    gettimeofday(&now, nullptr);
     m_secs = now.tv_sec;
     m_micros = now.tv_usec;
 }

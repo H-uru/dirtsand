@@ -34,7 +34,7 @@ DS::ShaHash::ShaHash(const char* struuid)
     buffer[8] = 0;
     for (size_t i=0; i<5; ++i) {
         memcpy(buffer, struuid + (i * 8), 8);
-        m_data[i] = strtoul(buffer, 0, 16);
+        m_data[i] = strtoul(buffer, nullptr, 16);
         m_data[i] = SWAP_BYTES(m_data[i]);
     }
 }
@@ -89,7 +89,7 @@ DS::ShaHash DS::ShaHash::Sha0(const void* data, size_t size)
     DS_ASSERT(out_len == sizeof(result.m_data));
 
     EVP_MD_CTX* sha_ctx = EVP_MD_CTX_create();
-    EVP_DigestInit_ex(sha_ctx, sha0_md, NULL);
+    EVP_DigestInit_ex(sha_ctx, sha0_md, nullptr);
     EVP_DigestUpdate(sha_ctx, data, size);
     EVP_DigestFinal_ex(sha_ctx, reinterpret_cast<unsigned char *>(result.m_data), &out_len);
     EVP_MD_CTX_destroy(sha_ctx);
@@ -107,7 +107,7 @@ DS::ShaHash DS::ShaHash::Sha1(const void* data, size_t size)
     DS_ASSERT(out_len == sizeof(result.m_data));
 
     EVP_MD_CTX* sha1_ctx = EVP_MD_CTX_create();
-    EVP_DigestInit_ex(sha1_ctx, sha1_md, NULL);
+    EVP_DigestInit_ex(sha1_ctx, sha1_md, nullptr);
     EVP_DigestUpdate(sha1_ctx, data, size);
     EVP_DigestFinal_ex(sha1_ctx, reinterpret_cast<unsigned char *>(result.m_data), &out_len);
     EVP_MD_CTX_destroy(sha1_ctx);

@@ -48,13 +48,13 @@ static char** dup_strlist(const char* text, const char** strlist, size_t count)
     if (count == 1) {
         dupe = reinterpret_cast<char**>(malloc(sizeof(char*) * 2));
         dupe[0] = strdup(strlist[0]);
-        dupe[1] = 0;
+        dupe[1] = nullptr;
     } else {
         dupe = reinterpret_cast<char**>(malloc(sizeof(char*) * (count + 2)));
         dupe[0] = strdup(text);
         for (size_t i=0; i<count; ++i)
             dupe[i+1] = strdup(strlist[i]);
-        dupe[count+1] = 0;
+        dupe[count+1] = nullptr;
     }
     return dupe;
 }
@@ -79,7 +79,7 @@ static char** console_completer(const char* text, int start, int end)
             matches.push_back(completions[i]);
     }
     if (matches.size() == 0)
-        return 0;
+        return nullptr;
     return dup_strlist(text, matches.data(), matches.size());
 }
 
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
     char rl_prompt[32];
     snprintf(rl_prompt, 32, "ds-%u> ", DS::Settings::BuildId());
 
-    char* cmdbuf = 0;
+    char* cmdbuf = nullptr;
     rl_attempted_completion_function = &console_completer;
     for ( ;; ) {
         cmdbuf = readline(rl_prompt);

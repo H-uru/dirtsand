@@ -116,7 +116,7 @@ namespace DS
     class FileStream : public Stream
     {
     public:
-        FileStream() : m_file(0) { }
+        FileStream() : m_file() { }
         ~FileStream() override { close(); }
 
         void open(const char* filename, const char* mode);
@@ -124,7 +124,7 @@ namespace DS
         {
             if (m_file)
                 fclose(m_file);
-            m_file = 0;
+            m_file = nullptr;
         }
 
         ssize_t readBytes(void* buffer, size_t count) override
@@ -147,8 +147,8 @@ namespace DS
     class BufferStream : public Stream
     {
     public:
-        BufferStream() : m_buffer(0), m_position(0), m_size(0), m_alloc(0), m_refs(1) { }
-        BufferStream(const void* data, size_t size) : m_buffer(0), m_refs(1) { set(data, size); }
+        BufferStream() : m_buffer(), m_position(), m_size(), m_alloc(), m_refs(1) { }
+        BufferStream(const void* data, size_t size) : m_buffer(), m_refs(1) { set(data, size); }
         ~BufferStream() override { delete[] m_buffer; }
 
         ssize_t readBytes(void* buffer, size_t count) override;
@@ -192,7 +192,7 @@ namespace DS
     class Blob
     {
     public:
-        Blob() : m_data(0) { }
+        Blob() : m_data() { }
 
         Blob(const uint8_t* buffer, size_t size)
         {
@@ -230,7 +230,7 @@ namespace DS
             return b;
         }
 
-        const uint8_t* buffer() const { return m_data ? m_data->m_buffer : 0; }
+        const uint8_t* buffer() const { return m_data ? m_data->m_buffer : nullptr; }
         size_t size() const { return m_data ? m_data->m_size : 0; }
 
     private:

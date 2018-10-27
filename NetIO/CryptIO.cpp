@@ -41,7 +41,7 @@ static void init_rand()
             uint8_t buffer[2048 - sizeof(pid_t) - sizeof(timeval)];
         } _random;
         _random.mypid = getpid();
-        gettimeofday(&_random.now, 0);
+        gettimeofday(&_random.now, nullptr);
         FILE* urand = fopen("/dev/urandom", "rb");
         if (!urand) {
             fprintf(stderr, "FATAL: Could not open /dev/urandom: %s\n",

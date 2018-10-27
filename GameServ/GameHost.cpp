@@ -255,7 +255,7 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     //       As it is, there might be a race condition if another player is
     //       joining just as the last player is leaving.
     if (host->m_clients.size() == 0)
-        host->m_channel.putMessage(e_GameShutdown, 0);
+        host->m_channel.putMessage(e_GameShutdown, nullptr);
 
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
@@ -626,7 +626,7 @@ void dm_load_clone(GameHost_Private* host, GameClient_Private* client,
 void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
 {
     DS::BlobStream stream(msg->m_message);
-    MOUL::NetMessage* netmsg = 0;
+    MOUL::NetMessage* netmsg = nullptr;
     try {
         netmsg = MOUL::Factory::Read<MOUL::NetMessage>(&stream);
     } catch (const MOUL::FactoryException&) {
@@ -831,7 +831,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
     if (PQstatus(postgres) != CONNECTION_OK) {
         fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(postgres));
         PQfinish(postgres);
-        return 0;
+        return nullptr;
     }
 
     DS::PGresultRef result = DS::PQexecVA(postgres,
@@ -843,13 +843,13 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                 __FILE__, __LINE__, PQerrorMessage(postgres));
         result.reset();
         PQfinish(postgres);
-        return 0;
+        return nullptr;
     }
     if (PQntuples(result) == 0) {
         fprintf(stderr, "[Game] Age MCP %u not found\n", ageMcpId);
         result.reset();
         PQfinish(postgres);
-        return 0;
+        return nullptr;
     } else {
         if (PQntuples(result) != 1) {
             fprintf(stderr, "[Game] WARNING: Multiple servers found for MCP %u\n",
@@ -859,7 +859,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         GameHost_Private* host = new GameHost_Private();
         host->m_instanceId = PQgetvalue(result, 0, 0);
         host->m_ageFilename = PQgetvalue(result, 0, 1);
-        host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), 0, 10);
+        host->m_ageIdx = strtoul(PQgetvalue(result, 0, 2), nullptr, 10);
         host->m_gameMaster = 0;
         host->m_serverIdx = ageMcpId;
         host->m_postgres = postgres;
@@ -870,7 +870,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         AuthClient_Private fakeClient;
         sdlFetch.m_client = &fakeClient;
         sdlFetch.m_ageFilename = host->m_ageFilename;
-        sdlFetch.m_sdlNodeId = strtoul(PQgetvalue(result, 0, 3), 0, 10);
+        sdlFetch.m_sdlNodeId = strtoul(PQgetvalue(result, 0, 3), nullptr, 10);
         result.reset();
 
         s_authChannel.putMessage(e_AuthFetchSDL, reinterpret_cast<void*>(&sdlFetch));
@@ -879,7 +879,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             fputs("[Game] Error fetching Age SDL\n", stderr);
             PQfinish(postgres);
             delete host;
-            return 0;
+            return nullptr;
         }
         host->m_sdlIdx = sdlFetch.m_sdlNodeId;
         host->m_globalState = sdlFetch.m_globalState;
@@ -892,7 +892,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                     host->m_ageFilename.c_str(), ex.what());
             PQfinish(postgres);
             delete host;
-            return 0;
+            return nullptr;
         }
         if (!host->m_localState.descriptor()) {
             // NULL VaultSDL Node (or it doesn't exist) -- maybe there is a descriptor now?

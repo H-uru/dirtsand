@@ -25,7 +25,7 @@ namespace DS
     class BitVector
     {
     public:
-        BitVector() : m_bits(0), m_words(0) { }
+        BitVector() : m_bits(), m_words() { }
 
         BitVector(const BitVector& copy) : m_words(copy.m_words)
         {

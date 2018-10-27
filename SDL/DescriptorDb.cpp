@@ -78,14 +78,14 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindDescriptor(const ST::string& name, 
     descmap_t::iterator namei = s_descriptors.find(name);
     if (namei == s_descriptors.end()) {
         fprintf(stderr, "[SDL] Requested invalid descriptor %s\n", name.c_str());
-        return 0;
+        return nullptr;
     }
 
     versionmap_t::iterator veri = namei->second.find(version);
     if (veri == namei->second.end()) {
         fprintf(stderr, "[SDL] Requested invalid descriptor version %d for %s\n",
                 version, name.c_str());
-        return 0;
+        return nullptr;
     }
 
     return &veri->second;
@@ -96,7 +96,7 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindLatestDescriptor(const ST::string& 
     descmap_t::iterator namei = s_descriptors.find(name);
     if (namei == s_descriptors.end()) {
         fprintf(stderr, "[SDL] Requested invalid descriptor %s\n", name.c_str());
-        return 0;
+        return nullptr;
     }
 
     versionmap_t::iterator veri = namei->second.begin();

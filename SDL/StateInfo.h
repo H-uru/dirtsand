@@ -56,7 +56,7 @@ namespace SDL
             e_XIsDirty            = (1<<8),
         };
 
-        Variable(VarDescriptor* desc = 0) : m_data(0)
+        Variable(VarDescriptor* desc = nullptr) : m_data()
         {
             if (desc)
                 m_data = new _ref(desc);
@@ -148,14 +148,14 @@ namespace SDL
         }* m_data;
 
     public:
-        VarDescriptor* descriptor() const { return m_data ? m_data->m_desc : 0; }
+        VarDescriptor* descriptor() const { return m_data ? m_data->m_desc : nullptr; }
         _ref* data() const { return m_data; }
     };
 
     class State
     {
     public:
-        State(StateDescriptor* desc = 0);
+        State(StateDescriptor* desc = nullptr);
 
         State(const State& copy) : m_data(copy.m_data)
         {
@@ -231,7 +231,7 @@ namespace SDL
         }* m_data;
 
     public:
-        StateDescriptor* descriptor() const { return m_data ? m_data->m_desc : 0; }
+        StateDescriptor* descriptor() const { return m_data ? m_data->m_desc : nullptr; }
         _ref* data() const { return m_data; }
     };
 }

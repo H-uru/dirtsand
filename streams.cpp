@@ -196,7 +196,7 @@ void DS::BufferStream::set(const void* data, size_t size)
         m_buffer = new uint8_t[m_alloc];
         memcpy(m_buffer, data, m_size);
     } else {
-        m_buffer = 0;
+        m_buffer = nullptr;
         m_size = m_alloc = 0;
     }
     m_position = 0;

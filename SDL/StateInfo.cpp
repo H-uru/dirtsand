@@ -661,7 +661,7 @@ void SDL::Variable::setDefault()
             break;
         case e_VarCreatable:
             m_data->m_creatable[i]->unref();
-            m_data->m_creatable[i] = 0;
+            m_data->m_creatable[i] = nullptr;
             break;
         case e_VarDouble:
             if (m_data->m_desc->m_default.m_valid)
@@ -785,7 +785,7 @@ bool SDL::Variable::isDefault() const
                 return false;
             break;
         case e_VarCreatable:
-            if (m_data->m_creatable[i] != 0)
+            if (m_data->m_creatable[i] != nullptr)
                 return false;
             break;
         case e_VarDouble:
@@ -851,7 +851,7 @@ bool SDL::Variable::isDefault() const
 }
 
 SDL::State::State(SDL::StateDescriptor* desc)
-    : m_data(0)
+    : m_data()
 {
     if (desc) {
         m_data = new _ref(desc);

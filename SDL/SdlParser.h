@@ -50,7 +50,7 @@ namespace SDL
     class Parser
     {
     public:
-        Parser() : m_file(0) { }
+        Parser() : m_file() { }
         ~Parser() { close(); }
 
         bool open(const char* filename);
@@ -58,7 +58,7 @@ namespace SDL
         {
             if (m_file)
                 fclose(m_file);
-            m_file = 0;
+            m_file = nullptr;
             m_filename = ST::null;
         }
 
