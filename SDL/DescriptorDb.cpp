@@ -83,7 +83,7 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindDescriptor(const ST::string& name, 
 
     versionmap_t::iterator veri = namei->second.find(version);
     if (veri == namei->second.end()) {
-        fprintf(stderr, "[SDL] Requested invalid decriptor version %d for %s\n",
+        fprintf(stderr, "[SDL] Requested invalid descriptor version %d for %s\n",
                 version, name.c_str());
         return 0;
     }
