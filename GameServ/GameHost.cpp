@@ -154,14 +154,14 @@ void dm_propagate_to(GameHost_Private* host, MOUL::NetMessage* msg,
     DM_UNREFBUF();
 }
 
-void dm_local_sdl_update(GameHost_Private* host, const DS::Blob& blob)
+void dm_local_sdl_update(GameHost_Private* host, DS::Blob blob)
 {
     Auth_NodeInfo sdlNode;
     AuthClient_Private fakeClient;
     sdlNode.m_client = &fakeClient;
     sdlNode.m_internal = true;
     sdlNode.m_node.set_NodeIdx(host->m_sdlIdx);
-    sdlNode.m_node.set_Blob_1(blob);
+    sdlNode.m_node.set_Blob_1(std::move(blob));
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
         fputs("[Game] Error writing SDL node back to vault\n", stderr);
@@ -336,7 +336,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
         state->m_object.m_name = "AgeSDLHook";
         state->m_object.m_type = 1;  // SceneObject
         state->m_object.m_id = 1;
-        state->m_sdlBlob = ageSdlBlob;
+        state->m_sdlBlob = std::move(ageSdlBlob);
         DM_SENDMSG(state, client);
         ++states;
     }
@@ -759,7 +759,7 @@ void dm_local_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
     AuthClient_Private fakeClient;
     sdlNode.m_client = &fakeClient;
     sdlNode.m_internal = true;
-    sdlNode.m_node = msg->m_node;
+    sdlNode.m_node = std::move(msg->m_node);
     sdlNode.m_revision = DS::Uuid();
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
@@ -900,14 +900,14 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             if (desc) {
                 host->m_localState = SDL::State(desc);
                 DS::Blob local = host->m_localState.toBlob();
-                dm_local_sdl_update(host, local);
                 host->m_ageSdlHook = SDL::State::FromBlob(local);
+                dm_local_sdl_update(host, std::move(local));
             }
         } else if (host->m_localState.update()) {
             // The SDL Descriptor was updated
             DS::Blob local = host->m_localState.toBlob();
-            dm_local_sdl_update(host, local);
             host->m_ageSdlHook = SDL::State::FromBlob(local);
+            dm_local_sdl_update(host, std::move(local));
         } else {
             // Perfectly valid old SDL Blob
             host->m_ageSdlHook = SDL::State::FromBlob(sdlFetch.m_localState);
@@ -930,7 +930,8 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             int count = PQntuples(result);
 
             for (int i=0; i<count; ++i) {
-                DS::BlobStream bsObject(DS::Base64Decode(PQgetvalue(result, i, 1)));
+                DS::Blob objblob = DS::Base64Decode(PQgetvalue(result, i, 1));
+                DS::BlobStream bsObject(objblob);
                 DS::Blob sdlblob = DS::Base64Decode(PQgetvalue(result, i, 2));
                 MOUL::Uoid key;
                 key.read(&bsObject);
