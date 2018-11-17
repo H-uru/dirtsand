@@ -129,8 +129,9 @@ static ST::string get_install_directory()
 {
     // Assume we're running as <install_directory>/bin/dirtsand
     char path[PATH_MAX];
-    if (readlink("/proc/self/exe", path, sizeof(path)) > 0) {
-        ST::string spath(path);
+    ssize_t exe_len = readlink("/proc/self/exe", path, sizeof(path));
+    if (exe_len > 0) {
+        ST::string spath(path, exe_len);
         ST_ssize_t slash = spath.find_last('/');
         if (slash >= 0) {
             spath = spath.left(slash);
