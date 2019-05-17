@@ -3,7 +3,7 @@ language: cpp
 matrix:
   include:
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: gcc
       addons:
         apt:
@@ -15,7 +15,7 @@ matrix:
             - libreadline-dev
             - zlib1g-dev
     - os: linux
-      dist: trusty
+      dist: xenial
       compiler: clang
       addons:
         apt:
