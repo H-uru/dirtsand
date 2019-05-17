@@ -96,7 +96,7 @@ the server settings as described in the "configure dirtsand" step.
 
    ```
    $ sudo -u postgres psql -d dirtsand < /path/to/uuid-ossp.sql
-   
+
    # (Example for Ubuntu 10.10 with PostgreSQL 8.4)
    $ sudo -u postgres psql -d dirtsand < /usr/share/postgresql/8.4/contrib/uuid-ossp.sql
    ```
@@ -134,23 +134,17 @@ the server settings as described in the "configure dirtsand" step.
    $ <your-favorite-editor> dirtsand.ini
    ```
 
-   To generate the RC4 keys, you can simply run the keygen command from
-   within the dirtsand interactive console:
+   To generate the RC4 keys, you can simply run the command-line option
+   `generate-keys` using dirtsand:
 
    ```
-   $ bin/dirtsand
-   ds-902> keygen new       (This one will take a little while)
-   ds-902> quit
+   $ bin/dirtsand --generate-keys
    ```
-
-   Any errors that dirtsand spits out about config files and postgres
-   passwords can be ignored, since you haven't provided a configuration
-   file yet.
 
    You should now have a bunch of keys output on your terminal.  The first
    block (labeled Server keys) is the set you should paste into your
    dirtsand.ini.  Replace the dummy lines (with the '...' values) with the
-   output from the `keygen new` command.  The second set of keys can be
+   output from the `generate-keys` command.  The second set of keys can be
    placed directly in the client's server.ini file (NOTE: This requires
    either the H-uru fork of CWE or PlasmaClient -- the vanilla MOUL
    client cannot load keys from a file, and you will have to enter the

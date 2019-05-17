@@ -158,6 +158,38 @@ static void do_help()
     puts("Options:");
     puts("    --help              Show this information.");
     puts("    --restrict-logins   Run the server with logins restricted.");
+    puts("    --generate-keys     Create a matching set of server and client keys.");
+}
+
+static void generate_keys()
+{
+    uint8_t nbuffer[3][64], kbuffer[3][64], xbuffer[64];
+    fputs("Generating new server keys...  This will take a while.", stdout);
+    fflush(stdout);
+    for (size_t i=0; i<3; ++i)
+        DS::GenPrimeKeys(nbuffer[i], kbuffer[i]);
+
+    fputs("\n--------------------\n", stdout);
+    fputs("Server keys: (dirtsand.ini)\n", stdout);
+    ST::printf("Key.Auth.N = {}\n", ST::base64_encode(nbuffer[0], 64));
+    ST::printf("Key.Auth.K = {}\n", ST::base64_encode(kbuffer[0], 64));
+    ST::printf("Key.Game.N = {}\n", ST::base64_encode(nbuffer[1], 64));
+    ST::printf("Key.Game.K = {}\n", ST::base64_encode(kbuffer[1], 64));
+    ST::printf("Key.Gate.N = {}\n", ST::base64_encode(nbuffer[2], 64));
+    ST::printf("Key.Gate.K = {}\n", ST::base64_encode(kbuffer[2], 64));
+
+    fputs("--------------------\n", stdout);
+    fputs("Client keys: (server.ini)\n", stdout);
+    DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
+    ST::printf("Server.Auth.N \"{}\"\n", ST::base64_encode(nbuffer[0], 64));
+    ST::printf("Server.Auth.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
+    DS::CryptCalcX(xbuffer, nbuffer[1], kbuffer[1], CRYPT_BASE_GAME);
+    ST::printf("Server.Game.N \"{}\"\n", ST::base64_encode(nbuffer[1], 64));
+    ST::printf("Server.Game.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
+    DS::CryptCalcX(xbuffer, nbuffer[2], kbuffer[2], CRYPT_BASE_GATE);
+    ST::printf("Server.Gate.N \"{}\"\n", ST::base64_encode(nbuffer[2], 64));
+    ST::printf("Server.Gate.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
+    fputs("--------------------\n", stdout);
 }
 
 int main(int argc, char* argv[])
@@ -180,6 +212,9 @@ int main(int argc, char* argv[])
         if (arg[0] == '-') {
             if (strcmp(arg, "--restrict-logins") == 0) {
                 restrictLogins = true;
+            } else if (strcmp(arg, "--generate-keys") == 0) {
+                generate_keys();
+                exit(0);
             } else if (strcmp(arg, "--help") == 0) {
                 do_help();
                 exit(0);
@@ -266,38 +301,12 @@ int main(int argc, char* argv[])
                 }
             }
         } else if (args[0] == "keygen") {
-            uint8_t xbuffer[64];
             if (args.size() != 2) {
                 fputs("Usage:  keygen <new|show>\n", stderr);
             } else if (args[1] == "new") {
-                uint8_t nbuffer[3][64], kbuffer[3][64];
-                fputs("Generating new server keys...  This will take a while.", stdout);
-                fflush(stdout);
-                for (size_t i=0; i<3; ++i)
-                    DS::GenPrimeKeys(nbuffer[i], kbuffer[i]);
-
-                fputs("\n--------------------\n", stdout);
-                fputs("Server keys: (dirtsand.ini)\n", stdout);
-                ST::printf("Key.Auth.N = {}\n", ST::base64_encode(nbuffer[0], 64));
-                ST::printf("Key.Auth.K = {}\n", ST::base64_encode(kbuffer[0], 64));
-                ST::printf("Key.Game.N = {}\n", ST::base64_encode(nbuffer[1], 64));
-                ST::printf("Key.Game.K = {}\n", ST::base64_encode(kbuffer[1], 64));
-                ST::printf("Key.Gate.N = {}\n", ST::base64_encode(nbuffer[2], 64));
-                ST::printf("Key.Gate.K = {}\n", ST::base64_encode(kbuffer[2], 64));
-
-                fputs("--------------------\n", stdout);
-                fputs("Client keys: (server.ini)\n", stdout);
-                DS::CryptCalcX(xbuffer, nbuffer[0], kbuffer[0], CRYPT_BASE_AUTH);
-                ST::printf("Server.Auth.N \"{}\"\n", ST::base64_encode(nbuffer[0], 64));
-                ST::printf("Server.Auth.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
-                DS::CryptCalcX(xbuffer, nbuffer[1], kbuffer[1], CRYPT_BASE_GAME);
-                ST::printf("Server.Game.N \"{}\"\n", ST::base64_encode(nbuffer[1], 64));
-                ST::printf("Server.Game.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
-                DS::CryptCalcX(xbuffer, nbuffer[2], kbuffer[2], CRYPT_BASE_GATE);
-                ST::printf("Server.Gate.N \"{}\"\n", ST::base64_encode(nbuffer[2], 64));
-                ST::printf("Server.Gate.X \"{}\"\n", ST::base64_encode(xbuffer, 64));
-                fputs("--------------------\n", stdout);
+                generate_keys();
             } else if (args[1] == "show") {
+                uint8_t xbuffer[64];
                 DS::CryptCalcX(xbuffer, DS::Settings::CryptKey(DS::e_KeyAuth_N),
                                DS::Settings::CryptKey(DS::e_KeyAuth_K), CRYPT_BASE_AUTH);
                 ST::printf("Server.Auth.N \"{}\"\n", ST::base64_encode(DS::Settings::CryptKey(DS::e_KeyAuth_N), 64));
