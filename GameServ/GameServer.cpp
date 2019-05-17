@@ -451,7 +451,7 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
 
     if (host) {
         Game_SdlMessage* msg = new Game_SdlMessage;
-        msg->m_node = node;
+        msg->m_node = node.copy();
         try {
             host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
             return true;

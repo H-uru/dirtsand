@@ -965,7 +965,7 @@ void dm_auth_fetchSDL(Auth_FetchSDL* msg)
         msg->m_localState = gen_default_sdl(msg->m_ageFilename);
     } else {
         DS::Vault::Node sdlNode = v_fetch_node(msg->m_sdlNodeId);
-        msg->m_localState = sdlNode.m_Blob_1;
+        msg->m_localState = std::move(sdlNode.m_Blob_1);
     }
 
     SEND_REPLY(msg, DS::e_NetSuccess);

@@ -187,3 +187,74 @@ void DS::Vault::Node::write(DS::Stream* stream) const
         stream->writeBytes(m_Blob_2.buffer(), m_Blob_2.size());
     }
 }
+
+DS::Vault::Node DS::Vault::Node::copy() const
+{
+    DS::Vault::Node dup;
+    dup.m_fields = m_fields;
+    if (m_fields & e_FieldNodeIdx)
+        dup.m_NodeIdx = m_NodeIdx;
+    if (m_fields & e_FieldCreateTime)
+        dup.m_CreateTime = m_CreateTime;
+    if (m_fields & e_FieldModifyTime)
+        dup.m_ModifyTime = m_ModifyTime;
+    if (m_fields & e_FieldCreateAgeName)
+        dup.m_CreateAgeName = m_CreateAgeName;
+    if (m_fields & e_FieldCreateAgeUuid)
+        dup.m_CreateAgeUuid = m_CreateAgeUuid;
+    if (m_fields & e_FieldCreatorUuid)
+        dup.m_CreatorUuid = m_CreatorUuid;
+    if (m_fields & e_FieldCreatorIdx)
+        dup.m_CreatorIdx = m_CreatorIdx;
+    if (m_fields & e_FieldNodeType)
+        dup.m_NodeType = m_NodeType;
+    if (m_fields & e_FieldInt32_1)
+        dup.m_Int32_1 = m_Int32_1;
+    if (m_fields & e_FieldInt32_2)
+        dup.m_Int32_2 = m_Int32_2;
+    if (m_fields & e_FieldInt32_3)
+        dup.m_Int32_3 = m_Int32_3;
+    if (m_fields & e_FieldInt32_4)
+        dup.m_Int32_4 = m_Int32_4;
+    if (m_fields & e_FieldUint32_1)
+        dup.m_Uint32_1 = m_Uint32_1;
+    if (m_fields & e_FieldUint32_2)
+        dup.m_Uint32_2 = m_Uint32_2;
+    if (m_fields & e_FieldUint32_3)
+        dup.m_Uint32_3 = m_Uint32_3;
+    if (m_fields & e_FieldUint32_4)
+        dup.m_Uint32_4 = m_Uint32_4;
+    if (m_fields & e_FieldUuid_1)
+        dup.m_Uuid_1 = m_Uuid_1;
+    if (m_fields & e_FieldUuid_2)
+        dup.m_Uuid_2 = m_Uuid_2;
+    if (m_fields & e_FieldUuid_3)
+        dup.m_Uuid_3 = m_Uuid_3;
+    if (m_fields & e_FieldUuid_4)
+        dup.m_Uuid_4 = m_Uuid_4;
+    if (m_fields & e_FieldString64_1)
+        dup.m_String64_1 = m_String64_1;
+    if (m_fields & e_FieldString64_2)
+        dup.m_String64_2 = m_String64_2;
+    if (m_fields & e_FieldString64_3)
+        dup.m_String64_3 = m_String64_3;
+    if (m_fields & e_FieldString64_4)
+        dup.m_String64_4 = m_String64_4;
+    if (m_fields & e_FieldString64_5)
+        dup.m_String64_5 = m_String64_5;
+    if (m_fields & e_FieldString64_6)
+        dup.m_String64_6 = m_String64_6;
+    if (m_fields & e_FieldIString64_1)
+        dup.m_IString64_1 = m_IString64_1;
+    if (m_fields & e_FieldIString64_2)
+        dup.m_IString64_2 = m_IString64_2;
+    if (m_fields & e_FieldText_1)
+        dup.m_Text_1 = m_Text_1;
+    if (m_fields & e_FieldText_2)
+        dup.m_Text_2 = m_Text_2;
+    if (m_fields & e_FieldBlob_1)
+        dup.m_Blob_1 = m_Blob_1.copy();
+    if (m_fields & e_FieldBlob_2)
+        dup.m_Blob_2 = m_Blob_2.copy();
+    return dup;
+}

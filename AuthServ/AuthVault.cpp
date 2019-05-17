@@ -688,13 +688,11 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     if (peopleNode == 0)
         return std::make_tuple(0, 0, 0);
 
-    DS::Blob link(reinterpret_cast<const uint8_t*>("Default:LinkInPointDefault:;"),
-                  strlen("Default:LinkInPointDefault:;"));
     node.clear();
     node.set_NodeType(DS::Vault::e_NodeAgeLink);
     node.set_CreatorUuid(acctId);
     node.set_CreatorIdx(playerIdx);
-    node.set_Blob_1(link);
+    node.set_Blob_1(DS::Blob::FromString("Default:LinkInPointDefault:;"));
     uint32_t reltoLink = v_create_node(node);
     if (reltoLink == 0)
         return std::make_tuple(0, 0, 0);
@@ -703,18 +701,16 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
     node.set_NodeType(DS::Vault::e_NodeAgeLink);
     node.set_CreatorUuid(acctId);
     node.set_CreatorIdx(playerIdx);
-    node.set_Blob_1(link);
+    node.set_Blob_1(DS::Blob::FromString("Default:LinkInPointDefault:;"));
     uint32_t hoodLink = v_create_node(node);
     if (hoodLink == 0)
         return std::make_tuple(0, 0, 0);
 
-    link = DS::Blob(reinterpret_cast<const uint8_t*>("Ferry Terminal:LinkInPointFerry:;"),
-                    strlen("Ferry Terminal:LinkInPointFerry:;"));
     node.clear();
     node.set_NodeType(DS::Vault::e_NodeAgeLink);
     node.set_CreatorUuid(acctId);
     node.set_CreatorIdx(playerIdx);
-    node.set_Blob_1(link);
+    node.set_Blob_1(DS::Blob::FromString("Ferry Terminal:LinkInPointFerry:;"));
     uint32_t cityLink = v_create_node(node);
     if (cityLink == 0)
         return std::make_tuple(0, 0, 0);

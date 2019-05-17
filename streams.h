@@ -188,74 +188,72 @@ namespace DS
         void operator=(const BufferStream& copy) { }
     };
 
-    /* Read-only ref-counted RAM stream */
+    /* Read-only non-copyable RAM stream */
     class Blob
     {
     public:
-        Blob() : m_data() { }
+        Blob() noexcept : m_buffer(), m_size() { }
 
         Blob(const uint8_t* buffer, size_t size)
         {
-            uint8_t* bufcopy = new uint8_t[size];
+            auto bufcopy = new uint8_t[size];
             memcpy(bufcopy, buffer, size);
-            m_data = new _ref(bufcopy, size);
+            m_buffer = const_cast<const uint8_t*>(bufcopy);
+            m_size = size;
         }
 
-        Blob(const Blob& other) : m_data(other.m_data)
+        Blob(Blob&& other) noexcept
+            : m_buffer(other.m_buffer), m_size(other.m_size)
         {
-            if (m_data)
-                m_data->ref();
+            other.m_buffer = nullptr;
         }
 
-        ~Blob()
-        {
-            if (m_data)
-                m_data->unref();
-        }
+        ~Blob() noexcept { delete[] m_buffer; }
 
-        Blob& operator=(const Blob& other)
+        Blob(const Blob&) = delete;
+        Blob& operator=(const Blob&) = delete;
+
+        Blob& operator=(Blob&& other) noexcept
         {
-            if (other.m_data)
-                other.m_data->ref();
-            if (m_data)
-                m_data->unref();
-            m_data = other.m_data;
+            m_buffer = other.m_buffer;
+            m_size = other.m_size;
+            other.m_buffer = nullptr;
             return *this;
         }
 
         static Blob Steal(const uint8_t* buffer, size_t size)
         {
             Blob b;
-            b.m_data = new _ref(buffer, size);
+            b.m_buffer = buffer;
+            b.m_size = size;
             return b;
         }
 
-        const uint8_t* buffer() const { return m_data ? m_data->m_buffer : nullptr; }
-        size_t size() const { return m_data ? m_data->m_size : 0; }
+        template <size_t length>
+        static Blob FromString(const char (&text)[length])
+        {
+            // Subtract one character for the nul-terminator
+            return Blob(reinterpret_cast<const uint8_t*>(text), length - 1);
+        }
+
+        const uint8_t* buffer() const { return m_buffer; }
+        size_t size() const { return m_size; }
+
+        Blob copy() const
+        {
+            return Blob(buffer(), size());
+        }
 
     private:
-        struct _ref {
-            const uint8_t* m_buffer;
-            size_t m_size;
-            int m_refs;
-
-            _ref(const uint8_t* buffer, size_t size)
-                : m_buffer(buffer), m_size(size), m_refs(1) { }
-            ~_ref() { delete[] m_buffer; }
-
-            void ref() { __sync_fetch_and_add(&m_refs, 1); }
-            void unref()
-            {
-                if (__sync_add_and_fetch(&m_refs, -1) == 0)
-                    delete this;
-            }
-        }* m_data;
+        const uint8_t* m_buffer;
+        size_t m_size;
     };
 
     class BlobStream : public Stream
     {
     public:
-        BlobStream(Blob blob) : m_blob(blob), m_position(0) { }
+        explicit BlobStream(const Blob& blob) : m_blob(blob), m_position(0) { }
+        explicit BlobStream(Blob&&) = delete;   // Prevent dangling references
         ~BlobStream() override { }
 
         ssize_t readBytes(void* buffer, size_t count) override;
@@ -268,7 +266,7 @@ namespace DS
         void flush() override { }
 
     private:
-        Blob m_blob;
+        const Blob& m_blob;
         size_t m_position;
     };
 

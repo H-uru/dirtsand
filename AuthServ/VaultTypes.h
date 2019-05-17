@@ -100,7 +100,7 @@ namespace Vault
     type m_##name; \
     void set_##name(type value) \
     { \
-        m_##name = value; \
+        m_##name = std::move(value); \
         m_fields |= e_Field##name; \
     } \
     bool has_##name() const { return (m_fields & e_Field##name) != 0; } \
@@ -148,6 +148,13 @@ namespace Vault
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream) const;
+
+        Node(const Node&) = delete;
+        Node& operator=(const Node&) = delete;
+        Node(Node&&) = default;
+        Node& operator=(Node&&) = default;
+
+        Node copy() const;
 
     private:
         uint64_t m_fields;
