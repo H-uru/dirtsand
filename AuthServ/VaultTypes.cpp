@@ -23,11 +23,10 @@
         uint32_t length = stream->read<uint32_t>(); \
         if ((length % sizeof(char16_t)) != 0) \
             throw DS::MalformedData(); \
-        ST::utf16_buffer storage; \
-        char16_t* buffer = storage.create_writable_buffer(length / sizeof(char16_t)); \
-        stream->readBytes(buffer, length); \
-        value = ST::string::from_utf16(buffer, (length / sizeof(char16_t))-1, \
-                                       ST::substitute_invalid); \
+        ST::utf16_buffer buffer; \
+        buffer.allocate(length / sizeof(char16_t)); \
+        stream->readBytes(buffer.data(), length); \
+        value = ST::string::from_utf16(buffer, ST::substitute_invalid); \
     }
 
 #define WRITE_VAULT_STRING(value) \

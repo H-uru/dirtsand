@@ -148,10 +148,10 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
         bool haveAge = false;
         while (fgets(buffer, 4096, cfgfile)) {
             ST::string line = ST::string(buffer).before_first('#').trim();
-            if (line.is_empty())
+            if (line.empty())
                 continue;
 
-            if (line.trim().char_at(0) == '[') {
+            if (line.trim().front() == '[') {
                 if (haveAge)
                     configs.push_back(age);
                 age.clear();
@@ -466,11 +466,11 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
     if (!age.m_parentId.isNull())
         node.set_Uuid_2(age.m_parentId);
     node.set_String64_2(age.m_filename);
-    if (!age.m_instName.is_empty())
+    if (!age.m_instName.empty())
         node.set_String64_3(age.m_instName);
-    if (!age.m_userName.is_empty())
+    if (!age.m_userName.empty())
         node.set_String64_4(age.m_userName);
-    if (!age.m_description.is_empty())
+    if (!age.m_description.empty())
         node.set_Text_1(age.m_description);
     uint32_t ageInfoNode = v_create_node(node);
     if (ageInfoNode == 0)
@@ -546,8 +546,8 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
 
     // Register with the server database
     {
-        ST::string agedesc = !age.m_description.is_empty() ? age.m_description
-                           : !age.m_instName.is_empty() ? age.m_instName
+        ST::string agedesc = !age.m_description.empty() ? age.m_description
+                           : !age.m_instName.empty() ? age.m_instName
                            : age.m_filename;
 
         DS::PGresultRef result = DS::PQexecVA(s_postgres,

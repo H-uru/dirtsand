@@ -986,7 +986,7 @@ void dm_auth_update_globalSDL(Auth_UpdateGlobalSDL* msg)
             var->data()->m_flags |= SDL::Variable::e_HasTimeStamp | SDL::Variable::e_XIsDirty;
             var->data()->m_timestamp.setNow();
 
-            if (msg->m_value.is_empty()) {
+            if (msg->m_value.empty()) {
                 var->setDefault();
             } else {
                 var->data()->m_flags &= ~SDL::Variable::e_SameAsDefault;

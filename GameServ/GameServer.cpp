@@ -326,7 +326,7 @@ Game_AgeInfo age_parse(FILE* stream)
     Game_AgeInfo age;
     while (fgets(lnbuffer, 4096, stream)) {
         ST::string trimmed = ST::string(lnbuffer).before_first('#').trim();
-        if (trimmed.is_empty())
+        if (trimmed.empty())
             continue;
         std::vector<ST::string> line = trimmed.split('=');
         if (line.size() != 2) {

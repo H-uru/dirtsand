@@ -125,7 +125,7 @@ bool DS::Settings::LoadFrom(const ST::string& filename)
         char buffer[4096];
         while (fgets(buffer, 4096, cfgfile)) {
             ST::string line = ST::string(buffer).before_first('#').trim();
-            if (line.is_empty())
+            if (line.empty())
                 continue;
             std::vector<ST::string> params = line.split('=', 1);
             if (params.size() != 2) {
@@ -262,7 +262,7 @@ ST::string DS::Settings::GameServerAddress()
 
 const char* DS::Settings::LobbyAddress()
 {
-    return s_settings.m_lobbyAddr.is_empty()
+    return s_settings.m_lobbyAddr.empty()
                 ? "127.0.0.1"   /* Not useful for external connections */
                 : s_settings.m_lobbyAddr.c_str();
 }
@@ -279,7 +279,7 @@ bool DS::Settings::StatusEnabled()
 
 const char* DS::Settings::StatusAddress()
 {
-    return s_settings.m_statusAddr.is_empty()
+    return s_settings.m_statusAddr.empty()
                 ? "127.0.0.1"   /* Not useful for external connections */
                 : s_settings.m_statusAddr.c_str();
 }

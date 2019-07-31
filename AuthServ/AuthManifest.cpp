@@ -37,7 +37,7 @@ DS::NetResultCode DS::AuthManifest::loadManifest(const char* filename)
     while (fgets(lnbuf, 4096, mfs)) {
         ++mfsline;
         ST::string line = ST::string(lnbuf).before_first('#').trim();
-        if (line.is_empty())
+        if (line.empty())
             continue;
 
         std::vector<ST::string> parts = line.split(',');

@@ -227,9 +227,8 @@ ST::string DS::CryptRecvString(const SocketHandle sock, CryptState crypt)
 {
     uint16_t length = CryptRecvValue<uint16_t>(sock, crypt);
     ST::utf16_buffer result;
-    char16_t* buffer = result.create_writable_buffer(length);
-    CryptRecvBuffer(sock, crypt, buffer, length * sizeof(char16_t));
-    buffer[length] = 0;
+    result.allocate(length);
+    CryptRecvBuffer(sock, crypt, result.data(), length * sizeof(char16_t));
     return ST::string::from_utf16(result, ST::substitute_invalid);
 }
 
@@ -237,13 +236,12 @@ DS::ShaHash DS::BuggyHashPassword(const ST::string& username, const ST::string& 
 {
     ST::utf16_buffer wuser = username.to_utf16();
     ST::utf16_buffer wpass = password.to_utf16();
-    ST::utf16_buffer work;
-    char16_t* buffer = work.create_writable_buffer(wuser.size() + wpass.size());
-    memcpy(buffer, wpass.data(), wpass.size() * sizeof(char16_t));
-    memcpy(buffer + wpass.size(), wuser.data(), wuser.size() * sizeof(char16_t));
+    auto buffer = std::make_unique<char16_t[]>(wuser.size() + wpass.size());
+    memcpy(buffer.get(), wpass.data(), wpass.size() * sizeof(char16_t));
+    memcpy(buffer.get() + wpass.size(), wuser.data(), wuser.size() * sizeof(char16_t));
     buffer[wpass.size() - 1] = 0;
     buffer[wpass.size() + wuser.size() - 1] = 0;
-    return ShaHash::Sha0(buffer, (wuser.size() + wpass.size()) * sizeof(char16_t));
+    return ShaHash::Sha0(buffer.get(), (wuser.size() + wpass.size()) * sizeof(char16_t));
 }
 
 DS::ShaHash DS::BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChallenge,
