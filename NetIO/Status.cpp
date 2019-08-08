@@ -79,7 +79,7 @@ void dm_htserv()
                 if (cp != sp)
                     scratch += sp;
 
-                if (lines.size() && lines.back().is_empty()) {
+                if (lines.size() && lines.back().empty()) {
                     // Got the separator line
                     break;
                 }

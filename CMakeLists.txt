@@ -16,7 +16,7 @@
 cmake_minimum_required(VERSION 3.4)
 project(dirtsand)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set up Product Identification parameters (NOTE: Should match plClient)
@@ -40,7 +40,7 @@ find_package(PostgreSQL REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Readline REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(string_theory 1.7 REQUIRED)
+find_package(string_theory 2.0 REQUIRED)
 find_package(Threads REQUIRED)
 
 set(PlasMOUL_SOURCES
@@ -136,7 +136,7 @@ set_target_properties(dirtsand PROPERTIES
 
 target_compile_definitions(dirtsand PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
-    ST_NO_2_0_DEPRECATION
+    ST_NO_3_0_DEPRECATION
     PRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID}
     PRODUCT_BUILD_ID=${PRODUCT_BUILD_ID}
     PRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE}
@@ -180,7 +180,7 @@ if(ENABLE_TESTS)
     target_compile_definitions(test_sha PRIVATE DS_BUILD_SHA0_TESTS)
     # Dependencies needed for ShaHash
     target_sources(test_sha PRIVATE streams.cpp streams.h errors.h)
-    target_compile_definitions(test_sha PRIVATE ST_NO_2_0_DEPRECATION)
+    target_compile_definitions(test_sha PRIVATE ST_NO_3_0_DEPRECATION)
     target_include_directories(test_sha PRIVATE "${CMAKE_SOURCE_DIR}")
     target_link_libraries(test_sha PRIVATE ${OPENSSL_CRYPTO_LIBRARIES}
                                            ${STRING_THEORY_LIBRARIES})

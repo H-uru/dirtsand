@@ -424,7 +424,7 @@ void SDL::Variable::read(DS::Stream* stream)
 void SDL::Variable::write(DS::Stream* stream) const
 {
     uint8_t contents = 0;
-    if (!m_data->m_notificationHint.is_empty())
+    if (!m_data->m_notificationHint.empty())
         contents |= e_HasNotificationInfo;
     stream->write<uint8_t>(contents);
     if (contents & e_HasNotificationInfo) {
