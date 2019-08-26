@@ -437,7 +437,7 @@ void cb_nodeTree(AuthServer_Private& client)
             client.m_buffer.write<uint32_t>(it->m_parent);
             client.m_buffer.write<uint32_t>(it->m_child);
             client.m_buffer.write<uint32_t>(it->m_owner);
-            client.m_buffer.write<uint8_t>(it->m_seen);
+            client.m_buffer.write<uint8_t>(0);
         }
     }
 

@@ -406,11 +406,11 @@ void dm_auth_createPlayer(Auth_PlayerCreate* msg)
 
     // Tell neighborhood about its new member
     if (v_ref_node(std::get<2>(player), std::get<1>(player), std::get<0>(player)))
-        dm_auth_bcast_ref({std::get<2>(player), std::get<1>(player), std::get<0>(player), 0});
+        dm_auth_bcast_ref({std::get<2>(player), std::get<1>(player), std::get<0>(player)});
 
     // Add new player to AllPlayers
     if (v_ref_node(s_allPlayers, std::get<1>(player), 0))
-        dm_auth_bcast_ref({s_allPlayers, std::get<1>(player), 0, 0});
+        dm_auth_bcast_ref({s_allPlayers, std::get<1>(player), 0});
 
     result = DS::PQexecVA(s_postgres,
             "INSERT INTO auth.\"Players\""
@@ -941,13 +941,13 @@ void dm_auth_addAllPlayers(Auth_AddAllPlayers* msg)
             SEND_REPLY(msg, DS::e_NetInternalError);
             return;
         }
-        dm_auth_bcast_unref({msg->m_playerId, s_allPlayers, 0, 0});
+        dm_auth_bcast_unref({msg->m_playerId, s_allPlayers, 0});
     } else {
         if (!v_ref_node(msg->m_playerId, s_allPlayers, 0)) {
             SEND_REPLY(msg, DS::e_NetInternalError);
             return;
         }
-        dm_auth_bcast_ref({msg->m_playerId, s_allPlayers, 0, 0});
+        dm_auth_bcast_ref({msg->m_playerId, s_allPlayers, 0});
     }
 
     SEND_REPLY(msg, DS::e_NetSuccess);
