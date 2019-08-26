@@ -26,12 +26,18 @@ namespace DS
     {
         float m_R, m_G, m_B, m_A;
 
-        bool operator==(const ColorRgba& other) const
+        ColorRgba() noexcept : m_R(), m_G(), m_B(), m_A() { }
+
+        bool operator==(const ColorRgba& other) const noexcept
         {
             return m_R == other.m_R && m_G == other.m_G && m_B == other.m_B
                 && m_A == other.m_A;
         }
-        bool operator!=(const ColorRgba& other) const { return !operator==(other); }
+
+        bool operator!=(const ColorRgba& other) const noexcept
+        {
+            return !operator==(other);
+        }
     };
 
     union ColorRgba8
@@ -39,12 +45,15 @@ namespace DS
         struct { uint8_t m_B, m_G, m_R, m_A; };
         uint32_t m_RGBA;
 
-        bool operator==(const ColorRgba8& other) const
+        bool operator==(const ColorRgba8& other) const noexcept
         {
-            return m_R == other.m_R && m_G == other.m_G && m_B == other.m_B
-                && m_A == other.m_A;
+            return m_RGBA == other.m_RGBA;
         }
-        bool operator!=(const ColorRgba8& other) const { return !operator==(other); }
+
+        bool operator!=(const ColorRgba8& other) const noexcept
+        {
+            return !operator==(other);
+        }
     };
 }
 

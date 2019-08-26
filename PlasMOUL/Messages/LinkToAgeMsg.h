@@ -39,7 +39,7 @@ namespace MOUL
 
     protected:
         LinkToAgeMsg(uint16_t type)
-            : Message(type), m_ageLink(AgeLinkStruct::Create()) { }
+            : Message(type), m_ageLink(AgeLinkStruct::Create()), m_flags() { }
 
         ~LinkToAgeMsg() override { m_ageLink->unref(); }
     };

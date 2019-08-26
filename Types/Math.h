@@ -26,24 +26,35 @@ namespace DS
     {
         float m_X, m_Y, m_Z;
 
-        bool operator==(const Vector3& other) const
+        Vector3() noexcept : m_X(), m_Y(), m_Z() { }
+
+        bool operator==(const Vector3& other) const noexcept
         {
             return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z;
         }
-        bool operator!=(const Vector3& other) const { return !operator==(other); }
 
+        bool operator!=(const Vector3& other) const noexcept
+        {
+            return !operator==(other);
+        }
     };
 
     struct Quaternion
     {
         float m_X, m_Y, m_Z, m_W;
 
-        bool operator==(const Quaternion& other) const
+        Quaternion() noexcept : m_X(), m_Y(), m_Z(), m_W() { }
+
+        bool operator==(const Quaternion& other) const noexcept
         {
             return m_X == other.m_X && m_Y == other.m_Y && m_Z == other.m_Z
                 && m_W == other.m_W;
         }
-        bool operator!=(const Quaternion& other) const { return !operator==(other); }
+
+        bool operator!=(const Quaternion& other) const noexcept
+        {
+            return !operator==(other);
+        }
     };
 
     struct Matrix44
@@ -51,10 +62,12 @@ namespace DS
         bool m_identity;
         float m_map[4][4];
 
-        bool operator==(const Matrix44& other) const;
-        bool operator!=(const Matrix44& other) const { return !operator==(other); }
+        Matrix44() noexcept { reset(); }
 
-        void reset();
+        bool operator==(const Matrix44& other) const noexcept;
+        bool operator!=(const Matrix44& other) const noexcept { return !operator==(other); }
+
+        void reset() noexcept;
 
         void read(DS::Stream* stream);
         void write(DS::Stream* stream) const;

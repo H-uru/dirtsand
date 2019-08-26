@@ -47,7 +47,8 @@ struct SocketHandle_Private
     };
     socklen_t m_addrLen;
 
-    SocketHandle_Private() : m_addrLen(sizeof(m_addrMax)) { }
+    SocketHandle_Private(int fd)
+        : m_sockfd(fd), m_addrLen(sizeof(m_addrMax)) { }
 };
 
 static void* get_in_addr(SocketHandle_Private* sock)
@@ -109,8 +110,7 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
         throw SystemError(message.c_str());
     }
 
-    SocketHandle_Private* sockinfo = new SocketHandle_Private();
-    sockinfo->m_sockfd = sockfd;
+    SocketHandle_Private* sockinfo = new SocketHandle_Private(sockfd);
     result = getsockname(sockfd, &sockinfo->m_addr, &sockinfo->m_addrLen);
     if (result != 0) {
         const char *error_text = strerror(errno);
@@ -136,7 +136,7 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     DS_ASSERT(sock);
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
 
-    SocketHandle_Private* client = new SocketHandle_Private();
+    SocketHandle_Private* client = new SocketHandle_Private(-1);
     client->m_sockfd = accept(sockp->m_sockfd, &client->m_addr, &client->m_addrLen);
     if (client->m_sockfd < 0) {
         delete client;
