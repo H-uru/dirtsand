@@ -40,8 +40,10 @@ struct FileRequest
     FileRequest(int fd) : m_fd(fd), m_pos()
     {
         struct stat stat_buf;
-        fstat(m_fd, &stat_buf);
-        m_size = stat_buf.st_size;
+        if (fstat(m_fd, &stat_buf) < 0)
+            m_size = 0;
+        else
+            m_size = stat_buf.st_size;
     }
 
     ~FileRequest()
