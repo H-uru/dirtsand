@@ -365,9 +365,12 @@ void DS::GameServer_Init()
         for (int i=0; i<count; ++i) {
             ST::string filename = ST::format("{}/{}", DS::Settings::AgePath(), dirls[i]->d_name);
             std::unique_ptr<FILE, std::function<int (FILE*)>> ageFile(fopen(filename.c_str(), "r"), &fclose);
-            if (ageFile.get()) {
+            if (ageFile) {
                 char magic[12];
-                fread(magic, 1, 12, ageFile.get());
+                if (fread(magic, 1, 12, ageFile.get()) != 12) {
+                    fprintf(stderr, "[Game] Error: File %s is empty\n", filename.c_str());
+                    break;
+                }
                 if (memcmp(magic, "whatdoyousee", 12) == 0 || memcmp(magic, "notthedroids", 12) == 0
                     || memcmp(magic, "BriceIsSmart", 12) == 0) {
                     fputs("[Game] Error: Please decrypt your .age files before using!\n", stderr);

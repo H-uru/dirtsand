@@ -163,7 +163,6 @@ namespace Vault
     struct NodeRef
     {
         uint32_t m_parent, m_child, m_owner;
-        uint8_t m_seen;
     };
 }
 }

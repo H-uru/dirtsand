@@ -106,8 +106,7 @@ CREATE TABLE "NodeRefs" (
     idx integer NOT NULL,
     "ParentIdx" integer NOT NULL,
     "ChildIdx" integer NOT NULL,
-    "OwnerIdx" integer DEFAULT 0 NOT NULL,
-    "Seen" integer DEFAULT 0 NOT NULL
+    "OwnerIdx" integer DEFAULT 0 NOT NULL
 );
 CREATE INDEX RefParent ON vault."NodeRefs" ("ParentIdx");
 CREATE SEQUENCE "NodeRefs_idx_seq"

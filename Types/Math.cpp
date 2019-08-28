@@ -18,14 +18,14 @@
 #include "Math.h"
 #include "streams.h"
 
-bool DS::Matrix44::operator==(const DS::Matrix44& other) const
+bool DS::Matrix44::operator==(const DS::Matrix44& other) const noexcept
 {
     if (m_identity && other.m_identity)
         return true;
     return memcmp(m_map, other.m_map, sizeof(m_map)) == 0;
 }
 
-void DS::Matrix44::reset()
+void DS::Matrix44::reset() noexcept
 {
     static const float s_identity[4][4] = {{1.0f, 0.0f, 0.0f, 0.0f},
                                            {0.0f, 1.0f, 0.0f, 0.0f},

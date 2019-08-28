@@ -47,7 +47,8 @@ struct SocketHandle_Private
     };
     socklen_t m_addrLen;
 
-    SocketHandle_Private() : m_addrLen(sizeof(m_addrMax)) { }
+    SocketHandle_Private(int fd)
+        : m_sockfd(fd), m_addrLen(sizeof(m_addrMax)) { }
 };
 
 static void* get_in_addr(SocketHandle_Private* sock)
@@ -93,7 +94,8 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
 
         // Avoid annoying "Address already in use" messages when restarting
         // the server.
-        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &SOCK_YES, sizeof(SOCK_YES));
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &SOCK_YES, sizeof(SOCK_YES)) < 0)
+            fprintf(stderr, "[Bind] Warning: Failed to set socket address reuse: %s\n", strerror(errno));
         if (bind(sockfd, addr_iter->ai_addr, addr_iter->ai_addrlen) == 0)
             break;
         fprintf(stderr, "[Bind] %s\n", strerror(errno));
@@ -109,8 +111,7 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
         throw SystemError(message.c_str());
     }
 
-    SocketHandle_Private* sockinfo = new SocketHandle_Private();
-    sockinfo->m_sockfd = sockfd;
+    SocketHandle_Private* sockinfo = new SocketHandle_Private(sockfd);
     result = getsockname(sockfd, &sockinfo->m_addr, &sockinfo->m_addrLen);
     if (result != 0) {
         const char *error_text = strerror(errno);
@@ -136,7 +137,7 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     DS_ASSERT(sock);
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
 
-    SocketHandle_Private* client = new SocketHandle_Private();
+    SocketHandle_Private* client = new SocketHandle_Private(-1);
     client->m_sockfd = accept(sockp->m_sockfd, &client->m_addr, &client->m_addrLen);
     if (client->m_sockfd < 0) {
         delete client;
@@ -153,9 +154,11 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     timeval tv;
     tv.tv_sec = NET_TIMEOUT;
     tv.tv_usec = 0;
-    setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    if (setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
+        fprintf(stderr, "Warning: Failed to set recv timeout: %s\n", strerror(errno));
     // eap-tastic protocols require Nagle's algo be disabled
-    setsockopt(client->m_sockfd, IPPROTO_TCP, TCP_NODELAY, &SOCK_YES, sizeof(SOCK_YES));
+    if (setsockopt(client->m_sockfd, IPPROTO_TCP, TCP_NODELAY, &SOCK_YES, sizeof(SOCK_YES)) < 0)
+        fprintf(stderr, "Warning: Failed to set TCP nodelay: %s\n", strerror(errno));
     return reinterpret_cast<SocketHandle>(client);
 }
 
@@ -250,7 +253,8 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
     SocketHandle_Private* imp = reinterpret_cast<SocketHandle_Private*>(sock);
 
     // Send the prepended buffer
-    setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_YES, sizeof(SOCK_YES));
+    if (setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_YES, sizeof(SOCK_YES)) < 0)
+        fprintf(stderr, "Warning: Failed to set cork option: %s", strerror(errno));
     while (bufsz > 0) {
         ssize_t bytes = send(imp->m_sockfd, buffer, bufsz, 0);
         if (bytes < 0) {
@@ -286,7 +290,8 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
         }
         fdsz -= bytes;
     }
-    setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_NO, sizeof(SOCK_NO));
+    if (setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_NO, sizeof(SOCK_NO)) < 0)
+        fprintf(stderr, "Warning: Failed to set cork option: %s", strerror(errno));
 }
 
 void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)

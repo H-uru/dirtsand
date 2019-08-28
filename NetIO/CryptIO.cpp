@@ -48,7 +48,13 @@ static void init_rand()
                     strerror(errno));
             exit(1);
         }
-        fread(_random.buffer, 1, sizeof(_random.buffer), urand);
+        size_t count = fread(_random.buffer, 1, sizeof(_random.buffer), urand);
+        if (count != sizeof(_random.buffer)) {
+            fprintf(stderr, "FATAL: Could not read enough bytes from /dev/urandom\n"
+                            "Requested: %zu\nSupplied: %zu\n",
+                    sizeof(_random.buffer), count);
+            exit(1);
+        }
         fclose(urand);
         RAND_seed(&_random, sizeof(_random));
         _rand_seeded = true;

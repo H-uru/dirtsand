@@ -134,7 +134,7 @@ namespace DS
         { return fwrite(buffer, 1, count, m_file); }
 
         uint32_t tell() const override { return static_cast<uint32_t>(ftell(m_file)); }
-        void seek(int32_t offset, int whence) override { fseek(m_file, offset, whence); }
+        void seek(int32_t offset, int whence) override;
         uint32_t size() const override;
         bool atEof() override;
         void flush() override { fflush(m_file); }

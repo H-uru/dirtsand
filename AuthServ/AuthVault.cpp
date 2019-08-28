@@ -1148,7 +1148,7 @@ bool v_unref_node(uint32_t parentIdx, uint32_t childIdx)
 bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs)
 {
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
-            "SELECT \"ParentIdx\", \"ChildIdx\", \"OwnerIdx\", \"Seen\""
+            "SELECT \"ParentIdx\", \"ChildIdx\", \"OwnerIdx\""
             "    FROM vault.fetch_tree($1);",
             nodeId);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -1162,7 +1162,6 @@ bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs)
         refs[i].m_parent = strtoul(PQgetvalue(result, i, 0), nullptr, 10);
         refs[i].m_child = strtoul(PQgetvalue(result, i, 1), nullptr, 10);
         refs[i].m_owner = strtoul(PQgetvalue(result, i, 2), nullptr, 10);
-        refs[i].m_seen = strtoul(PQgetvalue(result, i, 3), nullptr, 10);
     }
     return true;
 }

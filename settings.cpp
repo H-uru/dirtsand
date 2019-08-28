@@ -22,6 +22,7 @@
 #include <string_theory/stdio>
 #include <vector>
 #include <cstdio>
+#include <memory>
 
 /* Constants configured via CMake */
 uint32_t DS::Settings::BranchId()
@@ -115,7 +116,7 @@ bool DS::Settings::LoadFrom(const ST::string& filename)
     else
         s_settings.m_settingsPath = ".";
 
-    FILE* cfgfile = fopen(filename.c_str(), "r");
+    std::unique_ptr<FILE, decltype(&fclose)> cfgfile(fopen(filename.c_str(), "r"), &fclose);
     if (!cfgfile) {
         ST::printf(stderr, "Cannot open {} for reading\n", filename);
         return false;
@@ -123,7 +124,7 @@ bool DS::Settings::LoadFrom(const ST::string& filename)
 
     {
         char buffer[4096];
-        while (fgets(buffer, 4096, cfgfile)) {
+        while (fgets(buffer, 4096, cfgfile.get())) {
             ST::string line = ST::string(buffer).before_first('#').trim();
             if (line.empty())
                 continue;
@@ -206,7 +207,6 @@ bool DS::Settings::LoadFrom(const ST::string& filename)
             }
         }
     }
-    fclose(cfgfile);
     return true;
 }
 

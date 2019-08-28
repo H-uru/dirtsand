@@ -118,10 +118,17 @@ void DS::FileStream::open(const char* filename, const char* mode)
         throw FileIOException(strerror(errno));
 }
 
+void DS::FileStream::seek(int32_t offset, int whence)
+{
+    if (fseek(m_file, offset, whence) < 0)
+        throw FileIOException(strerror(errno));
+}
+
 uint32_t DS::FileStream::size() const
 {
     struct stat statbuf;
-    fstat(fileno(m_file), &statbuf);
+    if (fstat(fileno(m_file), &statbuf) < 0)
+        throw FileIOException(strerror(errno));
     return static_cast<uint32_t>(statbuf.st_size);
 }
 
