@@ -17,6 +17,7 @@
 
 #include "AuthServer_Private.h"
 #include "AuthManifest.h"
+#include "Types/BitVector.h"
 #include "Types/Uuid.h"
 #include "settings.h"
 #include "errors.h"
@@ -80,8 +81,21 @@ void auth_init(AuthServer_Private& client)
         client.m_buffer.writeBytes(serverSeed, 7);
     }
 
-    /* send reply */
+    /* send encryption reply */
     DS::SendBuffer(client.m_sock, client.m_buffer.buffer(), client.m_buffer.size());
+
+    /* Shard Capabilities */
+    DS::BitVector caps;
+    caps.set(e_CapsScoreLeaderBoards, true);
+
+    /* BCast Shard Capabilities */
+    START_REPLY(e_AuthToCli_ServerCaps);
+    uint32_t bufSzPos = client.m_buffer.tell();
+    client.m_buffer.write<uint32_t>(0);
+    caps.write(&client.m_buffer);
+    client.m_buffer.seek(bufSzPos, 0);
+    client.m_buffer.write<uint32_t>(client.m_buffer.size() - bufSzPos - sizeof(uint32_t));
+    SEND_REPLY();
 }
 
 void cb_ping(AuthServer_Private& client)
