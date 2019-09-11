@@ -38,10 +38,6 @@
 #include <execinfo.h>
 #endif
 
-#ifdef DEBUG
-extern bool s_commdebug;
-#endif
-
 static char** dup_strlist(const char* text, const char** strlist, size_t count)
 {
     char** dupe;

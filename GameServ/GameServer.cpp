@@ -25,8 +25,6 @@
 #include <chrono>
 #include <functional>
 
-extern bool s_commdebug;
-
 #define START_REPLY(msgId) \
     client.m_buffer.truncate(); \
     client.m_buffer.write<uint16_t>(msgId)

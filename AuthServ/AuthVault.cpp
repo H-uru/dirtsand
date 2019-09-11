@@ -25,8 +25,6 @@
 #include <ctime>
 
 static uint32_t s_systemNode = 0;
-extern PGconn* s_postgres;
-extern std::unordered_map<ST::string, SDL::State, ST::hash_i, ST::equal_i> s_globalStates;
 uint32_t s_allPlayers = 0;
 
 #define SEND_REPLY(msg, result) \
