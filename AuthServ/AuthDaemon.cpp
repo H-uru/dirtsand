@@ -536,12 +536,13 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
     } else {
         ageNodes = v_create_age(msg->m_age, 0);
     }
-    if (std::get<0>(ageNodes) == 0)
+    if (std::get<0>(ageNodes) == 0 || std::get<1>(ageNodes) == 0) {
         SEND_REPLY(msg, DS::e_NetInternalError);
-
-    msg->m_ageIdx = std::get<0>(ageNodes);
-    msg->m_infoIdx = std::get<1>(ageNodes);
-    SEND_REPLY(msg, DS::e_NetSuccess);
+    } else {
+        msg->m_ageIdx = std::get<0>(ageNodes);
+        msg->m_infoIdx = std::get<1>(ageNodes);
+        SEND_REPLY(msg, DS::e_NetSuccess);
+    }
 }
 
 void dm_auth_findAge(Auth_GameAge* msg)
