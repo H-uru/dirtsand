@@ -81,4 +81,8 @@ namespace DS
                            uint32_t clientChallenge);
 }
 
+#ifdef DEBUG
+extern bool s_commdebug;
+#endif
+
 #endif

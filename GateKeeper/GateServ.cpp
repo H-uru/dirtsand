@@ -26,8 +26,6 @@
 #include <mutex>
 #include <chrono>
 
-extern bool s_commdebug;
-
 struct GateKeeper_Private
 {
     DS::SocketHandle m_sock;

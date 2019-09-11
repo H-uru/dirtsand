@@ -23,6 +23,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include <thread>
 #include <mutex>
 
@@ -115,6 +116,10 @@ struct AuthServer_Private : public AuthClient_Private
 extern std::list<AuthServer_Private*> s_authClients;
 extern std::mutex s_authClientMutex;
 extern std::thread s_authDaemonThread;
+
+extern PGconn* s_postgres;
+extern uint32_t s_allPlayers;
+extern std::unordered_map<ST::string, SDL::State, ST::hash_i, ST::equal_i> s_globalStates;
 
 void dm_authDaemon();
 bool dm_vault_init();

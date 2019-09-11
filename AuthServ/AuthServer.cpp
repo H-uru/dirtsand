@@ -27,8 +27,6 @@
 
 #define NODE_SIZE_MAX (4 * 1024 * 1024)
 
-extern bool s_commdebug;
-
 std::list<AuthServer_Private*> s_authClients;
 std::mutex s_authClientMutex;
 
