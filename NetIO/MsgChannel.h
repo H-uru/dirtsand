@@ -32,7 +32,7 @@ namespace DS
     class MsgChannel
     {
     public:
-        MsgChannel() : m_semaphore(-1) { }
+        MsgChannel(bool initFd = true);
         ~MsgChannel();
 
         int fd();

@@ -23,6 +23,13 @@
 #include <cstring>
 #include "errors.h"
 
+DS::MsgChannel::MsgChannel(bool initFd)
+    : m_semaphore(-1)
+{
+    if (initFd)
+        fd();
+}
+
 DS::MsgChannel::~MsgChannel()
 {
     if (m_semaphore < 0)
