@@ -1,0 +1,40 @@
+name: CI Build
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, ubuntu-18.04]
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install libpq-dev postgresql-server-dev-all libreadline-dev
+      - name: Build string_theory
+        run: |
+          mkdir -p build_deps && cd build_deps
+          git clone https://github.com/zrax/string_theory
+          mkdir -p string_theory/build && cd string_theory/build
+          cmake -DCMAKE_BUILD_TYPE=Debug -DST_BUILD_TESTS=OFF \
+            -DCMAKE_INSTALL_PREFIX="${GITHUB_WORKSPACE}/build_deps/prefix" ..
+          make -j2 && make install
+      - name: Build dirtsand
+        run: |
+          if [[ "${{ matrix.compiler }}" == "clang" ]]; then
+            EXTRA_CMAKE_PARAMS="-DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++"
+          fi
+          mkdir -p build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="${GITHUB_WORKSPACE}/build_deps/prefix" \
+            ${EXTRA_CMAKE_PARAMS} ..
+          make -j2
+          ./test_sha
