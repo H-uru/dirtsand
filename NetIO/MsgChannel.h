@@ -42,7 +42,7 @@ namespace DS
 
     private:
         int m_semaphore;
-        std::mutex m_queueMutex;
+        std::mutex m_mutex;
         std::queue<FifoMessage> m_queue;
     };
 }

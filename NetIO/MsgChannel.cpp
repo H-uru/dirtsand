@@ -37,6 +37,8 @@ DS::MsgChannel::~MsgChannel()
 
 int DS::MsgChannel::fd()
 {
+    std::lock_guard<std::mutex> guard(m_mutex);
+
     if (m_semaphore >= 0)
         return m_semaphore;
 
@@ -48,12 +50,13 @@ int DS::MsgChannel::fd()
 
 void DS::MsgChannel::putMessage(int type, void* payload)
 {
-    m_queueMutex.lock();
     FifoMessage msg;
     msg.m_messageType = type;
     msg.m_payload = payload;
-    m_queue.push(msg);
-    m_queueMutex.unlock();
+    {
+        std::lock_guard<std::mutex> guard(m_mutex);
+        m_queue.push(msg);
+    }
 
     int result = eventfd_write(fd(), 1);
     if (result < 0)
@@ -67,15 +70,14 @@ DS::FifoMessage DS::MsgChannel::getMessage()
     if (result < 0)
         throw SystemError("Failed to read from event semaphore", strerror(errno));
 
-    m_queueMutex.lock();
+    std::lock_guard<std::mutex> guard(m_mutex);
     FifoMessage msg = m_queue.front();
     m_queue.pop();
-    m_queueMutex.unlock();
     return msg;
 }
 
 bool DS::MsgChannel::hasMessage()
 {
-    std::lock_guard<std::mutex> guard(m_queueMutex);
+    std::lock_guard<std::mutex> guard(m_mutex);
     return !m_queue.empty();
 }
