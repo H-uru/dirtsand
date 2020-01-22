@@ -52,6 +52,12 @@ namespace DS
 
         void setNow();
 
+        void setNull()
+        {
+            m_secs = 0;
+            m_micros = 0;
+        }
+
     public:
         union {
             uint32_t m_secs;

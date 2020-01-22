@@ -539,6 +539,9 @@ void SDL::Variable::copy(const SDL::Variable& rhs) {
     case e_VarAgeTimeOfDay:
         /* No extra data to copy */
         break;
+    default:
+        DS_ASSERT(false);
+        break;
     }
 }
 

@@ -45,6 +45,13 @@ namespace SDL
         ST::string m_string;
 
         VarDefault() : m_valid(false) { }
+
+        void clear()
+        {
+            m_valid = false;
+            m_time.setNull();
+            m_string = ST::null;
+        }
     };
 
     struct VarDescriptor
@@ -55,6 +62,19 @@ namespace SDL
         int m_size;
         VarDefault m_default;
         ST::string m_defaultOption, m_displayOption;
+
+        VarDescriptor() : m_type(e_VarInvalid), m_size() { }
+
+        void clear()
+        {
+            m_type = e_VarInvalid;
+            m_typeName = ST::null;
+            m_name = ST::null;
+            m_size = 0;
+            m_default.clear();
+            m_defaultOption = ST::null;
+            m_displayOption = ST::null;
+        }
     };
 
     struct StateDescriptor
@@ -64,6 +84,16 @@ namespace SDL
         std::vector<VarDescriptor> m_vars;
         typedef std::unordered_map<ST::string, int, ST::hash> varmap_t;
         varmap_t m_varmap;
+
+        StateDescriptor() : m_version(-1) { }
+
+        void clear()
+        {
+            m_name = ST::null;
+            m_version = -1;
+            m_vars.clear();
+            m_varmap.clear();
+        }
     };
 
     class DescriptorDb

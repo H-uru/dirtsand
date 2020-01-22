@@ -35,6 +35,8 @@ namespace SDL
         e_VarDouble, e_VarTime, e_VarByte, e_VarShort, e_VarAgeTimeOfDay,
         e_VarVector3, e_VarPoint3, e_VarQuaternion, e_VarRgb, e_VarRgba,
         e_VarRgb8, e_VarRgba8, e_VarStateDesc,
+
+        e_VarInvalid = -1,
     };
 
     struct StateDescriptor;
