@@ -562,9 +562,7 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             } else {
                 BAD_TOK(tok.m_type, this);
             }
-            descBuffer.m_name = ST::null;
-            descBuffer.m_vars.clear();
-            descBuffer.m_version = -1;
+            descBuffer.clear();
             break;
         case e_TokVersion:
             if (state == e_State_Var /*|| state == e_State_Var_SZ*/) {
@@ -585,12 +583,7 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             } else {
                 BAD_TOK(tok.m_type, this);
             }
-            varBuffer.m_type = static_cast<SDL::VarType>(-1);
-            varBuffer.m_typeName = ST::null;
-            varBuffer.m_name = ST::null;
-            varBuffer.m_size = 0;
-            varBuffer.m_default.m_valid = false;
-            varBuffer.m_defaultOption = ST::null;
+            varBuffer.clear();
             break;
         case e_TokInt:
             TYPE_TOK(e_VarInt);
