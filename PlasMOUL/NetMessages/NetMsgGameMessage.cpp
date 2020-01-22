@@ -25,7 +25,7 @@ void MOUL::NetMsgGameMessage::read(DS::Stream* stream)
     NetMsgStream msgStream;
     msgStream.read(stream);
     m_compression = msgStream.m_compression;
-    m_message->unref();
+    Creatable::SafeUnref(m_message);
     m_message = Factory::Read<Message>(&msgStream.m_stream);
 
     if (stream->read<bool>())

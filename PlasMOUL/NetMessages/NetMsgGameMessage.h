@@ -39,7 +39,7 @@ namespace MOUL
             : NetMessage(type), m_compression(NetMsgStream::e_CompressNone),
               m_message() { }
 
-        ~NetMsgGameMessage() override { m_message->unref(); }
+        ~NetMsgGameMessage() override { Creatable::SafeUnref(m_message); }
     };
 
     class NetMsgGameMessageDirected : public NetMsgGameMessage

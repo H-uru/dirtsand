@@ -56,7 +56,7 @@ void MOUL::AvOneShotLinkTask::write(DS::Stream* stream) const
 
 void MOUL::AvTaskBrain::read(DS::Stream* stream)
 {
-    m_brain->unref();
+    Creatable::SafeUnref(m_brain);
     m_brain = Factory::Read<ArmatureBrain>(stream);
 }
 

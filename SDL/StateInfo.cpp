@@ -141,7 +141,7 @@ void SDL::Variable::_ref::clear()
         break;
     case e_VarCreatable:
         for (int i=0; i<m_desc->m_size; ++i)
-            m_creatable[i]->unref();
+            MOUL::Creatable::SafeUnref(m_creatable[i]);
         delete[] m_creatable;
         break;
     case e_VarDouble:
@@ -498,8 +498,8 @@ void SDL::Variable::copy(const SDL::Variable& rhs) {
         break;
     case e_VarCreatable:
         for (size_t i = 0; i < minsize; ++i) {
-            rhs.m_data->m_creatable[i]->ref();
-            m_data->m_creatable[i]->unref();
+            MOUL::Creatable::SafeRef(rhs.m_data->m_creatable[i]);
+            MOUL::Creatable::SafeUnref(m_data->m_creatable[i]);
             m_data->m_creatable[i] = rhs.m_data->m_creatable[i];
         }
         break;
@@ -659,7 +659,7 @@ void SDL::Variable::setDefault()
             m_data->m_key[i] = MOUL::Uoid();
             break;
         case e_VarCreatable:
-            m_data->m_creatable[i]->unref();
+            MOUL::Creatable::SafeUnref(m_data->m_creatable[i]);
             m_data->m_creatable[i] = nullptr;
             break;
         case e_VarDouble:

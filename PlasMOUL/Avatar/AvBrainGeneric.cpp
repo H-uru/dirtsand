@@ -21,9 +21,9 @@
 MOUL::AvBrainGeneric::~AvBrainGeneric()
 {
     for (auto it = m_stages.begin(); it != m_stages.end(); ++it)
-        (*it)->unref();
-    m_startMessage->unref();
-    m_endMessage->unref();
+        Creatable::SafeUnref(*it);
+    Creatable::SafeUnref(m_startMessage);
+    Creatable::SafeUnref(m_endMessage);
 }
 
 void MOUL::AvBrainGeneric::read(DS::Stream* stream)
@@ -31,7 +31,7 @@ void MOUL::AvBrainGeneric::read(DS::Stream* stream)
     MOUL::ArmatureBrain::read(stream);
 
     for (auto it = m_stages.begin(); it != m_stages.end(); ++it)
-        (*it)->unref();
+        Creatable::SafeUnref((*it));
 
     m_stages.resize(stream->read<uint32_t>());
     for (size_t i = 0; i < m_stages.size(); ++i) {
@@ -45,13 +45,13 @@ void MOUL::AvBrainGeneric::read(DS::Stream* stream)
     m_mode = stream->read<uint8_t>();
     m_forward = stream->read<bool>();
 
-    m_startMessage->unref();
+    Creatable::SafeUnref(m_startMessage);
     if (stream->read<bool>())
         m_startMessage = Factory::Read<Message>(stream);
     else
         m_startMessage = nullptr;
 
-    m_endMessage->unref();
+    Creatable::SafeUnref(m_endMessage);
     if (stream->read<bool>())
         m_endMessage = Factory::Read<Message>(stream);
     else

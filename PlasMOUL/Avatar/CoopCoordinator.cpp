@@ -22,9 +22,9 @@
 
 MOUL::CoopCoordinator::~CoopCoordinator()
 {
-    m_hostBrain->unref();
-    m_guestBrain->unref();
-    m_acceptMsg->unref();
+    Creatable::SafeUnref(m_hostBrain);
+    Creatable::SafeUnref(m_guestBrain);
+    Creatable::SafeUnref(m_acceptMsg);
 }
 
 void MOUL::CoopCoordinator::read(DS::Stream* s)
@@ -32,15 +32,15 @@ void MOUL::CoopCoordinator::read(DS::Stream* s)
     m_hostKey.read(s);
     m_guestKey.read(s);
 
-    m_hostBrain->unref();
-    m_guestBrain->unref();
+    Creatable::SafeUnref(m_hostBrain);
+    Creatable::SafeUnref(m_guestBrain);
     m_hostBrain = Factory::Read<AvBrainCoop>(s);
     m_guestBrain = Factory::Read<AvBrainCoop>(s);
 
     m_hostOfferStage = s->read<uint8_t>();
     m_guestAcceptStage = s->read<bool>();
 
-    m_acceptMsg->unref();
+    Creatable::SafeUnref(m_acceptMsg);
     if (s->read<bool>())
         m_acceptMsg = Factory::Read<Message>(s);
     else

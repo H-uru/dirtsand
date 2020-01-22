@@ -90,7 +90,7 @@ namespace MOUL
     protected:
         AvTaskBrain(uint16_t type) : AvTask(type), m_brain() { }
 
-        ~AvTaskBrain() override { m_brain->unref(); }
+        ~AvTaskBrain() override { Creatable::SafeUnref(m_brain); }
     };
 
     class AvTaskSeek : public AvTask

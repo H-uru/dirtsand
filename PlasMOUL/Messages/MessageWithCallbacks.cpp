@@ -21,7 +21,7 @@
 MOUL::MessageWithCallbacks::~MessageWithCallbacks()
 {
     for (Message* callback : m_callbacks)
-        callback->unref();
+        Creatable::SafeUnref(callback);
 }
 
 void MOUL::MessageWithCallbacks::read(DS::Stream* stream)
@@ -29,7 +29,7 @@ void MOUL::MessageWithCallbacks::read(DS::Stream* stream)
     Message::read(stream);
 
     for (Message* callback : m_callbacks)
-        callback->unref();
+        Creatable::SafeUnref(callback);
 
     m_callbacks.resize(stream->read<uint32_t>());
     for (size_t i = 0; i < m_callbacks.capacity(); ++i)

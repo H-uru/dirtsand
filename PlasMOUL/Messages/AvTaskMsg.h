@@ -35,7 +35,7 @@ namespace MOUL
     protected:
         AvTaskMsg(uint16_t type) : AvatarMsg(type), m_task() { }
 
-        ~AvTaskMsg() override { m_task->unref(); }
+        ~AvTaskMsg() override { Creatable::SafeUnref(m_task); }
     };
 
     class AvPushBrainMsg : public AvTaskMsg
@@ -50,7 +50,7 @@ namespace MOUL
     protected:
         AvPushBrainMsg(uint16_t type) : AvTaskMsg(type), m_brain() { }
 
-        ~AvPushBrainMsg() override { m_brain->unref(); }
+        ~AvPushBrainMsg() override { Creatable::SafeUnref(m_brain); }
     };
 
     class AvPopBrainMsg : public AvTaskMsg
