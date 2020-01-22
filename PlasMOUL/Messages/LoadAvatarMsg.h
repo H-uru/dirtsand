@@ -40,7 +40,7 @@ namespace MOUL
         LoadAvatarMsg(uint16_t type)
             : LoadCloneMsg(type), m_isPlayer(true), m_initTask() { }
 
-        ~LoadAvatarMsg() override { m_initTask->unref(); }
+        ~LoadAvatarMsg() override { Creatable::SafeUnref(m_initTask); }
     };
 }
 

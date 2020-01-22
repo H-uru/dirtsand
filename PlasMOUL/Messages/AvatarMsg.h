@@ -79,7 +79,7 @@ namespace MOUL
             : Message(type), m_coordinator(), m_initiatorId(),
               m_initiatorSerial(), m_command(e_None) { }
 
-        ~AvCoopMsg() override { m_coordinator->unref(); }
+        ~AvCoopMsg() override { Creatable::SafeUnref(m_coordinator); }
     };
 
     class AvTaskSeekDoneMsg : public AvatarMsg

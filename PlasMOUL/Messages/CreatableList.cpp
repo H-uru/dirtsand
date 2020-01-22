@@ -26,7 +26,7 @@
 void MOUL::CreatableList::clear()
 {
     for (auto& it : m_items)
-        it.second->unref();
+        Creatable::SafeUnref(it.second);
     m_items.clear();
 }
 

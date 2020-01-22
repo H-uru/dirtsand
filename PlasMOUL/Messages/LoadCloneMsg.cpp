@@ -28,7 +28,7 @@ void MOUL::LoadCloneMsg::read(DS::Stream* stream)
     m_userData = stream->read<uint32_t>();
     m_validMsg = stream->read<bool>();
     m_isLoading = stream->read<bool>();
-    m_triggerMsg->unref();
+    Creatable::SafeUnref(m_triggerMsg);
     m_triggerMsg = Factory::Read<Message>(stream);
 }
 

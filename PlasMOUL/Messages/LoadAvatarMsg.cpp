@@ -24,7 +24,7 @@ void MOUL::LoadAvatarMsg::read(DS::Stream* stream)
 
     m_isPlayer = stream->read<bool>();
     m_spawnPoint.read(stream);
-    m_initTask->unref();
+    Creatable::SafeUnref(m_initTask);
     if (stream->read<bool>())
         m_initTask = Factory::Read<AvTask>(stream);
     else

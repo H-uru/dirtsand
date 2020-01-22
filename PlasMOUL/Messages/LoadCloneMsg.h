@@ -40,7 +40,7 @@ namespace MOUL
             : Message(type), m_validMsg(), m_isLoading(),
               m_userData(), m_originPlayerId(), m_triggerMsg() { }
 
-        ~LoadCloneMsg() override { m_triggerMsg->unref(); }
+        ~LoadCloneMsg() override { Creatable::SafeUnref(m_triggerMsg); }
     };
 }
 

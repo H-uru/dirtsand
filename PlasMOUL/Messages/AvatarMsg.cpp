@@ -49,7 +49,7 @@ void MOUL::AvCoopMsg::read(DS::Stream* s)
 {
     Message::read(s);
 
-    m_coordinator->unref();
+    Creatable::SafeUnref(m_coordinator);
     if (s->read<bool>())
         m_coordinator = Factory::Read<CoopCoordinator>(s);
     else
