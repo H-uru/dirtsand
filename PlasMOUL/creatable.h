@@ -38,7 +38,7 @@ namespace MOUL
 
     class Creatable
     {
-        static void safe_unref(Creatable* pcre)
+        static void __attribute__ ((noinline)) safe_unref(Creatable* pcre)
         {
             if (pcre && --pcre->m_refs == 0)
                 delete pcre;
