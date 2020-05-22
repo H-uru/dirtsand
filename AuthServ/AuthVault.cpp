@@ -35,8 +35,7 @@ DS::Uuid gen_uuid()
     check_postgres(s_postgres);
     DS::PGresultRef result = PQexec(s_postgres, "SELECT uuid_generate_v4()");
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return DS::Uuid();
     }
     DS_ASSERT(PQntuples(result) == 1);
@@ -48,8 +47,8 @@ DS::Blob gen_default_sdl(const ST::string& filename)
 {
     SDL::StateDescriptor* desc = SDL::DescriptorDb::FindDescriptor(filename, -1);
     if (!desc) {
-        fprintf(stderr, "[Vault] Warning: Could not find SDL descriptor for %s\n",
-                filename.c_str());
+        ST::printf(stderr, "[Vault] Warning: Could not find SDL descriptor for {}\n",
+                   filename);
         return DS::Blob();
     }
 
@@ -66,8 +65,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
             "    ORDER BY \"Int32_1\"",
             DS::Settings::HoodUserName());
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return std::make_tuple<uint32_t, uint32_t>(0, 0);
     }
     uint32_t theHoodInfo = 0;
@@ -100,8 +98,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
         uint32_t ownersFolder = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
         return std::make_tuple(theHoodInfo, ownersFolder);
     } else {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return std::make_tuple(0, 0);
     }
 }
@@ -123,8 +120,7 @@ static uint32_t find_public_age_1(const ST::string& filename, const DS::Uuid& uu
         if (PQntuples(result) > 0)
             ageInfoId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     } else {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
     }
     return ageInfoId;
 }
@@ -137,7 +133,7 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
     ST::string filename = DS::Settings::SettingsPath() + "/static_ages.ini";
     FILE* cfgfile = fopen(filename.c_str(), "r");
     if (!cfgfile) {
-        fprintf(stderr, "Cannot open %s for reading\n", filename.c_str());
+        ST::printf(stderr, "Cannot open {} for reading\n", filename);
         return configs;
     }
 
@@ -170,7 +166,7 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
 
             std::vector<ST::string> params = line.split('=', 1);
             if (params.size() != 2) {
-                fprintf(stderr, "Warning: Invalid config line: %s\n", line.c_str());
+                ST::printf(stderr, "Warning: Invalid config line: \"{}\"\n", line);
                 continue;
             }
 
@@ -185,8 +181,7 @@ std::list<AuthServer_AgeInfo> configure_static_ages()
             } else if (params[0] == "UserName") {
                 age.m_userName = params[1];
             } else {
-                fprintf(stderr, "Warning: Unknown setting '%s' ignored\n",
-                        params[0].c_str());
+                ST::printf(stderr, "Warning: Unknown setting '{}' ignored\n", params[0]);
             }
         }
 
@@ -205,8 +200,7 @@ bool dm_vault_init()
             "    WHERE \"NodeType\"=$1",
             DS::Vault::e_NodeSystem);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
 
@@ -231,9 +225,9 @@ bool dm_vault_init()
             return false;
     } else {
         if (count > 1) {
-            fprintf(stderr, "[Vault] WARNING: Found %d System nodes. "
-                            "The vault is almost certainly corrupt at this point.",
-                    count);
+            ST::printf(stderr, "[Vault] WARNING: Found {} System nodes. "
+                               "The vault is almost certainly corrupt at this point.",
+                       count);
         }
         s_systemNode = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     }
@@ -253,13 +247,12 @@ bool dm_all_players_init()
             "    WHERE \"NodeType\"=$1 AND \"Int32_1\"=$2",
             DS::Vault::e_NodePlayerInfoList, DS::Vault::e_AllPlayersFolder);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     } else if (PQntuples(result) > 0) {
         if (PQntuples(result) != 1) {
-            fprintf(stderr, "[Vault] WARNING: Found %d AllPlayers folders\n",
-                    PQntuples(result));
+            ST::printf(stderr, "[Vault] WARNING: Found {} AllPlayers folders\n",
+                       PQntuples(result));
         }
         s_allPlayers = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
         return true;
@@ -272,8 +265,7 @@ bool dm_all_players_init()
                           DS::Vault::e_NodePlayerInfoList,
                           DS::Vault::e_AllPlayersFolder);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, INSERT);
         return false;
     }
     s_allPlayers = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
@@ -283,8 +275,7 @@ bool dm_all_players_init()
                           "SELECT idx FROM vault.\"Nodes\" WHERE \"NodeType\"=$1",
                           DS::Vault::e_NodePlayerInfo);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
     for (int i = 0; i < PQntuples(result); ++i)
@@ -323,8 +314,7 @@ bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc)
             "    WHERE \"Descriptor\"=$1 LIMIT 1",
             name);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
 
@@ -337,8 +327,7 @@ bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc)
                 "    (\"Descriptor\", \"SdlBlob\") VALUES ($1, $2)",
                 name, ST::base64_encode(blob.buffer(), blob.size()));
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQ_PRINT_ERROR(s_postgres, INSERT);
             return false;
         }
     } else {
@@ -356,8 +345,7 @@ bool v_check_global_sdl(const ST::string& name, SDL::StateDescriptor* desc)
                     "    SET \"SdlBlob\"=$1 WHERE idx=$2",
                     ST::base64_encode(blob.buffer(), blob.size()), idx);
             if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-                fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                        __FILE__, __LINE__, PQerrorMessage(s_postgres));
+                PQ_PRINT_ERROR(s_postgres, UPDATE);
                 // This doesn't block continuing...
             }
         }
@@ -378,15 +366,14 @@ SDL::State v_find_global_sdl(const ST::string& ageName)
             "    WHERE \"Descriptor\"=$1 LIMIT 1",
             ageName);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return nullptr;
     }
     if (PQntuples(result) == 0) {
         return nullptr;
     } else if (PQntuples(result) != 1) {
-        fprintf(stderr, "[Auth] WARNING: Found multiple global SDL blobs for %s\n",
-                ageName.c_str());
+        ST::printf(stderr, "[Auth] WARNING: Found multiple global SDL blobs for {}\n",
+                   ageName);
     }
 
     DS::Blob blob = DS::Base64Decode(PQgetvalue(result, 0, 0));
@@ -404,8 +391,7 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
 
         DS::PGresultRef result = PQexec(s_postgres, "SELECT nextval('game.\"AgeSeqNumber\"'::regclass)");
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQ_PRINT_ERROR(s_postgres, SELECT);
             return std::make_pair(0, 0);
         }
         DS_ASSERT(PQntuples(result) == 1);
@@ -554,8 +540,7 @@ v_create_age(AuthServer_AgeInfo age, uint32_t flags)
                 "    VALUES ($1, $2, $3, $4, $5)",
                 age.m_ageId.toString(), age.m_filename, agedesc, ageNode, ageSdlNode);
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQ_PRINT_ERROR(s_postgres, INSERT);
             return std::make_pair(0, 0);
         }
     }
@@ -728,17 +713,16 @@ v_create_player(DS::Uuid acctId, const AuthServer_PlayerInfo& player)
                 "SELECT idx FROM vault.find_folder($1, $2);",
                 std::get<1>(reltoAge), DS::Vault::e_AgeOwnersFolder);
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(s_postgres));
+            PQ_PRINT_ERROR(s_postgres, SELECT);
             return std::make_tuple(0, 0, 0);
         }
         if (PQntuples(result) == 0) {
-            fprintf(stderr, "Did not find AgeOwnersFolder for %u\n",
-                    std::get<1>(reltoAge));
+            ST::printf(stderr, "Did not find AgeOwnersFolder for {}\n",
+                       std::get<1>(reltoAge));
             return std::make_tuple(0, 0, 0);
         } else if (PQntuples(result) != 1) {
-            fprintf(stderr, "WARNING: Multiple AgeOwnersFolders found for %u\n",
-                    std::get<1>(reltoAge));
+            ST::printf(stderr, "WARNING: Multiple AgeOwnersFolders found for {}\n",
+                       std::get<1>(reltoAge));
         }
         uint32_t ownerFolder = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
 
@@ -897,8 +881,7 @@ uint32_t v_create_node(const DS::Vault::Node& node)
                                           parmcount, nullptr, parms.m_values,
                                           nullptr, nullptr, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, INSERT);
         return 0;
     }
     DS_ASSERT(PQntuples(result) == 1);
@@ -918,8 +901,7 @@ bool v_has_node(uint32_t parentId, uint32_t childId)
             "SELECT vault.has_node($1, $2)",
             parentId, childId);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
     // If this assertion fails, it is a problem in the implementation of
@@ -1020,8 +1002,7 @@ bool v_update_node(const DS::Vault::Node& node)
                                           parmcount, nullptr, parms.m_values,
                                           nullptr, nullptr, 0);
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, UPDATE);
         return false;
     }
     return true;
@@ -1041,8 +1022,7 @@ DS::Vault::Node v_fetch_node(uint32_t nodeIdx)
         "    FROM vault.\"Nodes\" WHERE idx=$1",
         nodeIdx);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return DS::Vault::Node();
     }
     if (PQntuples(result) == 0) {
@@ -1122,8 +1102,7 @@ bool v_ref_node(uint32_t parentIdx, uint32_t childIdx, uint32_t ownerIdx)
             "    VALUES ($1, $2, $3)",
             parentIdx, childIdx, ownerIdx);
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, INSERT);
         return false;
     }
     return true;
@@ -1136,8 +1115,7 @@ bool v_unref_node(uint32_t parentIdx, uint32_t childIdx)
             "    WHERE \"ParentIdx\"=$1 AND \"ChildIdx\"=$2",
             parentIdx, childIdx);
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres DELETE error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, DELETE);
         return false;
     }
     return true;
@@ -1150,8 +1128,7 @@ bool v_fetch_tree(uint32_t nodeId, std::vector<DS::Vault::NodeRef>& refs)
             "    FROM vault.fetch_tree($1);",
             nodeId);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
 
@@ -1266,8 +1243,7 @@ bool v_find_nodes(const DS::Vault::Node& nodeTemplate, std::vector<uint32_t>& no
                                           parmcount, nullptr, parms.m_values,
                                           nullptr, nullptr, 0);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
 
@@ -1285,12 +1261,11 @@ DS::Vault::NodeRef v_send_node(uint32_t nodeId, uint32_t playerId, uint32_t send
             "SELECT idx FROM vault.find_folder($1, $2);",
             playerId, DS::Vault::e_InboxFolder);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return ref;
     }
     if (PQntuples(result) == 0) {
-        fprintf(stderr, "[Auth] Could not find Inbox folder for %u\n", playerId);
+        ST::printf(stderr, "[Auth] Could not find Inbox folder for {}\n", playerId);
         return ref;
     }
     uint32_t inbox = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
@@ -1310,8 +1285,7 @@ uint32_t v_count_age_owners(uint32_t ageInfoId)
             ageInfoId, DS::Vault::e_AgeOwnersFolder);
     uint32_t owners = 0;
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return owners;
     }
     const ST::string parentIdx = PQgetvalue(result, 0, 0);
@@ -1321,8 +1295,7 @@ uint32_t v_count_age_owners(uint32_t ageInfoId)
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
         owners = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     } else {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
     }
     return owners;
 }
@@ -1337,8 +1310,7 @@ uint32_t v_count_age_population(const char* uuid)
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
         population = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
     } else {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
     }
     return population;
 }
@@ -1353,8 +1325,7 @@ bool v_find_public_ages(const ST::string& ageFilename, std::vector<Auth_PubAgeRe
             "    ORDER BY \"ModifyTime\" DESC LIMIT 50",
             DS::Vault::e_NodeAgeInfo, ageFilename);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(s_postgres));
+        PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
     for (int i = 0; i < PQntuples(result); ++i) {

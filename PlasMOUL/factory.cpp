@@ -66,7 +66,7 @@ MOUL::Creatable* MOUL::Factory::Create(uint16_t type)
 #undef CREATABLE_TYPE
     case 0x8000: return nullptr;
     default:
-        fprintf(stderr, "[Factory] Tried to create unknown type %04X\n", type);
+        ST::printf(stderr, "[Factory] Tried to create unknown type {04X}\n", type);
         throw FactoryException();
     }
 }

@@ -212,9 +212,9 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
                     const uint32_t endp = stream->tell() + stream->read<uint32_t>();
                     m_creatable[i]->read(stream);
                     if (stream->tell() != endp) {
-                        fprintf(stderr, "[SDL] Warning: Creatable %04X was not fully parsed in SDL blob "
-                                        " (%u bytes remain)\n",
-                                type, endp - stream->tell());
+                        ST::printf(stderr, "[SDL] Warning: Creatable {04X} was not fully parsed in SDL blob "
+                                           " ({} bytes remain)\n",
+                                   type, endp - stream->tell());
                     }
                 }
             }
@@ -268,8 +268,8 @@ void SDL::Variable::_ref::read(DS::Stream* stream)
             // No data to read
             break;
         default:
-            fprintf(stderr, "Invalid SDL variable type %d during read\n",
-                    static_cast<int>(m_desc->m_type));
+            ST::printf(stderr, "Invalid SDL variable type {} during read\n",
+                       static_cast<int>(m_desc->m_type));
             throw DS::MalformedData();
         }
     }
@@ -363,8 +363,8 @@ void SDL::Variable::_ref::write(DS::Stream* stream) const
             // No data to write
             break;
         default:
-            fprintf(stderr, "Invalid SDL variable type %d during write\n",
-                    static_cast<int>(m_desc->m_type));
+            ST::printf(stderr, "Invalid SDL variable type {} during write\n",
+                       static_cast<int>(m_desc->m_type));
             throw DS::MalformedData();
         }
     }
@@ -553,61 +553,61 @@ void SDL::Variable::debug()
     for (size_t i=0; i<m_data->m_size; ++i) {
         switch (m_data->m_desc->m_type) {
         case e_VarInt:
-            fprintf(stderr, "%d", m_data->m_int[i]);
+            ST::printf(stderr, "{}", m_data->m_int[i]);
             break;
         case e_VarFloat:
-            fprintf(stderr, "%f", m_data->m_float[i]);
+            ST::printf(stderr, "{f}", m_data->m_float[i]);
             break;
         case e_VarBool:
             fputs(m_data->m_bool[i] ? "true" : "false", stderr);
             break;
         case e_VarString:
-            fprintf(stderr, "\"%s\"", m_data->m_string[i].c_str());
+            ST::printf(stderr, "\"{}\"", m_data->m_string[i]);
             break;
         case e_VarKey:
-            fprintf(stderr, "{loc=%08X,flag=%04X,type=%04X,name=\"%s\"}",
-                    m_data->m_key[i].m_location.m_sequence,
-                    m_data->m_key[i].m_location.m_flags,
-                    m_data->m_key[i].m_type, m_data->m_key[i].m_name.c_str());
+            ST::printf(stderr, "{{loc={08X},flag={04X},type={04X},name=\"{}\"}",
+                       m_data->m_key[i].m_location.m_sequence,
+                       m_data->m_key[i].m_location.m_flags,
+                       m_data->m_key[i].m_type, m_data->m_key[i].m_name);
             m_data->m_key[i] = MOUL::Uoid();
             break;
         case e_VarCreatable:
-            fprintf(stderr, "{type=%04X}", m_data->m_creatable[i]->type());
+            ST::printf(stderr, "{{type={04X}}", m_data->m_creatable[i]->type());
             break;
         case e_VarDouble:
-            fprintf(stderr, "%f", m_data->m_double[i]);
+            ST::printf(stderr, "{f}", m_data->m_double[i]);
             break;
         case e_VarTime:
-            fprintf(stderr, "{%u,%u}", m_data->m_time[i].m_secs,
-                    m_data->m_time[i].m_micros);
+            ST::printf(stderr, "{{{},{}}", m_data->m_time[i].m_secs,
+                       m_data->m_time[i].m_micros);
             break;
         case e_VarByte:
-            fprintf(stderr, "%d", m_data->m_byte[i]);
+            ST::printf(stderr, "{}", m_data->m_byte[i]);
             break;
         case e_VarShort:
-            fprintf(stderr, "%d", m_data->m_short[i]);
+            ST::printf(stderr, "{}", m_data->m_short[i]);
             break;
         case e_VarVector3:
         case e_VarPoint3:
-            fprintf(stderr, "{%f,%f,%f}", m_data->m_vector[i].m_X,
-                    m_data->m_vector[i].m_Y, m_data->m_vector[i].m_Z);
+            ST::printf(stderr, "{{{f},{f},{f}}", m_data->m_vector[i].m_X,
+                       m_data->m_vector[i].m_Y, m_data->m_vector[i].m_Z);
             break;
         case e_VarQuaternion:
-            fprintf(stderr, "{%f,%f,%f,%f}", m_data->m_quat[i].m_X,
-                    m_data->m_quat[i].m_Y, m_data->m_quat[i].m_Z,
-                    m_data->m_quat[i].m_W);
+            ST::printf(stderr, "{{{f},{f},{f},{f}}", m_data->m_quat[i].m_X,
+                       m_data->m_quat[i].m_Y, m_data->m_quat[i].m_Z,
+                       m_data->m_quat[i].m_W);
             break;
         case e_VarRgb:
         case e_VarRgba:
-            fprintf(stderr, "{%f,%f,%f,%f}", m_data->m_color[i].m_R,
-                    m_data->m_color[i].m_G, m_data->m_color[i].m_B,
-                    m_data->m_color[i].m_A);
+            ST::printf(stderr, "{{{f},{f},{f},{f}}", m_data->m_color[i].m_R,
+                       m_data->m_color[i].m_G, m_data->m_color[i].m_B,
+                       m_data->m_color[i].m_A);
             break;
         case e_VarRgb8:
         case e_VarRgba8:
-            fprintf(stderr, "{%u,%u,%u,%u}", m_data->m_color8[i].m_R,
-                    m_data->m_color8[i].m_G, m_data->m_color8[i].m_B,
-                    m_data->m_color8[i].m_A);
+            ST::printf(stderr, "{{{},{},{},{}}", m_data->m_color8[i].m_R,
+                       m_data->m_color8[i].m_G, m_data->m_color8[i].m_B,
+                       m_data->m_color8[i].m_A);
             break;
         case e_VarStateDesc:
             fputs("<STATEDESC>\n", stderr);
@@ -941,10 +941,10 @@ void SDL::State::debug()
     if (!m_data)
         return;
 
-    fprintf(stderr, "{%s}\n", m_data->m_desc->m_name.c_str());
+    ST::printf(stderr, "{{{}}\n", m_data->m_desc->m_name);
     for (size_t i=0; i<m_data->m_vars.size(); ++i) {
         if (m_data->m_vars[i].data()->m_flags & Variable::e_XIsDirty) {
-            fprintf(stderr, "  * %s=", m_data->m_desc->m_vars[i].m_name.c_str());
+            ST::printf(stderr, "  * {}=", m_data->m_desc->m_vars[i].m_name);
             m_data->m_vars[i].debug();
         }
     }
@@ -971,8 +971,8 @@ void SDL::State::merge(const SDL::State& state)
 
     if (state.m_data->m_desc != m_data->m_desc) {
         if (state.m_data->m_desc && m_data->m_desc) {
-            fprintf(stderr, "Stubbornly refusing to merge unrelated SDL states %s and %s\n",
-                    state.m_data->m_desc->m_name.c_str(), m_data->m_desc->m_name.c_str());
+            ST::printf(stderr, "Stubbornly refusing to merge unrelated SDL states {} and {}\n",
+                       state.m_data->m_desc->m_name, m_data->m_desc->m_name);
         } else {
             fputs("Stubbornly refusing to merge SDL states with NULL descriptors\n",
                   stderr);

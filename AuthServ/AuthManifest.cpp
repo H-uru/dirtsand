@@ -42,8 +42,8 @@ DS::NetResultCode DS::AuthManifest::loadManifest(const char* filename)
 
         std::vector<ST::string> parts = line.split(',');
         if (parts.size() != 2) {
-            fprintf(stderr, "Warning:  Ignoring invalid manifest entry on line %ld of %s:\n",
-                    mfsline, filename);
+            ST::printf(stderr, "Warning:  Ignoring invalid manifest entry on line {} of {}:\n",
+                       mfsline, filename);
             continue;
         }
 

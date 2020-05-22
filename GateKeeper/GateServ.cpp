@@ -180,8 +180,8 @@ void wk_gateKeeper(DS::SocketHandle sockp)
                 break;
             default:
                 /* Invalid message */
-                fprintf(stderr, "[GateKeeper] Got invalid message ID %d from %s\n",
-                        msgId, DS::SockIpAddress(client.m_sock).c_str());
+                ST::printf(stderr, "[GateKeeper] Got invalid message ID {} from {}\n",
+                           msgId, DS::SockIpAddress(client.m_sock));
                 DS::CloseSock(client.m_sock);
                 throw DS::SockHup();
             }
@@ -189,8 +189,8 @@ void wk_gateKeeper(DS::SocketHandle sockp)
     } catch (const DS::SockHup&) {
         // Socket closed...
     } catch (const std::exception& ex) {
-        fprintf(stderr, "[GateKeeper] Error processing client message from %s: %s\n",
-                DS::SockIpAddress(sockp).c_str(), ex.what());
+        ST::printf(stderr, "[GateKeeper] Error processing client message from {}: {}\n",
+                   DS::SockIpAddress(sockp), ex.what());
     }
 
     s_clientMutex.lock();
@@ -214,7 +214,7 @@ void DS::GateKeeper_Add(DS::SocketHandle client)
 {
 #ifdef DEBUG
     if (s_commdebug)
-        printf("Connecting GATE on %s\n", DS::SockIpAddress(client).c_str());
+        ST::printf("Connecting GATE on {}\n", DS::SockIpAddress(client));
 #endif
 
     std::thread threadh(&wk_gateKeeper, client);
@@ -248,5 +248,5 @@ void DS::GateKeeper_DisplayClients()
     if (s_clients.size())
         fputs("Gate Keeper:\n", stdout);
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
-        printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
+        ST::printf("  * {}\n", DS::SockIpAddress((*client_iter)->m_sock));
 }

@@ -25,7 +25,7 @@ DS::Uuid::Uuid(const char* struuid)
     char hexbuf[9];
     if (strlen(struuid) != 36 || struuid[8] != '-' || struuid[13] != '-'
             || struuid[18] != '-' || struuid[23] != '-') {
-        fprintf(stderr, "Invalid UUID string '%s'\n", struuid);
+        ST::printf(stderr, "Invalid UUID string '{}'\n", struuid);
         throw DS::MalformedData();
     }
 

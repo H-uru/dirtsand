@@ -32,7 +32,7 @@ static DS::SocketHandle s_listenSock;
 
 void dm_htserv()
 {
-    printf("[Status] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
+    ST::printf("[Status] Running on {}\n", DS::SockIpAddress(s_listenSock));
     for ( ;; ) {
         DS::SocketHandle client;
         try {
@@ -93,13 +93,13 @@ void dm_htserv()
             // First line contains the action
             std::vector<ST::string> action = lines.front().tokenize();
             if (action.size() < 2) {
-                fprintf(stderr, "[Status] Incorrectly formatted HTTP request: %s\n",
-                        lines.front().c_str());
+                ST::printf(stderr, "[Status] Incorrectly formatted HTTP request: {}\n",
+                           lines.front());
                 DS::FreeSock(client);
                 continue;
             }
             if (action[0] != "GET") {
-                fprintf(stderr, "[Status] Unsupported method: %s\n", action[0].c_str());
+                ST::printf(stderr, "[Status] Unsupported method: {}\n", action[0]);
                 DS::FreeSock(client);
                 continue;
             }
@@ -162,8 +162,8 @@ void dm_htserv()
                 DS::FreeSock(client);
             }
         } catch (const std::exception& ex) {
-            fprintf(stderr, "[Status] Exception occurred serving HTTP to %s: %s\n",
-                    DS::SockIpAddress(client).c_str(), ex.what());
+            ST::printf(stderr, "[Status] Exception occurred serving HTTP to {}: {}\n",
+                       DS::SockIpAddress(client), ex.what());
             DS::FreeSock(client);
         }
     }
@@ -178,8 +178,8 @@ void DS::StartStatusHTTP()
                                       DS::Settings::StatusPort());
         DS::ListenSock(s_listenSock);
     } catch (const SystemError &err) {
-        fprintf(stderr, "[Status] WARNING: Could not start the HTTP server: %s\n",
-                err.what());
+        ST::printf(stderr, "[Status] WARNING: Could not start the HTTP server: {}\n",
+                   err.what());
         return;
     }
     s_httpThread = std::thread(&dm_htserv);

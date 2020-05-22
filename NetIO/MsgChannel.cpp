@@ -30,8 +30,8 @@ DS::MsgChannel::~MsgChannel()
 
     int result = close(m_semaphore);
     if (result < 0 && errno != EBADF) {
-        fprintf(stderr, "WARNING: Failed to close event semaphore: %s\n",
-                strerror(errno));
+        ST::printf(stderr, "WARNING: Failed to close event semaphore: {}\n",
+                   strerror(errno));
     }
 }
 

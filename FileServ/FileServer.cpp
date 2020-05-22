@@ -157,17 +157,17 @@ void cb_manifest(FileServer_Private& client)
     // Build ID
     uint32_t buildId = DS::RecvValue<uint32_t>(client.m_sock);
     if (buildId && buildId != DS::Settings::BuildId()) {
-        fprintf(stderr, "[File] Wrong Build ID from %s: %d\n",
-                DS::SockIpAddress(client.m_sock).c_str(), buildId);
+        ST::printf(stderr, "[File] Wrong Build ID from {}: {}\n",
+                   DS::SockIpAddress(client.m_sock), buildId);
         DS::CloseSock(client.m_sock);
         return;
     }
 
     // Manifest may not have any path characters
     if (mfsname.find(".") != -1 || mfsname.find("/") != -1
-        || mfsname.find("\\") != -1 || mfsname.find(":") != -1) {
-        fprintf(stderr, "[File] Invalid manifest request from %s: %s\n",
-                DS::SockIpAddress(client.m_sock).c_str(), mfsname.c_str());
+            || mfsname.find("\\") != -1 || mfsname.find(":") != -1) {
+        ST::printf(stderr, "[File] Invalid manifest request from {}: {}\n",
+                   DS::SockIpAddress(client.m_sock), mfsname);
         client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
         client.m_buffer.write<uint32_t>(0);     // Reader ID
         client.m_buffer.write<uint32_t>(0);     // File count
@@ -182,8 +182,8 @@ void cb_manifest(FileServer_Private& client)
     client.m_buffer.write<uint32_t>(result);
 
     if (result != DS::e_NetSuccess) {
-        fprintf(stderr, "[File] %s requested invalid manifest %s\n",
-                DS::SockIpAddress(client.m_sock).c_str(), mfsname.c_str());
+        ST::printf(stderr, "[File] {} requested invalid manifest {}\n",
+                   DS::SockIpAddress(client.m_sock), mfsname);
         client.m_buffer.write<uint32_t>(0);     // Reader ID
         client.m_buffer.write<uint32_t>(0);     // File count
         client.m_buffer.write<uint32_t>(0);     // Data packet size
@@ -223,8 +223,8 @@ void cb_downloadStart(FileServer_Private& client)
     // Build ID
     uint32_t buildId = DS::RecvValue<uint32_t>(client.m_sock);
     if (buildId && buildId != DS::Settings::BuildId()) {
-        fprintf(stderr, "[File] Wrong Build ID from %s: %d\n",
-                DS::SockIpAddress(client.m_sock).c_str(), buildId);
+        ST::printf(stderr, "[File] Wrong Build ID from {}: {}\n",
+                   DS::SockIpAddress(client.m_sock), buildId);
         DS::CloseSock(client.m_sock);
         return;
     }
@@ -244,8 +244,8 @@ void cb_downloadStart(FileServer_Private& client)
     int fd = open(filename.c_str(), O_RDONLY);
 
     if (fd < 0) {
-        fprintf(stderr, "[File] Could not open file %s\n[File] Requested by %s\n",
-                filename.c_str(), DS::SockIpAddress(client.m_sock).c_str());
+        ST::printf(stderr, "[File] Could not open file {}\n[File] Requested by {}\n",
+                   filename, DS::SockIpAddress(client.m_sock));
         client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
         client.m_buffer.write<uint32_t>(0);     // Reader ID
         client.m_buffer.write<uint32_t>(0);     // File size
@@ -329,8 +329,8 @@ void wk_fileServ(DS::SocketHandle sockp)
                 break;
             default:
                 /* Invalid message */
-                fprintf(stderr, "[File] Got invalid message ID %d from %s\n",
-                        msgId, DS::SockIpAddress(client.m_sock).c_str());
+                ST::printf(stderr, "[File] Got invalid message ID {} from {}\n",
+                           msgId, DS::SockIpAddress(client.m_sock));
                 DS::CloseSock(client.m_sock);
                 throw DS::SockHup();
             }
@@ -338,8 +338,8 @@ void wk_fileServ(DS::SocketHandle sockp)
     } catch (const DS::SockHup&) {
         // Socket closed...
     } catch (const std::exception& ex) {
-        fprintf(stderr, "[File] Error processing client message from %s: %s\n",
-                DS::SockIpAddress(sockp).c_str(), ex.what());
+        ST::printf(stderr, "[File] Error processing client message from {}: {}\n",
+                   DS::SockIpAddress(sockp), ex.what());
     }
 
     s_clientMutex.lock();
@@ -391,5 +391,5 @@ void DS::FileServer_DisplayClients()
     if (s_clients.size())
         fputs("File Server:\n", stdout);
     for (auto client_iter = s_clients.begin(); client_iter != s_clients.end(); ++client_iter)
-        printf("  * %s\n", DS::SockIpAddress((*client_iter)->m_sock).c_str());
+        ST::printf("  * {}\n", DS::SockIpAddress((*client_iter)->m_sock));
 }

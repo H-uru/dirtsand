@@ -35,7 +35,7 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
     dirent** dirls;
     int count = scandir(sdlpath, &dirls, &sel_sdl, &alphasort);
     if (count < 0) {
-        fprintf(stderr, "[SDL] Error reading SDL descriptors: %s\n", strerror(errno));
+        ST::printf(stderr, "[SDL] Error reading SDL descriptors: {}\n", strerror(errno));
         return false;
     }
     if (count == 0) {
@@ -54,8 +54,8 @@ bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
                 descmap_t::iterator namei = s_descriptors.find(it->m_name);
                 if (namei != s_descriptors.end()) {
                     if (namei->second.find(it->m_version) != namei->second.end()) {
-                        fprintf(stderr, "[SDL] Warning: Duplicate descriptor version for %s\n",
-                                it->m_name.c_str());
+                        ST::printf(stderr, "[SDL] Warning: Duplicate descriptor version for {}\n",
+                                   it->m_name);
                     }
                 }
 #endif
@@ -77,14 +77,14 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindDescriptor(const ST::string& name, 
 {
     descmap_t::iterator namei = s_descriptors.find(name);
     if (namei == s_descriptors.end()) {
-        fprintf(stderr, "[SDL] Requested invalid descriptor %s\n", name.c_str());
+        ST::printf(stderr, "[SDL] Requested invalid descriptor {}\n", name);
         return nullptr;
     }
 
     versionmap_t::iterator veri = namei->second.find(version);
     if (veri == namei->second.end()) {
-        fprintf(stderr, "[SDL] Requested invalid descriptor version %d for %s\n",
-                version, name.c_str());
+        ST::printf(stderr, "[SDL] Requested invalid descriptor version {} for {}\n",
+                   version, name);
         return nullptr;
     }
 
@@ -95,7 +95,7 @@ SDL::StateDescriptor* SDL::DescriptorDb::FindLatestDescriptor(const ST::string& 
 {
     descmap_t::iterator namei = s_descriptors.find(name);
     if (namei == s_descriptors.end()) {
-        fprintf(stderr, "[SDL] Requested invalid descriptor %s\n", name.c_str());
+        ST::printf(stderr, "[SDL] Requested invalid descriptor {}\n", name);
         return nullptr;
     }
 

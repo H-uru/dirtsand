@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "KIMessage.h"
+#include <string_theory/stdio>
 
 void MOUL::KIMessage::read(DS::Stream* stream)
 {
@@ -47,7 +48,7 @@ bool MOUL::KIMessage::makeSafeForNet()
 {
     if (m_command != e_ChatMessage) {
         // Client is being naughty
-        fprintf(stderr, "Ignoring KI message %d\n", m_command);
+        ST::printf(stderr, "Ignoring KI message {}\n", m_command);
         return false;
     }
     m_flags &= ~e_AdminMsg;
