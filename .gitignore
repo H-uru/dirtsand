@@ -1,3 +1,4 @@
 bin/dirtsand
 build/
+.env
 *.kdev4
