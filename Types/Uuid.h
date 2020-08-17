@@ -47,7 +47,7 @@ namespace DS
         void read(Stream* stream);
         void write(Stream* stream) const;
 
-        ST::string toString() const;
+        ST::string toString(bool pretty = false) const;
 
     public:
         union {

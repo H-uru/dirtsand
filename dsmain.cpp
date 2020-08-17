@@ -90,9 +90,9 @@ static void print_trace(const char* text)
     stack_depth = backtrace(stack_addrs, max_depth);
     stack_strings = backtrace_symbols(stack_addrs, stack_depth);
 
-    fprintf(stderr, "%s at %s\n", text, stack_strings[0]);
+    ST::printf(stderr, "{} at {}\n", text, stack_strings[0]);
     for (size_t i=1; i<stack_depth; ++i)
-        fprintf(stderr, "    from %s\n", stack_strings[i]);
+        ST::printf(stderr, "    from {}\n", stack_strings[i]);
     free(stack_strings);
 }
 
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
                     DS::StopStatusHTTP();
                     DS::StartStatusHTTP();
                 } else {
-                    fprintf(stderr, "Error: Service %s cannot be restarted\n", svc->c_str());
+                    ST::printf(stderr, "Error: Service {} cannot be restarted\n", *svc);
                 }
             }
         } else if (args[0] == "keygen") {
@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
         } else if (args[0] == "commdebug") {
 #ifdef DEBUG
             if (args.size() == 1)
-                printf("Comm debugging is currently %s\n", s_commdebug ? "on" : "off");
+                ST::printf("Comm debugging is currently {}\n", s_commdebug ? "on" : "off");
             else if (args[1] == "on")
                 s_commdebug = true;
             else if (args[1] == "off")

@@ -232,9 +232,9 @@ static DS::ShaHash _ds_internal_sha0(const void* data, size_t size)
 {                                                                       \
     const DS::ShaHash hash = (expr);                                    \
     if (hash.toString() != sha) {                                       \
-        fprintf(stderr, "Incorrect SHA hash for " #expr ":\n");         \
-        fprintf(stderr, "  Expected: " sha "\n");                       \
-        fprintf(stderr, "  Actual:   %s\n", hash.toString().c_str());   \
+        fputs("Incorrect SHA hash for " #expr ":\n", stderr);           \
+        fputs("  Expected: " sha "\n", stderr);                         \
+        ST::printf(stderr, "  Actual:   {}\n", hash.toString());        \
         ++test_fails;                                                   \
     }                                                                   \
 }
@@ -265,7 +265,7 @@ int main()
                                  "hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu", 112));
 
     if (test_fails == 0)
-        printf("All tests passed!\n");
+        fputs("All tests passed!\n", stdout);
     return test_fails;
 }
 #endif

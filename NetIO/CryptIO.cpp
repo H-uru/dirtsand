@@ -44,15 +44,15 @@ static void init_rand()
         gettimeofday(&_random.now, nullptr);
         FILE* urand = fopen("/dev/urandom", "rb");
         if (!urand) {
-            fprintf(stderr, "FATAL: Could not open /dev/urandom: %s\n",
-                    strerror(errno));
+            ST::printf(stderr, "FATAL: Could not open /dev/urandom: {}\n",
+                       strerror(errno));
             exit(1);
         }
         size_t count = fread(_random.buffer, 1, sizeof(_random.buffer), urand);
         if (count != sizeof(_random.buffer)) {
-            fprintf(stderr, "FATAL: Could not read enough bytes from /dev/urandom\n"
-                            "Requested: %zu\nSupplied: %zu\n",
-                    sizeof(_random.buffer), count);
+            ST::printf(stderr, "FATAL: Could not read enough bytes from /dev/urandom\n"
+                               "Requested: {}\nSupplied: {}\n",
+                       sizeof(_random.buffer), count);
             exit(1);
         }
         fclose(urand);
@@ -171,13 +171,13 @@ void DS::CryptSendBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
 #ifdef DEBUG
     if (s_commdebug) {
         std::lock_guard<std::mutex> commdebugGuard(s_commdebug_mutex);
-        printf("SEND TO %s", DS::SockIpAddress(sock).c_str());
+        ST::printf("SEND TO {}", DS::SockIpAddress(sock));
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
                 fputs("\n    ", stdout);
             else if ((i % 16) == 8)
                 fputs("   ", stdout);
-            printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
+            ST::printf("{02X} ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
         fputc('\n', stdout);
     }
@@ -216,13 +216,13 @@ void DS::CryptRecvBuffer(const DS::SocketHandle sock, DS::CryptState crypt,
 #ifdef DEBUG
     if (s_commdebug) {
         std::lock_guard<std::mutex> commdebugGuard(s_commdebug_mutex);
-        printf("RECV FROM %s", DS::SockIpAddress(sock).c_str());
+        ST::printf("RECV FROM {}", DS::SockIpAddress(sock));
         for (size_t i=0; i<size; ++i) {
             if ((i % 16) == 0)
                 fputs("\n    ", stdout);
             else if ((i % 16) == 8)
                 fputs("   ", stdout);
-            printf("%02X ", reinterpret_cast<const uint8_t*>(buffer)[i]);
+            ST::printf("{02X} ", reinterpret_cast<const uint8_t*>(buffer)[i]);
         }
         fputc('\n', stdout);
     }

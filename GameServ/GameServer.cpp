@@ -90,7 +90,7 @@ GameHost_Private* find_game_host(uint32_t ageMcpId)
     try {
         return start_game_host(ageMcpId);
     } catch (const std::exception& ex) {
-        fprintf(stderr, "[Game] ERROR: %s\n", ex.what());
+        ST::printf(stderr, "[Game] ERROR: {}\n", ex.what());
     }
     return nullptr;
 }
@@ -129,7 +129,7 @@ void cb_join(GameClient_Private& client)
 
     client.m_host = find_game_host(mcpId);
     if (!client.m_host) {
-        fprintf(stderr, "Could not find a game host for %u\n", mcpId);
+        ST::printf(stderr, "Could not find a game host for {}\n", mcpId);
         client.m_buffer.write<uint32_t>(DS::e_NetInternalError);
         SEND_REPLY();
         return;
@@ -175,8 +175,8 @@ void cb_netmsg(GameClient_Private& client)
         client.m_host->m_channel.putMessage(e_GamePropagate, reinterpret_cast<void*>(&msg));
         client.m_channel.getMessage();
     } else {
-        fprintf(stderr, "Client %s sent a game message with no game host connection\n",
-                DS::SockIpAddress(client.m_sock).c_str());
+        ST::printf(stderr, "Client {} sent a game message with no game host connection\n",
+                   DS::SockIpAddress(client.m_sock));
         throw DS::SockHup();
     }
 }
@@ -194,7 +194,7 @@ void cb_gameMgrMsg(GameClient_Private& client)
             fputs("\n    ", stdout);
         else if ((i % 16) == 8)
             fputs("   ", stdout);
-        printf("%02X ", buffer[i]);
+        ST::printf("{02X} ", buffer[i]);
     }
     fputc('\n', stdout);
 #endif
@@ -218,8 +218,8 @@ void cb_sockRead(GameClient_Private& client)
         break;
     default:
         /* Invalid message */
-        fprintf(stderr, "[Game] Got invalid message ID %d from %s\n",
-                msgId, DS::SockIpAddress(client.m_sock).c_str());
+        ST::printf(stderr, "[Game] Got invalid message ID {} from {}\n",
+                   msgId, DS::SockIpAddress(client.m_sock));
         throw DS::SockHup();
     }
 }
@@ -246,8 +246,8 @@ void wk_gameWorker(DS::SocketHandle sockp)
     try {
         game_client_init(client);
     } catch (const DS::InvalidConnectionHeader& ex) {
-        fprintf(stderr, "[Game] Invalid connection header from %s\n",
-                DS::SockIpAddress(sockp).c_str());
+        ST::printf(stderr, "[Game] Invalid connection header from {}\n",
+                   DS::SockIpAddress(sockp));
         return;
     } catch (const DS::SockHup&) {
         // Socket closed...
@@ -265,8 +265,8 @@ void wk_gameWorker(DS::SocketHandle sockp)
         for ( ;; ) {
             int result = poll(fds, 2, NET_TIMEOUT * 1000);
             if (result < 0) {
-                fprintf(stderr, "[Game] Failed to poll for events: %s\n",
-                        strerror(errno));
+                ST::printf(stderr, "[Game] Failed to poll for events: {}\n",
+                           strerror(errno));
                 throw DS::SockHup();
             }
             if (result == 0 || fds[0].revents & POLLHUP)
@@ -280,8 +280,8 @@ void wk_gameWorker(DS::SocketHandle sockp)
     } catch (const DS::SockHup&) {
         // Socket closed...
     } catch (const std::exception& ex) {
-        fprintf(stderr, "[Game] Error processing client message from %s: %s\n",
-                DS::SockIpAddress(sockp).c_str(), ex.what());
+        ST::printf(stderr, "[Game] Error processing client message from {}: {}\n",
+                   DS::SockIpAddress(sockp), ex.what());
     }
 
     if (client.m_host) {
@@ -294,7 +294,7 @@ void wk_gameWorker(DS::SocketHandle sockp)
             client.m_host->m_channel.putMessage(e_GameDisconnect, reinterpret_cast<void*>(&msg));
             client.m_channel.getMessage();
         } catch (const std::exception& ex) {
-            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+            ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
         }
     }
 
@@ -305,7 +305,7 @@ void wk_gameWorker(DS::SocketHandle sockp)
             reinterpret_cast<DS::BufferStream*>(msg.m_payload)->unref();
         }
     } catch (const std::exception& ex) {
-        fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+        ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
     }
 
     DS::CryptStateFree(client.m_crypt);
@@ -328,7 +328,7 @@ Game_AgeInfo age_parse(FILE* stream)
             continue;
         std::vector<ST::string> line = trimmed.split('=');
         if (line.size() != 2) {
-            fprintf(stderr, "[Game] Invalid AGE line: %s", lnbuffer);
+            ST::printf(stderr, "[Game] Invalid AGE line: \"{}\"", lnbuffer);
             continue;
         }
         if (line[0] == "StartDateTime") {
@@ -344,7 +344,7 @@ Game_AgeInfo age_parse(FILE* stream)
         } else if (line[0] == "ReleaseVersion" || line[0] == "Page") {
             // Ignored
         } else {
-            fprintf(stderr, "[Game] Invalid AGE line: %s", lnbuffer);
+            ST::printf(stderr, "[Game] Invalid AGE line: \"{}\"", lnbuffer);
         }
     }
     return age;
@@ -355,7 +355,7 @@ void DS::GameServer_Init()
     dirent** dirls;
     int count = scandir(DS::Settings::AgePath(), &dirls, &sel_age, &alphasort);
     if (count < 0) {
-        fprintf(stderr, "[Game] Error reading age descriptors: %s\n", strerror(errno));
+        ST::printf(stderr, "[Game] Error reading age descriptors: {}\n", strerror(errno));
     } else if (count == 0) {
         fputs("[Game] Warning: No age descriptors found!\n", stderr);
         free(dirls);
@@ -366,7 +366,7 @@ void DS::GameServer_Init()
             if (ageFile) {
                 char magic[12];
                 if (fread(magic, 1, 12, ageFile.get()) != 12) {
-                    fprintf(stderr, "[Game] Error: File %s is empty\n", filename.c_str());
+                    ST::printf(stderr, "[Game] Error: File {} is empty\n", filename);
                     break;
                 }
                 if (memcmp(magic, "whatdoyousee", 12) == 0 || memcmp(magic, "notthedroids", 12) == 0
@@ -392,7 +392,7 @@ void DS::GameServer_Add(DS::SocketHandle client)
 {
 #ifdef DEBUG
     if (s_commdebug)
-        printf("Connecting GAME on %s\n", DS::SockIpAddress(client).c_str());
+        ST::printf("Connecting GAME on {}\n", DS::SockIpAddress(client));
 #endif
 
     std::thread threadh(&wk_gameWorker, client);
@@ -408,7 +408,7 @@ void DS::GameServer_Shutdown()
             try {
                 host_iter->second->m_channel.putMessage(e_GameShutdown);
             } catch (const std::exception& ex) {
-                fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+                ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
             }
         }
     }
@@ -435,7 +435,7 @@ void DS::GameServer_UpdateGlobalSDL(const ST::string& age)
         try {
             it->second->m_channel.putMessage(e_GameGlobalSdlUpdate, nullptr);
         } catch (const std::exception& ex) {
-            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+            ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
         }
     }
 }
@@ -457,7 +457,7 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
             host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
             return true;
         } catch (const std::exception& ex) {
-            fprintf(stderr, "[Game] WARNING: %s\n", ex.what());
+            ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
         }
     }
     return false;
@@ -469,14 +469,14 @@ void DS::GameServer_DisplayClients()
     if (s_gameHosts.size())
         fputs("Game Servers:\n", stdout);
     for (hostmap_t::iterator host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter) {
-        printf("    %s {%s}\n", host_iter->second->m_ageFilename.c_str(),
-               host_iter->second->m_instanceId.toString().c_str());
+        ST::printf("    {} {}\n", host_iter->second->m_ageFilename,
+                   host_iter->second->m_instanceId.toString(true));
         std::lock_guard<std::mutex> clientGuard(host_iter->second->m_clientMutex);
         for (auto client_iter = host_iter->second->m_clients.begin();
              client_iter != host_iter->second->m_clients.end(); ++ client_iter)
-            printf("      * %s - %s (%u)\n", DS::SockIpAddress(client_iter->second->m_sock).c_str(),
-                   client_iter->second->m_clientInfo.m_PlayerName.c_str(),
-                   client_iter->second->m_clientInfo.m_PlayerId);
+            ST::printf("      * {} - {} ({})\n", DS::SockIpAddress(client_iter->second->m_sock),
+                       client_iter->second->m_clientInfo.m_PlayerName,
+                       client_iter->second->m_clientInfo.m_PlayerId);
     }
 }
 

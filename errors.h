@@ -18,7 +18,7 @@
 #ifndef _DS_ERRORS_H
 #define _DS_ERRORS_H
 
-#include <cstdio>
+#include <string_theory/stdio>
 #include <cstdlib>
 #include <stdexcept>
 
@@ -28,8 +28,8 @@ namespace DS
     inline void AssertionFailure(const char *condition, const char *file, long line)
         noexcept
     {
-        fprintf(stderr, "FATAL: Assertion Failure at %s:%ld: %s\n",
-                file, line, condition);
+        ST::printf(stderr, "FATAL: Assertion Failure at {}:{}: {}\n",
+                   file, line, condition);
         // Exit code 3 not used anywhere else...
         exit(3);
     }
@@ -66,7 +66,7 @@ namespace DS
     if (!(cond)) DS::AssertionFailure(#cond, __FILE__, __LINE__)
 
 #ifdef DEBUG
-#define DEBUG_printf(...)   printf(__VA_ARGS__)
+#define DEBUG_printf(...)   ST::printf(__VA_ARGS__)
 #else
 #define DEBUG_printf(...)   ((void)0)
 #endif

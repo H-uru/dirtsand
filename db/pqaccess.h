@@ -126,8 +126,12 @@ static inline void check_postgres(PGconn* postgres)
         status = PQstatus(postgres);
     }
     if (status != CONNECTION_OK) {
-        fprintf(stderr, "WARNING: Failed to reset postgres session.  Status = %d\n",
-                static_cast<int>(status));
+        ST::printf(stderr, "WARNING: Failed to reset postgres session.  Status = {}\n",
+                   static_cast<int>(status));
         fputs("The next postgres transaction is likely to fail...\n", stderr);
     }
 }
+
+#define PQ_PRINT_ERROR(pq, action)                                      \
+    ST::printf(stderr, "{}:{}:\n    Postgres " #action " error: {}\n",  \
+               __FILE__, __LINE__, PQerrorMessage(pq))

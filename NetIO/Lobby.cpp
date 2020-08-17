@@ -49,7 +49,7 @@ static DS::SocketHandle s_listenSock;
 
 void dm_lobby()
 {
-    printf("[Lobby] Running on %s\n", DS::SockIpAddress(s_listenSock).c_str());
+    ST::printf("[Lobby] Running on {}\n", DS::SockIpAddress(s_listenSock));
     {
         for ( ;; ) {
             DS::SocketHandle client;
@@ -86,21 +86,21 @@ void dm_lobby()
                     DS::GameServer_Add(client);
                     break;
                 case e_ConnCliToCsr:
-                    printf("[Lobby] %s - CSR client?  Get that mutha outta here!\n",
-                           DS::SockIpAddress(client).c_str());
+                    ST::printf("[Lobby] {} - CSR client?  Get that mutha outta here!\n",
+                               DS::SockIpAddress(client));
                     DS::FreeSock(client);
                     break;
                 default:
-                    printf("[Lobby] %s - Unknown connection type!  Abandon ship!\n",
-                           DS::SockIpAddress(client).c_str());
+                    ST::printf("[Lobby] {} - Unknown connection type!  Abandon ship!\n",
+                           DS::SockIpAddress(client));
                     DS::FreeSock(client);
                     break;
                 }
             } catch (const DS::SockHup& hup) {
                 DS::FreeSock(client);
             } catch (const std::exception& ex) {
-                fprintf(stderr, "[Lobby] %s - Exception while processing incoming client: %s\n",
-                        DS::SockIpAddress(client).c_str(), ex.what());
+                ST::printf(stderr, "[Lobby] {} - Exception while processing incoming client: {}\n",
+                           DS::SockIpAddress(client), ex.what());
                 DS::FreeSock(client);
             }
         }

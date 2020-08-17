@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include "FileManifest.h"
-#include "errors.h"
+#include <string_theory/stdio>
 #include <cstdio>
 
 DS::FileManifest::~FileManifest()
@@ -43,13 +43,13 @@ DS::NetResultCode DS::FileManifest::loadManifest(const char* filename)
 
         std::vector<ST::string> parts = line.split(',');
         if (parts.size() != 7) {
-            fprintf(stderr, "Warning:  Ignoring invalid manifest entry on line %ld of %s:\n",
-                    mfsline, filename);
+            ST::printf(stderr, "Warning:  Ignoring invalid manifest entry on line {} of {}:\n",
+                       mfsline, filename);
             continue;
         }
         if (parts[2].size() != 32 || parts[3].size() != 32) {
-            fprintf(stderr, "Warning:  Bad file hash on line %ld of %s:\n",
-                    mfsline, filename);
+            ST::printf(stderr, "Warning:  Bad file hash on line {} of {}:\n",
+                       mfsline, filename);
             continue;
         }
 

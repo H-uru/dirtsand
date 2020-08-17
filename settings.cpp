@@ -153,9 +153,9 @@ bool DS::Settings::LoadFrom(const ST::string& filename)
             } else if (params[0] == "Key.Droid") {
                 Blob data = HexDecode(params[1]);
                 if (data.size() != 16) {
-                    fprintf(stderr, "Invalid key size for Key.Droid: "
-                                    "Expected 16 bytes, got %zu bytes\n",
-                            data.size());
+                    ST::printf(stderr, "Invalid key size for Key.Droid: "
+                                       "Expected 16 bytes, got {} bytes\n",
+                               data.size());
                     return false;
                 }
                 s_settings.m_droidKey[0] = BUF_TO_UINT(data.buffer()     );

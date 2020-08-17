@@ -19,6 +19,7 @@
 #define _SDL_STATEINFO_H
 
 #include <atomic>
+#include <string_theory/stdio>
 #include "PlasMOUL/Key.h"
 #include "PlasMOUL/creatable.h"
 #include "Types/UnifiedTime.h"
@@ -207,7 +208,7 @@ namespace SDL
             State state = Create(&bs);
             state.read(&bs);
             if (!bs.atEof())
-                fprintf(stderr, "[SDL] WARNING: Did not fully parse SDL blob! (@0x%x)\n", bs.tell());
+                ST::printf(stderr, "[SDL] WARNING: Did not fully parse SDL blob! (@0x{x})\n", bs.tell());
             return state;
         }
 

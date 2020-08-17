@@ -95,10 +95,10 @@ DS::SocketHandle DS::BindSocket(const char* address, const char* port)
         // Avoid annoying "Address already in use" messages when restarting
         // the server.
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &SOCK_YES, sizeof(SOCK_YES)) < 0)
-            fprintf(stderr, "[Bind] Warning: Failed to set socket address reuse: %s\n", strerror(errno));
+            ST::printf(stderr, "[Bind] Warning: Failed to set socket address reuse: {}\n", strerror(errno));
         if (bind(sockfd, addr_iter->ai_addr, addr_iter->ai_addrlen) == 0)
             break;
-        fprintf(stderr, "[Bind] %s\n", strerror(errno));
+        ST::printf(stderr, "[Bind] {}\n", strerror(errno));
 
         // Couldn't bind, try the next one
         close(sockfd);
@@ -146,8 +146,8 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
         } else if (errno == ECONNABORTED) {
             return nullptr;
         } else {
-            fprintf(stderr, "Failed to accept incoming connection: %s\n",
-                    strerror(errno));
+            ST::printf(stderr, "Failed to accept incoming connection: {}\n",
+                       strerror(errno));
             return nullptr;
         }
     }
@@ -155,10 +155,10 @@ DS::SocketHandle DS::AcceptSock(const DS::SocketHandle sock)
     tv.tv_sec = NET_TIMEOUT;
     tv.tv_usec = 0;
     if (setsockopt(client->m_sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
-        fprintf(stderr, "Warning: Failed to set recv timeout: %s\n", strerror(errno));
+        ST::printf(stderr, "Warning: Failed to set recv timeout: {}\n", strerror(errno));
     // eap-tastic protocols require Nagle's algo be disabled
     if (setsockopt(client->m_sockfd, IPPROTO_TCP, TCP_NODELAY, &SOCK_YES, sizeof(SOCK_YES)) < 0)
-        fprintf(stderr, "Warning: Failed to set TCP nodelay: %s\n", strerror(errno));
+        ST::printf(stderr, "Warning: Failed to set TCP nodelay: {}\n", strerror(errno));
     return reinterpret_cast<SocketHandle>(client);
 }
 
@@ -183,8 +183,7 @@ ST::string DS::SockIpAddress(const DS::SocketHandle sock)
     char addrbuf[256];
     SocketHandle_Private* sockp = reinterpret_cast<SocketHandle_Private*>(sock);
     if (!inet_ntop(sockp->m_addr.sa_family, get_in_addr(sockp), addrbuf, 256)) {
-        fprintf(stderr, "Failed to get socket address: %s\n",
-                strerror(errno));
+        ST::printf(stderr, "Failed to get socket address: {}\n", strerror(errno));
         return ST_LITERAL("???");
     }
     return ST::format("{}/{}", addrbuf, get_in_port(sockp));
@@ -202,16 +201,16 @@ uint32_t DS::GetAddress4(const char* lookup)
     int result = getaddrinfo(lookup, nullptr, &info, &addrList);
     if (result != 0) {
         if (result == EAI_SYSTEM) {
-            fprintf(stderr, "WARNING: Failed to get address of %s: %s\n",
-                    lookup, strerror(errno));
+            ST::printf(stderr, "WARNING: Failed to get address of {}: {}\n",
+                       lookup, strerror(errno));
         } else {
-            fprintf(stderr, "WARNING: Failed to get address of %s: %s\n",
-                    lookup, gai_strerror(result));
+            ST::printf(stderr, "WARNING: Failed to get address of {}: {}\n",
+                       lookup, gai_strerror(result));
         }
         return 0;
     }
     if (!addrList) {
-        fprintf(stderr, "WARNING: No address info found for %s\n", lookup);
+        ST::printf(stderr, "WARNING: No address info found for {}\n", lookup);
         return 0;
     }
     uint32_t addr = reinterpret_cast<sockaddr_in*>(addrList->ai_addr)->sin_addr.s_addr;
@@ -233,8 +232,8 @@ void DS::SendBuffer(const DS::SocketHandle sock, const void* buffer, size_t size
         if (bytes < 0) {
             if (errno != EPIPE && errno != ECONNRESET) {
                 const char *error_text = strerror(errno);
-                fprintf(stderr, "Failed to send to %s: %s\n",
-                        DS::SockIpAddress(sock).c_str(), error_text);
+                ST::printf(stderr, "Failed to send to {}: {}\n",
+                           DS::SockIpAddress(sock), error_text);
             }
             throw DS::SockHup();
         } else if (bytes == 0) {
@@ -254,14 +253,14 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
 
     // Send the prepended buffer
     if (setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_YES, sizeof(SOCK_YES)) < 0)
-        fprintf(stderr, "Warning: Failed to set cork option: %s", strerror(errno));
+        ST::printf(stderr, "Warning: Failed to set cork option: {}", strerror(errno));
     while (bufsz > 0) {
         ssize_t bytes = send(imp->m_sockfd, buffer, bufsz, 0);
         if (bytes < 0) {
             if (errno != EPIPE && errno != ECONNRESET) {
                 const char *error_text = strerror(errno);
-                fprintf(stderr, "Failed to send to %s: %s\n",
-                        DS::SockIpAddress(sock).c_str(), error_text);
+                ST::printf(stderr, "Failed to send to {}: {}\n",
+                           DS::SockIpAddress(sock), error_text);
             }
             throw DS::SockHup();
         } else if (bytes == 0) {
@@ -281,8 +280,8 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
                 continue;
             } else if (errno != EPIPE && errno != ECONNRESET) {
                 const char *error_text = strerror(errno);
-                fprintf(stderr, "Failed to send to %s: %s\n",
-                        DS::SockIpAddress(sock).c_str(), error_text);
+                ST::printf(stderr, "Failed to send to {}: {}\n",
+                           DS::SockIpAddress(sock), error_text);
             }
             throw DS::SockHup();
         } else if (bytes == 0) {
@@ -291,7 +290,7 @@ void DS::SendFile(const DS::SocketHandle sock, const void* buffer, size_t bufsz,
         fdsz -= bytes;
     }
     if (setsockopt(imp->m_sockfd, IPPROTO_TCP, TCP_CORK, &SOCK_NO, sizeof(SOCK_NO)) < 0)
-        fprintf(stderr, "Warning: Failed to set cork option: %s", strerror(errno));
+        ST::printf(stderr, "Warning: Failed to set cork option: {}", strerror(errno));
 }
 
 void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
@@ -305,8 +304,8 @@ void DS::RecvBuffer(const DS::SocketHandle sock, void* buffer, size_t size)
             } else if (errno != ECONNRESET && errno != EAGAIN
                        && errno != EWOULDBLOCK && errno != EPIPE) {
                 const char *error_text = strerror(errno);
-                fprintf(stderr, "Failed to recv from %s: %s\n",
-                        DS::SockIpAddress(sock).c_str(), error_text);
+                ST::printf(stderr, "Failed to recv from {}: {}\n",
+                           DS::SockIpAddress(sock), error_text);
             }
             throw DS::SockHup();
         } else if (bytes == 0) {
@@ -327,8 +326,8 @@ size_t DS::PeekSize(const SocketHandle sock)
     if (bytes < 0) {
         if (errno != ECONNRESET && errno != EAGAIN && errno != EWOULDBLOCK) {
             const char *error_text = strerror(errno);
-            fprintf(stderr, "Failed to peek from %s: %s\n",
-                    DS::SockIpAddress(sock).c_str(), error_text);
+            ST::printf(stderr, "Failed to peek from {}: {}\n",
+                       DS::SockIpAddress(sock), error_text);
         }
         throw DS::SockHup();
     } else if (bytes == 0) {

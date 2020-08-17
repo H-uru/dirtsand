@@ -33,7 +33,7 @@ bool SDL::Parser::open(const char* filename)
 
     m_file = fopen(filename, "r");
     if (!m_file) {
-        fprintf(stderr, "[SDL] Error opening file %s for reading\n", filename);
+        ST::printf(stderr, "[SDL] Error opening file {} for reading\n", filename);
         return false;
     }
     memset(sanitycheck, 0, sizeof(sanitycheck));
@@ -44,7 +44,7 @@ bool SDL::Parser::open(const char* filename)
         || memcmp(sanitycheck, "BriceIsSmart", 12) == 0) {
         fputs("[SDL] Error: DirtSand does not support encrypted SDL sources\n", stderr);
         fputs("[SDL] Please decrypt your SDL files and re-start DirtSand\n", stderr);
-        fprintf(stderr, "[SDL] Error in file: %s\n", filename);
+        ST::printf(stderr, "[SDL] Error in file: {}\n", filename);
         return false;
     }
 
@@ -175,8 +175,8 @@ SDL::Token SDL::Parser::next()
                 m_buffer.push_back(tokbuf);
                 lnp = endp + 1;
             } else {
-                fprintf(stderr, "[SDL] %s:%ld: Unexpected character '%c'\n",
-                        m_filename.c_str(), m_lineno, *lnp);
+                ST::printf(stderr, "[SDL] {}:{}: Unexpected character '{c}'\n",
+                           m_filename, m_lineno, *lnp);
                 tokbuf.m_type = e_TokError;
                 m_buffer.push_back(tokbuf);
                 break;
@@ -204,20 +204,20 @@ enum {
 #define BAD_TOK(token, parser) \
     { \
         if ((token) < 256) \
-            fprintf(stderr, "[SDL] %s:%ld: Unexpected token '%c'\n", \
-                    parser->filename(), tok.m_lineno, (token)); \
+            ST::printf(stderr, "[SDL] {}:{}: Unexpected token '{c}'\n", \
+                       parser->filename(), tok.m_lineno, (token)); \
         else \
-            fprintf(stderr, "[SDL] %s:%ld: Unexpected token %s (%s)\n", \
-                    parser->filename(), tok.m_lineno, s_toknames[(token)-256], \
-                    tok.m_value.c_str()); \
+            ST::printf(stderr, "[SDL] {}:{}: Unexpected token {} ({})\n", \
+                       parser->filename(), tok.m_lineno, s_toknames[(token)-256], \
+                       tok.m_value); \
         tok.m_type = SDL::e_TokError; \
         parser->push(tok); \
     }
 
 #define CHECK_PARAMS(count) \
     if (values.size() != count) { \
-        fprintf(stderr, "[SDL] %s:%ld: Incorrect number of parameters to DEFAULT attribute\n", \
-                parser->filename(), tok.m_lineno); \
+        ST::printf(stderr, "[SDL] {}:{}: Incorrect number of parameters to DEFAULT attribute\n", \
+                   parser->filename(), tok.m_lineno); \
         tok.m_type = SDL::e_TokError; \
         parser->push(tok); \
     }
@@ -293,9 +293,9 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
             } else if (values[0].m_value == "false") {
                 var->m_default.m_bool = false;
             } else {
-                fprintf(stderr, "[SDL] %s:%ld: Bad boolean value: %s\n",
-                        parser->filename(), values[0].m_lineno,
-                        values[0].m_value.c_str());
+                ST::printf(stderr, "[SDL] {}:{}: Bad boolean value: {}\n",
+                           parser->filename(), values[0].m_lineno,
+                           values[0].m_value);
                 tok.m_type = SDL::e_TokError;
                 parser->push(tok);
             }
@@ -448,9 +448,9 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
             if (values[0].m_value == "nil") {
                 // This is redundant...
             } else {
-                fprintf(stderr, "[SDL] %s:%ld: Bad plKey initializer: %s\n",
-                        parser->filename(), values[0].m_lineno,
-                        values[0].m_value.c_str());
+                ST::printf(stderr, "[SDL] {}:{}: Bad plKey initializer: {}\n",
+                           parser->filename(), values[0].m_lineno,
+                           values[0].m_value);
                 tok.m_type = SDL::e_TokError;
                 parser->push(tok);
             }
@@ -459,8 +459,8 @@ static int parse_default(SDL::VarDescriptor* var, SDL::Parser* parser)
         }
         break;
     default:
-        fprintf(stderr, "[SDL] %s:%ld: Unexpected variable type\n",
-                parser->filename(), tok.m_lineno);
+        ST::printf(stderr, "[SDL] {}:{}: Unexpected variable type\n",
+                   parser->filename(), tok.m_lineno);
         break;
     }
 
@@ -489,7 +489,7 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             break;
         if (tok.m_type == e_TokEof) {
             if (state != e_State_File)
-                fprintf(stderr, "[SDL] Unexpected EOF in %s\n", m_filename.c_str());
+                ST::printf(stderr, "[SDL] Unexpected EOF in {}\n", m_filename);
             break;
         }
 

@@ -381,8 +381,7 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
             "    WHERE \"ServerIdx\"=$1 AND \"Descriptor\"=$2 AND \"ObjectKey\"=$3",
             host->m_serverIdx, descriptor, object_b64);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+        PQ_PRINT_ERROR(host->m_postgres, SELECT);
         return;
     }
     if (PQntuples(result) == 0) {
@@ -392,8 +391,7 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
                               "    VALUES ($1, $2, $3, $4)",
                               host->m_serverIdx, descriptor, object_b64, blob_b64);
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres INSERT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            PQ_PRINT_ERROR(host->m_postgres, INSERT);
             return;
         }
     } else {
@@ -405,8 +403,7 @@ void dm_save_sdl_state(GameHost_Private* host, const ST::string& descriptor,
                               "    SET \"SdlBlob\"=$2 WHERE idx=$1",
                               stateIdx, blob_b64);
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres UPDATE error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            PQ_PRINT_ERROR(host->m_postgres, UPDATE);
             return;
         }
     }
@@ -442,20 +439,20 @@ void dm_read_sdl(GameHost_Private* host, GameClient_Private* client,
     try {
         update = SDL::State::FromBlob(state->m_sdlBlob);
     } catch (const std::exception& ex) {
-        fprintf(stderr, "[SDL] Error parsing state: %s\n", ex.what());
+        ST::printf(stderr, "[SDL] Error parsing state: {}\n", ex.what());
         return;
     }
 
     if (!update.descriptor()) {
-        fprintf(stderr, "[SDL] Received an update for '%s' using an invalid descriptor!\n",
-                state->m_object.m_name.c_str());
+        ST::printf(stderr, "[SDL] Received an update for '{}' using an invalid descriptor!\n",
+                   state->m_object.m_name);
         return;
     }
 
 #if 0  // Enable for SDL debugging
-    fprintf(stderr, "[SDL] Bcasting SDL %s for [%04X]%s\n",
-            update.descriptor()->m_name.c_str(), state->m_object.m_type,
-            state->m_object.m_name.c_str());
+    ST::printf(stderr, "[SDL] Bcasting SDL {} for [{04X}]{}\n",
+               update.descriptor()->m_name, state->m_object.m_type,
+               state->m_object.m_name);
     update.debug();
 #endif
 
@@ -630,8 +627,8 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     try {
         netmsg = MOUL::Factory::Read<MOUL::NetMessage>(&stream);
     } catch (const MOUL::FactoryException&) {
-        fprintf(stderr, "[Game] Warning: Ignoring message: %04X\n",
-                msg->m_messageType);
+        ST::printf(stderr, "[Game] Warning: Ignoring message: {04X}\n",
+                   msg->m_messageType);
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     } catch (const std::exception& ex) {
@@ -641,20 +638,20 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             switch (gameMsg->m_message->type()) {
 #define CREATABLE_TYPE(id, name) \
             case id: \
-                fprintf(stderr, "[Game] Exception reading " #name ": %s\n", ex.what()); \
+                ST::printf(stderr, "[Game] Exception reading " #name ": {}\n", ex.what()); \
                 break;
 #include "creatable_types.inl"
 #undef CREATABLE_TYPE
             }
         } else {
-            fprintf(stderr, "[Game] Exception reading net message: %s\n",
-                    ex.what());
+            ST::printf(stderr, "[Game] Exception reading net message: {}\n",
+                       ex.what());
         }
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
     }
     if (!stream.atEof()) {
-        fprintf(stderr, "[Game] Incomplete parse of %04X\n", netmsg->type());
+        ST::printf(stderr, "[Game] Incomplete parse of {04X}\n", netmsg->type());
         netmsg->unref();
         SEND_REPLY(msg, DS::e_NetInternalError);
         return;
@@ -715,8 +712,8 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
             //TODO: Whatever the client is expecting us to do
             break;
         default:
-            fprintf(stderr, "[Game] Warning: Unhandled message: %04X\n",
-                    msg->m_messageType);
+            ST::printf(stderr, "[Game] Warning: Unhandled message: {04X}\n",
+                       msg->m_messageType);
             break;
         }
     } catch (const DS::SockHup&) {
@@ -801,14 +798,14 @@ void dm_gameHost(GameHost_Private* host)
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
-                fprintf(stderr, "[Game] Invalid message (%d) in message queue\n",
-                        msg.m_messageType);
+                ST::printf(stderr, "[Game] Invalid message ({}) in message queue\n",
+                           msg.m_messageType);
                 exit(1);
                 break;
             }
         } catch (const std::exception& ex) {
-            fprintf(stderr, "[Game] Exception raised processing message: %s\n",
-                    ex.what());
+            ST::printf(stderr, "[Game] Exception raised processing message: {}\n",
+                       ex.what());
             if (msg.m_payload) {
                 // Keep clients from blocking on a reply
                 SEND_REPLY(reinterpret_cast<Game_ClientMessage*>(msg.m_payload),
@@ -829,7 +826,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                     DS::Settings::DbUsername(), DS::Settings::DbPassword(),
                     DS::Settings::DbDbaseName()).c_str());
     if (PQstatus(postgres) != CONNECTION_OK) {
-        fprintf(stderr, "Error connecting to postgres: %s", PQerrorMessage(postgres));
+        ST::printf(stderr, "Error connecting to postgres: {}", PQerrorMessage(postgres));
         PQfinish(postgres);
         return nullptr;
     }
@@ -839,21 +836,20 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
             "    FROM game.\"Servers\" WHERE idx=$1",
             ageMcpId);
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                __FILE__, __LINE__, PQerrorMessage(postgres));
+        PQ_PRINT_ERROR(postgres, SELECT);
         result.reset();
         PQfinish(postgres);
         return nullptr;
     }
     if (PQntuples(result) == 0) {
-        fprintf(stderr, "[Game] Age MCP %u not found\n", ageMcpId);
+        ST::printf(stderr, "[Game] Age MCP {} not found\n", ageMcpId);
         result.reset();
         PQfinish(postgres);
         return nullptr;
     } else {
         if (PQntuples(result) != 1) {
-            fprintf(stderr, "[Game] WARNING: Multiple servers found for MCP %u\n",
-                    ageMcpId);
+            ST::printf(stderr, "[Game] WARNING: Multiple servers found for MCP {}\n",
+                       ageMcpId);
         }
 
         GameHost_Private* host = new GameHost_Private();
@@ -888,8 +884,8 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
         try {
             host->m_localState = SDL::State::FromBlob(sdlFetch.m_localState);
         } catch (const std::exception& ex) {
-            fprintf(stderr, "[SDL] Error parsing Age SDL state for %s: %s\n",
-                    host->m_ageFilename.c_str(), ex.what());
+            ST::printf(stderr, "[SDL] Error parsing Age SDL state for {}: {}\n",
+                       host->m_ageFilename, ex.what());
             PQfinish(postgres);
             delete host;
             return nullptr;
@@ -924,8 +920,7 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                 "    FROM game.\"AgeStates\" WHERE \"ServerIdx\"=$1",
                 host->m_serverIdx);
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-            fprintf(stderr, "%s:%d:\n    Postgres SELECT error: %s\n",
-                    __FILE__, __LINE__, PQerrorMessage(host->m_postgres));
+            PQ_PRINT_ERROR(host->m_postgres, SELECT);
         } else {
             int count = PQntuples(result);
 
@@ -945,9 +940,9 @@ GameHost_Private* start_game_host(uint32_t ageMcpId)
                     gs.m_state = state;
                     host->m_states[key][PQgetvalue(result, i, 0)] = gs;
                 } catch (const std::exception& ex) {
-                    fprintf(stderr, "[SDL] Error parsing state %s for [%04X]%s: %s\n",
-                            PQgetvalue(result, i, 0), key.m_type, key.m_name.c_str(),
-                            ex.what());
+                    ST::printf(stderr, "[SDL] Error parsing state {} for [{04X}]{}: {}\n",
+                               PQgetvalue(result, i, 0), key.m_type, key.m_name,
+                               ex.what());
                 }
             }
         }

@@ -23,6 +23,7 @@
 
 #ifdef DEBUG
 #include <typeinfo>
+#include <string_theory/stdio>
 #endif
 
 namespace MOUL
@@ -44,8 +45,8 @@ namespace MOUL
 #ifdef DEBUG
                 if (!result) {
                     fputs("Error: Cast did not match expected type\n", stderr);
-                    fprintf(stderr, "    FROM %s ; TO %s\n",
-                            typeid(*obj).name(), typeid(cre_t).name());
+                    ST::printf(stderr, "    FROM {} ; TO {}\n",
+                               typeid(*obj).name(), typeid(cre_t).name());
                 }
 #endif
                 if (!result)

@@ -72,7 +72,7 @@ MOUL::EventData* MOUL::EventData::Read(DS::Stream* stream)
         data = new ClimbingBlockerHitEventData();
         break;
     default:
-        fprintf(stderr, "Got unsupported EventData type %u\n", type);
+        ST::printf(stderr, "Got unsupported EventData type {}\n", type);
         throw DS::MalformedData();
     }
 
