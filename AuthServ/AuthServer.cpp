@@ -1148,9 +1148,9 @@ void DS::AuthServer_DisplayClients()
     std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
     if (s_authClients.size())
         fputs("Auth Server:\n", stdout);
-    for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
-        ST::printf("  * {} {{{}}\n", DS::SockIpAddress((*client_iter)->m_sock),
-                   (*client_iter)->m_acctUuid.toString());
+    for (const auto& client : s_authClients) {
+        ST::printf("  * {} {}\n", DS::SockIpAddress(client->m_sock),
+                   client->m_acctUuid.toString(true));
     }
 }
 

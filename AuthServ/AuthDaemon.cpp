@@ -160,9 +160,9 @@ void dm_auth_login(Auth_LoginInfo* info)
     client->m_acctUuid = DS::Uuid(PQgetvalue(result, 0, 1));
     client->m_acctFlags = strtoul(PQgetvalue(result, 0, 2), nullptr, 10);
     info->m_billingType = strtoul(PQgetvalue(result, 0, 3), nullptr, 10);
-    ST::printf("[Auth] {} logged in as {} {{{}}\n",
+    ST::printf("[Auth] {} logged in as {} {}\n",
                DS::SockIpAddress(info->m_client->m_sock),
-               info->m_acctName, client->m_acctUuid.toString());
+               info->m_acctName, client->m_acctUuid.toString(true));
 
     // Avoid fetching the players for banned dudes
     if (client->m_acctFlags & DS::e_AcctBanned) {
@@ -302,8 +302,8 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
         return;
     }
     if (PQntuples(result) == 0) {
-        ST::printf(stderr, "[Auth] {{{}} requested invalid player ID ({})\n",
-                   client->m_acctUuid.toString(), client->m_player.m_playerId);
+        ST::printf(stderr, "[Auth] {} requested invalid player ID ({})\n",
+                   client->m_acctUuid.toString(true), client->m_player.m_playerId);
         client->m_player.m_playerId = 0;
         SEND_REPLY(msg, DS::e_NetPlayerNotFound);
         return;
@@ -319,8 +319,8 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
         std::lock_guard<std::mutex> authClientGuard(s_authClientMutex);
         for (auto client_iter = s_authClients.begin(); client_iter != s_authClients.end(); ++client_iter) {
             if (client != *client_iter && (*client_iter)->m_player.m_playerId == client->m_player.m_playerId) {
-                ST::printf("[Auth] {{{}} requested already-active player ({})\n",
-                           client->m_acctUuid.toString(), client->m_player.m_playerId);
+                ST::printf("[Auth] {} requested already-active player ({})\n",
+                           client->m_acctUuid.toString(true), client->m_player.m_playerId);
                 client->m_player.m_playerId = 0;
                 SEND_REPLY(msg, DS::e_NetLoggedInElsewhere);
                 return;
@@ -355,8 +355,8 @@ void dm_auth_setPlayer(Auth_ClientMessage* msg)
         dm_auth_bcast_node(nodeid, gen_uuid());
     }
 
-    ST::printf("[Auth] {{{}} signed in as {} ({})\n",
-               client->m_acctUuid.toString(), client->m_player.m_playerName,
+    ST::printf("[Auth] {} signed in as {} ({})\n",
+               client->m_acctUuid.toString(true), client->m_player.m_playerName,
                client->m_player.m_playerId);
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
@@ -420,8 +420,8 @@ void dm_auth_deletePlayer(Auth_PlayerDelete* msg)
 {
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(msg->m_client);
 
-    DEBUG_printf("[Auth] {{{}} requesting deletion of PlayerId ({})\n",
-                 client->m_acctUuid.toString(), msg->m_playerId);
+    DEBUG_printf("[Auth] {} requesting deletion of PlayerId ({})\n",
+                 client->m_acctUuid.toString(true), msg->m_playerId);
 
     // Check for existing player
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
@@ -527,11 +527,11 @@ void dm_auth_createAge(Auth_AgeCreate* msg)
 
 void dm_auth_findAge(Auth_GameAge* msg)
 {
-    const ST::string instanceIdString = msg->m_instanceId.toString();
-    DEBUG_printf("[Auth] {} Requesting game server {{{}} {}\n",
+    DEBUG_printf("[Auth] {} Requesting game server {} {}\n",
                  DS::SockIpAddress(msg->m_client->m_sock),
-                 instanceIdString, msg->m_name);
+                 msg->m_instanceId.toString(true), msg->m_name);
 
+    const ST::string instanceIdString = msg->m_instanceId.toString();
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT idx, \"AgeIdx\", \"DisplayName\" FROM game.\"Servers\""
             "    WHERE \"AgeUuid\"=$1",
@@ -554,8 +554,8 @@ void dm_auth_findAge(Auth_GameAge* msg)
             return;
         }
     } else  if (PQntuples(result) != 1) {
-        ST::printf(stderr, "[Auth] WARNING: Age {{{}} {} matched {} servers.\n",
-                   instanceIdString, msg->m_name, PQntuples(result));
+        ST::printf(stderr, "[Auth] WARNING: Age {} {} matched {} servers.\n",
+                   msg->m_instanceId.toString(true), msg->m_name, PQntuples(result));
     }
     msg->m_ageNodeIdx = strtoul(PQgetvalue(result, 0, 1), nullptr, 10);
     msg->m_mcpId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);

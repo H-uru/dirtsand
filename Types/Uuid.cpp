@@ -89,10 +89,16 @@ void DS::Uuid::write(DS::Stream* stream) const
     stream->writeBytes(m_data4, sizeof(m_data4));
 }
 
-ST::string DS::Uuid::toString() const
+ST::string DS::Uuid::toString(bool pretty) const
 {
-    return ST::format("{08x}-{04x}-{04x}-{02x}{02x}-{02x}{02x}{02x}{02x}{02x}{02x}",
-                      m_data1, m_data2, m_data3, m_data4[0], m_data4[1],
-                      m_data4[2], m_data4[3], m_data4[4], m_data4[5],
-                      m_data4[6], m_data4[7]);
+    const ST::string uuidStr =
+        ST::format("{08x}-{04x}-{04x}-{02x}{02x}-{02x}{02x}{02x}{02x}{02x}{02x}",
+                   m_data1, m_data2, m_data3, m_data4[0], m_data4[1],
+                   m_data4[2], m_data4[3], m_data4[4], m_data4[5],
+                   m_data4[6], m_data4[7]);
+
+    if (pretty)
+        return ST_LITERAL("{") + uuidStr + ST_LITERAL("}");
+    else
+        return uuidStr;
 }

@@ -469,8 +469,8 @@ void DS::GameServer_DisplayClients()
     if (s_gameHosts.size())
         fputs("Game Servers:\n", stdout);
     for (hostmap_t::iterator host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ++host_iter) {
-        ST::printf("    {} {{{}}\n", host_iter->second->m_ageFilename,
-                   host_iter->second->m_instanceId.toString());
+        ST::printf("    {} {}\n", host_iter->second->m_ageFilename,
+                   host_iter->second->m_instanceId.toString(true));
         std::lock_guard<std::mutex> clientGuard(host_iter->second->m_clientMutex);
         for (auto client_iter = host_iter->second->m_clients.begin();
              client_iter != host_iter->second->m_clients.end(); ++ client_iter)
