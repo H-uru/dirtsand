@@ -230,7 +230,7 @@ void DS::Settings::UseDefaults()
     s_settings.m_dbHostname = ST_LITERAL("localhost");
     s_settings.m_dbPort = ST_LITERAL("5432");
     s_settings.m_dbUsername = ST_LITERAL("dirtsand");
-    s_settings.m_dbPassword = ST::null;
+    s_settings.m_dbPassword = ST::string();
     s_settings.m_dbDbase = ST_LITERAL("dirtsand");
 }
 

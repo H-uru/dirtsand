@@ -55,10 +55,10 @@ struct AuthServer_AgeInfo
     {
         m_ageId = DS::Uuid();
         m_parentId = DS::Uuid();
-        m_filename = ST::null;
-        m_instName = ST::null;
-        m_userName = ST::null;
-        m_description = ST::null;
+        m_filename.clear();
+        m_instName.clear();
+        m_userName.clear();
+        m_description.clear();
         m_seqNumber = 0;
         m_language = -1;
     }

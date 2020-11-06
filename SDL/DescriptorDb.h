@@ -50,7 +50,7 @@ namespace SDL
         {
             m_valid = false;
             m_time.setNull();
-            m_string = ST::null;
+            m_string.clear();
         }
     };
 
@@ -68,12 +68,12 @@ namespace SDL
         void clear()
         {
             m_type = e_VarInvalid;
-            m_typeName = ST::null;
-            m_name = ST::null;
+            m_typeName.clear();
+            m_name.clear();
             m_size = 0;
             m_default.clear();
-            m_defaultOption = ST::null;
-            m_displayOption = ST::null;
+            m_defaultOption.clear();
+            m_displayOption.clear();
         }
     };
 
@@ -89,7 +89,7 @@ namespace SDL
 
         void clear()
         {
-            m_name = ST::null;
+            m_name = ST::string();
             m_version = -1;
             m_vars.clear();
             m_varmap.clear();

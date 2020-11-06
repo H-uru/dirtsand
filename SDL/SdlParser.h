@@ -59,7 +59,7 @@ namespace SDL
             if (m_file)
                 fclose(m_file);
             m_file = nullptr;
-            m_filename = ST::null;
+            m_filename.clear();
             m_lineno = -1;
         }
 

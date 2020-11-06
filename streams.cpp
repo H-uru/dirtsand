@@ -84,7 +84,7 @@ void DS::Stream::writeString(const ST::string& value, DS::StringType format)
         writeBytes(buffer.data(), buffer.size() * sizeof(char16_t));
     } else {
         ST::char_buffer buffer = (format == e_StringUTF8) ? value.to_utf8()
-                               : value.to_latin_1(ST::substitute_invalid);
+                               : value.to_latin_1();
         writeBytes(buffer.data(), buffer.size() * sizeof(char));
     }
 }
@@ -101,7 +101,7 @@ void DS::Stream::writeSafeString(const ST::string& value, DS::StringType format)
         write<char16_t>(0);
     } else {
         ST::char_buffer buffer = (format == e_StringUTF8) ? value.to_utf8()
-                               : value.to_latin_1(ST::substitute_invalid);
+                               : value.to_latin_1();
         uint16_t length = value.size() & 0x0FFF;
         for (uint16_t i=0; i<length; ++i)
             buffer[i] = ~buffer[i];

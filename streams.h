@@ -88,7 +88,7 @@ namespace DS
                 writeBytes(buffer.data(), buffer.size() * sizeof(char16_t));
             } else {
                 ST::char_buffer buffer = (format == e_StringUTF8) ? value.to_utf8()
-                                       : value.to_latin_1(ST::substitute_invalid);
+                                       : value.to_latin_1();
                 write<sz_t>(buffer.size());
                 writeBytes(buffer.data(), buffer.size() * sizeof(char));
             }
