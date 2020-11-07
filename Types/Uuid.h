@@ -25,7 +25,7 @@ namespace DS
     class Uuid
     {
     public:
-        Uuid() { memset(m_bytes, 0, sizeof(m_bytes)); }
+        Uuid() : m_bytes() { }
 
         Uuid(uint32_t data1, uint16_t data2, uint16_t data3, const uint8_t* data4)
             : m_data1(data1), m_data2(data2), m_data3(data3)
@@ -42,6 +42,7 @@ namespace DS
         bool operator!=(const Uuid& other) const
         { return memcmp(m_bytes, other.m_bytes, sizeof(m_bytes)) != 0; }
 
+        void clear() { memset(m_bytes, 0, sizeof(m_bytes)); }
         bool isNull() const { return operator==(Uuid()); }
 
         void read(Stream* stream);

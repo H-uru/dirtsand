@@ -103,7 +103,7 @@ find_a_friendly_neighborhood_for_our_new_visitor()
     }
 }
 
-static uint32_t find_public_age_1(const ST::string& filename, const DS::Uuid& uuid=DS::Uuid())
+static uint32_t find_public_age_1(const ST::string& filename, const DS::Uuid& uuid={})
 {
     DS::PGresultRef result;
     if (uuid.isNull()) {

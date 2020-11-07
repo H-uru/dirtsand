@@ -105,7 +105,7 @@ void dm_auth_login(Auth_LoginInfo* info)
 
     // Reset UUID in case authentication fails
     AuthServer_Private* client = reinterpret_cast<AuthServer_Private*>(info->m_client);
-    client->m_acctUuid = DS::Uuid();
+    client->m_acctUuid.clear();
 
     DS::PGresultRef result = DS::PQexecVA(s_postgres,
             "SELECT \"PassHash\", \"AcctUuid\", \"AcctFlags\", \"BillingType\""

@@ -757,7 +757,7 @@ void dm_local_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
     sdlNode.m_client = &fakeClient;
     sdlNode.m_internal = true;
     sdlNode.m_node = std::move(msg->m_node);
-    sdlNode.m_revision = DS::Uuid();
+    sdlNode.m_revision.clear();
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
         fputs("[Game] Error writing SDL node back to vault\n", stderr);
