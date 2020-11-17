@@ -653,7 +653,7 @@ void SDL::Variable::setDefault()
             if (m_data->m_desc->m_default.m_valid)
                 m_data->m_string[i] = m_data->m_desc->m_default.m_string;
             else
-                m_data->m_string[i] = ST::null;
+                m_data->m_string[i] = ST::string();
             break;
         case e_VarKey:
             m_data->m_key[i] = MOUL::Uoid();

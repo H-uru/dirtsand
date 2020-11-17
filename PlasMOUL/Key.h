@@ -165,7 +165,7 @@ namespace MOUL
         Location location() const { return m_data ? m_data->m_uoid.m_location : Location::Invalid; }
         uint8_t loadMask() const { return m_data ? m_data->m_uoid.m_loadMask : 0xFF; }
         uint16_t type() const { return m_data ? m_data->m_uoid.m_type : 0x8000; }
-        ST::string name() const { return m_data ? m_data->m_uoid.m_name : ST::null; }
+        ST::string name() const { return m_data ? m_data->m_uoid.m_name : ST::string(); }
         uint32_t id() const { return m_data ? m_data->m_uoid.m_id : 0; }
         uint32_t cloneId() const { return m_data ? m_data->m_uoid.m_cloneId : 0; }
         uint32_t clonePlayerId() const { return m_data ? m_data->m_uoid.m_clonePlayerId : 0; }

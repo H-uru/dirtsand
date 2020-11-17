@@ -71,7 +71,7 @@ void dm_htserv()
                         *cp++ = 0;
                         lines.push_back(ST::string::from_latin_1(sp));
                         sp = cp;
-                        scratch = ST::null;
+                        scratch.clear();
                     } else {
                         ++cp;
                     }
