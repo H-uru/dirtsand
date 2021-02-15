@@ -29,7 +29,7 @@ SET search_path = auth, pg_catalog;
 SET default_tablespace = '';
 SET default_with_oids = false;
 
-CREATE TABLE "Accounts" (
+CREATE TABLE IF NOT EXISTS "Accounts" (
     idx integer NOT NULL,
     "Login" character varying(64) NOT NULL,
     "PassHash" character(40) NOT NULL,
@@ -38,16 +38,15 @@ CREATE TABLE "Accounts" (
     "BillingType" integer DEFAULT 0 NOT NULL
 );
 
-CREATE SEQUENCE "Accounts_idx_seq"
+CREATE SEQUENCE IF NOT EXISTS "Accounts_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 ALTER SEQUENCE "Accounts_idx_seq" OWNED BY "Accounts".idx;
-SELECT pg_catalog.setval('"Accounts_idx_seq"', 1, false);
 
-CREATE TABLE "Players" (
+CREATE TABLE IF NOT EXISTS "Players" (
     idx integer NOT NULL,
     "AcctUuid" uuid NOT NULL,
     "PlayerIdx" integer NOT NULL,
@@ -56,16 +55,15 @@ CREATE TABLE "Players" (
     "Explorer" integer DEFAULT 1 NOT NULL
 );
 
-CREATE SEQUENCE "Players_idx_seq"
+CREATE SEQUENCE IF NOT EXISTS "Players_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 ALTER SEQUENCE "Players_idx_seq" OWNED BY "Players".idx;
-SELECT pg_catalog.setval('"Players_idx_seq"', 1, false);
 
-CREATE TABLE "Scores" (
+CREATE TABLE IF NOT EXISTS "Scores" (
     idx integer NOT NULL,
     "CreateTime" integer DEFAULT 0 NOT NULL,
     "OwnerIdx" integer NOT NULL,
@@ -73,42 +71,40 @@ CREATE TABLE "Scores" (
     "Name" character varying(64) NOT NULL,
     "Points" integer DEFAULT 0 NOT NULL
 );
-CREATE INDEX "Score_Index" ON auth."Scores" ("OwnerIdx", "Name");
+CREATE INDEX IF NOT EXISTS "Score_Index" ON auth."Scores" ("OwnerIdx", "Name");
 
-CREATE SEQUENCE "Scores_idx_seq"
+CREATE SEQUENCE IF NOT EXISTS "Scores_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 ALTER SEQUENCE "Scores_idx_seq" OWNED BY "Scores".idx;
-SELECT pg_catalog.setval('"Scores_idx_seq"', 1, false);
 
 SET search_path = vault, pg_catalog;
 
-CREATE TABLE "GlobalStates" (
+CREATE TABLE IF NOT EXISTS "GlobalStates" (
     idx integer NOT NULL,
     "Descriptor" character varying(64) NOT NULL,
     "SdlBlob" text NOT NULL
 );
-CREATE INDEX "GlobalStates_Index" ON vault."GlobalStates" ("Descriptor");
+CREATE INDEX IF NOT EXISTS "GlobalStates_Index" ON vault."GlobalStates" ("Descriptor");
 
-CREATE SEQUENCE "GlobalStates_idx_seq"
+CREATE SEQUENCE IF NOT EXISTS "GlobalStates_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 ALTER SEQUENCE "GlobalStates_idx_seq" OWNED BY "GlobalStates".idx;
-SELECT pg_catalog.setval('"GlobalStates_idx_seq"', 1, false);
 
-CREATE TABLE "NodeRefs" (
+CREATE TABLE IF NOT EXISTS "NodeRefs" (
     idx integer NOT NULL,
     "ParentIdx" integer NOT NULL,
     "ChildIdx" integer NOT NULL,
     "OwnerIdx" integer DEFAULT 0 NOT NULL
 );
-CREATE INDEX RefParent ON vault."NodeRefs" ("ParentIdx");
+CREATE INDEX IF NOT EXISTS RefParent ON vault."NodeRefs" ("ParentIdx");
 CREATE SEQUENCE "NodeRefs_idx_seq"
     START WITH 1
     INCREMENT BY 1
@@ -116,9 +112,8 @@ CREATE SEQUENCE "NodeRefs_idx_seq"
     NO MINVALUE
     CACHE 1;
 ALTER SEQUENCE "NodeRefs_idx_seq" OWNED BY "NodeRefs".idx;
-SELECT pg_catalog.setval('"NodeRefs_idx_seq"', 1, false);
 
-CREATE TABLE "Nodes" (
+CREATE TABLE IF NOT EXISTS "Nodes" (
     idx integer NOT NULL,
     "CreateTime" integer DEFAULT 0 NOT NULL,
     "ModifyTime" integer DEFAULT 0 NOT NULL,
@@ -152,18 +147,17 @@ CREATE TABLE "Nodes" (
     "Blob_1" text,
     "Blob_2" text
 );
-CREATE INDEX PublicAgeList ON vault."Nodes" ("NodeType", "Int32_2", "String64_2");
-CREATE SEQUENCE "Nodes_idx_seq"
+CREATE INDEX IF NOT EXISTS PublicAgeList ON vault."Nodes" ("NodeType", "Int32_2", "String64_2");
+CREATE SEQUENCE IF NOT EXISTS "Nodes_idx_seq"
     INCREMENT BY 1
     NO MAXVALUE
     MINVALUE 10001
     CACHE 1;
 ALTER SEQUENCE "Nodes_idx_seq" OWNED BY "Nodes".idx;
-SELECT pg_catalog.setval('"Nodes_idx_seq"', 10001, false);
 
 SET search_path = game, pg_catalog;
 
-CREATE TABLE "Servers" (
+CREATE TABLE IF NOT EXISTS "Servers" (
     idx integer NOT NULL,
     "AgeUuid" uuid NOT NULL,
     "AgeFilename" character varying(64) NOT NULL,
@@ -172,38 +166,35 @@ CREATE TABLE "Servers" (
     "SdlIdx" integer NOT NULL,
     "Temporary" boolean DEFAULT 'f' NOT NULL
 );
-CREATE SEQUENCE "Servers_idx_seq"
+CREATE SEQUENCE IF NOT EXISTS "Servers_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 ALTER SEQUENCE "Servers_idx_seq" OWNED BY "Servers".idx;
-SELECT pg_catalog.setval('"Servers_idx_seq"', 1, false);
 
-CREATE SEQUENCE "AgeSeqNumber"
+CREATE SEQUENCE IF NOT EXISTS "AgeSeqNumber"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
-SELECT pg_catalog.setval('"AgeSeqNumber"', 1, false);
 
-CREATE TABLE "AgeStates" (
+CREATE TABLE IF NOT EXISTS "AgeStates" (
     idx integer NOT NULL,
     "ServerIdx" integer NOT NULL,
     "Descriptor" character varying(64) NOT NULL,
     "ObjectKey" text NOT NULL,
     "SdlBlob" text NOT NULL
 );
-CREATE SEQUENCE "AgeStates_idx_seq"
+CREATE SEQUENCE IF NOT EXISTS "AgeStates_idx_seq"
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 ALTER SEQUENCE "AgeStates_idx_seq" OWNED BY "AgeStates".idx;
-SELECT pg_catalog.setval('"AgeStates_idx_seq"', 1, false);
 
 SET search_path = auth, pg_catalog;
 ALTER TABLE "Accounts" ALTER COLUMN idx SET DEFAULT nextval('"Accounts_idx_seq"'::regclass);
@@ -218,7 +209,7 @@ ALTER TABLE ONLY "Players"
     ADD CONSTRAINT "Players_pkey" PRIMARY KEY (idx);
 ALTER TABLE ONLY "Scores"
     ADD CONSTRAINT "Scores_pkey" PRIMARY KEY (idx);
-CREATE INDEX "Login_Index" ON "Accounts" USING hash ("Login");
+CREATE INDEX IF NOT EXISTS "Login_Index" ON "Accounts" USING hash ("Login");
 
 SET search_path = vault, pg_catalog;
 ALTER TABLE "GlobalStates" ALTER COLUMN idx SET DEFAULT nextval('"GlobalStates_idx_seq"'::regclass);

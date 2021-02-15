@@ -15,11 +15,14 @@
 
 version: "3.8"
 
+# This is the baseline dirtsand service definition -- the bare minimum to start a dirtsand service.
+# However, this is insufficient to actually start a shard. You will need to use docker-compose.local.yml
+# to setup a trivial local shard (see also: `docker-compose -f`) or copy and customize it to deploy
+# a real shard (see also: `docker stack`) This is due to multi-value keys merging instead of overriding.
+# See also: https://docs.docker.com/compose/extends/#adding-and-overriding-configuration
 services:
   db:
-    build:
-      context: ./db
-    env_file: .env
+    image: postgres:13-alpine
     restart: always
     volumes:
       - db:/var/lib/postgresql/data/
@@ -28,32 +31,8 @@ services:
     build:
         context: .
     depends_on: [db]
-    env_file: .env
-    ports:
-      - "14617:14617/tcp"
-      - "8080:8080/tcp"
     stdin_open: true
     tty: true
-    volumes:
-      - type: bind
-        source: ${HOST_CONFIG_DIRECTORY}
-        target: /opt/dirtsand/etc/
-
-      - type: bind
-        source: ${HOST_AUTHSRV_DIRECTORY}
-        target: /opt/dirtsand/lib/authsrv/
-
-      - type: bind
-        source: ${HOST_FILESRV_DIRECTORY}
-        target: /opt/dirtsand/lib/filesrv/
-
-      - type: bind
-        source: ${HOST_AGE_DIRECTORY}
-        target: /opt/dirtsand/lib/dat/
-
-      - type: bind
-        source: ${HOST_SDL_DIRECTORY}
-        target: /opt/dirtsand/lib/SDL/
 
 volumes:
   db:
