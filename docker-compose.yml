@@ -17,9 +17,8 @@ version: "3.8"
 
 # This is the baseline dirtsand service definition -- the bare minimum to start a dirtsand service.
 # However, this is insufficient to actually start a shard. You will need to use docker-compose.local.yml
-# to setup a trivial local shard (see also: `docker-compose -f`) or copy and customize it to deploy
-# a real shard (see also: `docker stack`) This is due to multi-value keys merging instead of overriding.
-# See also: https://docs.docker.com/compose/extends/#adding-and-overriding-configuration
+# to setup a trivial local shard (see also: `docker-compose -f`). This is due to multi-value keys
+# merging instead of overriding. See also: https://docs.docker.com/compose/extends/#adding-and-overriding-configuration
 services:
   db:
     image: postgres:13-alpine

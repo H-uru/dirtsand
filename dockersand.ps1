@@ -22,6 +22,20 @@ param(
     $Command = "help"
 )
 
+# --- CONFIGURABLE ---
+# This compose file will be processed AFTER docker-compose.yml to set up your shard's
+# custom options.
+$OverlayComposeFile = "docker-compose.local.yml"
+
+# The directory this script is in. If you customize this file outside of the repo, hardcode the
+# path to the DIRTSAND sources.
+$DSDir = $PSScriptRoot
+
+# The prefix for the containers. Defaults to the name of the DIRTSAND source directory ("dirtsand"),
+# so the containers are usually: dirtsand_moul_1 and dirtsand_db_1. Change this to something else
+# if you intend to run multiple shards on the same machine.
+$ProjectName = Split-Path -Leaf $DSDir
+
 function Get-DirtsandContainer() {
     $containers = @(docker-compose ps | Select-String ".*_moul_[0-9]*").Matches
     if ($containers.Length -gt 0) {
@@ -39,7 +53,8 @@ function Test-Docker() {
     }
 }
 
-Push-Location $PSScriptRoot
+# docker-compose requires the CWD have the docker-compose.yml file.
+Push-Location $DSDir
 trap { Pop-Location }
 
 if ($Command -eq "help") {
@@ -55,7 +70,7 @@ if ($Command -eq "help") {
     $container = Get-DirtsandContainer
     if (!$container) {
         Write-Warning "dockersand is not running! Starting..."
-        docker-compose -f docker-compose.yml -f docker-compose.local.yml up -d
+        docker-compose -p $ProjectName -f docker-compose.yml -f $OverlayComposeFile up -d
         $container = Get-DirtsandContainer
     }
     if (!$container) {
@@ -70,7 +85,7 @@ if ($Command -eq "help") {
         docker-compose restart
     } else {
         Write-Warning "dockersand is not running! Starting..."
-        docker-compose -f docker-compose.yml -f docker-compose.local.yml up -d
+        docker-compose -p $ProjectName -f docker-compose.yml -f $OverlayComposeFile up -d
     }
     if ($LASTEXITCODE -eq 0) {
         Write-Host -NoNewline -ForegroundColor Green "SUCCESS"
@@ -82,7 +97,7 @@ if ($Command -eq "help") {
     Test-Docker
     if (!$(Get-DirtsandContainer)) {
         Write-Host -ForegroundColor Cyan "Starting dockersand..."
-        docker-compose -f docker-compose.yml -f docker-compose.local.yml up -d
+        docker-compose -p $ProjectName -f docker-compose.yml -f $OverlayComposeFile up -d
         if ($LASTEXITCODE -eq 0) {
             Write-Host -NoNewline -ForegroundColor Green "SUCCESS"
             Write-Host ": To manage DIRTSAND, use ./dockersand attach"
