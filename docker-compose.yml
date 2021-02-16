@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.
 
-version: "3.8"
+version: "3.2"
 
 services:
   # If you would prefer to run a bare metal database, you may omit this and simply set the
