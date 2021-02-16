@@ -63,7 +63,7 @@ elif [[ $1 = "help" ]]; then
     do_help
 elif [[ $1 = "attach" ]]; then
     check_docker
-    docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
+    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}_moul_[0-9]*" > /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "\e[33mWARNING\e[0m: dockersand is not running! Starting..."
         docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
@@ -77,11 +77,11 @@ elif [[ $1 = "attach" ]]; then
     docker attach $CONTAINER_NAME
 elif [[ $1 = "build" ]]; then
     check_docker
-    docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
+    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}_moul_[0-9]*" > /dev/null
     RUNNING=$?
     if [[ $RUNNING -eq 0 ]]; then
         echo -e "\e[36mStopping dockersand...\e[0m"
-        docker-compose down
+        docker-compose -p $PROJECT_NAME down
     fi
     docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE build
     if [[ $? -ne 0 ]]; then
@@ -99,10 +99,10 @@ elif [[ $1 = "build" ]]; then
     fi
 elif [[ $1 = "restart" ]]; then
     check_docker
-    docker-compose ps | grep dirtsand > /dev/null
+    docker-compose -p $PROJECT_NAME ps | grep dirtsand > /dev/null
     if [[ $? -eq 0 ]]; then
         echo -e "\e[36mRestarting dockersand...\e[0m"
-        docker-compose restart
+        docker-compose -p $PROJECT_NAME restart
     else
         echo -e "\e[33mWARNING\e[0m: dockersand is not running! Starting..."
         docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
@@ -114,7 +114,7 @@ elif [[ $1 = "restart" ]]; then
     fi
 elif [[ $1 = "start" ]]; then
     check_docker
-    docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
+    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}_moul_[0-9]*" > /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "\e[36mStarting dockersand...\e[0m"
         docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
@@ -128,7 +128,7 @@ elif [[ $1 = "start" ]]; then
     fi
 elif [[ $1 = "status" ]]; then
     check_docker
-    docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
+    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}_moul_[0-9]*" > /dev/null
     if [[ $? -eq 0 ]]; then
         echo -e "dockersand is \e[32mUP\e[0m"
     else
@@ -136,10 +136,10 @@ elif [[ $1 = "status" ]]; then
     fi
 elif [[ $1 = "stop" ]]; then
     check_docker
-    docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
+    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}_moul_[0-9]*" > /dev/null
     if [[ $? -eq 0 ]]; then
         echo -e "\e[36mStopping dockersand...\e[0m"
-        docker-compose down
+        docker-compose -p $PROJECT_NAME down
     else
         echo -e "\e[33mWARNING\e[0m: dockersand is not running!"
     fi

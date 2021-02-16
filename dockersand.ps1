@@ -35,7 +35,7 @@ $DSDir = $PSScriptRoot
 $ProjectName = Split-Path -Leaf $DSDir
 
 function Get-DirtsandContainer() {
-    $containers = @(docker-compose ps | Select-String ".*_moul_[0-9]*").Matches
+    $containers = @(docker-compose -p $ProjectName ps | Select-String "$($ProjectName)_moul_[0-9]*").Matches
     if ($containers.Length -gt 0) {
         return $containers[0].Value
     }
@@ -82,7 +82,7 @@ if ($Command -eq "help") {
     $running = Get-DirtsandContainer
     if ($running) {
         Write-Host -ForegroundColor Cyan "Stopping dockersand..."
-        docker-compose down
+        docker-compose -p $ProjectName down
     }
     Write-Host -ForegroundColor Cyan "Building dockersand..."
     docker-compose -p $ProjectName -f $ComposeFile build
@@ -103,7 +103,7 @@ if ($Command -eq "help") {
     Test-Docker
     if (Get-DirtsandContainer) {
         Write-Host -ForegroundColor Cyan "Restarting dockersand..."
-        docker-compose restart
+        docker-compose -p $ProjectName restart
     } else {
         Write-Warning "dockersand is not running! Starting..."
         docker-compose -p $ProjectName -f $ComposeFile up -d
@@ -140,7 +140,7 @@ if ($Command -eq "help") {
     Test-Docker
     if (Get-DirtsandContainer) {
         Write-Host -ForegroundColor Cyan "Stopping dockersand..."
-        docker-compose down
+        docker-compose -p $ProjectName down
     } else {
         Write-Warning "dockersand is not running!"
     }
