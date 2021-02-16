@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS "NodeRefs" (
     "ChildIdx" integer NOT NULL,
     "OwnerIdx" integer DEFAULT 0 NOT NULL
 );
-CREATE INDEX IF NOT EXISTS RefParent ON vault."NodeRefs" ("ParentIdx");
+CREATE INDEX IF NOT EXISTS "RefParent" ON vault."NodeRefs" ("ParentIdx");
 CREATE SEQUENCE "NodeRefs_idx_seq"
     START WITH 1
     INCREMENT BY 1
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS "Nodes" (
     "Blob_1" text,
     "Blob_2" text
 );
-CREATE INDEX IF NOT EXISTS PublicAgeList ON vault."Nodes" ("NodeType", "Int32_2", "String64_2");
+CREATE INDEX IF NOT EXISTS "PublicAgeList" ON vault."Nodes" ("NodeType", "Int32_2", "String64_2");
 CREATE SEQUENCE IF NOT EXISTS "Nodes_idx_seq"
     INCREMENT BY 1
     NO MAXVALUE

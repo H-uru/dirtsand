@@ -28,8 +28,8 @@ ARG DS_HOOD_POP_THRESHOLD=20
 
 # Everything coalesced into this single RUN statement to avoid creating WIP images.
 RUN \
-    apk add build-base cmake git openssl-dev postgresql-dev readline-dev zlib-dev && \
-    apk add bash libstdc++ openssl postgresql-client readline zlib && \
+    apk add build-base cmake git openssl-dev postgresql-dev readline-dev zlib-dev \
+        bash libstdc++ openssl postgresql-client readline zlib && \
     \
     git clone --depth 1 https://github.com/zrax/string_theory.git && \
     cmake -DCMAKE_BUILD_TYPE=Release -DST_BUILD_TESTS=OFF -B string_theory/build -S string_theory && \
