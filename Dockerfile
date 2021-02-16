@@ -18,6 +18,14 @@ FROM alpine
 COPY . /usr/src/dirtsand
 WORKDIR /usr/src
 
+ARG PRODUCT_BRANCH_ID=1
+ARG PRODUCT_BUILD_ID=918
+ARG PRODUCT_BUILD_TYPE=50
+ARG PRODUCT_UUID=ea489821-6c35-4bd0-9dae-bb17c585e680
+ARG DS_HOOD_USER_NAME=DS
+ARG DS_HOOD_INST_NAME=Neighborhood
+ARG DS_HOOD_POP_THRESHOLD=20
+
 # Everything coalesced into this single RUN statement to avoid creating WIP images.
 RUN \
     apk add build-base cmake git openssl-dev postgresql-dev readline-dev zlib-dev && \
@@ -29,7 +37,12 @@ RUN \
     rm -r string_theory && \
     \
     mkdir -p /opt/dirtsand/db && cp dirtsand/db/*.sql /opt/dirtsand/db && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/dirtsand -DCMAKE_BUILD_TYPE=Release -B dirtsand/build -S dirtsand && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/dirtsand -DCMAKE_BUILD_TYPE=Release \
+        -DPRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID} -DPRODUCT_BUILD_ID=${PRODUCT_BUILD_ID} \
+        -DPRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE} -DPRODUCT_UUID=${PRODUCT_UUID} \
+        -DDS_HOOD_USER_NAME=${DS_HOOD_USER_NAME} -DDS_HOOD_INST_NAME=${DS_HOOD_INST_NAME}} \
+        -DDS_HOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD} \
+        -B dirtsand/build -S dirtsand && \
     cmake --build dirtsand/build --parallel && cmake --build dirtsand/build --target install && \
     cd /usr/src && rm -r dirtsand && \
     mkdir -p /opt/dirtsand/etc && \

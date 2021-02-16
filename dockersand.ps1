@@ -17,7 +17,7 @@
 
 param(
     [Parameter(Position=0)]
-    [ValidateSet("attach", "help", "restart", "start", "status", "stop")]
+    [ValidateSet("attach", "build", "help", "restart", "start", "status", "stop")]
     [string]
     $Command = "help"
 )
@@ -61,6 +61,7 @@ if ($Command -eq "help") {
     Write-Host "dockersand - DIRTSAND for Docker"
     Write-Host "Available commands:"
     Write-Host "    attach - attach to the DIRTSAND console"
+    Write-Host "    build - rebuild the DIRTSAND containers from the source and compose files"
     Write-Host "    restart - restart the DIRTSAND containers"
     Write-Host "    start - start the DIRTSAND containers"
     Write-Host "    status - check if the DIRTSAND containers are running"
@@ -78,6 +79,28 @@ if ($Command -eq "help") {
     }
     Write-Host "Attaching to DIRTSAND... Press Ctrl+P Ctrl+Q to detatch!"
     docker attach $container
+} elseif($Command -eq "build") {
+    Test-Docker
+    $running = Get-DirtsandContainer
+    if ($running) {
+        Write-Host -ForegroundColor Cyan "Stopping dockersand..."
+        docker-compose down
+    }
+    Write-Host -ForegroundColor Cyan "Building dockersand..."
+    docker-compose -p $ProjectName -f docker-compose.yml -f $OverlayComposeFile build
+    if ($LASTEXITCODE -ne 0) {
+        throw "FAILED"
+    }
+    if ($running) {
+        Write-Host -ForegroundColor Cyan "Starting dockersand..."
+        docker-compose -p $ProjectName -f docker-compose.yml -f $OverlayComposeFile up -d
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host -NoNewline -ForegroundColor Green "SUCCESS"
+            Write-Host ": To manage DIRTSAND, use ./dockersand attach"
+        } else {
+            throw "FAILED"
+        }
+    }
 } elseif ($Command -eq "restart") {
     Test-Docker
     if (Get-DirtsandContainer) {

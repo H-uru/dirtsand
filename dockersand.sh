@@ -33,6 +33,7 @@ PROJECT_NAME=$(basename $DS_DIR)
 do_help() {
     echo "Available commands:"
     echo "    attach - attach to the DIRTSAND console"
+    echo "    build - rebuild the DIRTSAND containers from the source and compose files"
     echo "    restart - restart the DIRTSAND containers"
     echo "    start - start the DIRTSAND containers"
     echo "    status - check if the DIRTSAND containers are running"
@@ -76,6 +77,28 @@ elif [[ $1 = "attach" ]]; then
     fi
     echo "Attaching to DIRTSAND... Press Ctrl+P Ctrl+Q to detatch!"
     docker attach $CONTAINER_NAME
+elif [[ $1 = "build" ]]; then
+    check_docker
+    docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
+    RUNNING=$?
+    if [[ $RUNNING -eq 0 ]]; then
+        echo -e "\e[36mStopping dockersand...\e[0m"
+        docker-compose down
+    fi
+    docker-compose -p $PROJECT_NAME -f docker-compose.yml -f $OVERLAY_COMPOSE_FILE build
+    if [[ $? -ne 0 ]]; then
+        echo -e "\e[31mFAILED\e[0m"
+        exit 1
+    fi
+    if [[ $RUNNING -eq 0 ]]; then
+        echo -e "\e[36mStarting dockersand...\e[0m"
+        docker-compose -p $PROJECT_NAME -f docker-compose.yml -f $OVERLAY_COMPOSE_FILE up -d
+        if [[ $? -eq 0 ]]; then
+            echo -e "\e[32mSUCCESS\e[0m: To manage DIRTSAND, use ./dockersand.sh attach"
+        else
+            echo -e "\e[31mFAILED\e[0m"
+        fi
+    fi
 elif [[ $1 = "restart" ]]; then
     check_docker
     docker-compose ps | grep dirtsand > /dev/null
