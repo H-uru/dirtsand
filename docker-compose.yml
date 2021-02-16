@@ -15,23 +15,70 @@
 
 version: "3.8"
 
-# This is the baseline dirtsand service definition -- the bare minimum to start a dirtsand service.
-# However, this is insufficient to actually start a shard. You will need to use docker-compose.local.yml
-# to setup a trivial local shard (see also: `docker-compose -f`). This is due to multi-value keys
-# merging instead of overriding. See also: https://docs.docker.com/compose/extends/#adding-and-overriding-configuration
 services:
+  # If you would prefer to run a bare metal database, you may omit this and simply set the
+  # environment variables POSTGRES_HOST and POSTGRES_PORT on the moul service. You'll
+  # probably just want to run a single container and avoid all the dockersand stuff in that
+  # case.
   db:
     image: postgres:13-alpine
     restart: always
     volumes:
       - db:/var/lib/postgresql/data/
 
+    environment:
+      - POSTGRES_USER=dirtsand
+      - POSTGRES_PASSWORD=MySuperSecretPassword
+      - POSTGRES_DB=dirtsand
+
+  # Note: the dockersand helper scripts assume the dirtsand container is named this.
   moul:
     build:
         context: .
     depends_on: [db]
+
+    # All dirtsand services need this incantation so that the console doesn't hang the container.
     stdin_open: true
     tty: true
 
+    # Additional options:
+    # DS_HOST: ***external*** address to advertise to clients
+    # DS_DROIDKEY: encryption key for python.pak
+    # SHARD_NAME: Your shard's name (used for storing user credentials)
+    # SHARD_PORT: Port you exposed for dirtsand
+    # SHARD_SIGNUP_URL: URL opened when the "Need an Account?" button is pressed
+    # SHARD_STATUS_URL: URL fetched for the launcher status message
+    # SHARD_WELCOME_MSG: Message displayed by the built-in status server
+    environment:
+      - POSTGRES_USER=dirtsand
+      - POSTGRES_PASSWORD=MySuperSecretPassword
+      - POSTGRES_DB=dirtsand
+
+    ports:
+      - "14617:14617/tcp"
+      - "8080:8080/tcp"
+
+    volumes:
+      - type: bind
+        source: ./build/etc
+        target: /opt/dirtsand/etc/
+
+      - type: bind
+        source: ./build/authserv
+        target: /opt/dirtsand/lib/authsrv/
+
+      - type: bind
+        source: ./build/fileserv
+        target: /opt/dirtsand/lib/filesrv/
+
+      - type: bind
+        source: ./build/dat
+        target: /opt/dirtsand/lib/dat/
+
+      - type: bind
+        source: ./build/SDL
+        target: /opt/dirtsand/lib/SDL/
+
+# Ensures the database persists.
 volumes:
   db:

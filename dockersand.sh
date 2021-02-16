@@ -17,9 +17,7 @@
 # *****************************************************************************
 
 # --- CONFIGURABLE ---
-# This compose file will be processed AFTER docker-compose.yml to set up your shard's
-# custom options.
-OVERLAY_COMPOSE_FILE="docker-compose.local.yml"
+COMPOSE_FILE="docker-compose.yml"
 
 # The directory this script is in. If you customize this file outside of the repo, hardcode the
 # path to the DIRTSAND sources.
@@ -68,7 +66,7 @@ elif [[ $1 = "attach" ]]; then
     docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "\e[33mWARNING\e[0m: dockersand is not running! Starting..."
-        docker-compose -p $PROJECT_NAME -f docker-compose.yml -f $OVERLAY_COMPOSE_FILE up -d
+        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
     fi
     CONTAINER_NAME=$(docker-compose ps | grep -oh ".*_moul_[0-9]*")
     if [[ $? -ne 0 ]]; then
@@ -85,14 +83,14 @@ elif [[ $1 = "build" ]]; then
         echo -e "\e[36mStopping dockersand...\e[0m"
         docker-compose down
     fi
-    docker-compose -p $PROJECT_NAME -f docker-compose.yml -f $OVERLAY_COMPOSE_FILE build
+    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE build
     if [[ $? -ne 0 ]]; then
         echo -e "\e[31mFAILED\e[0m"
         exit 1
     fi
     if [[ $RUNNING -eq 0 ]]; then
         echo -e "\e[36mStarting dockersand...\e[0m"
-        docker-compose -p $PROJECT_NAME -f docker-compose.yml -f $OVERLAY_COMPOSE_FILE up -d
+        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
         if [[ $? -eq 0 ]]; then
             echo -e "\e[32mSUCCESS\e[0m: To manage DIRTSAND, use ./dockersand.sh attach"
         else
@@ -107,7 +105,7 @@ elif [[ $1 = "restart" ]]; then
         docker-compose restart
     else
         echo -e "\e[33mWARNING\e[0m: dockersand is not running! Starting..."
-        docker-compose -p $PROJECT_NAME -f docker-compose.yml -f $OVERLAY_COMPOSE_FILE up -d
+        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
     fi
     if [[ $? -eq 0 ]]; then
         echo -e "\e[32mSUCCESS\e[0m: To manage DIRTSAND, use ./dockersand.sh attach"
@@ -119,7 +117,7 @@ elif [[ $1 = "start" ]]; then
     docker-compose ps | grep ".*_moul_[0-9]*" > /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "\e[36mStarting dockersand...\e[0m"
-        docker-compose -p $PROJECT_NAME -f docker-compose.yml -f $OVERLAY_COMPOSE_FILE up -d
+        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
         if [[ $? -eq 0 ]]; then
             echo -e "\e[32mSUCCESS\e[0m: To manage DIRTSAND, use ./dockersand.sh attach"
         else
