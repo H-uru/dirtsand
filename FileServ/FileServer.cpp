@@ -24,56 +24,15 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
-#include <memory>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-
-struct FileRequest
-{
-    int m_fd;
-    off_t m_size;
-    off_t m_pos;
-
-    typedef std::tuple<bool, off_t> chunk_t;
-
-    FileRequest(int fd) : m_fd(fd), m_pos()
-    {
-        struct stat stat_buf;
-        if (fstat(m_fd, &stat_buf) < 0)
-            m_size = 0;
-        else
-            m_size = stat_buf.st_size;
-    }
-
-    ~FileRequest()
-    {
-        close(m_fd);
-    }
-
-    chunk_t nextChunk()
-    {
-        off_t left = m_size - m_pos;
-        if (left > CHUNK_SIZE) {
-            return std::make_tuple(false, CHUNK_SIZE);
-        } else {
-            return std::make_tuple(true, left);
-        }
-    }
-};
 
 struct FileServer_Private
 {
     DS::SocketHandle m_sock;
     DS::BufferStream m_buffer;
     uint32_t m_readerId;
-
-    std::map<uint32_t, std::unique_ptr<FileRequest>> m_downloads;
-
-    ~FileServer_Private()
-    {
-        m_downloads.clear();
-    }
 };
 
 static std::list<FileServer_Private*> s_clients;
@@ -209,10 +168,8 @@ void cb_manifestAck(FileServer_Private& client)
 
 void cb_downloadStart(FileServer_Private& client)
 {
-    START_REPLY(e_FileToCli_FileDownloadReply);
-
     // Trans ID
-    client.m_buffer.write<uint32_t>(DS::RecvValue<uint32_t>(client.m_sock));
+    uint32_t transId = DS::RecvValue<uint32_t>(client.m_sock);
 
     // Download filename
     char16_t buffer[260];
@@ -231,6 +188,8 @@ void cb_downloadStart(FileServer_Private& client)
 
     // Ensure filename is jailed to our data path
     if (filename.find("..") != -1) {
+        START_REPLY(e_FileToCli_FileDownloadReply);
+        client.m_buffer.write<uint32_t>(transId);
         client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
         client.m_buffer.write<uint32_t>(0);     // Reader ID
         client.m_buffer.write<uint32_t>(0);     // File size
@@ -246,6 +205,8 @@ void cb_downloadStart(FileServer_Private& client)
     if (fd < 0) {
         ST::printf(stderr, "[File] Could not open file {}\n[File] Requested by {}\n",
                    filename, DS::SockIpAddress(client.m_sock));
+        START_REPLY(e_FileToCli_FileDownloadReply);
+        client.m_buffer.write<uint32_t>(transId);
         client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
         client.m_buffer.write<uint32_t>(0);     // Reader ID
         client.m_buffer.write<uint32_t>(0);     // File size
@@ -254,42 +215,51 @@ void cb_downloadStart(FileServer_Private& client)
         return;
     }
 
-    std::unique_ptr<FileRequest> req(new FileRequest(fd));
-    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
-    client.m_buffer.write<uint32_t>(++client.m_readerId);
-    client.m_buffer.write<uint32_t>(req->m_size);
+    struct stat stat_buf;
+    off_t filepos = 0;
+    if (fstat(fd, &stat_buf) < 0) {
+        ST::printf(stderr, "[File] Could not stat file {}\n[File] Requested by {}\n",
+                   filename, DS::SockIpAddress(client.m_sock));
+        START_REPLY(e_FileToCli_FileDownloadReply);
+        client.m_buffer.write<uint32_t>(transId);
+        client.m_buffer.write<uint32_t>(DS::e_NetFileNotFound);
+        client.m_buffer.write<uint32_t>(0);     // Reader ID
+        client.m_buffer.write<uint32_t>(0);     // File size
+        client.m_buffer.write<uint32_t>(0);     // Data packet size
+        SEND_REPLY();
 
-    FileRequest::chunk_t c = req->nextChunk();
-    client.m_buffer.write<uint32_t>(std::get<1>(c));
-    SEND_FD_REPLY(req->m_fd, req->m_pos, std::get<1>(c));
-    if (!std::get<0>(c)) {
-        client.m_downloads[client.m_readerId] = std::move(req);
+        close(fd);
+        return;
     }
+
+    // Attempting to use the MOUL protocol's "acking" of file chunks has a severe performance
+    // penalty. For me, I see an improvement from 950 KiB/s to 14 MiB/s by simply sending the
+    // whole file synchronously. We still have to chunk it, though, so the client's progress
+    // bar updates correctly. Besides, this is TCP, who needs acks at this level? The drawback
+    // to this is that the connection becomes unresponsive to all other traffic when a download
+    // is in progress.
+    while (filepos < stat_buf.st_size) {
+        off_t remsz = stat_buf.st_size - filepos;
+        uint32_t chunksz = remsz > CHUNK_SIZE ? CHUNK_SIZE : (uint32_t)remsz;
+
+        START_REPLY(e_FileToCli_FileDownloadReply);
+        client.m_buffer.write<uint32_t>(transId);
+        client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
+        client.m_buffer.write<uint32_t>(client.m_readerId);     // Reader ID
+        client.m_buffer.write<uint32_t>(stat_buf.st_size);      // File size
+        client.m_buffer.write<uint32_t>(chunksz);               // Data packet size
+        SEND_FD_REPLY(fd, filepos, chunksz);
+    }
+
+    ++client.m_readerId;
+    close(fd);
 }
 
 void cb_downloadNext(FileServer_Private& client)
 {
-    START_REPLY(e_FileToCli_FileDownloadReply);
-
-    uint32_t transId = DS::RecvValue<uint32_t>(client.m_sock);
-    uint32_t readerId = DS::RecvValue<uint32_t>(client.m_sock);
-    auto fi = client.m_downloads.find(readerId);
-    if (fi == client.m_downloads.end()) {
-        // The last chunk was already sent, we don't care anymore
-        return;
-    }
-
-    client.m_buffer.write<uint32_t>(transId);
-    client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
-    client.m_buffer.write<uint32_t>(fi->first);
-    client.m_buffer.write<uint32_t>(fi->second->m_size);
-
-    FileRequest::chunk_t c = fi->second->nextChunk();
-    client.m_buffer.write<uint32_t>(std::get<1>(c));
-    SEND_FD_REPLY(fi->second->m_fd, fi->second->m_pos, std::get<1>(c));
-    if (std::get<0>(c)) {
-        client.m_downloads.erase(fi);
-    }
+    /* This is TCP, nobody cares about this ack... */
+    DS::RecvValue<uint32_t>(client.m_sock);     // TransID
+    DS::RecvValue<uint32_t>(client.m_sock);     // Reader ID
 }
 
 void wk_fileServ(DS::SocketHandle sockp)
