@@ -14,7 +14,8 @@ development or support.
 Prerequisites
 -------------
 * GCC 4.7+ (might work with other C++11 compliant compilers, but untested)
-* Postgres (libpq) -- the actual database server can reside anywhere
+* PostgreSQL 9.0+ (the database server can be run on another machine)
+* libpq
 * OpenSSL
 * libreadline
 * zlib

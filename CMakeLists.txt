@@ -163,7 +163,7 @@ target_link_libraries(dirtsand PRIVATE
 
 install(TARGETS dirtsand
         RUNTIME DESTINATION "bin")
-install(PROGRAMS ${CMAKE_SOURCE_DIR}/bin/dsData.sh
+install(PROGRAMS ${CMAKE_SOURCE_DIR}/bin/docker-entrypoint.sh ${CMAKE_SOURCE_DIR}/bin/dsData.sh
         DESTINATION "bin")
 install(FILES static_ages.ini
         DESTINATION ".")
