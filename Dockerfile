@@ -40,7 +40,7 @@ RUN \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/dirtsand -DCMAKE_BUILD_TYPE=Release \
         -DPRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID} -DPRODUCT_BUILD_ID=${PRODUCT_BUILD_ID} \
         -DPRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE} -DPRODUCT_UUID=${PRODUCT_UUID} \
-        -DDS_HOOD_USER_NAME=${DS_HOOD_USER_NAME} -DDS_HOOD_INST_NAME=${DS_HOOD_INST_NAME}} \
+        -DDS_HOOD_USER_NAME=${DS_HOOD_USER_NAME} -DDS_HOOD_INST_NAME=${DS_HOOD_INST_NAME} \
         -DDS_HOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD} \
         -B dirtsand/build -S dirtsand && \
     cmake --build dirtsand/build --parallel && cmake --build dirtsand/build --target install && \
