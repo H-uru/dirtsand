@@ -1097,10 +1097,11 @@ void dm_authDaemon()
                         }
                         if (PQntuples(result) != 0) {
                             uint32_t ageMcpId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
-                            if (DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId)) {
+                            if (DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId))
                                 SEND_REPLY(info, DS::e_NetSuccess);
-                                break;
-                            }
+                            else
+                                SEND_REPLY(info, DS::e_NetInternalError);
+                            break;
                         }
                     }
                     if (info->m_revision.isNull()) {

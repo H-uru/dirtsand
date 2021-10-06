@@ -451,11 +451,13 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
     s_gameHostMutex.unlock();
 
     if (host) {
-        Game_SdlMessage* msg = new Game_SdlMessage;
-        msg->m_node = node.copy();
+        GameClient_Private client;
+        Game_SdlMessage msg;
+        msg.m_client = &client;
+        msg.m_node = node.copy();
         try {
-            host->m_channel.putMessage(e_GameLocalSdlUpdate, msg);
-            return true;
+            host->m_channel.putMessage(e_GameLocalSdlUpdate, &msg);
+            return client.m_channel.getMessage().m_messageType == DS::e_NetSuccess;
         } catch (const std::exception& ex) {
             ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
         }
