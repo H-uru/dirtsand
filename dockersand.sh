@@ -83,6 +83,8 @@ elif [[ $1 = "build" ]]; then
         echo -e "\e[36mStopping dockersand...\e[0m"
         docker-compose -p $PROJECT_NAME down
     fi
+    # Hacky, but what can you do?
+    mkdir -p build/authserv build/dat build/etc build/fileserv build/SDL
     docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE build
     if [[ $? -ne 0 ]]; then
         echo -e "\e[31mFAILED\e[0m"
