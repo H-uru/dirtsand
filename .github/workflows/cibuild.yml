@@ -12,14 +12,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-16.04, ubuntu-18.04]
+        os: [ubuntu-18.04, ubuntu-20.04]
         compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install libpq-dev postgresql-server-dev-all libreadline-dev
+          sudo apt-get update
+          sudo apt-get install libpq-dev libreadline-dev
       - name: Build string_theory
         run: |
           mkdir -p build_deps && cd build_deps
