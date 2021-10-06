@@ -35,7 +35,7 @@ $DSDir = $PSScriptRoot
 $ProjectName = Split-Path -Leaf $DSDir
 
 function Get-DirtsandContainer() {
-    $containers = @(docker-compose -p $ProjectName ps | Select-String "$($ProjectName)_moul_[0-9]*").Matches
+    $containers = @(docker-compose -p $ProjectName ps | Select-String "$($ProjectName)[-_]moul[-_][0-9]*").Matches
     if ($containers.Length -gt 0) {
         return $containers[0].Value
     }
