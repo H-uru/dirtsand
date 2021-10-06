@@ -124,7 +124,7 @@ struct Game_PropagateMessage : public Game_ClientMessage
     DS::Blob m_message;
 };
 
-struct Game_SdlMessage
+struct Game_SdlMessage : public Game_ClientMessage
 {
     DS::Vault::Node m_node;
 };
