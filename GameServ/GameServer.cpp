@@ -443,12 +443,11 @@ void DS::GameServer_UpdateGlobalSDL(const ST::string& age)
 
 bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId)
 {
-    s_gameHostMutex.lock();
+    std::lock_guard<std::mutex> lock(s_gameHostMutex);
     hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
     GameHost_Private* host = nullptr;
     if (host_iter != s_gameHosts.end())
         host = host_iter->second;
-    s_gameHostMutex.unlock();
 
     if (host) {
         GameClient_Private client;
