@@ -33,7 +33,7 @@ namespace DS
     void GameServer_Shutdown();
 
     void GameServer_UpdateGlobalSDL(const ST::string& age);
-    bool GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId);
+    uint32_t GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId);
 
     void GameServer_DisplayClients();
     uint32_t GameServer_GetNumClients(Uuid instance);
