@@ -773,13 +773,15 @@ void dm_local_sdl_update(GameHost_Private* host, Game_SdlMessage* msg)
     sdlNode.m_internal = true;
     sdlNode.m_node = std::move(msg->m_node);
     sdlNode.m_revision.clear();
+
+    // The client that put this message is the auth daemon, and it is blocking on us.
+    SEND_REPLY(msg, DS::e_NetSuccess);
+
     s_authChannel.putMessage(e_VaultUpdateNode, reinterpret_cast<void*>(&sdlNode));
     if (fakeClient.m_channel.getMessage().m_messageType != DS::e_NetSuccess)
         fputs("[Game] Error writing SDL node back to vault\n", stderr);
 
     dm_bcast_agesdl_hook(host);
-
-    SEND_REPLY(msg, DS::e_NetSuccess);
 }
 
 void dm_global_sdl_update(GameHost_Private* host)

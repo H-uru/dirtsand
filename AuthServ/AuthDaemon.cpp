@@ -1086,7 +1086,9 @@ void dm_authDaemon()
                 {
                     Auth_NodeInfo* info = reinterpret_cast<Auth_NodeInfo*>(msg.m_payload);
                     if (!info->m_internal && info->m_node.m_NodeType == DS::Vault::e_NodeSDL) {
-                        // This is an SDL update. It needs to be passed off to the gameserver
+                        // This is an SDL update. It needs to be passed off to the gameserver, which
+                        // will consume the update and return an authoritative version for us to save.
+                        // This prevents race conditions between the AgeSDLHook and vault updates.
                         DS::PGresultRef result = DS::PQexecVA(s_postgres,
                                 "SELECT \"idx\" FROM game.\"Servers\" WHERE \"SdlIdx\"=$1",
                                 info->m_node.m_NodeIdx);
@@ -1097,11 +1099,13 @@ void dm_authDaemon()
                         }
                         if (PQntuples(result) != 0) {
                             uint32_t ageMcpId = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
-                            if (DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId))
-                                SEND_REPLY(info, DS::e_NetSuccess);
-                            else
-                                SEND_REPLY(info, DS::e_NetInternalError);
-                            break;
+                            // The update will respond with "AgeNotFound" if no matching game server
+                            // is found, making this effectively an authoritative update.
+                            uint32_t result = DS::GameServer_UpdateVaultSDL(info->m_node, ageMcpId);
+                            if (result != DS::e_NetAgeNotFound) {
+                                SEND_REPLY(info, result);
+                                break;
+                            }
                         }
                     }
                     if (info->m_revision.isNull()) {

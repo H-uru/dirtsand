@@ -441,7 +441,7 @@ void DS::GameServer_UpdateGlobalSDL(const ST::string& age)
 }
 
 
-bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId)
+uint32_t DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpId)
 {
     std::lock_guard<std::mutex> lock(s_gameHostMutex);
     hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
@@ -456,12 +456,12 @@ bool DS::GameServer_UpdateVaultSDL(const DS::Vault::Node& node, uint32_t ageMcpI
         msg.m_node = node.copy();
         try {
             host->m_channel.putMessage(e_GameLocalSdlUpdate, &msg);
-            return client.m_channel.getMessage().m_messageType == DS::e_NetSuccess;
+            return client.m_channel.getMessage().m_messageType;
         } catch (const std::exception& ex) {
             ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
         }
     }
-    return false;
+    return DS::e_NetAgeNotFound;
 }
 
 void DS::GameServer_DisplayClients()
