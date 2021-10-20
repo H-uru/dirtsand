@@ -23,7 +23,7 @@ void MOUL::KIMessage::read(DS::Stream* stream)
     Message::read(stream);
 
     m_command = stream->read<uint8_t>();
-    m_user = stream->readSafeString();
+    m_user = stream->readSafeString(DS::e_StringUTF8);
     m_playerId = stream->read<uint32_t>();
     m_string = stream->readSafeString(DS::e_StringUTF16);
     m_flags = stream->read<uint32_t>();
@@ -36,7 +36,7 @@ void MOUL::KIMessage::write(DS::Stream* stream) const
     Message::write(stream);
 
     stream->write<uint8_t>(m_command);
-    stream->writeSafeString(m_user);
+    stream->writeSafeString(m_user, DS::e_StringUTF8);
     stream->write<uint32_t>(m_playerId);
     stream->writeSafeString(m_string, DS::e_StringUTF16);
     stream->write<uint32_t>(m_flags);
