@@ -150,7 +150,11 @@ the server settings as described in the "configure dirtsand" step.
    client cannot load keys from a file, and you will have to enter the
    keys as byte arrays directly into the executable.
 
-5) Provide data for the client to use:
+5) Provide data for the client to use.  This process can be performed mostly
+   automatically using the [UruManifest](https://github.com/Hoikas/UruManifest)
+   tool, which prepares a complete set of data files and generates the
+   appropriate manifests.  The instructions below describe how to set up the
+   data files and manifests manually.
 
    The most important data for the client are the auth server provided
    files -- specifically, the SDL and python.pak.  External Plasma clients
@@ -158,9 +162,10 @@ the server settings as described in the "configure dirtsand" step.
    them unless you are planning on making your server only work with
    Internal client builds.
 
-   Generating or acquiring these files is currently outside the scope of
-   this document, but you can find more information on that process at the
-   [moul-scripts github project page](http://github.com/H-uru/moul-scripts).
+   The SDL and Python files can be found in the [Scripts directory of the
+   Plasma repository](https://github.com/H-uru/Plasma/tree/master/Scripts)).
+   The process of compiling the Python scripts and packing them into a
+   python.pak is currently outside of the scope of this document.
 
    To provide the files to the client, set up a directory for auth data
    (the default is /opt/dirtsand/authdata) and put the files in their
