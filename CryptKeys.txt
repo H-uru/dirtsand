@@ -1,7 +1,0 @@
-To generate keys for DirtSand, use the follwing process:
-
-1) Generate a new set of keys for the server and client by running dirtsand
-   and issuing the 'keygen' command
-2) Copy the server keys into your dirtsand configuration
-3) Copy N and X for each server type into the client binaries
-   (See ExeChanges.txt for locations)
