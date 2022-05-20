@@ -13,6 +13,7 @@ development or support.
 
 Prerequisites
 -------------
+* CMake 3.4+
 * GCC 4.7+ (might work with other C++11 compliant compilers, but untested)
 * Postgres (libpq) -- the actual database server can reside anywhere
 * OpenSSL
@@ -34,7 +35,7 @@ Building the code
 2) Check out a copy of the source:
 
    ```
-   $ git clone git://github.com/H-uru/dirtsand.git dirtsand
+   $ git clone https://github.com/H-uru/dirtsand.git
    $ cd dirtsand
    ```
 
@@ -43,7 +44,7 @@ Building the code
    ```
    $ mkdir build && cd build
    $ cmake -DCMAKE_INSTALL_PREFIX=/opt/dirtsand ..
-   $ make && sudo make install
+   $ cmake --build . && sudo cmake --build . --target install
    $ cd ..
    ```
 
@@ -144,7 +145,7 @@ the server settings as described in the "configure dirtsand" step.
    You should now have a bunch of keys output on your terminal.  The first
    block (labeled Server keys) is the set you should paste into your
    dirtsand.ini.  Replace the dummy lines (with the '...' values) with the
-   output from the `generate-keys` command.  The second set of keys can be
+   output from the `--generate-keys` command.  The second set of keys can be
    placed directly in the client's server.ini file (NOTE: This requires
    either the H-uru fork of CWE or PlasmaClient -- the vanilla MOUL
    client cannot load keys from a file, and you will have to enter the
