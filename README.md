@@ -13,6 +13,7 @@ development or support.
 
 Prerequisites
 -------------
+* CMake 3.4+
 * GCC 4.7+ (might work with other C++11 compliant compilers, but untested)
 * Postgres (libpq) -- the actual database server can reside anywhere
 * OpenSSL
@@ -34,7 +35,7 @@ Building the code
 2) Check out a copy of the source:
 
    ```
-   $ git clone git://github.com/H-uru/dirtsand.git dirtsand
+   $ git clone https://github.com/H-uru/dirtsand.git
    $ cd dirtsand
    ```
 
@@ -43,7 +44,7 @@ Building the code
    ```
    $ mkdir build && cd build
    $ cmake -DCMAKE_INSTALL_PREFIX=/opt/dirtsand ..
-   $ make && sudo make install
+   $ cmake --build . && sudo cmake --build . --target install
    $ cd ..
    ```
 
@@ -144,13 +145,17 @@ the server settings as described in the "configure dirtsand" step.
    You should now have a bunch of keys output on your terminal.  The first
    block (labeled Server keys) is the set you should paste into your
    dirtsand.ini.  Replace the dummy lines (with the '...' values) with the
-   output from the `generate-keys` command.  The second set of keys can be
+   output from the `--generate-keys` command.  The second set of keys can be
    placed directly in the client's server.ini file (NOTE: This requires
    either the H-uru fork of CWE or PlasmaClient -- the vanilla MOUL
    client cannot load keys from a file, and you will have to enter the
    keys as byte arrays directly into the executable.
 
-5) Provide data for the client to use:
+5) Provide data for the client to use.  This process can be performed mostly
+   automatically using the [UruManifest](https://github.com/Hoikas/UruManifest)
+   tool, which prepares a complete set of data files and generates the
+   appropriate manifests.  The instructions below describe how to set up the
+   data files and manifests manually.
 
    The most important data for the client are the auth server provided
    files -- specifically, the SDL and python.pak.  External Plasma clients
@@ -158,9 +163,10 @@ the server settings as described in the "configure dirtsand" step.
    them unless you are planning on making your server only work with
    Internal client builds.
 
-   Generating or acquiring these files is currently outside the scope of
-   this document, but you can find more information on that process at the
-   [moul-scripts github project page](http://github.com/H-uru/moul-scripts).
+   The SDL and Python files can be found in the [Scripts directory of the
+   Plasma repository](https://github.com/H-uru/Plasma/tree/master/Scripts)).
+   The process of compiling the Python scripts and packing them into a
+   python.pak is currently outside of the scope of this document.
 
    To provide the files to the client, set up a directory for auth data
    (the default is /opt/dirtsand/authdata) and put the files in their
