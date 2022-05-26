@@ -32,7 +32,7 @@ $DSDir = $PSScriptRoot
 # The prefix for the containers. Defaults to the name of the DIRTSAND source directory ("dirtsand"),
 # so the containers are usually: dirtsand_moul_1 and dirtsand_db_1. Change this to something else
 # if you intend to run multiple shards on the same machine.
-$ProjectName = Split-Path -Leaf $DSDir
+$ProjectName = (Split-Path -Leaf $DSDir).ToLower() -Replace "[^a-z0-9_]","_"
 
 function Get-DirtsandContainer() {
     $containers = @(docker-compose -p $ProjectName ps | Select-String "$($ProjectName)[-_]moul[-_][0-9]*").Matches
@@ -47,7 +47,7 @@ function Test-Docker() {
         Get-Command -ErrorAction Stop docker | Out-Null
         Get-Command -ErrorAction Stop docker-compose | Out-Null
     } catch {
-        throw "ERROR: Docker does not seem to be installed. Install docker desktop for Windows from https://www.docker.com/products/docker-desktop"
+        throw "ERROR: Docker does not seem to be installed. Install docker desktop for Windows from https://www.docker.com/get-started/"
     }
 }
 
@@ -75,7 +75,7 @@ if ($Command -eq "help") {
     if (!$container) {
         throw "ERROR: Unable to determine DIRTSAND container name. Sorry :("
     }
-    Write-Host "Attaching to DIRTSAND... Press Ctrl+P Ctrl+Q to detatch!"
+    Write-Host "Attaching to DIRTSAND... Press Ctrl+P Ctrl+Q to detach!"
     docker attach $container
 } elseif($Command -eq "build") {
     Test-Docker

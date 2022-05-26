@@ -10,12 +10,16 @@ Currently, it has only been tested on Linux, but in theory it should work on
 other Unixes as well.  There are, however, currently no plans for Windows
 development or support.
 
+However, DIRTSAND may be set up on Windows (or other architectures) using Docker
+in order to be used as a local testing server. For instructions, go to the
+[DOCKERSAND](#DOCKERSAND) section directly.
+
 
 Prerequisites
 -------------
+* CMake 3.4+
 * GCC 4.7+ (might work with other C++11 compliant compilers, but untested)
-* PostgreSQL 9.0+ (the database server can be run on another machine)
-* libpq
+* Postgres (libpq) -- the actual database server can reside anywhere
 * OpenSSL
 * libreadline
 * zlib
@@ -35,7 +39,7 @@ Building the code
 2) Check out a copy of the source:
 
    ```
-   $ git clone git://github.com/H-uru/dirtsand.git dirtsand
+   $ git clone https://github.com/H-uru/dirtsand.git
    $ cd dirtsand
    ```
 
@@ -44,7 +48,7 @@ Building the code
    ```
    $ mkdir build && cd build
    $ cmake -DCMAKE_INSTALL_PREFIX=/opt/dirtsand ..
-   $ make && sudo make install
+   $ cmake --build . && sudo cmake --build . --target install
    $ cd ..
    ```
 
@@ -129,7 +133,7 @@ the server settings as described in the "configure dirtsand" step.
    other than /opt/dirtsand, you will also need to point the configuration
    to the right paths too.
 
-    ```
+   ```
    $ sudo cp dirtsand.sample.ini /opt/dirtsand/dirtsand.ini
    $ sudo chown dirtsand /opt/dirtsand/dirtsand.ini
    $ <your-favorite-editor> dirtsand.ini
@@ -145,13 +149,17 @@ the server settings as described in the "configure dirtsand" step.
    You should now have a bunch of keys output on your terminal.  The first
    block (labeled Server keys) is the set you should paste into your
    dirtsand.ini.  Replace the dummy lines (with the '...' values) with the
-   output from the `generate-keys` command.  The second set of keys can be
+   output from the `--generate-keys` command.  The second set of keys can be
    placed directly in the client's server.ini file (NOTE: This requires
    either the H-uru fork of CWE or PlasmaClient -- the vanilla MOUL
    client cannot load keys from a file, and you will have to enter the
    keys as byte arrays directly into the executable.
 
-5) Provide data for the client to use:
+5) Provide data for the client to use.  This process can be performed mostly
+   automatically using the [UruManifest](https://github.com/Hoikas/UruManifest)
+   tool, which prepares a complete set of data files and generates the
+   appropriate manifests.  The instructions below describe how to set up the
+   data files and manifests manually.
 
    The most important data for the client are the auth server provided
    files -- specifically, the SDL and python.pak.  External Plasma clients
@@ -159,9 +167,10 @@ the server settings as described in the "configure dirtsand" step.
    them unless you are planning on making your server only work with
    Internal client builds.
 
-   Generating or acquiring these files is currently outside the scope of
-   this document, but you can find more information on that process at the
-   [moul-scripts github project page](http://github.com/H-uru/moul-scripts).
+   The SDL and Python files can be found in the [Scripts directory of the
+   Plasma repository](https://github.com/H-uru/Plasma/tree/master/Scripts)).
+   The process of compiling the Python scripts and packing them into a
+   python.pak is currently outside of the scope of this document.
 
    To provide the files to the client, set up a directory for auth data
    (the default is /opt/dirtsand/authdata) and put the files in their
@@ -233,6 +242,41 @@ the server settings as described in the "configure dirtsand" step.
    If you want to leave the server running across different login sessions
    and you don't have an X or VNC server running, I recommend running
    dirtsand in a detachable GNU screen session.
+
+
+DOCKERSAND
+-------------------
+
+Docker allows building and running isolated software programs (or "containers")
+in a platform-agnostic way. This allows users to bootstrap a new DIRTSAND 
+testing server much more quickly and easily on Windows, Mac, or Linux.
+
+1) Download and install [Docker Desktop](https://www.docker.com/get-started/). If
+   on Windows, you probably want to install WSL as directed by the installer. Your
+   computer may need to restart several times during these installs.
+
+2) Clone the dirtsand repo to a local directory.
+    - NOTE: Please ensure you are using `git config core.autocrlf false` if
+    on Windows. Otherwise, the bash script files can get corrupted with the wrong
+    line endings and your server container will fail to start.
+
+3) From the local repo root directory, run `./dockersand build`.
+    - NOTE: By default, dockersand will try to use the current directory name as
+    the base docker container name. You can overwrite this usage by setting the
+    $ProjectName variable in `dockersand.ps1` (for Windows) or the PROJECT_NAME
+    variable in `dockersand.sh` (for *nix) to the desired base container name.
+
+4) Once the build is complete, run `./dockersand start` to start the new containers
+for the database and the dirtsand server. Once this command has been run, you should
+be able to see the containers in Docker Desktop. You can also view the docker
+logs for the containers.
+
+5) Retrieve the `server.ini` file from the build/etc folder. You will need this file
+for connecting to the server with a game client.
+
+6) Use `./dockersand attach` to attach to the dirtsand server and run commands as
+desired. For example, use `addacct <username> <password>` to create the user
+account you want to use to connect locally via the client.
 
 
 Additional Information
