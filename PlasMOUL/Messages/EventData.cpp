@@ -135,7 +135,7 @@ void MOUL::ControlKeyEventData::write(DS::Stream* stream) const
 
 void MOUL::VariableEventData::read(DS::Stream* stream)
 {
-    m_name = stream->readSafeString();
+    m_name = stream->readSafeString(DS::e_StringUTF8);
     m_dataType = stream->read<EventDataType, uint32_t>();
     switch(m_dataType) {
     case e_DataFloat:
@@ -152,7 +152,7 @@ void MOUL::VariableEventData::read(DS::Stream* stream)
 
 void MOUL::VariableEventData::write(DS::Stream* stream) const
 {
-    stream->writeSafeString(m_name);
+    stream->writeSafeString(m_name, DS::e_StringUTF8);
     stream->write<EventDataType, uint32_t>(m_dataType);
     switch(m_dataType) {
     case e_DataFloat:
