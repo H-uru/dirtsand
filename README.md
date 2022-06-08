@@ -10,6 +10,10 @@ Currently, it has only been tested on Linux, but in theory it should work on
 other Unixes as well.  There are, however, currently no plans for Windows
 development or support.
 
+However, DIRTSAND may be set up on Windows (or other architectures) using Docker
+in order to be used as a local testing server. For instructions, go to the
+[DOCKERSAND](#DOCKERSAND) section directly.
+
 
 Prerequisites
 -------------
@@ -129,7 +133,7 @@ the server settings as described in the "configure dirtsand" step.
    other than /opt/dirtsand, you will also need to point the configuration
    to the right paths too.
 
-    ```
+   ```
    $ sudo cp dirtsand.sample.ini /opt/dirtsand/dirtsand.ini
    $ sudo chown dirtsand /opt/dirtsand/dirtsand.ini
    $ <your-favorite-editor> dirtsand.ini
@@ -238,6 +242,41 @@ the server settings as described in the "configure dirtsand" step.
    If you want to leave the server running across different login sessions
    and you don't have an X or VNC server running, I recommend running
    dirtsand in a detachable GNU screen session.
+
+
+DOCKERSAND
+-------------------
+
+Docker allows building and running isolated software programs (or "containers")
+in a platform-agnostic way. This allows users to bootstrap a new DIRTSAND 
+testing server much more quickly and easily on Windows, Mac, or Linux.
+
+1) Download and install [Docker Desktop](https://www.docker.com/get-started/). If
+   on Windows, you probably want to install WSL as directed by the installer. Your
+   computer may need to restart several times during these installs.
+
+2) Clone the dirtsand repo to a local directory.
+    - NOTE: Please ensure you are using `git config core.autocrlf false` if
+    on Windows. Otherwise, the bash script files can get corrupted with the wrong
+    line endings and your server container will fail to start.
+
+3) From the local repo root directory, run `./dockersand build`.
+    - NOTE: By default, dockersand will try to use the current directory name as
+    the base docker container name. You can overwrite this usage by setting the
+    $ProjectName variable in `dockersand.ps1` (for Windows) or the PROJECT_NAME
+    variable in `dockersand.sh` (for *nix) to the desired base container name.
+
+4) Once the build is complete, run `./dockersand start` to start the new containers
+for the database and the dirtsand server. Once this command has been run, you should
+be able to see the containers in Docker Desktop. You can also view the docker
+logs for the containers.
+
+5) Retrieve the `server.ini` file from the build/etc folder. You will need this file
+for connecting to the server with a game client.
+
+6) Use `./dockersand attach` to attach to the dirtsand server and run commands as
+desired. For example, use `addacct <username> <password>` to create the user
+account you want to use to connect locally via the client.
 
 
 Additional Information

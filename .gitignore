@@ -1,3 +1,4 @@
 bin/dirtsand
 build/
 *.kdev4
+.vs
