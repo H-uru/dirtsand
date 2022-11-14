@@ -1300,44 +1300,51 @@ uint32_t v_count_age_owners(uint32_t ageInfoId)
     return owners;
 }
 
-uint32_t v_count_age_population(const char* uuid)
-{
-    DS::PGresultRef result = DS::PQexecVA(s_postgres,
-            "SELECT COUNT(*) FROM vault.\"Nodes\" WHERE \"NodeType\"=$1 AND"
-            "    \"Int32_1\"=1 AND \"Uuid_1\"=$2",
-            DS::Vault::e_NodePlayerInfo, uuid);
-    uint32_t population = 0;
-    if (PQresultStatus(result) == PGRES_TUPLES_OK) {
-        population = strtoul(PQgetvalue(result, 0, 0), nullptr, 10);
-    } else {
-        PQ_PRINT_ERROR(s_postgres, SELECT);
-    }
-    return population;
-}
-
 bool v_find_public_ages(const ST::string& ageFilename, std::vector<Auth_PubAgeRequest::NetAgeInfo>& ages)
 {
-    // ageInfoId, Uuid, InstName, UserName, Description, SeqNumber, Language
-    DS::PGresultRef result = DS::PQexecVA(s_postgres,
-            "SELECT idx, \"Uuid_1\", \"String64_3\", \"String64_4\","
-            "    \"Text_1\",\"Int32_1\", \"Int32_3\" FROM vault.\"Nodes\""
-            "    WHERE \"NodeType\"=$1 AND \"Int32_2\"=1 AND \"String64_2\"=$2"
-            "    ORDER BY \"ModifyTime\" DESC LIMIT 50",
-            DS::Vault::e_NodeAgeInfo, ageFilename);
+    // InstUuid, InstName, UserName, Description, SeqNumber, Language, AgePopulation, NumOwners
+    const char* queryStr = R"""(
+        SELECT
+            pubage."Uuid_1",
+            pubage."String64_3",
+            pubage."String64_4",
+            pubage."Text_1",
+            pubage."Int32_1",
+            pubage."Int32_3",
+            (
+                SELECT COUNT(*)
+                FROM vault."Nodes" AS curpop
+                WHERE curpop."NodeType" = $1 AND curpop."Int32_1" = 1 AND curpop."Uuid_1" = pubage."Uuid_1"
+            ) AS "AgePopulation",
+            (
+                SELECT COUNT(*)
+                FROM vault."NodeRefs" AS owners
+                WHERE owners."ParentIdx" = (SELECT idx FROM vault.find_folder(pubage.idx, $2))
+            ) AS "NumOwners"
+        FROM vault."Nodes" AS pubage
+        WHERE pubage."NodeType" = $3 AND pubage."Int32_2" = 1 AND pubage."String64_2" = $4
+        ORDER BY "ModifyTime" DESC
+        LIMIT 50;
+    )""";
+
+    DS::PGresultRef result = DS::PQexecVA(s_postgres, queryStr,
+        DS::Vault::e_NodePlayerInfo, DS::Vault::e_AgeOwnersFolder,
+        DS::Vault::e_NodeAgeInfo, ageFilename);
+
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         PQ_PRINT_ERROR(s_postgres, SELECT);
         return false;
     }
     for (int i = 0; i < PQntuples(result); ++i) {
         Auth_PubAgeRequest::NetAgeInfo ai;
-        ai.m_instance = DS::Uuid(PQgetvalue(result, i, 1));
-        ai.m_instancename = PQgetvalue(result, i, 2);
-        ai.m_username = PQgetvalue(result, i, 3);
-        ai.m_description = PQgetvalue(result, i, 4);
-        ai.m_sequence = strtoul(PQgetvalue(result, i, 5), nullptr, 10);
-        ai.m_language = strtoul(PQgetvalue(result, i, 6), nullptr, 10);
-        ai.m_curPopulation = v_count_age_population(PQgetvalue(result, i, 1));
-        ai.m_population = v_count_age_owners(strtoul(PQgetvalue(result, i, 0), nullptr , 10));
+        ai.m_instance = DS::Uuid(PQgetvalue(result, i, 0));
+        ai.m_instancename = PQgetvalue(result, i, 1);
+        ai.m_username = PQgetvalue(result, i, 2);
+        ai.m_description = PQgetvalue(result, i, 3);
+        ai.m_sequence = strtoul(PQgetvalue(result, i, 4), nullptr, 10);
+        ai.m_language = strtoul(PQgetvalue(result, i, 5), nullptr, 10);
+        ai.m_curPopulation = strtoul(PQgetvalue(result, i, 6), nullptr, 10);
+        ai.m_population = strtoul(PQgetvalue(result, i, 7), nullptr, 10);
         ages.push_back(ai);
     }
     return true;
