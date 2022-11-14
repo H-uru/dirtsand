@@ -1345,7 +1345,7 @@ bool v_find_public_ages(const ST::string& ageFilename, std::vector<Auth_PubAgeRe
         ai.m_language = strtoul(PQgetvalue(result, i, 5), nullptr, 10);
         ai.m_curPopulation = strtoul(PQgetvalue(result, i, 6), nullptr, 10);
         ai.m_population = strtoul(PQgetvalue(result, i, 7), nullptr, 10);
-        ages.push_back(ai);
+        ages.emplace_back(std::move(ai));
     }
     return true;
 }
