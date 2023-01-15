@@ -37,4 +37,4 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="${GITHUB_WORKSPACE}/build_deps/prefix" \
             ${EXTRA_CMAKE_PARAMS} ..
           make -j2
-          ./test_sha
+          make test

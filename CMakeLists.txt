@@ -127,12 +127,9 @@ set(dirtsand_SOURCES
     GameServ/GameHost.cpp
     streams.cpp
     settings.cpp
-    dsmain.cpp
 )
 
-add_executable(dirtsand ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
-set_target_properties(dirtsand PROPERTIES
-                      RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin")
+add_library(dirtsand OBJECT ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
 
 target_compile_definitions(dirtsand PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
@@ -145,41 +142,47 @@ target_compile_definitions(dirtsand PRIVATE
     HOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD}
 )
 
-target_include_directories(dirtsand PRIVATE
-    "${CMAKE_SOURCE_DIR}"
-    "${CMAKE_SOURCE_DIR}/PlasMOUL"
-    "${PostgreSQL_INCLUDE_DIRS}"
-    "${STRING_THEORY_INCLUDE_DIRS}"
+target_include_directories(dirtsand
+    PRIVATE
+        "${PostgreSQL_INCLUDE_DIRS}"
+    PUBLIC
+        "${CMAKE_SOURCE_DIR}"
+        "${CMAKE_SOURCE_DIR}/PlasMOUL"
+        "${STRING_THEORY_INCLUDE_DIRS}"
 )
 
 target_link_libraries(dirtsand PRIVATE
     ${PostgreSQL_LIBRARIES}
     OpenSSL::Crypto
     ZLIB::ZLIB
-    Readline::Readline
     ${STRING_THEORY_LIBRARIES}
     Threads::Threads
 )
 
-install(TARGETS dirtsand
+add_executable(server dsmain.cpp)
+target_link_libraries(server
+    PRIVATE
+        dirtsand
+        Readline::Readline
+)
+set_target_properties(server PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${dirtsand_SOURCE_DIR}/bin"
+    OUTPUT_NAME "dirtsand"
+)
+
+install(TARGETS server
         RUNTIME DESTINATION "bin")
 install(PROGRAMS ${CMAKE_SOURCE_DIR}/bin/docker-entrypoint.sh ${CMAKE_SOURCE_DIR}/bin/dsData.sh
         DESTINATION "bin")
 install(FILES static_ages.ini
         DESTINATION ".")
 
-# TODO: Build proper unit test framework...
 option(ENABLE_TESTS "Enable building and running unit tests" ON)
 
 # clang-tidy related rules and targets
 include(TidyRules.cmake)
 
 if(ENABLE_TESTS)
-    add_executable(test_sha Types/ShaHash.cpp Types/ShaHash.h)
-    target_compile_definitions(test_sha PRIVATE DS_BUILD_SHA0_TESTS)
-    # Dependencies needed for ShaHash
-    target_sources(test_sha PRIVATE streams.cpp streams.h errors.h)
-    target_include_directories(test_sha PRIVATE "${CMAKE_SOURCE_DIR}")
-    target_link_libraries(test_sha PRIVATE ${OPENSSL_CRYPTO_LIBRARIES}
-                                           ${STRING_THEORY_LIBRARIES})
+    enable_testing()
+    add_subdirectory(Tests)
 endif()
