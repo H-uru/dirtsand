@@ -8,6 +8,7 @@ FetchContent_MakeAvailable(Catch2)
 
 set(test_SOURCES
     main.cpp
+    Test_SDL.cpp
     Test_ShaHash.cpp
 )
 add_executable(test_dirtsand ${test_SOURCES})
