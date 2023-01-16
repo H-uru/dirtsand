@@ -544,14 +544,11 @@ std::list<SDL::StateDescriptor> SDL::Parser::parse()
             }
             break;
         case '}':
-            if (state == e_State_Var /*|| state == e_State_Var_SZ*/) {
-                descBuffer.m_vars.push_back(varBuffer);
-                descriptors.push_back(descBuffer);
-                state = e_State_File;
-            } else if (state == e_State_Statedesc) {
-                for (size_t i = 0; i < descBuffer.m_vars.size(); ++i) {
+            if (state == e_State_Var || state == e_State_Statedesc /*|| state == e_State_Var_SZ*/) {
+                if (state == e_State_Var)
+                    descBuffer.m_vars.push_back(varBuffer);
+                for (size_t i = 0; i < descBuffer.m_vars.size(); ++i)
                     descBuffer.m_varmap[descBuffer.m_vars[i].m_name] = i;
-                }
                 descriptors.push_back(descBuffer);
                 state = e_State_File;
             } else {
