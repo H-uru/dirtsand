@@ -63,18 +63,16 @@ static bool LoadDescriptors()
         return true;
 
     ST::string sdlFilePath;
-    char tempDir[256]{};
-    const char kTemplate[] = "DirtSandSDLTestXXXXXX";
-    strcpy(tempDir, kTemplate);
+    char tempDir[256] = "/tmp/DirtSandSDLTestXXXXXX";
+    char* tempDirResult = nullptr;
     do {
-        char* tempDirResult = mkdtemp(tempDir);
+        tempDirResult = mkdtemp(tempDir);
         if (!tempDirResult) {
             fprintf(stderr, "Failed to create a temporary directory for SDL.\n");
             break;
         }
 
         sdlFilePath = ST::format("{}/Test.sdl", tempDirResult);
-        fprintf(stderr, "%s\n%s\n%s\n", sdlFilePath.c_str(), tempDir, tempDirResult);
         FILE* f = fopen(sdlFilePath.c_str(), "w+");
         if (!f) {
             fprintf(stderr, "Failed to create a file in our temporary SDL directory.\n");
@@ -89,8 +87,8 @@ static bool LoadDescriptors()
 
     if (!sdlFilePath.empty())
         unlink(sdlFilePath.c_str());
-    if (*tempDir)
-        rmdir(tempDir);
+    if (tempDirResult)
+        rmdir(tempDirResult);
     return result;
 }
 
@@ -171,8 +169,8 @@ static SDL::State CreateState()
     REQUIRE(intVarIdx != desc->m_varmap.end());
 
     SDL::State state(desc);
-    state.data()->m_vars[boolVarIdx->second].data()->m_bool = new bool[1] { true };
-    state.data()->m_vars[intVarIdx->second].data()->m_int = new int32_t[1] { 6 };
+    state.data()->m_vars[boolVarIdx->second].data()->m_bool[0] = true;
+    state.data()->m_vars[intVarIdx->second].data()->m_int[0] = 6;
     return state;
 }
 
