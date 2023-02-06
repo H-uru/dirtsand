@@ -129,7 +129,7 @@ set(dirtsand_SOURCES
     settings.cpp
 )
 
-add_library(dirtsand OBJECT ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
+add_library(dirtsand STATIC ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCES})
 
 target_compile_definitions(dirtsand PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
