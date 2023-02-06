@@ -177,7 +177,15 @@ install(PROGRAMS ${CMAKE_SOURCE_DIR}/bin/docker-entrypoint.sh ${CMAKE_SOURCE_DIR
 install(FILES static_ages.ini
         DESTINATION ".")
 
-option(ENABLE_TESTS "Enable building and running unit tests" ON)
+# The tests use the FetchContent module, which was added in CMake 3.11.
+include(CMakeDependentOption)
+cmake_dependent_option(
+    ENABLE_TESTS
+    "Enable building and running unit tests"
+    ON
+    "NOT ${CMAKE_VERSION} VERSION_LESS 3.11"
+    OFF
+)
 
 # clang-tidy related rules and targets
 include(TidyRules.cmake)
