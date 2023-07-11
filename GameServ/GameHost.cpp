@@ -332,7 +332,7 @@ void dm_send_state(GameHost_Private* host, GameClient_Private* client)
     DS::Blob ageSdlBlob = host->m_ageSdlHook.toBlob();
     if (ageSdlBlob.size()) {
         Game_AgeInfo info = s_ages[host->m_ageFilename];
-        state->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
+        state->m_object.m_location = MOUL::Location(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
         state->m_object.m_name = "AgeSDLHook";
         state->m_object.m_type = 1;  // SceneObject
         state->m_object.m_id = 1;
@@ -734,7 +734,7 @@ void dm_bcast_agesdl_hook(GameHost_Private* host)
     bcast->m_isInitial = true;
     bcast->m_persistOnServer = true;
     bcast->m_isAvatar = false;
-    bcast->m_object.m_location = MOUL::Location::Make(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
+    bcast->m_object.m_location = MOUL::Location(info.m_seqPrefix, -2, MOUL::Location::e_BuiltIn);
     bcast->m_object.m_name = "AgeSDLHook";
     bcast->m_object.m_type = 1;  // SceneObject
     bcast->m_object.m_id = 1;
