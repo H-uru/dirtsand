@@ -18,14 +18,6 @@
 #include "AuthManifest.h"
 #include "errors.h"
 
-DS::AuthManifest::~AuthManifest()
-{
-    while (!m_files.empty()) {
-        delete m_files.front();
-        m_files.pop_front();
-    }
-}
-
 DS::NetResultCode DS::AuthManifest::loadManifest(const char* filename)
 {
     FILE* mfs = fopen(filename, "r");
@@ -47,10 +39,9 @@ DS::NetResultCode DS::AuthManifest::loadManifest(const char* filename)
             continue;
         }
 
-        AuthFileInfo* info = new AuthFileInfo;
-        info->m_filename = parts[0];
-        info->m_fileSize = parts[1].to_uint();
-        m_files.push_back(info);
+        AuthFileInfo& info = m_files.emplace_back();
+        info.m_filename = parts[0];
+        info.m_fileSize = parts[1].to_uint();
     }
 
     fclose(mfs);
@@ -61,12 +52,12 @@ uint32_t DS::AuthManifest::encodeToStream(DS::Stream* stream) const
 {
     uint32_t start = stream->tell();
 
-    for (auto it = m_files.begin(); it != m_files.end(); ++it) {
-        stream->writeString((*it)->m_filename, DS::e_StringUTF16);
+    for (const auto& info : m_files) {
+        stream->writeString(info.m_filename, DS::e_StringUTF16);
         stream->write<char16_t>(0);
 
-        stream->write<uint16_t>((*it)->m_fileSize >> 16);
-        stream->write<uint16_t>((*it)->m_fileSize & 0xFFFF);
+        stream->write<uint16_t>(info.m_fileSize >> 16);
+        stream->write<uint16_t>(info.m_fileSize & 0xFFFF);
         stream->write<uint16_t>(0);
     }
     stream->write<uint16_t>(0);

@@ -19,14 +19,6 @@
 #include <string_theory/stdio>
 #include <cstdio>
 
-DS::FileManifest::~FileManifest()
-{
-    while (!m_files.empty()) {
-        delete m_files.front();
-        m_files.pop_front();
-    }
-}
-
 DS::NetResultCode DS::FileManifest::loadManifest(const char* filename)
 {
     FILE* mfs = fopen(filename, "r");
@@ -53,15 +45,14 @@ DS::NetResultCode DS::FileManifest::loadManifest(const char* filename)
             continue;
         }
 
-        FileInfo* info = new FileInfo;
-        info->m_filename = parts[0];
-        info->m_downloadName = parts[1];
-        memcpy(info->m_fileHash, parts[2].to_utf16().data(), 32 * sizeof(char16_t));
-        memcpy(info->m_downloadHash, parts[3].to_utf16().data(), 32 * sizeof(char16_t));
-        info->m_fileSize = parts[4].to_uint();
-        info->m_downloadSize = parts[5].to_uint();
-        info->m_flags = parts[6].to_uint();
-        m_files.push_back(info);
+        FileInfo& info = m_files.emplace_back();
+        info.m_filename = parts[0];
+        info.m_downloadName = parts[1];
+        memcpy(info.m_fileHash, parts[2].to_utf16().data(), 32 * sizeof(char16_t));
+        memcpy(info.m_downloadHash, parts[3].to_utf16().data(), 32 * sizeof(char16_t));
+        info.m_fileSize = parts[4].to_uint();
+        info.m_downloadSize = parts[5].to_uint();
+        info.m_flags = parts[6].to_uint();
     }
 
     fclose(mfs);
@@ -72,29 +63,29 @@ uint32_t DS::FileManifest::encodeToStream(DS::Stream* stream) const
 {
     uint32_t start = stream->tell();
 
-    for (auto it = m_files.begin(); it != m_files.end(); ++it) {
-        stream->writeString((*it)->m_filename, DS::e_StringUTF16);
+    for (const FileInfo& info : m_files) {
+        stream->writeString(info.m_filename, DS::e_StringUTF16);
         stream->write<char16_t>(0);
 
-        stream->writeString((*it)->m_downloadName, DS::e_StringUTF16);
+        stream->writeString(info.m_downloadName, DS::e_StringUTF16);
         stream->write<char16_t>(0);
 
-        stream->writeBytes((*it)->m_fileHash, sizeof(FileInfo::m_fileHash));
+        stream->writeBytes(info.m_fileHash, sizeof(FileInfo::m_fileHash));
         stream->write<char16_t>(0);
 
-        stream->writeBytes((*it)->m_downloadHash, sizeof(FileInfo::m_downloadHash));
+        stream->writeBytes(info.m_downloadHash, sizeof(FileInfo::m_downloadHash));
         stream->write<char16_t>(0);
 
-        stream->write<uint16_t>((*it)->m_fileSize >> 16);
-        stream->write<uint16_t>((*it)->m_fileSize & 0xFFFF);
+        stream->write<uint16_t>(info.m_fileSize >> 16);
+        stream->write<uint16_t>(info.m_fileSize & 0xFFFF);
         stream->write<uint16_t>(0);
 
-        stream->write<uint16_t>((*it)->m_downloadSize >> 16);
-        stream->write<uint16_t>((*it)->m_downloadSize & 0xFFFF);
+        stream->write<uint16_t>(info.m_downloadSize >> 16);
+        stream->write<uint16_t>(info.m_downloadSize & 0xFFFF);
         stream->write<uint16_t>(0);
 
-        stream->write<uint16_t>((*it)->m_flags >> 16);
-        stream->write<uint16_t>((*it)->m_flags & 0xFFFF);
+        stream->write<uint16_t>(info.m_flags >> 16);
+        stream->write<uint16_t>(info.m_flags & 0xFFFF);
         stream->write<uint16_t>(0);
     }
     stream->write<uint16_t>(0);

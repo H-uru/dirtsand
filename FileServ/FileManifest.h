@@ -26,6 +26,16 @@ namespace DS
 {
     struct FileInfo
     {
+        FileInfo()
+            : m_fileHash(), m_downloadHash(), m_fileSize(), m_downloadSize(),
+              m_flags() { }
+
+        FileInfo(const FileInfo&) = delete;
+        FileInfo& operator=(const FileInfo&) = delete;
+
+        FileInfo(FileInfo&&) = default;
+        FileInfo& operator=(FileInfo&&) = default;
+
         ST::string m_filename, m_downloadName;
         char16_t m_fileHash[32], m_downloadHash[32];
         uint32_t m_fileSize, m_downloadSize;
@@ -35,16 +45,13 @@ namespace DS
     class FileManifest
     {
     public:
-        FileManifest() { }
-        ~FileManifest();
-
         NetResultCode loadManifest(const char* filename);
         uint32_t encodeToStream(DS::Stream* stream) const;
 
         size_t fileCount() const { return m_files.size(); }
 
     private:
-        std::list<FileInfo*> m_files;
+        std::vector<FileInfo> m_files;
     };
 }
 

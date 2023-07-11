@@ -26,6 +26,14 @@ namespace DS
 {
     struct AuthFileInfo
     {
+        AuthFileInfo() : m_fileSize() { }
+
+        AuthFileInfo(const AuthFileInfo&) = delete;
+        AuthFileInfo& operator=(const AuthFileInfo&) = delete;
+
+        AuthFileInfo(AuthFileInfo&&) = default;
+        AuthFileInfo& operator=(AuthFileInfo&&) = default;
+
         ST::string m_filename;
         uint32_t m_fileSize;
     };
@@ -34,7 +42,6 @@ namespace DS
     {
     public:
         AuthManifest() { }
-        ~AuthManifest();
 
         NetResultCode loadManifest(const char* filename);
         uint32_t encodeToStream(DS::Stream* stream) const;
@@ -42,7 +49,7 @@ namespace DS
         size_t fileCount() const { return m_files.size(); }
 
     private:
-        std::list<AuthFileInfo*> m_files;
+        std::vector<AuthFileInfo> m_files;
     };
 }
 
