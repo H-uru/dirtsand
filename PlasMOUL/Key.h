@@ -63,14 +63,6 @@ namespace MOUL
         bool operator>=(const Location& other) const
         { return m_sequence >= other.m_sequence; }
 
-        static Location Make(int32_t prefix, uint16_t page, uint16_t flags)
-        {
-            if (prefix < 0)
-                return Location(page - (prefix << 16) + 0xFF000001, flags);
-            else
-                return Location(page + (prefix << 16) + 0x00000021, flags);
-        }
-
     public:
         uint32_t m_sequence;
         uint16_t m_flags;
