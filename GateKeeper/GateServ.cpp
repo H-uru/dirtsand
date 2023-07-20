@@ -102,10 +102,10 @@ void cb_ping(GateKeeper_Private& client)
 {
     START_REPLY(e_GateKeeperToCli_PingReply);
 
-    // Ping time
+    // Trans ID
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
-    // Trans ID
+    // Ping time
     client.m_buffer.write<uint32_t>(DS::CryptRecvValue<uint32_t>(client.m_sock, client.m_crypt));
 
     // Payload
