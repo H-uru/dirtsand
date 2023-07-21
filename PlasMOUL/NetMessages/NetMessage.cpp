@@ -27,7 +27,7 @@ void MOUL::NetMessage::read(DS::Stream* stream)
         m_protocolVerMin = stream->read<uint8_t>();
 
         if (m_protocolVerMaj != NETMSG_PROTOCOL_MAJ
-                || m_protocolVerMin == NETMSG_PROTOCOL_MIN) {
+                || m_protocolVerMin != NETMSG_PROTOCOL_MIN) {
             throw DS::MalformedData();
         }
     }
