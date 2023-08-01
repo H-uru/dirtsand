@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <mutex>
 #include <memory>
+#include <regex>
 
 #ifdef DEBUG
 bool s_commdebug = false;
@@ -263,4 +264,12 @@ DS::ShaHash DS::BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChall
     buffer.m_serverChallenge = serverChallenge;
     buffer.m_pwhash = passwordHash;
     return ShaHash::Sha0(&buffer, sizeof(buffer));
+}
+
+bool DS::UseEmailAuth(const ST::string& username)
+{
+    static const std::regex re_domain("[^@]+@([^.]+\\.)*([^.]+)\\.[^.]+");
+    std::cmatch match;
+    std::regex_search(username.c_str(), match, re_domain);
+    return !match.empty() && ST::string(match[2].str().c_str()).compare_i("gametap") != 0;
 }
