@@ -79,6 +79,7 @@ namespace DS
     ShaHash BuggyHashPassword(const ST::string& username, const ST::string& password);
     ShaHash BuggyHashLogin(const ShaHash& passwordHash, uint32_t serverChallenge,
                            uint32_t clientChallenge);
+    bool UseEmailAuth(const ST::string& username);
 }
 
 #ifdef DEBUG

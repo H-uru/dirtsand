@@ -50,8 +50,14 @@ void dm_auth_addacct(Auth_AddAcct* msg)
     }
 
     if (PQntuples(result) == 0) {
-        ST::char_buffer pwBuf = msg->m_acctInfo.m_password.to_utf8();
-        DS::ShaHash pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.size());
+        DS::ShaHash pwHash;
+        if (DS::UseEmailAuth(msg->m_acctInfo.m_acctName)) {
+            pwHash = DS::BuggyHashPassword(msg->m_acctInfo.m_acctName,
+                                           msg->m_acctInfo.m_password);
+        } else {
+            ST::char_buffer pwBuf = msg->m_acctInfo.m_password.to_utf8();
+            pwHash = DS::ShaHash::Sha1(pwBuf.data(), pwBuf.size());
+        }
         result = DS::PQexecVA(s_postgres,
                 "INSERT INTO auth.\"Accounts\""
                 "    (\"AcctUuid\", \"PassHash\", \"Login\", \"AcctFlags\", \"BillingType\")"
@@ -135,7 +141,7 @@ void dm_auth_login(Auth_LoginInfo* info)
     }
 
     DS::ShaHash passhash = PQgetvalue(result, 0, 0);
-    if (info->m_acctName.find("@") != -1 && info->m_acctName.find("@gametap") == -1) {
+    if (DS::UseEmailAuth(info->m_acctName)) {
         DS::ShaHash challengeHash = DS::BuggyHashLogin(passhash,
                 client->m_serverChallenge, info->m_clientChallenge);
         if (challengeHash != info->m_passHash) {
