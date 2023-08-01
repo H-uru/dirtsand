@@ -245,8 +245,10 @@ DS::ShaHash DS::BuggyHashPassword(const ST::string& username, const ST::string& 
     auto buffer = std::make_unique<char16_t[]>(wuser.size() + wpass.size());
     memcpy(buffer.get(), wpass.data(), wpass.size() * sizeof(char16_t));
     memcpy(buffer.get() + wpass.size(), wuser.data(), wuser.size() * sizeof(char16_t));
-    buffer[wpass.size() - 1] = 0;
-    buffer[wpass.size() + wuser.size() - 1] = 0;
+    if (wpass.size() > 0)
+        buffer[wpass.size() - 1] = 0;
+    if (wuser.size() > 0)
+        buffer[wpass.size() + wuser.size() - 1] = 0;
     return ShaHash::Sha0(buffer.get(), (wuser.size() + wpass.size()) * sizeof(char16_t));
 }
 
