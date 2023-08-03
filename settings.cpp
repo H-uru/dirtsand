@@ -116,7 +116,7 @@ bool DS::Settings::LoadFrom(const ST::string& filename)
     else
         s_settings.m_settingsPath = ".";
 
-    std::unique_ptr<FILE, decltype(&fclose)> cfgfile(fopen(filename.c_str(), "r"), &fclose);
+    std::unique_ptr<FILE, int (*)(FILE*)> cfgfile(fopen(filename.c_str(), "r"), &fclose);
     if (!cfgfile) {
         ST::printf(stderr, "Cannot open {} for reading\n", filename);
         return false;
