@@ -89,6 +89,12 @@ enum AuthServer_MsgIds
 enum ServerCaps
 {
     e_CapsScoreLeaderBoards,
+    e_CapsGameMgrBlueSpiral,
+    e_CapsGameMgrClimbingWall,
+    e_CapsGameMgrHeek,
+    e_CapsGameMgrMarker,
+    e_CapsGameMgrTTT,
+    e_CapsGameMgrVarSync,
 };
 
 struct AuthServer_Private : public AuthClient_Private
