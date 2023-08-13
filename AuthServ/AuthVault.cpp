@@ -108,12 +108,14 @@ static uint32_t find_public_age_1(const ST::string& filename, const DS::Uuid& uu
     DS::PGresultRef result;
     if (uuid.isNull()) {
         result = DS::PQexecVA(s_postgres, "SELECT idx FROM vault.\"Nodes\""
-                              "    WHERE \"Int32_2\" = 1 AND \"String64_2\"=$1",
-                              filename);
+                              "    WHERE \"NodeType\"=$1 AND \"Int32_2\"=1 AND"
+                              "          \"String64_2\"=$2",
+                              DS::Vault::e_NodeAgeInfo, filename);
     } else {
         result = DS::PQexecVA(s_postgres, "SELECT idx FROM vault.\"Nodes\""
-                              "    WHERE \"Int32_2\" = 1 AND \"String64_2\"=$1 AND \"Uuid_1\"=$2",
-                              filename, uuid.toString());
+                              "    WHERE \"NodeType\"=$1 AND \"Int32_2\"=1 AND"
+                              "          \"String64_2\"=$2 AND \"Uuid_1\"=$3",
+                              DS::Vault::e_NodeAgeInfo, filename, uuid.toString());
     }
     uint32_t ageInfoId = 0;
     if (PQresultStatus(result) == PGRES_TUPLES_OK) {
