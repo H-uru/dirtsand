@@ -32,10 +32,10 @@ namespace SDL
 {
     enum VarType
     {
-        e_VarInt, e_VarFloat, e_VarBool, e_VarString, e_VarKey, e_VarCreatable,
-        e_VarDouble, e_VarTime, e_VarByte, e_VarShort, e_VarAgeTimeOfDay,
-        e_VarVector3, e_VarPoint3, e_VarQuaternion, e_VarRgb, e_VarRgba,
-        e_VarRgb8, e_VarRgba8, e_VarStateDesc,
+        e_VarInt, e_VarFloat, e_VarBool, e_VarString, e_VarKey, e_VarStateDesc,
+        e_VarCreatable, e_VarDouble, e_VarTime, e_VarByte, e_VarShort, e_VarAgeTimeOfDay,
+        e_VarVector3, e_VarPoint3, e_VarRgb, e_VarRgba, e_VarQuaternion,
+        e_VarRgb8, e_VarRgba8,
 
         e_VarInvalid = -1,
     };
