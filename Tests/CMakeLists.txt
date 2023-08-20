@@ -8,6 +8,7 @@ FetchContent_MakeAvailable(Catch2)
 
 set(test_SOURCES
     main.cpp
+    Test_EncryptedStream.cpp
     Test_Location.cpp
     Test_SDL.cpp
     Test_ShaHash.cpp

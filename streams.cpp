@@ -258,3 +258,248 @@ DS::Blob DS::HexDecode(const ST::string& value)
     ST::hex_decode(value, result, resultLen);
     return Blob::Steal(result, resultLen);
 }
+
+DS::EncryptedStream::EncryptedStream(
+    DS::Stream* base, DS::EncryptedStream::Mode mode,
+    std::optional<DS::EncryptedStream::Type> type, const uint32_t* keys
+) : m_base(base), m_buffer(), m_key(), m_pos(), m_size(),
+    m_type(type.has_value() ? type.value() : DS::EncryptedStream::Type::e_xtea),
+    m_mode(mode)
+{
+    DS_ASSERT(base != nullptr);
+    DS_ASSERT(base->tell() == 0);
+
+    static constexpr uint32_t kXteaKey[] {
+        0x6c0a5452,
+        0x03827d0f,
+        0x3a170b92,
+        0x16db7fc2
+    };
+    if (keys) {
+        memcpy(m_key, keys, sizeof(m_key));
+    } else {
+        static_assert(sizeof(kXteaKey) == sizeof(m_key));
+        memcpy(m_key, kXteaKey, sizeof(m_key));
+    }
+
+    uint8_t header[16]{};
+    DS_ASSERT(!(!type.has_value() && mode == Mode::e_write));
+    switch (mode) {
+    case Mode::e_read:
+        base->readBytes(header, sizeof(header));
+        if (memcmp(header, "whatdoyousee", 12) == 0)
+            m_type = DS::EncryptedStream::Type::e_xtea;
+        else if (memcmp(header, "BriceIsSmart", 12) == 0)
+            m_type = DS::EncryptedStream::Type::e_xtea;
+        else if (memcmp(header, "notthedroids", 12) == 0)
+            m_type = DS::EncryptedStream::Type::e_btea;
+        else
+            throw DS::FileIOException("Unknown EncryptedString magic");
+        DS_ASSERT(!type.has_value() || type.value() == m_type);
+        m_size = reinterpret_cast<uint32_t*>(header)[3];
+        break;
+
+    case Mode::e_write:
+        // Write out some temporary junk for the header for now.
+        uint8_t header[16]{};
+        base->writeBytes(header, sizeof(header));
+        break;
+    }
+}
+
+DS::EncryptedStream::~EncryptedStream()
+{
+    if (m_mode == Mode::e_write) {
+        if (m_pos % sizeof(m_buffer) != 0)
+            cryptFlush();
+        m_base->seek(0, SEEK_SET);
+        switch (m_type) {
+            case Type::e_btea:
+                m_base->writeBytes("notthedroids", 12);
+                break;
+            case Type::e_xtea:
+                m_base->writeBytes("whatdoyousee", 12);
+                break;
+        }
+        m_base->write<uint32_t>(m_size);
+    }
+}
+
+std::optional<DS::EncryptedStream::Type> DS::EncryptedStream::CheckEncryption(const char* filename)
+{
+    DS::FileStream stream;
+    stream.open(filename, "r");
+    return CheckEncryption(&stream);
+}
+
+std::optional<DS::EncryptedStream::Type> DS::EncryptedStream::CheckEncryption(DS::Stream* stream)
+{
+    uint32_t pos = stream->tell();
+    if (pos != 0)
+        stream->seek(0, SEEK_SET);
+    uint8_t header[12];
+    stream->readBytes(header, sizeof(header));
+    stream->seek(pos, SEEK_SET);
+
+    if (memcmp(header, "whatdoyousee", sizeof(header)) == 0)
+        return DS::EncryptedStream::Type::e_xtea;
+    if (memcmp(header, "BriceIsSmart", sizeof(header)) == 0)
+        return DS::EncryptedStream::Type::e_xtea;
+    if (memcmp(header, "notthedroids", sizeof(header)) == 0)
+        return DS::EncryptedStream::Type::e_btea;
+    return std::nullopt;
+}
+
+void DS::EncryptedStream::setKeys(const uint32_t* keys)
+{
+    memcpy(m_key, keys, sizeof(m_key));
+}
+
+void DS::EncryptedStream::bteaDecipher(uint32_t* buf, uint32_t num) const
+{
+    uint32_t key = ((52 / num) + 6) * 0x9E3779B9;
+    while (key != 0) {
+        uint32_t xorkey = (key >> 2) & 3;
+        uint32_t numloop = num - 1;
+        while (numloop != 0) {
+            buf[numloop] -=
+              (((buf[numloop - 1] << 4) ^ (buf[numloop - 1] >> 3)) +
+              ((buf[numloop - 1] >> 5) ^ (buf[numloop - 1] << 2))) ^
+              ((m_key[(numloop & 3) ^ xorkey] ^ buf[numloop - 1]) +
+              (key ^ buf[numloop - 1]));
+            numloop--;
+        }
+        buf[0] -=
+          (((buf[num - 1] << 4) ^ (buf[num - 1] >> 3)) +
+          ((buf[num - 1] >> 5) ^ (buf[num - 1] << 2))) ^
+          ((m_key[(numloop & 3) ^ xorkey] ^ buf[num - 1]) +
+          (key ^ buf[num - 1]));
+        key += 0x61C88647;
+    }
+}
+
+void DS::EncryptedStream::bteaEncipher(uint32_t* buf, uint32_t num) const
+{
+    uint32_t key = 0;
+    uint32_t count = (52 / num) + 6;
+    while (count != 0) {
+        key -= 0x61C88647;
+        uint32_t xorkey = (key >> 2) & 3;
+        uint32_t numloop = 0;
+        while (numloop != num - 1) {
+            buf[numloop] +=
+              (((buf[numloop + 1] << 4) ^ (buf[numloop + 1] >> 3)) +
+              ((buf[numloop + 1] >> 5) ^ (buf[numloop + 1] << 2))) ^
+              ((m_key[(numloop & 3) ^ xorkey] ^ buf[numloop + 1]) +
+              (key ^ buf[numloop + 1]));
+            numloop++;
+        }
+        buf[num - 1] +=
+          (((buf[0] << 4) ^ (buf[0] >> 3)) +
+          ((buf[0] >> 5) ^ (buf[0] << 2))) ^
+          ((m_key[(numloop & 3) ^ xorkey] ^ buf[0]) +
+          (key ^ buf[0]));
+        count--;
+    }
+}
+
+void DS::EncryptedStream::xteaDecipher(uint32_t* buf) const
+{
+    uint32_t second = buf[1], first = buf[0], key = 0xC6EF3720;
+
+    for (size_t i = 0; i < 32; i++) {
+        second -= (((first >> 5) ^ (first << 4)) + first)
+                ^ (m_key[(key >> 11) & 3] + key);
+        key += 0x61C88647;
+        first -= (((second >> 5) ^ (second << 4)) + second)
+               ^ (m_key[key & 3] + key);
+    }
+    buf[0] = first;
+    buf[1] = second;
+}
+
+void DS::EncryptedStream::xteaEncipher(uint32_t* buf) const
+{
+    uint32_t first = buf[0], second = buf[1], key = 0;
+
+    for (size_t i = 0; i < 32; i++) {
+        first += (((second >> 5) ^ (second << 4)) + second)
+               ^ (m_key[key & 3] + key);
+        key -= 0x61C88647;
+        second += (((first >> 5) ^ (first << 4)) + first)
+                ^ (m_key[(key >> 11) & 3] + key);
+    }
+    buf[1] = second;
+    buf[0] = first;
+}
+
+void DS::EncryptedStream::cryptFlush()
+{
+    switch (m_type) {
+        case Type::e_btea:
+            bteaEncipher(reinterpret_cast<uint32_t*>(m_buffer), 2);
+            break;
+        case Type::e_xtea:
+            xteaEncipher(reinterpret_cast<uint32_t*>(m_buffer));
+            break;
+    }
+    m_base->writeBytes(m_buffer, sizeof(m_buffer));
+    memset(m_buffer, 0, sizeof(m_buffer));
+}
+
+ssize_t DS::EncryptedStream::readBytes(void* buffer, size_t count)
+{
+    if (m_mode != Mode::e_read)
+        throw FileIOException("EncryptedStream instance is not readable");
+
+    size_t bp = 0;
+    size_t lp = m_pos % sizeof(m_buffer);
+    while (bp < count) {
+        if (lp == 0) {
+            m_base->readBytes(m_buffer, sizeof(m_buffer));
+            switch (m_type) {
+                case Type::e_btea:
+                    bteaDecipher(reinterpret_cast<uint32_t*>(m_buffer), 2);
+                    break;
+                case Type::e_xtea:
+                    xteaDecipher(reinterpret_cast<uint32_t*>(m_buffer));
+                    break;
+            }
+        }
+        if (lp + (count - bp) >= sizeof(m_buffer)) {
+            memcpy(reinterpret_cast<uint8_t*>(buffer) + bp, m_buffer + lp, sizeof(m_buffer) - lp);
+            bp += sizeof(m_buffer) - lp;
+            lp = 0;
+        } else {
+            memcpy(reinterpret_cast<uint8_t*>(buffer) + bp, m_buffer + lp, count - bp);
+            bp = count;
+        }
+    }
+
+    m_pos += count;
+    return count;
+}
+
+ssize_t DS::EncryptedStream::writeBytes(const void* buffer, size_t count)
+{
+    if (m_mode != Mode::e_write)
+        throw DS::FileIOException("EncryptedStream instance is not writeable");
+
+    size_t bp = 0;
+    size_t lp = m_pos % sizeof(m_buffer);
+    while (bp < count) {
+        if (lp + (count - bp) >= sizeof(m_buffer)) {
+            memcpy(m_buffer + lp, reinterpret_cast<const uint8_t*>(buffer) + bp, sizeof(m_buffer) - lp);
+            bp += sizeof(m_buffer) - lp;
+            cryptFlush();
+            lp = 0;
+        } else {
+            memcpy(m_buffer + lp, reinterpret_cast<const uint8_t*>(buffer) + bp, count - bp);
+            bp = count;
+        }
+    }
+
+    m_pos += count;
+    m_size = std::max(m_size, m_pos);
+    return count;
+}
