@@ -64,6 +64,8 @@ namespace DS
             return static_cast<tp>(value);
         }
 
+        bool readLine(void* buffer, size_t count);
+
         ST::string readString(size_t length, DS::StringType format = e_StringRAW8);
         ST::string readSafeString(DS::StringType format = e_StringRAW8);
 

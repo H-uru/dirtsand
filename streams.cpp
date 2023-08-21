@@ -22,6 +22,27 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+bool DS::Stream::readLine(void* buffer, size_t count)
+{
+    DS_ASSERT(count >= 1);
+    char* outp = reinterpret_cast<char*>(buffer);
+    char* endp = outp + count - 1;
+    bool eof = false;
+
+    while (outp < endp) {
+        ssize_t nread = readBytes(outp, 1);
+        if (nread == 0) {
+            eof = true;
+            break;
+        }
+        char c = *outp++;
+        if (c == '\n')
+            break;
+    }
+    *outp = 0;
+    return !eof;
+}
+
 ST::string DS::Stream::readString(size_t length, DS::StringType format)
 {
     if (format == e_StringUTF16) {
