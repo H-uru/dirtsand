@@ -431,7 +431,7 @@ void DS::EncryptedStream::xteaDecipher(uint32_t* buf) const
     for (size_t i = 0; i < 32; i++) {
         second -= (((first >> 5) ^ (first << 4)) + first)
                 ^ (m_key[(key >> 11) & 3] + key);
-        key += 0x61C88647;
+        key -= 0x9E3779B9;
         first -= (((second >> 5) ^ (second << 4)) + second)
                ^ (m_key[key & 3] + key);
     }
@@ -446,7 +446,7 @@ void DS::EncryptedStream::xteaEncipher(uint32_t* buf) const
     for (size_t i = 0; i < 32; i++) {
         first += (((second >> 5) ^ (second << 4)) + second)
                ^ (m_key[key & 3] + key);
-        key -= 0x61C88647;
+        key += 0x9E3779B9;
         second += (((first >> 5) ^ (first << 4)) + first)
                 ^ (m_key[(key >> 11) & 3] + key);
     }
