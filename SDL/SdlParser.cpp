@@ -55,7 +55,7 @@ bool SDL::Parser::open(const char* filename)
             close();
             return false;
         }
-        if (m_encStream->getEncType() == DS::EncryptedStream::Type::e_btea)
+        if (m_encStream->getEncType() == DS::EncryptedStream::Type::e_xxtea)
             m_encStream->setKeys(DS::Settings::DroidKey());
     }
 

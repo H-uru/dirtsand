@@ -284,13 +284,13 @@ DS::EncryptedStream::EncryptedStream(
     DS::Stream* base, DS::EncryptedStream::Mode mode,
     std::optional<DS::EncryptedStream::Type> type, const uint32_t* keys
 ) : m_base(base), m_buffer(), m_key(), m_pos(), m_size(),
-    m_type(type.has_value() ? type.value() : DS::EncryptedStream::Type::e_xtea),
+    m_type(type.has_value() ? type.value() : DS::EncryptedStream::Type::e_tea),
     m_mode(mode)
 {
     DS_ASSERT(base != nullptr);
     DS_ASSERT(base->tell() == 0);
 
-    static constexpr uint32_t kXteaKey[] {
+    static constexpr uint32_t kTeaKey[] {
         0x6c0a5452,
         0x03827d0f,
         0x3a170b92,
@@ -299,8 +299,8 @@ DS::EncryptedStream::EncryptedStream(
     if (keys) {
         memcpy(m_key, keys, sizeof(m_key));
     } else {
-        static_assert(sizeof(kXteaKey) == sizeof(m_key));
-        memcpy(m_key, kXteaKey, sizeof(m_key));
+        static_assert(sizeof(kTeaKey) == sizeof(m_key));
+        memcpy(m_key, kTeaKey, sizeof(m_key));
     }
 
     uint8_t header[16]{};
@@ -309,11 +309,11 @@ DS::EncryptedStream::EncryptedStream(
     case Mode::e_read:
         base->readBytes(header, sizeof(header));
         if (memcmp(header, "whatdoyousee", 12) == 0)
-            m_type = DS::EncryptedStream::Type::e_xtea;
+            m_type = DS::EncryptedStream::Type::e_tea;
         else if (memcmp(header, "BriceIsSmart", 12) == 0)
-            m_type = DS::EncryptedStream::Type::e_xtea;
+            m_type = DS::EncryptedStream::Type::e_tea;
         else if (memcmp(header, "notthedroids", 12) == 0)
-            m_type = DS::EncryptedStream::Type::e_btea;
+            m_type = DS::EncryptedStream::Type::e_xxtea;
         else
             throw DS::FileIOException("Unknown EncryptedString magic");
         DS_ASSERT(!type.has_value() || type.value() == m_type);
@@ -335,10 +335,10 @@ DS::EncryptedStream::~EncryptedStream()
             cryptFlush();
         m_base->seek(0, SEEK_SET);
         switch (m_type) {
-            case Type::e_btea:
+            case Type::e_xxtea:
                 m_base->writeBytes("notthedroids", 12);
                 break;
-            case Type::e_xtea:
+            case Type::e_tea:
                 m_base->writeBytes("whatdoyousee", 12);
                 break;
         }
@@ -363,11 +363,11 @@ std::optional<DS::EncryptedStream::Type> DS::EncryptedStream::CheckEncryption(DS
     stream->seek(pos, SEEK_SET);
 
     if (memcmp(header, "whatdoyousee", sizeof(header)) == 0)
-        return DS::EncryptedStream::Type::e_xtea;
+        return DS::EncryptedStream::Type::e_tea;
     if (memcmp(header, "BriceIsSmart", sizeof(header)) == 0)
-        return DS::EncryptedStream::Type::e_xtea;
+        return DS::EncryptedStream::Type::e_tea;
     if (memcmp(header, "notthedroids", sizeof(header)) == 0)
-        return DS::EncryptedStream::Type::e_btea;
+        return DS::EncryptedStream::Type::e_xxtea;
     return std::nullopt;
 }
 
@@ -376,7 +376,7 @@ void DS::EncryptedStream::setKeys(const uint32_t* keys)
     memcpy(m_key, keys, sizeof(m_key));
 }
 
-void DS::EncryptedStream::bteaDecipher(uint32_t* buf, uint32_t num) const
+void DS::EncryptedStream::xxteaDecipher(uint32_t* buf, uint32_t num) const
 {
     uint32_t key = ((52 / num) + 6) * 0x9E3779B9;
     while (key != 0) {
@@ -399,7 +399,7 @@ void DS::EncryptedStream::bteaDecipher(uint32_t* buf, uint32_t num) const
     }
 }
 
-void DS::EncryptedStream::bteaEncipher(uint32_t* buf, uint32_t num) const
+void DS::EncryptedStream::xxteaEncipher(uint32_t* buf, uint32_t num) const
 {
     uint32_t key = 0;
     uint32_t count = (52 / num) + 6;
@@ -424,7 +424,7 @@ void DS::EncryptedStream::bteaEncipher(uint32_t* buf, uint32_t num) const
     }
 }
 
-void DS::EncryptedStream::xteaDecipher(uint32_t* buf) const
+void DS::EncryptedStream::teaDecipher(uint32_t* buf) const
 {
     uint32_t second = buf[1], first = buf[0], key = 0xC6EF3720;
 
@@ -439,7 +439,7 @@ void DS::EncryptedStream::xteaDecipher(uint32_t* buf) const
     buf[1] = second;
 }
 
-void DS::EncryptedStream::xteaEncipher(uint32_t* buf) const
+void DS::EncryptedStream::teaEncipher(uint32_t* buf) const
 {
     uint32_t first = buf[0], second = buf[1], key = 0;
 
@@ -457,11 +457,11 @@ void DS::EncryptedStream::xteaEncipher(uint32_t* buf) const
 void DS::EncryptedStream::cryptFlush()
 {
     switch (m_type) {
-        case Type::e_btea:
-            bteaEncipher(reinterpret_cast<uint32_t*>(m_buffer), 2);
+        case Type::e_xxtea:
+            xxteaEncipher(reinterpret_cast<uint32_t*>(m_buffer), 2);
             break;
-        case Type::e_xtea:
-            xteaEncipher(reinterpret_cast<uint32_t*>(m_buffer));
+        case Type::e_tea:
+            teaEncipher(reinterpret_cast<uint32_t*>(m_buffer));
             break;
     }
     m_base->writeBytes(m_buffer, sizeof(m_buffer));
@@ -479,11 +479,11 @@ ssize_t DS::EncryptedStream::readBytes(void* buffer, size_t count)
         if (lp == 0) {
             m_base->readBytes(m_buffer, sizeof(m_buffer));
             switch (m_type) {
-                case Type::e_btea:
-                    bteaDecipher(reinterpret_cast<uint32_t*>(m_buffer), 2);
+                case Type::e_xxtea:
+                    xxteaDecipher(reinterpret_cast<uint32_t*>(m_buffer), 2);
                     break;
-                case Type::e_xtea:
-                    xteaDecipher(reinterpret_cast<uint32_t*>(m_buffer));
+                case Type::e_tea:
+                    teaDecipher(reinterpret_cast<uint32_t*>(m_buffer));
                     break;
             }
         }

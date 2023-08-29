@@ -287,8 +287,8 @@ namespace DS
 
         enum class Type
         {
-            e_btea,
-            e_xtea,
+            e_xxtea,
+            e_tea,
         };
 
     protected:
@@ -300,10 +300,10 @@ namespace DS
         Type m_type;
         Mode m_mode;
 
-        void bteaDecipher(uint32_t* buf, uint32_t num) const;
-        void bteaEncipher(uint32_t* buf, uint32_t num) const;
-        void xteaDecipher(uint32_t* buf) const;
-        void xteaEncipher(uint32_t* buf) const;
+        void xxteaDecipher(uint32_t* buf, uint32_t num) const;
+        void xxteaEncipher(uint32_t* buf, uint32_t num) const;
+        void teaDecipher(uint32_t* buf) const;
+        void teaEncipher(uint32_t* buf) const;
         void cryptFlush();
 
     public:

@@ -25,7 +25,7 @@ TEST_CASE("EncryptedStream known values", "[streams]")
     const char result[] = "Hello, world!";
     constexpr size_t resultsz = sizeof(result) - 1;
 
-    SECTION("bTEA") {
+    SECTION("xxtea") {
         uint32_t keys[] = { 0x31415926, 0x53589793, 0x23846264, 0x33832795 };
         uint8_t buff[] = {
             0x6E, 0x6F, 0x74, 0x74, 0x68, 0x65, 0x64, 0x72, 0x6F, 0x69, 0x64, 0x73,
@@ -35,7 +35,7 @@ TEST_CASE("EncryptedStream known values", "[streams]")
 
         DS::BufferStream base(buff, sizeof(buff));
         DS::EncryptedStream stream(&base, DS::EncryptedStream::Mode::e_read, std::nullopt, keys);
-        REQUIRE(stream.getEncType() == DS::EncryptedStream::Type::e_btea);
+        REQUIRE(stream.getEncType() == DS::EncryptedStream::Type::e_xxtea);
         REQUIRE(stream.size() == resultsz);
 
         char test[sizeof(result)];
@@ -47,7 +47,7 @@ TEST_CASE("EncryptedStream known values", "[streams]")
         REQUIRE(stream.atEof());
     }
 
-    SECTION("xTEA") {
+    SECTION("tea") {
         uint8_t buff[] = {
             0x77, 0x68, 0x61, 0x74, 0x64, 0x6F, 0x79, 0x6F, 0x75, 0x73, 0x65, 0x65,
             0x0D, 0x00, 0x00, 0x00, 0xAC, 0xC1, 0xA6, 0xB6, 0xDC, 0x33, 0x95, 0x0E,
@@ -56,7 +56,7 @@ TEST_CASE("EncryptedStream known values", "[streams]")
 
         DS::BufferStream base(buff, sizeof(buff));
         DS::EncryptedStream stream(&base, DS::EncryptedStream::Mode::e_read);
-        REQUIRE(stream.getEncType() == DS::EncryptedStream::Type::e_xtea);
+        REQUIRE(stream.getEncType() == DS::EncryptedStream::Type::e_tea);
         REQUIRE(stream.size() == resultsz);
 
         char test[sizeof(result)];
@@ -82,8 +82,8 @@ TEST_CASE("EncryptedStream known values", "[streams]")
 
 TEST_CASE("EncryptedStream round-trip", "[streams]",) {
     auto type = GENERATE(
-        DS::EncryptedStream::Type::e_btea,
-        DS::EncryptedStream::Type::e_xtea
+        DS::EncryptedStream::Type::e_xxtea,
+        DS::EncryptedStream::Type::e_tea
     );
 
     DS::BufferStream base;
@@ -114,18 +114,18 @@ TEST_CASE("EncryptedStream Magic Strings", "[streams]")
     SECTION("whatdoyousee") {
         const char buffer[] { "whatdoyousee\x0\x0\x0\x0" };
         DS::BufferStream base(buffer, sizeof(buffer));
-        REQUIRE(DS::EncryptedStream::CheckEncryption(&base) == DS::EncryptedStream::Type::e_xtea);
+        REQUIRE(DS::EncryptedStream::CheckEncryption(&base) == DS::EncryptedStream::Type::e_tea);
     }
 
     SECTION("BriceIsSmart") {
         const char buffer[] { "BriceIsSmart\x0\x0\x0\x0" };
         DS::BufferStream base(buffer, sizeof(buffer));
-        REQUIRE(DS::EncryptedStream::CheckEncryption(&base) == DS::EncryptedStream::Type::e_xtea);
+        REQUIRE(DS::EncryptedStream::CheckEncryption(&base) == DS::EncryptedStream::Type::e_tea);
     }
 
     SECTION("notthedroids") {
         const char buffer[] { "notthedroids\x0\x0\x0\x0" };
         DS::BufferStream base(buffer, sizeof(buffer));
-        REQUIRE(DS::EncryptedStream::CheckEncryption(&base) == DS::EncryptedStream::Type::e_btea);
+        REQUIRE(DS::EncryptedStream::CheckEncryption(&base) == DS::EncryptedStream::Type::e_xxtea);
     }
 }
