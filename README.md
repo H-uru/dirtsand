@@ -256,9 +256,6 @@ testing server much more quickly and easily on Windows, Mac, or Linux.
    computer may need to restart several times during these installs.
 
 2) Clone the dirtsand repo to a local directory.
-    - NOTE: Please ensure you are using `git config core.autocrlf false` if
-    on Windows. Otherwise, the bash script files can get corrupted with the wrong
-    line endings and your server container will fail to start.
 
 3) From the local repo root directory, run `./dockersand build`.
     - NOTE: By default, dockersand will try to use the current directory name as
