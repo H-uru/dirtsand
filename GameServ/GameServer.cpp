@@ -269,7 +269,7 @@ void wk_gameWorker(DS::SocketHandle sockp)
                            strerror(errno));
                 throw DS::SockHup();
             }
-            if (result == 0 || fds[0].revents & POLLHUP)
+            if (result == 0 || fds[0].revents & (POLLERR | POLLHUP | POLLNVAL) || fds[1].revents & (POLLERR | POLLNVAL))
                 throw DS::SockHup();
 
             if (fds[0].revents & POLLIN)
