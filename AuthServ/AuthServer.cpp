@@ -17,13 +17,17 @@
 
 #include "AuthServer_Private.h"
 #include "AuthManifest.h"
+#include "SDL/DescriptorDb.h"
 #include "Types/BitVector.h"
 #include "Types/Uuid.h"
 #include "settings.h"
 #include "errors.h"
+
 #include <string_theory/format>
 #include <openssl/rand.h>
 #include <poll.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define NODE_SIZE_MAX (4 * 1024 * 1024)
 
@@ -566,7 +570,33 @@ void cb_fileList(AuthServer_Private& client)
     ST::string mfsname = ST::format("{}{}_{}.list", DS::Settings::AuthRoot(),
                                     directory, fileext);
     DS::AuthManifest mfs;
-    DS::NetResultCode result = mfs.loadManifest(mfsname.c_str());
+    DS::NetResultCode result = DS::e_NetPending;
+
+    // Special case: SDL files
+    // For production shards, we expect for them to be listed in the secure preloader manifest.
+    // If that hasn't been done, don't worry about the SDL lists - just use the SDL files that
+    // DS would load on start up.
+    if (directory.compare_i("SDL") == 0 && fileext.compare_i("sdl") == 0) {
+        auto populateSdl = [&mfs](const ST::string& path) {
+            struct stat sbuf;
+            if (stat(path.c_str(), &sbuf) < 0)
+                throw DS::SystemError("[Auth] Unable to stat SDL file", strerror(errno));
+            ST::string filename = path.after_last('/');
+            mfs.addFile(ST::format("SDL\\{}", filename), sbuf.st_size);
+            return true;
+        };
+        try {
+            SDL::DescriptorDb::ForDescriptorFiles(DS::Settings::SdlPath(), populateSdl);
+            result = DS::e_NetSuccess;
+        } catch (const DS::SystemError& err) {
+            fputs(err.what(), stderr);
+            result = DS::e_NetInternalError;
+        }
+    } else {
+        result = mfs.loadManifest(mfsname.c_str());
+    }
+
+    DS_ASSERT(result != DS::e_NetPending);
     client.m_buffer.write<uint32_t>(result);
 
     if (result != DS::e_NetSuccess) {
@@ -594,6 +624,7 @@ void cb_downloadStart(AuthServer_Private& client)
 
     // Download filename
     ST::string filename = DS::CryptRecvString(client.m_sock, client.m_crypt);
+    filename = filename.replace("\\", "/");
 
     // Ensure filename is jailed to our data path
     if (filename.find("..") != -1) {
@@ -604,12 +635,18 @@ void cb_downloadStart(AuthServer_Private& client)
         SEND_REPLY();
         return;
     }
-    filename = filename.replace("\\", "/");
 
-    filename = DS::Settings::AuthRoot() + filename;
-    DS::FileStream* stream = new DS::FileStream();
+    // Special case: SDL files from the server' SDL directory.
+    ST_ssize_t slashPos = filename.find_last('/');
+    if (slashPos != -1 && filename.left(slashPos).compare_i("SDL") == 0 && filename.after_last('.').compare_i("sdl") == 0) {
+        filename = DS::Settings::SdlPath() + filename.substr(slashPos);
+    } else {
+        filename = DS::Settings::AuthRoot() + filename;
+    }
+
+    std::unique_ptr<DS::Stream> stream = std::make_unique<DS::FileStream>();
     try {
-        stream->open(filename.c_str(), "rb");
+        static_cast<DS::FileStream*>(stream.get())->open(filename.c_str(), "rb");
     } catch (const DS::FileIOException& ex) {
         ST::printf(stderr, "[Auth] Could not open file {}: {}\n[Auth] Requested by {}\n",
                    filename, ex.what(), DS::SockIpAddress(client.m_sock));
@@ -618,8 +655,25 @@ void cb_downloadStart(AuthServer_Private& client)
         client.m_buffer.write<uint32_t>(0);     // Chunk offset
         client.m_buffer.write<uint32_t>(0);     // Data packet size
         SEND_REPLY();
-        delete stream;
         return;
+    }
+
+    // All auth downloads must be encrypted.
+    if (!DS::EncryptedStream::CheckEncryption(stream.get()).has_value()) {
+        std::unique_ptr<DS::Stream> bufStream = std::make_unique<DS::BufferStream>();
+        {
+            DS::EncryptedStream encStream(bufStream.get(), DS::EncryptedStream::Mode::e_write,
+                                          DS::EncryptedStream::Type::e_xxtea,
+                                          DS::Settings::DroidKey());
+            uint8_t buf[CHUNK_SIZE];
+            while (stream->tell() < stream->size()) {
+                ssize_t nread = stream->readBytes(buf, sizeof(buf));
+                DS_ASSERT(nread >= 0);
+                encStream.writeBytes(buf, nread);
+            }
+        }
+        bufStream->seek(0, SEEK_SET);
+        stream = std::move(bufStream);
     }
 
     client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
@@ -631,12 +685,11 @@ void cb_downloadStart(AuthServer_Private& client)
         client.m_buffer.write<uint32_t>(CHUNK_SIZE);
         stream->readBytes(data, CHUNK_SIZE);
         client.m_buffer.writeBytes(data, CHUNK_SIZE);
-        client.m_downloads[transId] = stream;
+        client.m_downloads[transId] = std::move(stream);
     } else {
         client.m_buffer.write<uint32_t>(stream->size());
         stream->readBytes(data, stream->size());
         client.m_buffer.writeBytes(data, stream->size());
-        delete stream;
     }
 
     SEND_REPLY();
@@ -670,7 +723,6 @@ void cb_downloadNext(AuthServer_Private& client)
         client.m_buffer.write<uint32_t>(bytesLeft);
         fi->second->readBytes(data, bytesLeft);
         client.m_buffer.writeBytes(data, bytesLeft);
-        delete fi->second;
         client.m_downloads.erase(fi);
     }
 
