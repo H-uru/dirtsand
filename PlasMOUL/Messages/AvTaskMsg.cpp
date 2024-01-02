@@ -40,6 +40,11 @@ void MOUL::AvTaskMsg::write(DS::Stream* stream) const
     }
 }
 
+bool MOUL::AvTaskMsg::makeSafeForNet()
+{
+    return m_task == nullptr || m_task->makeSafeForNet();
+}
+
 void MOUL::AvPushBrainMsg::read(DS::Stream* stream)
 {
     AvTaskMsg::read(stream);
@@ -50,4 +55,10 @@ void MOUL::AvPushBrainMsg::write(DS::Stream* stream) const
 {
     AvTaskMsg::write(stream);
     Factory::WriteCreatable(stream, m_brain);
+}
+
+bool MOUL::AvPushBrainMsg::makeSafeForNet()
+{
+    return MOUL::AvTaskMsg::makeSafeForNet()
+        && (m_brain == nullptr || m_brain->makeSafeForNet());
 }

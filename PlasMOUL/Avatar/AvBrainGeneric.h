@@ -31,6 +31,8 @@ namespace MOUL
         void read(DS::Stream* stream) override;
         void write(DS::Stream* stream) const override;
 
+        bool makeSafeForNet() override;
+
     public:
         std::vector<AnimStage*> m_stages;
         int32_t m_curStage;

@@ -64,3 +64,8 @@ void MOUL::AvTaskBrain::write(DS::Stream* stream) const
 {
     Factory::WriteCreatable(stream, m_brain);
 }
+
+bool MOUL::AvTaskBrain::makeSafeForNet()
+{
+    return m_brain == nullptr || m_brain->makeSafeForNet();
+}

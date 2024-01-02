@@ -30,6 +30,8 @@ namespace MOUL
         void read(DS::Stream* stream) override;
         void write(DS::Stream* stream) const override;
 
+        bool makeSafeForNet() override;
+
     public:
         bool m_isPlayer;
         Key m_spawnPoint;

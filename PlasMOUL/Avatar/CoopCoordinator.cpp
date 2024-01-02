@@ -66,3 +66,11 @@ void MOUL::CoopCoordinator::write(DS::Stream* s) const
     s->writeSafeString(m_synchBone);
     s->write<bool>(m_autoStartGuest);
 }
+
+bool MOUL::CoopCoordinator::makeSafeForNet()
+{
+    return (m_hostBrain == nullptr || m_hostBrain->makeSafeForNet())
+        && (m_guestBrain == nullptr || m_guestBrain->makeSafeForNet())
+        // This can only be LinkToAgeMsg.
+        && (m_acceptMsg == nullptr || (m_acceptMsg->type() == ID_LinkToAgeMsg && m_acceptMsg->makeSafeForNet()));
+}
