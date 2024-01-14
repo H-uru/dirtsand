@@ -71,6 +71,5 @@ bool MOUL::CoopCoordinator::makeSafeForNet()
 {
     return (m_hostBrain == nullptr || m_hostBrain->makeSafeForNet())
         && (m_guestBrain == nullptr || m_guestBrain->makeSafeForNet())
-        // This can only be LinkToAgeMsg.
-        && (m_acceptMsg == nullptr || (m_acceptMsg->type() == ID_LinkToAgeMsg && m_acceptMsg->makeSafeForNet()));
+        && (m_acceptMsg == nullptr || m_acceptMsg->makeSafeForNet());
 }
