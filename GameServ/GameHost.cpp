@@ -660,7 +660,6 @@ void dm_game_message(GameHost_Private* host, Game_PropagateMessage* msg)
     try {
         switch (msg->m_messageType) {
         case MOUL::ID_NetMsgPagingRoom:
-            dm_propagate(host, netmsg, msg->m_client->m_clientInfo.m_PlayerId);
             break;
         case MOUL::ID_NetMsgGameStateRequest:
             dm_send_state(host, msg->m_client);
