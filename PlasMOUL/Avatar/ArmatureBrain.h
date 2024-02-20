@@ -28,6 +28,8 @@ namespace MOUL
         void read(DS::Stream* stream) override;
         void write(DS::Stream* stream) const override;
 
+        virtual bool makeSafeForNet() { return true; }
+
     protected:
         ArmatureBrain(uint16_t type) : Creatable(type) { }
     };

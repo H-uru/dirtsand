@@ -46,3 +46,9 @@ void MOUL::LoadAvatarMsg::write(DS::Stream* stream) const
     }
     stream->writeSafeString(m_userString);
 }
+
+bool MOUL::LoadAvatarMsg::makeSafeForNet()
+{
+    return MOUL::LoadCloneMsg::makeSafeForNet()
+        && (m_initTask == nullptr || m_initTask->makeSafeForNet());
+}

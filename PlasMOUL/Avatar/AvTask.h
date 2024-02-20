@@ -24,6 +24,9 @@ namespace MOUL
 {
     class AvTask : public Creatable
     {
+    public:
+        virtual bool makeSafeForNet() { return true; }
+
     protected:
         AvTask(uint16_t type) : Creatable(type) { }
     };
@@ -83,6 +86,8 @@ namespace MOUL
 
         void read(DS::Stream* stream) override;
         void write(DS::Stream* stream) const override;
+
+        bool makeSafeForNet() override;
 
     public:
         ArmatureBrain* m_brain;

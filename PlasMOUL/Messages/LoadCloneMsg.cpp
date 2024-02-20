@@ -44,3 +44,8 @@ void MOUL::LoadCloneMsg::write(DS::Stream* stream) const
     stream->write<bool>(m_isLoading);
     Factory::WriteCreatable(stream, m_triggerMsg);
 }
+
+bool MOUL::LoadCloneMsg::makeSafeForNet()
+{
+    return m_triggerMsg == nullptr || m_triggerMsg->makeSafeForNet();
+}

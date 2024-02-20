@@ -29,6 +29,8 @@ namespace MOUL
         void read(DS::Stream* stream) override;
         void write(DS::Stream* stream) const override;
 
+        bool makeSafeForNet() override;
+
     public:
         Key m_cloneKey, m_requestorKey;
         bool m_validMsg, m_isLoading;

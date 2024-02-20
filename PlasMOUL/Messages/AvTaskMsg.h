@@ -32,6 +32,8 @@ namespace MOUL
         void read(DS::Stream* stream) override;
         void write(DS::Stream* stream) const override;
 
+        bool makeSafeForNet() override;
+
     protected:
         AvTaskMsg(uint16_t type) : AvatarMsg(type), m_task() { }
 
@@ -46,6 +48,8 @@ namespace MOUL
 
         void read(DS::Stream* stream) override;
         void write(DS::Stream* stream) const override;
+
+        bool makeSafeForNet() override;
 
     protected:
         AvPushBrainMsg(uint16_t type) : AvTaskMsg(type), m_brain() { }

@@ -89,3 +89,15 @@ void MOUL::AvBrainGeneric::write(DS::Stream* stream) const
     stream->write<uint8_t>(m_bodyUsage);
     m_recipient.write(stream);
 }
+
+bool MOUL::AvBrainGeneric::makeSafeForNet()
+{
+    // These fields can contain arbitrary messages,
+    // so we must check them before sending the brain to other clients.
+    // The client never uses these fields for brains sent over the network though,
+    // so for simplicity, don't allow them over the network at all.
+    // If this causes issues, we could specifically allow NotifyMsg
+    // (the only message type that the client puts in these fields)
+    // or recursively call makeSafeForNet() on the messages.
+    return m_startMessage == nullptr && m_endMessage == nullptr;
+}

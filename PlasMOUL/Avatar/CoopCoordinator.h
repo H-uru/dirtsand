@@ -35,6 +35,8 @@ namespace MOUL
         void read(DS::Stream* s) override;
         void write(DS::Stream* s) const override;
 
+        virtual bool makeSafeForNet();
+
     public:
         Key m_hostKey, m_guestKey;
         AvBrainCoop* m_hostBrain;
