@@ -316,6 +316,8 @@ namespace DS
         static std::optional<Type> CheckEncryption(const char* filename);
         static std::optional<Type> CheckEncryption(DS::Stream* stream);
 
+        void close();
+
         Type getEncType() const { return m_type; }
         void setKeys(const uint32_t* keys);
 
@@ -327,6 +329,9 @@ namespace DS
         uint32_t size() const override { return m_size; }
         bool atEof() override { return m_pos == m_size; }
         void flush() override { m_base->flush(); }
+
+        EncryptedStream& operator =(const EncryptedStream& copy) = delete;
+        EncryptedStream& operator =(EncryptedStream&& move) = delete;
     };
 }
 

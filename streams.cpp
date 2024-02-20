@@ -308,9 +308,7 @@ DS::EncryptedStream::EncryptedStream(
     switch (mode) {
     case Mode::e_read:
         base->readBytes(header, sizeof(header));
-        if (memcmp(header, "whatdoyousee", 12) == 0)
-            m_type = DS::EncryptedStream::Type::e_tea;
-        else if (memcmp(header, "BriceIsSmart", 12) == 0)
+        if (memcmp(header, "whatdoyousee", 12) == 0 || memcmp(header, "BriceIsSmart", 12) == 0)
             m_type = DS::EncryptedStream::Type::e_tea;
         else if (memcmp(header, "notthedroids", 12) == 0)
             m_type = DS::EncryptedStream::Type::e_xxtea;
@@ -330,6 +328,14 @@ DS::EncryptedStream::EncryptedStream(
 
 DS::EncryptedStream::~EncryptedStream()
 {
+    close();
+}
+
+void DS::EncryptedStream::close()
+{
+    if (m_base == nullptr)
+        return;
+
     if (m_mode == Mode::e_write) {
         if (m_pos % sizeof(m_buffer) != 0)
             cryptFlush();
@@ -344,6 +350,8 @@ DS::EncryptedStream::~EncryptedStream()
         }
         m_base->write<uint32_t>(m_size);
     }
+
+    m_base = nullptr;
 }
 
 std::optional<DS::EncryptedStream::Type> DS::EncryptedStream::CheckEncryption(const char* filename)
@@ -362,9 +370,7 @@ std::optional<DS::EncryptedStream::Type> DS::EncryptedStream::CheckEncryption(DS
     stream->readBytes(header, sizeof(header));
     stream->seek(pos, SEEK_SET);
 
-    if (memcmp(header, "whatdoyousee", sizeof(header)) == 0)
-        return DS::EncryptedStream::Type::e_tea;
-    if (memcmp(header, "BriceIsSmart", sizeof(header)) == 0)
+    if (memcmp(header, "whatdoyousee", sizeof(header)) == 0 || memcmp(header, "BriceIsSmart", sizeof(header)) == 0)
         return DS::EncryptedStream::Type::e_tea;
     if (memcmp(header, "notthedroids", sizeof(header)) == 0)
         return DS::EncryptedStream::Type::e_xxtea;

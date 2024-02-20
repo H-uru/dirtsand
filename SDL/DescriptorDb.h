@@ -106,7 +106,7 @@ namespace SDL
         static StateDescriptor* FindDescriptor(const ST::string& name, int version);
         static StateDescriptor* FindLatestDescriptor(const ST::string& name);
         static bool ForLatestDescriptors(descfunc_t functor);
-        static bool ForDescriptorFiles(const char* sdlpath, const filefunc_t& functor);
+        static bool ForDescriptorFiles(const char* sdlpath, filefunc_t functor);
 
     private:
         DescriptorDb() = delete;

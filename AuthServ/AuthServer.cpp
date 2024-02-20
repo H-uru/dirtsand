@@ -586,7 +586,7 @@ void cb_fileList(AuthServer_Private& client)
             return true;
         };
         try {
-            SDL::DescriptorDb::ForDescriptorFiles(DS::Settings::SdlPath(), populateSdl);
+            SDL::DescriptorDb::ForDescriptorFiles(DS::Settings::SdlPath(), std::move(populateSdl));
             result = DS::e_NetSuccess;
         } catch (const DS::SystemError& err) {
             fputs(err.what(), stderr);
@@ -644,9 +644,9 @@ void cb_downloadStart(AuthServer_Private& client)
         filename = DS::Settings::AuthRoot() + filename;
     }
 
-    std::unique_ptr<DS::Stream> stream = std::make_unique<DS::FileStream>();
+    auto fileStream = std::make_unique<DS::FileStream>();
     try {
-        static_cast<DS::FileStream*>(stream.get())->open(filename.c_str(), "rb");
+        fileStream->open(filename.c_str(), "rb");
     } catch (const DS::FileIOException& ex) {
         ST::printf(stderr, "[Auth] Could not open file {}: {}\n[Auth] Requested by {}\n",
                    filename, ex.what(), DS::SockIpAddress(client.m_sock));
@@ -659,23 +659,27 @@ void cb_downloadStart(AuthServer_Private& client)
     }
 
     // All auth downloads must be encrypted.
-    if (!DS::EncryptedStream::CheckEncryption(stream.get()).has_value()) {
-        std::unique_ptr<DS::Stream> bufStream = std::make_unique<DS::BufferStream>();
+    std::unique_ptr<DS::Stream> stream;
+    if (!DS::EncryptedStream::CheckEncryption(fileStream.get()).has_value()) {
+        auto bufStream = std::make_unique<DS::BufferStream>();
         {
             DS::EncryptedStream encStream(bufStream.get(), DS::EncryptedStream::Mode::e_write,
                                           DS::EncryptedStream::Type::e_xxtea,
                                           DS::Settings::DroidKey());
             uint8_t buf[CHUNK_SIZE];
-            while (stream->tell() < stream->size()) {
-                ssize_t nread = stream->readBytes(buf, sizeof(buf));
+            while (fileStream->tell() < fileStream->size()) {
+                ssize_t nread = fileStream->readBytes(buf, sizeof(buf));
                 DS_ASSERT(nread >= 0);
                 encStream.writeBytes(buf, nread);
             }
         }
         bufStream->seek(0, SEEK_SET);
         stream = std::move(bufStream);
+    } else {
+        stream = std::move(fileStream);
     }
 
+    DS_ASSERT(stream);
     client.m_buffer.write<uint32_t>(DS::e_NetSuccess);
     client.m_buffer.write<uint32_t>(stream->size());
     client.m_buffer.write<uint32_t>(stream->tell());

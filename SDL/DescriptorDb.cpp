@@ -117,7 +117,7 @@ bool SDL::DescriptorDb::ForLatestDescriptors(descfunc_t functor)
     return true;
 }
 
-bool SDL::DescriptorDb::ForDescriptorFiles(const char* sdlpath, const filefunc_t& functor)
+bool SDL::DescriptorDb::ForDescriptorFiles(const char* sdlpath, filefunc_t functor)
 {
     dirent** dirls;
     int count = scandir(sdlpath, &dirls, &sel_sdl, &alphasort);

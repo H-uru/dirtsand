@@ -44,6 +44,7 @@ bool SDL::Parser::open(const char* filename)
         m_fileStream->open(filename, "r");
     } catch (DS::FileIOException& ex) {
         ST::printf(stderr, "[SDL] Error opening file {} for reading: {}\n", filename, ex.what());
+        close();
         return false;
     }
 
