@@ -28,6 +28,11 @@ DS_DIR=$(dirname $(readlink -f "$0"))
 # if you intend to run multiple shards on the same machine.
 PROJECT_NAME=$(basename $DS_DIR)
 
+# The command to invoke to run Docker Compose
+# compose v2 does not always install the `docker-compose` backward-compatible
+# alias and needs instead to be run as `docker compose`
+DOCKER_COMPOSE="docker-compose"
+
 do_help() {
     echo "Available commands:"
     echo "    attach - attach to the DIRTSAND console"
@@ -39,15 +44,21 @@ do_help() {
 }
 
 check_docker() {
-    which docker > /dev/null
+    command -v docker > /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "\e[31mERROR:\e[0m docker is not installed."
         exit 1
     fi
-    which docker-compose > /dev/null
+
+    command -v docker-compose > /dev/null
     if [[ $? -ne 0 ]]; then
-        echo -e "\e[31mERROR:\e[0m docker-compose is not installed."
-        exit 1
+        docker compose > /dev/null
+        if [[ $? -eq 0 ]]; then
+            DOCKER_COMPOSE="docker compose"
+        else
+            echo -e "\e[31mERROR:\e[0m docker-compose is not installed."
+            exit 1
+        fi
     fi
 }
 
@@ -63,12 +74,12 @@ elif [[ $1 = "help" ]]; then
     do_help
 elif [[ $1 = "attach" ]]; then
     check_docker
-    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
+    $DOCKER_COMPOSE -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "\e[33mWARNING\e[0m: dockersand is not running! Starting..."
-        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
+        $DOCKER_COMPOSE -p $PROJECT_NAME -f $COMPOSE_FILE up -d
     fi
-    CONTAINER_NAME=$(docker-compose ps | grep -oh ".*[-_]moul[-_][0-9]*")
+    CONTAINER_NAME=$($DOCKER_COMPOSE ps | grep -oh ".*[-_]moul[-_][0-9]*")
     if [[ $? -ne 0 ]]; then
         echo -e "\e[31mERROR\e[0m: Unable to determine DIRTSAND container name. Sorry :("
         exit 1
@@ -77,22 +88,22 @@ elif [[ $1 = "attach" ]]; then
     docker attach $CONTAINER_NAME
 elif [[ $1 = "build" ]]; then
     check_docker
-    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
+    $DOCKER_COMPOSE -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
     RUNNING=$?
     if [[ $RUNNING -eq 0 ]]; then
         echo -e "\e[36mStopping dockersand...\e[0m"
-        docker-compose -p $PROJECT_NAME down
+        $DOCKER_COMPOSE -p $PROJECT_NAME down
     fi
     # Hacky, but what can you do?
     mkdir -p build/authserv build/dat build/etc build/fileserv build/SDL
-    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE build
+    $DOCKER_COMPOSE -p $PROJECT_NAME -f $COMPOSE_FILE build
     if [[ $? -ne 0 ]]; then
         echo -e "\e[31mFAILED\e[0m"
         exit 1
     fi
     if [[ $RUNNING -eq 0 ]]; then
         echo -e "\e[36mStarting dockersand...\e[0m"
-        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
+        $DOCKER_COMPOSE -p $PROJECT_NAME -f $COMPOSE_FILE up -d
         if [[ $? -eq 0 ]]; then
             echo -e "\e[32mSUCCESS\e[0m: To manage DIRTSAND, use ./dockersand.sh attach"
         else
@@ -101,13 +112,13 @@ elif [[ $1 = "build" ]]; then
     fi
 elif [[ $1 = "restart" ]]; then
     check_docker
-    docker-compose -p $PROJECT_NAME ps | grep dirtsand > /dev/null
+    $DOCKER_COMPOSE -p $PROJECT_NAME ps | grep dirtsand > /dev/null
     if [[ $? -eq 0 ]]; then
         echo -e "\e[36mRestarting dockersand...\e[0m"
-        docker-compose -p $PROJECT_NAME restart
+        $DOCKER_COMPOSE -p $PROJECT_NAME restart
     else
         echo -e "\e[33mWARNING\e[0m: dockersand is not running! Starting..."
-        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
+        $DOCKER_COMPOSE -p $PROJECT_NAME -f $COMPOSE_FILE up -d
     fi
     if [[ $? -eq 0 ]]; then
         echo -e "\e[32mSUCCESS\e[0m: To manage DIRTSAND, use ./dockersand.sh attach"
@@ -116,10 +127,10 @@ elif [[ $1 = "restart" ]]; then
     fi
 elif [[ $1 = "start" ]]; then
     check_docker
-    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
+    $DOCKER_COMPOSE -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
     if [[ $? -ne 0 ]]; then
         echo -e "\e[36mStarting dockersand...\e[0m"
-        docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
+        $DOCKER_COMPOSE -p $PROJECT_NAME -f $COMPOSE_FILE up -d
         if [[ $? -eq 0 ]]; then
             echo -e "\e[32mSUCCESS\e[0m: To manage DIRTSAND, use ./dockersand.sh attach"
         else
@@ -130,7 +141,7 @@ elif [[ $1 = "start" ]]; then
     fi
 elif [[ $1 = "status" ]]; then
     check_docker
-    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
+    $DOCKER_COMPOSE -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
     if [[ $? -eq 0 ]]; then
         echo -e "dockersand is \e[32mUP\e[0m"
     else
@@ -138,10 +149,10 @@ elif [[ $1 = "status" ]]; then
     fi
 elif [[ $1 = "stop" ]]; then
     check_docker
-    docker-compose -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
+    $DOCKER_COMPOSE -p $PROJECT_NAME ps | grep "${PROJECT_NAME}[-_]moul[-_][0-9]*" > /dev/null
     if [[ $? -eq 0 ]]; then
         echo -e "\e[36mStopping dockersand...\e[0m"
-        docker-compose -p $PROJECT_NAME down
+        $DOCKER_COMPOSE -p $PROJECT_NAME down
     else
         echo -e "\e[33mWARNING\e[0m: dockersand is not running!"
     fi
