@@ -100,16 +100,20 @@ namespace SDL
     {
     public:
         typedef std::function<bool(const ST::string&, StateDescriptor*)> descfunc_t;
+        typedef std::function<bool(ST::string path)> filefunc_t;
 
         static bool LoadDescriptors(const char* sdlpath);
         static StateDescriptor* FindDescriptor(const ST::string& name, int version);
         static StateDescriptor* FindLatestDescriptor(const ST::string& name);
         static bool ForLatestDescriptors(descfunc_t functor);
+        static bool ForDescriptorFiles(const char* sdlpath, filefunc_t functor);
 
     private:
         DescriptorDb() = delete;
         DescriptorDb(const DescriptorDb&) = delete;
         ~DescriptorDb() = delete;
+
+        static bool LoadDescriptorsFromFile(const ST::string& path);
 
         typedef std::unordered_map<int, StateDescriptor> versionmap_t;
         typedef std::unordered_map<ST::string, versionmap_t, ST::hash_i, ST::equal_i> descmap_t;

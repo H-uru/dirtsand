@@ -27,6 +27,9 @@ namespace DS
     struct AuthFileInfo
     {
         AuthFileInfo() : m_fileSize() { }
+        AuthFileInfo(ST::string filename, uint32_t fileSize)
+            : m_filename(std::move(filename)), m_fileSize(fileSize)
+        { }
 
         AuthFileInfo(const AuthFileInfo&) = delete;
         AuthFileInfo& operator=(const AuthFileInfo&) = delete;
@@ -47,6 +50,11 @@ namespace DS
         uint32_t encodeToStream(DS::Stream* stream) const;
 
         size_t fileCount() const { return m_files.size(); }
+
+        void addFile(ST::string filename, uint32_t fileSize)
+        {
+            m_files.emplace_back(std::move(filename), fileSize);
+        }
 
     private:
         std::vector<AuthFileInfo> m_files;

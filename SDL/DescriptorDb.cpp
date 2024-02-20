@@ -30,46 +30,39 @@ static int sel_sdl(const dirent* de)
 
 SDL::DescriptorDb::descmap_t SDL::DescriptorDb::s_descriptors;
 
+bool SDL::DescriptorDb::LoadDescriptorsFromFile(const ST::string& filename)
+{
+    SDL::Parser parser;
+    if (parser.open(filename.c_str())) {
+        std::list<StateDescriptor> descriptors = parser.parse();
+        for (auto it = descriptors.begin(); it != descriptors.end(); ++it) {
+#ifdef DEBUG
+            descmap_t::iterator namei = s_descriptors.find(it->m_name);
+            if (namei != s_descriptors.end()) {
+                if (namei->second.find(it->m_version) != namei->second.end()) {
+                    ST::printf(stderr, "[SDL] Warning: Duplicate descriptor version for {}\n",
+                               it->m_name);
+                }
+            }
+#endif
+            s_descriptors[it->m_name][it->m_version] = *it;
+
+            // Keep the highest version in -1
+            if (s_descriptors[it->m_name][-1].m_version < it->m_version)
+                s_descriptors[it->m_name][-1] = *it;
+        }
+    }
+    return true;
+}
+
 bool SDL::DescriptorDb::LoadDescriptors(const char* sdlpath)
 {
-    dirent** dirls;
-    int count = scandir(sdlpath, &dirls, &sel_sdl, &alphasort);
-    if (count < 0) {
-        ST::printf(stderr, "[SDL] Error reading SDL descriptors: {}\n", strerror(errno));
+    try {
+        ForDescriptorFiles(sdlpath, LoadDescriptorsFromFile);
+    } catch (const DS::SystemError& err) {
+        fputs(err.what(), stderr);
         return false;
     }
-    if (count == 0) {
-        fputs("[SDL] Warning: No SDL descriptors found!\n", stderr);
-        free(dirls);
-        return true;
-    }
-
-    SDL::Parser parser;
-    for (int i=0; i<count; ++i) {
-        ST::string filename = ST::format("{}/{}", sdlpath, dirls[i]->d_name);
-        if (parser.open(filename.c_str())) {
-            std::list<StateDescriptor> descriptors = parser.parse();
-            for (auto it = descriptors.begin(); it != descriptors.end(); ++it) {
-#ifdef DEBUG
-                descmap_t::iterator namei = s_descriptors.find(it->m_name);
-                if (namei != s_descriptors.end()) {
-                    if (namei->second.find(it->m_version) != namei->second.end()) {
-                        ST::printf(stderr, "[SDL] Warning: Duplicate descriptor version for {}\n",
-                                   it->m_name);
-                    }
-                }
-#endif
-                s_descriptors[it->m_name][it->m_version] = *it;
-
-                // Keep the highest version in -1
-                if (s_descriptors[it->m_name][-1].m_version < it->m_version)
-                    s_descriptors[it->m_name][-1] = *it;
-            }
-        }
-        parser.close();
-        free(dirls[i]);
-    }
-    free(dirls);
     return true;
 }
 
@@ -124,3 +117,27 @@ bool SDL::DescriptorDb::ForLatestDescriptors(descfunc_t functor)
     return true;
 }
 
+bool SDL::DescriptorDb::ForDescriptorFiles(const char* sdlpath, filefunc_t functor)
+{
+    dirent** dirls;
+    int count = scandir(sdlpath, &dirls, &sel_sdl, &alphasort);
+
+    DS_ASSERT(count > 0);
+    if (count == 0)
+        fputs("[SDL] Warning: No SDL descriptors found!\n", stderr);
+    if (count < 0)
+        throw DS::SystemError("[SDL] Error scanning for SDL files", strerror(errno));
+
+    bool retval = true;
+    for (int i = 0; i < count; i++) {
+        if (!functor(ST::format("{}/{}", sdlpath, dirls[i]->d_name))) {
+            retval = false;
+            break;
+        }
+    }
+
+    for (int i = 0; i < count; i++)
+        free(dirls[i]);
+    free(dirls);
+    return retval;
+}

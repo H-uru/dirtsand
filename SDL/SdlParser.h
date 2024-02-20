@@ -20,8 +20,14 @@
 
 #include "DescriptorDb.h"
 #include "strings.h"
-#include <cstdio>
 #include <list>
+
+namespace DS
+{
+    class EncryptedStream;
+    class FileStream;
+    class Stream;
+}
 
 namespace SDL
 {
@@ -50,18 +56,11 @@ namespace SDL
     class Parser
     {
     public:
-        Parser() : m_file(), m_lineno(-1) { }
+        Parser() : m_fileStream(), m_encStream(), m_lineno(-1) { }
         ~Parser() { close(); }
 
         bool open(const char* filename);
-        void close()
-        {
-            if (m_file)
-                fclose(m_file);
-            m_file = nullptr;
-            m_filename.clear();
-            m_lineno = -1;
-        }
+        void close();
 
         const char* filename() const { return m_filename.c_str(); }
 
@@ -71,10 +70,13 @@ namespace SDL
         std::list<StateDescriptor> parse();
 
     private:
-        FILE* m_file;
+        DS::FileStream* m_fileStream;
+        DS::EncryptedStream* m_encStream;
         ST::string m_filename;
         long m_lineno;
         std::list<Token> m_buffer;
+
+        DS::Stream* stream() const;
     };
 }
 

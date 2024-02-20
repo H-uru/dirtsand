@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <cstdio>
 #include <cstring>
+#include <optional>
 
 namespace DS
 {
@@ -62,6 +63,8 @@ namespace DS
                 throw EofException();
             return static_cast<tp>(value);
         }
+
+        bool readLine(void* buffer, size_t count);
 
         ST::string readString(size_t length, DS::StringType format = e_StringRAW8);
         ST::string readSafeString(DS::StringType format = e_StringRAW8);
@@ -272,6 +275,64 @@ namespace DS
 
     Blob Base64Decode(const ST::string& value);
     Blob HexDecode(const ST::string& value);
+
+    class EncryptedStream : public Stream
+    {
+    public:
+        enum class Mode
+        {
+            e_read,
+            e_write,
+        };
+
+        enum class Type
+        {
+            e_xxtea,
+            e_tea,
+        };
+
+    protected:
+        Stream* m_base;
+        uint8_t m_buffer[8];
+        uint32_t m_key[4];
+        uint32_t m_pos;
+        uint32_t m_size;
+        Type m_type;
+        Mode m_mode;
+
+        void xxteaDecipher(uint32_t* buf, uint32_t num) const;
+        void xxteaEncipher(uint32_t* buf, uint32_t num) const;
+        void teaDecipher(uint32_t* buf) const;
+        void teaEncipher(uint32_t* buf) const;
+        void cryptFlush();
+
+    public:
+        EncryptedStream(Stream* base, Mode mode, std::optional<Type> type = std::nullopt, const uint32_t* keys = nullptr);
+        ~EncryptedStream() override;
+
+        EncryptedStream(const EncryptedStream&) = delete;
+        EncryptedStream(EncryptedStream&&) = delete;
+
+        static std::optional<Type> CheckEncryption(const char* filename);
+        static std::optional<Type> CheckEncryption(DS::Stream* stream);
+
+        void close();
+
+        Type getEncType() const { return m_type; }
+        void setKeys(const uint32_t* keys);
+
+        ssize_t readBytes(void* buffer, size_t count) override;
+        ssize_t writeBytes(const void* buffer, size_t count) override;
+
+        uint32_t tell() const override { return m_pos; }
+        void seek(int32_t offset, int whence) override { throw FileIOException("not supported"); }
+        uint32_t size() const override { return m_size; }
+        bool atEof() override { return m_pos == m_size; }
+        void flush() override { m_base->flush(); }
+
+        EncryptedStream& operator =(const EncryptedStream& copy) = delete;
+        EncryptedStream& operator =(EncryptedStream&& move) = delete;
+    };
 }
 
 #endif

@@ -26,6 +26,7 @@
 #include <unordered_map>
 #include <thread>
 #include <mutex>
+#include <memory>
 
 enum AuthServer_MsgIds
 {
@@ -105,18 +106,9 @@ struct AuthServer_Private : public AuthClient_Private
     uint32_t m_acctFlags;
     AuthServer_PlayerInfo m_player;
     uint32_t m_ageNodeId;
-    std::map<uint32_t, DS::Stream*> m_downloads;
+    std::map<uint32_t, std::unique_ptr<DS::Stream>> m_downloads;
 
     AuthServer_Private() : m_serverChallenge(0), m_acctFlags(0), m_ageNodeId(0) { }
-
-    ~AuthServer_Private()
-    {
-        while (!m_downloads.empty()) {
-            auto item = m_downloads.begin();
-            delete item->second;
-            m_downloads.erase(item);
-        }
-    }
 };
 
 extern std::list<AuthServer_Private*> s_authClients;
