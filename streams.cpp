@@ -27,12 +27,10 @@ bool DS::Stream::readLine(void* buffer, size_t count)
     DS_ASSERT(count >= 1);
     char* outp = reinterpret_cast<char*>(buffer);
     char* endp = outp + count - 1;
-    bool eof = false;
 
     while (outp < endp) {
         ssize_t nread = readBytes(outp, 1);
         if (nread == 0) {
-            eof = true;
             break;
         }
         char c = *outp++;
@@ -40,7 +38,8 @@ bool DS::Stream::readLine(void* buffer, size_t count)
             break;
     }
     *outp = 0;
-    return !eof;
+    // Signal EOF if the loop terminated without reading anything into the buffer.
+    return outp != buffer;
 }
 
 ST::string DS::Stream::readString(size_t length, DS::StringType format)
