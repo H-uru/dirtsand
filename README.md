@@ -262,6 +262,10 @@ testing server much more quickly and easily on Windows, Mac, or Linux.
     the base docker container name. You can overwrite this usage by setting the
     $ProjectName variable in `dockersand.ps1` (for Windows) or the PROJECT_NAME
     variable in `dockersand.sh` (for *nix) to the desired base container name.
+    - Windows users: By default, Windows Terminal may open a *Windows PowerShell*
+    prompt. Running any `./dockersand` commands in *Windows PowerShell* may trigger
+    security exceptions. You can avoid these by using the *Command Prompt* or by
+    running `Unblock-File dockersand.ps1`.
 
 4) Once the build is complete, run `./dockersand start` to start the new containers
 for the database and the dirtsand server. Once this command has been run, you should
