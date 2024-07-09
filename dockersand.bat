@@ -1,1 +1,1 @@
-powershell.exe -ExecutionPolicy Bypass dockersand.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass dockersand.ps1
