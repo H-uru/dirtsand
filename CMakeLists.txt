@@ -33,6 +33,8 @@ set(DS_HOOD_INST_NAME       "Neighborhood"
 set(DS_HOOD_POP_THRESHOLD   "20"
     CACHE STRING "Default Neighborhood Max Population")
 
+option(DS_OU_COMPATIBLE "Enable backwards compatibility with older game clients" OFF)
+
 add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/cmake")
@@ -133,6 +135,7 @@ add_library(dirtsand STATIC ${dirtsand_SOURCES} ${SDL_SOURCES} ${PlasMOUL_SOURCE
 
 target_compile_definitions(dirtsand PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
+    $<$<BOOL:${DS_OU_COMPATIBLE}>:DS_OU_COMPATIBLE>
     PRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID}
     PRODUCT_BUILD_ID=${PRODUCT_BUILD_ID}
     PRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE}

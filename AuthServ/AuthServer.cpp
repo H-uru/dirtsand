@@ -93,10 +93,33 @@ void auth_init(AuthServer_Private& client)
     /* BCast Shard Capabilities */
     START_REPLY(e_AuthToCli_ServerCaps);
     uint32_t bufSzPos = client.m_buffer.tell();
+#ifdef DS_OU_COMPATIBLE
+    // OpenUru parses this as the start of a FileDownloadChunk message,
+    // which will be ignored,
+    // because no file download transaction is active.
+    client.m_buffer.write<uint32_t>(37);
+
+    // H'uru sees: 0x25 bytes of data, bit vector is 1 dword long, value is [caps]
+    // OpenUru sees: message type 0x25 (FileDownloadChunk), transaction ID 0x10000, error code 0x[caps]0000, file size 0x0000[caps] (continued below)
+    caps.write(&client.m_buffer);
+
+    // Ensure the caps haven't changed size and broken this compat hack
+    uint32_t newBufPos = client.m_buffer.tell();
+    DS_ASSERT(newBufPos - bufSzPos == 3 * sizeof(uint32_t));
+
+    // ServerCaps message extra data, which is ignored by H'uru,
+    // because the bit vector doesn't have this many dwords.
+    // OpenUru parses this as the rest of FileDownloadChunk message:
+    client.m_buffer.write<uint16_t>(0); // file size 0x0000[caps] (continued)
+    client.m_buffer.write<uint32_t>(0); // chunk offset 0
+    client.m_buffer.write<uint32_t>(19); // chunk size 19
+    client.m_buffer.writeBytes("[ServerCaps compat]", 19); // 19 bytes of chunk data
+#else
     client.m_buffer.write<uint32_t>(0);
     caps.write(&client.m_buffer);
     client.m_buffer.seek(bufSzPos, 0);
     client.m_buffer.write<uint32_t>(client.m_buffer.size() - bufSzPos - sizeof(uint32_t));
+#endif
     SEND_REPLY();
 }
 
