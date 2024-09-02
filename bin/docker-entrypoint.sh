@@ -145,6 +145,7 @@ Server.Status "${SHARD_STATUS_URL:-http://${DS_HOST:-127.0.0.1}:8080/welcome}"
 
 # Shard front-end server address.
 Server.Gate.Host "${DS_HOST:-127.0.0.1}"
+Server.Auth.Host "${DS_HOST:-127.0.0.1}"
 Server.Port ${SHARD_PORT:-14617}
 
 # Shard name - NOTE: this is currently not visible anywhere.
