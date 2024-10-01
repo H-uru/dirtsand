@@ -155,7 +155,7 @@ uint32_t DS::FileStream::size() const
 bool DS::FileStream::atEof()
 {
     int ch = fgetc(m_file);
-    fputc(ch, m_file);
+    ungetc(ch, m_file);
     return (ch == EOF);
 }
 

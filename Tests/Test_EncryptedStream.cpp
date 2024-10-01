@@ -38,6 +38,8 @@ TEST_CASE("EncryptedStream known values", "[streams]")
         REQUIRE(stream.getEncType() == DS::EncryptedStream::Type::e_xxtea);
         REQUIRE(stream.size() == resultsz);
 
+        REQUIRE_FALSE(stream.atEof());
+
         char test[sizeof(result)];
         stream.readBytes(test, resultsz);
         test[sizeof(test) - 1] = 0;
@@ -58,6 +60,8 @@ TEST_CASE("EncryptedStream known values", "[streams]")
         DS::EncryptedStream stream(&base, DS::EncryptedStream::Mode::e_read);
         REQUIRE(stream.getEncType() == DS::EncryptedStream::Type::e_tea);
         REQUIRE(stream.size() == resultsz);
+
+        REQUIRE_FALSE(stream.atEof());
 
         char test[sizeof(result)];
         stream.readBytes(test, resultsz);
