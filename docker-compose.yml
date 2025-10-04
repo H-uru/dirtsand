@@ -22,7 +22,7 @@ services:
   # case.
   db:
     image: postgres:13-alpine
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - db:/var/lib/postgresql/data/
 
@@ -39,7 +39,7 @@ services:
         args:
           - BUILD_TYPE=release
     depends_on: [db]
-    restart: on-failure
+    restart: unless-stopped
 
     # All dirtsand services need this incantation so that the console doesn't hang the container.
     stdin_open: true
