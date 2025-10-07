@@ -20,7 +20,7 @@ RUN \
     apk add bash libstdc++ openssl postgresql-client readline zlib && \
     \
     adduser --disabled-password --no-create-home dirtsand && \
-    mkdir -p /opt/dirtsand && chown -R dirtsand /opt/dirtsand
+    mkdir -p /opt/dirtsand && chown -R dirtsand:dirtsand /opt/dirtsand
 
 FROM run_env AS build_env_debug
 ENV BUILD_TYPE=Debug
@@ -37,7 +37,7 @@ RUN \
     mkdir -p /usr/src && cd /usr/src && \
     git clone --depth 1 https://github.com/zrax/string_theory.git && \
     cmake -DCMAKE_BUILD_TYPE=Release -DST_BUILD_TESTS=OFF -B string_theory/build -S string_theory && \
-    cmake --build string_theory/build --parallel && cmake --build string_theory/build --target install && \
+    cmake --build string_theory/build --parallel 1 && cmake --build string_theory/build --target install && \
     \
     git clone --depth 1 https://github.com/H-uru/Plasma.git
 
@@ -62,14 +62,14 @@ RUN \
         -DDS_HOOD_USER_NAME=${DS_HOOD_USER_NAME} -DDS_HOOD_INST_NAME=${DS_HOOD_INST_NAME} \
         -DDS_HOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD} -DDS_OU_COMPATIBLE=${DS_OU_COMPATIBLE} \
         -DENABLE_TESTS=OFF -B dirtsand/build -S dirtsand && \
-    cmake --build dirtsand/build --parallel && cmake --build dirtsand/build --target install && \
+    cmake --build dirtsand/build --parallel 1 && cmake --build dirtsand/build --target install && \
     mkdir -p /opt/dirtsand/etc && \
     \
     mkdir -p /opt/dirtsand/lib/moul-scripts/SDL && mkdir -p /opt/dirtsand/lib/moul-scripts/dat && \
     cp /usr/src/Plasma/Scripts/SDL/*.sdl /opt/dirtsand/lib/moul-scripts/SDL && \
     cp /usr/src/Plasma/Scripts/dat/*.age /opt/dirtsand/lib/moul-scripts/dat && \
     \
-    chown -R dirtsand /opt/dirtsand
+    chown -R dirtsand:dirtsand /opt/dirtsand
 
 FROM run_env AS run_env_debug
 RUN apk add gdb musl-dbg
