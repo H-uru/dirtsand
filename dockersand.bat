@@ -1,2 +1,2 @@
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File dockersand.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File dockersandps.ps1 %*
