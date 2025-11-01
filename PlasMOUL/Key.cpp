@@ -28,9 +28,9 @@ MOUL::Location::Location(int prefix, int page, uint16_t flags)
     : m_flags(flags)
 {
     if (prefix < 0)
-        m_sequence = (page & 0xFFFF) - (prefix << 16) + 0xFF000001;
+        m_sequence = ((-prefix << 16) + (page & 0xFFFF)) + 0xFF000001;
     else
-        m_sequence = (page & 0xFFFF) + (prefix << 16) + 33;
+        m_sequence = (prefix << 16) + (page & 0xFFFF) + 33;
 }
 
 void MOUL::Location::read(DS::Stream* stream)
