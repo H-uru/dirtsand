@@ -53,5 +53,17 @@ TEST_CASE("Test MOUL::Location", "[location]")
         CHECK_SEQUENCE(MOUL::Location(1, -34, 0), 0x0001FFFF);
         CHECK_SEQUENCE(MOUL::Location(-255, 65535, 0), 0x00000000);
         CHECK_SEQUENCE(MOUL::Location(-255, -2, 0), 0xFFFFFFFF);
+
+        // Examples from real PRPs
+        CHECK_SEQUENCE(MOUL::Location(6, 1, 0), 0x00060022);      // city:canyon
+        CHECK_SEQUENCE(MOUL::Location(6, 101, 0), 0x00060086);    // city:museumDoor
+        CHECK_SEQUENCE(MOUL::Location(6, -2, 0), 0x0007001F);     // city:BuiltIn
+        CHECK_SEQUENCE(MOUL::Location(6, -1, 0), 0x00070020);     // city:Textures
+        CHECK_SEQUENCE(MOUL::Location(1234, 5, 0), 0x04D20026);   // GoMePubNew:Entry
+        CHECK_SEQUENCE(MOUL::Location(40004, 1, 0), 0x9C440022);  // VeeTsah:Temple
+        CHECK_SEQUENCE(MOUL::Location(40004, -1, 0), 0x9C450020); // VeeTsah:Textures
+        CHECK_SEQUENCE(MOUL::Location(-1, 8, 0), 0xFF010009);     // GlobalAnimations:MaileIdle
+        CHECK_SEQUENCE(MOUL::Location(-1, 435, 0), 0xFF0101B4);   // GlobalAnimations:FemaleSwimDockExit
+        CHECK_SEQUENCE(MOUL::Location(-6, 3, 0), 0xFF060004);     // GlobalAvatars:Audio
     }
 }
