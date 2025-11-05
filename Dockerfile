@@ -32,12 +32,12 @@ ENV BUILD_TYPE=Release
 
 FROM build_env_${BUILD_TYPE} AS build_env
 RUN \
-    apk add build-base cmake git openssl-dev postgresql-dev readline-dev zlib-dev && \
+    apk add build-base cmake git ninja openssl-dev postgresql-dev readline-dev zlib-dev && \
     \
     mkdir -p /usr/src && cd /usr/src && \
     git clone --depth 1 https://github.com/zrax/string_theory.git && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DST_BUILD_TESTS=OFF -B string_theory/build -S string_theory && \
-    cmake --build string_theory/build --parallel 1 && cmake --build string_theory/build --target install && \
+    cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DST_BUILD_TESTS=OFF -B string_theory/build -S string_theory && \
+    cmake --build string_theory/build --parallel && cmake --build string_theory/build --target install && \
     \
     git clone --depth 1 https://github.com/H-uru/Plasma.git
 
@@ -56,7 +56,7 @@ ARG DS_OU_COMPATIBLE=ON
 
 RUN \
     mkdir -p /opt/dirtsand/db && cp dirtsand/db/*.sql /opt/dirtsand/db && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/dirtsand -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=/opt/dirtsand -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
         -DPRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID} -DPRODUCT_BUILD_ID=${PRODUCT_BUILD_ID} \
         -DPRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE} -DPRODUCT_UUID=${PRODUCT_UUID} \
         -DDS_HOOD_USER_NAME=${DS_HOOD_USER_NAME} -DDS_HOOD_INST_NAME=${DS_HOOD_INST_NAME} \
