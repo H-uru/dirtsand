@@ -62,7 +62,7 @@ RUN \
         -DDS_HOOD_USER_NAME=${DS_HOOD_USER_NAME} -DDS_HOOD_INST_NAME=${DS_HOOD_INST_NAME} \
         -DDS_HOOD_POP_THRESHOLD=${DS_HOOD_POP_THRESHOLD} -DDS_OU_COMPATIBLE=${DS_OU_COMPATIBLE} \
         -DENABLE_TESTS=OFF -B dirtsand/build -S dirtsand && \
-    cmake --build dirtsand/build --parallel 1 && cmake --build dirtsand/build --target install && \
+    cmake --build dirtsand/build --parallel && cmake --build dirtsand/build --target install && \
     mkdir -p /opt/dirtsand/etc && \
     \
     mkdir -p /opt/dirtsand/lib/moul-scripts/SDL && mkdir -p /opt/dirtsand/lib/moul-scripts/dat && \
