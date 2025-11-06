@@ -20,7 +20,7 @@ RUN \
     apk add bash libstdc++ openssl postgresql-client readline zlib && \
     \
     adduser --disabled-password --no-create-home dirtsand && \
-    mkdir -p /opt/dirtsand && chown -R dirtsand /opt/dirtsand
+    mkdir -p /opt/dirtsand && chown -R dirtsand: /opt/dirtsand
 
 FROM run_env AS build_env_debug
 ENV BUILD_TYPE=Debug
@@ -69,7 +69,7 @@ RUN \
     cp /usr/src/Plasma/Scripts/SDL/*.sdl /opt/dirtsand/lib/moul-scripts/SDL && \
     cp /usr/src/Plasma/Scripts/dat/*.age /opt/dirtsand/lib/moul-scripts/dat && \
     \
-    chown -R dirtsand /opt/dirtsand
+    chown -R dirtsand: /opt/dirtsand
 
 FROM run_env AS run_env_debug
 RUN apk add gdb musl-dbg
