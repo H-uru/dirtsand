@@ -59,10 +59,7 @@ namespace DS
         }
 
     public:
-        union {
-            uint32_t m_secs;
-            time_t m_time;
-        };
+        int64_t m_secs;
         uint32_t m_micros;
     };
 }
