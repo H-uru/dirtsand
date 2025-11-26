@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.5)
 project(dirtsand)
 
 set(CMAKE_CXX_STANDARD 17)

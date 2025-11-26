@@ -103,15 +103,14 @@ namespace Vault
         m_##name = std::move(value); \
         m_fields |= e_Field##name; \
     } \
-    bool has_##name() const { return (m_fields & e_Field##name) != 0; } \
-    void clear_##name() { m_fields &= ~e_Field##name; }
+    bool has_##name() const { return (m_fields & e_Field##name) != 0; }
 
     class Node
     {
     public:
         NODE_FIELD(uint32_t,    NodeIdx         )
-        NODE_FIELD(uint32_t,    CreateTime      )
-        NODE_FIELD(uint32_t,    ModifyTime      )
+        NODE_FIELD(int64_t,     CreateTime      )
+        NODE_FIELD(int64_t,     ModifyTime      )
         NODE_FIELD(ST::string,  CreateAgeName   )
         NODE_FIELD(DS::Uuid,    CreateAgeUuid   )
         NODE_FIELD(DS::Uuid,    CreatorUuid     )
