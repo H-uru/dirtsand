@@ -16,17 +16,26 @@
  ******************************************************************************/
 
 #include "UnifiedTime.h"
+
+#include <limits>
 #include <sys/time.h>
 
 void DS::UnifiedTime::read(DS::Stream* stream)
 {
-    m_secs = stream->read<uint32_t>();
+    m_secs = (int64_t)stream->read<uint32_t>();
+    if (m_secs == 0xFFFFFFFFLL)
+        m_secs = stream->read<int64_t>();
     m_micros = stream->read<uint32_t>();
 }
 
 void DS::UnifiedTime::write(DS::Stream* stream) const
 {
-    stream->write<uint32_t>(m_secs);
+    if (m_secs > (int64_t)std::numeric_limits<int32_t>::max()) {
+        stream->write<uint32_t>(0xFFFFFFFFU);
+        stream->write<int64_t>(m_secs);
+    } else {
+        stream->write<uint32_t>((uint32_t)m_secs);
+    }
     stream->write<uint32_t>(m_micros);
 }
 

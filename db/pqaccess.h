@@ -45,6 +45,12 @@ namespace DS
             _cache(idx);
         }
 
+        void set(size_t idx, int64_t value)
+        {
+            m_strings[idx] = ST::string::from_int(value);
+            _cache(idx);
+        }
+
         template <typename... ArgsT>
         void set_all(ArgsT&&... args)
         {

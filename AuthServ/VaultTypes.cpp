@@ -37,15 +37,34 @@
         stream->write<char16_t>(0); \
     }
 
+#define READ_TIME(value) \
+    { \
+        uint32_t short_time = stream->read<uint32_t>(); \
+        if (short_time == 0xFFFFFFFFU) \
+            value = stream->read<int64_t>(); \
+        else \
+            value = (int64_t)short_time; \
+    }
+
+#define WRITE_TIME(value) \
+    { \
+        if (value > std::numeric_limits<int32_t>::max()) { \
+            stream->write<uint32_t>(0xFFFFFFFFU); \
+            stream->write<int64_t>(value); \
+        } else { \
+            stream->write((uint32_t)value); \
+        } \
+    }
+
 void DS::Vault::Node::read(DS::Stream* stream)
 {
     m_fields = stream->read<uint64_t>();
     if (m_fields & e_FieldNodeIdx)
         m_NodeIdx = stream->read<uint32_t>();
     if (m_fields & e_FieldCreateTime)
-        m_CreateTime = stream->read<uint32_t>();
+        READ_TIME(m_CreateTime);
     if (m_fields & e_FieldModifyTime)
-        m_ModifyTime = stream->read<uint32_t>();
+        READ_TIME(m_ModifyTime);
     if (m_fields & e_FieldCreateAgeName)
         READ_VAULT_STRING(m_CreateAgeName);
     if (m_fields & e_FieldCreateAgeUuid)
@@ -120,9 +139,9 @@ void DS::Vault::Node::write(DS::Stream* stream) const
     if (m_fields & e_FieldNodeIdx)
         stream->write<uint32_t>(m_NodeIdx);
     if (m_fields & e_FieldCreateTime)
-        stream->write<uint32_t>(m_CreateTime);
+        WRITE_TIME(m_CreateTime);
     if (m_fields & e_FieldModifyTime)
-        stream->write<uint32_t>(m_ModifyTime);
+        WRITE_TIME(m_ModifyTime);
     if (m_fields & e_FieldCreateAgeName)
         WRITE_VAULT_STRING(m_CreateAgeName);
     if (m_fields & e_FieldCreateAgeUuid)

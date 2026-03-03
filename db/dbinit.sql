@@ -13,7 +13,7 @@
 -- You should have received a copy of the GNU Affero General Public License
 -- along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
--- DirtSand DB initialization script --
+-- DirtSand DB initialization script
 
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
@@ -115,8 +115,8 @@ ALTER SEQUENCE "NodeRefs_idx_seq" OWNED BY "NodeRefs".idx;
 
 CREATE TABLE IF NOT EXISTS "Nodes" (
     idx integer NOT NULL,
-    "CreateTime" integer DEFAULT 0 NOT NULL,
-    "ModifyTime" integer DEFAULT 0 NOT NULL,
+    "CreateTime" bigint DEFAULT 0 NOT NULL,
+    "ModifyTime" bigint DEFAULT 0 NOT NULL,
     "CreateAgeName" character varying(64),
     "CreateAgeUuid" uuid,
     "CreatorUuid" uuid DEFAULT '00000000-0000-0000-0000-000000000000'::uuid NOT NULL,

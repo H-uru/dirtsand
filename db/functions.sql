@@ -13,7 +13,7 @@
 -- You should have received a copy of the GNU Affero General Public License
 -- along with dirtsand.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
--- Utility functions for DirtSand operation and administration --
+-- Utility functions for DirtSand operation and administration
 
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
@@ -21,7 +21,7 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET escape_string_warning = off;
 
--- [Required] Fetch a complete noderef tree, for the FetchNodeRefs message --
+-- [Required] Fetch a complete noderef tree, for the FetchNodeRefs message
 CREATE OR REPLACE FUNCTION vault.fetch_tree(integer)
 RETURNS SETOF vault."NodeRefs" AS
 $BODY$
@@ -40,7 +40,7 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
--- [Required] Fetch a specific folder child node --
+-- [Required] Fetch a specific folder child node
 CREATE OR REPLACE FUNCTION vault.find_folder(integer, integer)
 RETURNS SETOF vault."Nodes" AS
 $BODY$
@@ -62,7 +62,7 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
--- [Required] Checks to see if a node is in another node's tree --
+-- [Required] Checks to see if a node is in another node's tree
 CREATE OR REPLACE FUNCTION vault.has_node(integer, integer)
 RETURNS BOOLEAN AS
 $BODY$
@@ -85,8 +85,8 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
--- [Required] Create a new score--
--- This prevents score creation race conditions --
+-- [Required] Create a new score
+-- This prevents score creation race conditions
 CREATE OR REPLACE FUNCTION auth.create_score(integer, integer, character varying, integer)
 RETURNS integer AS
 $BODY$
@@ -109,9 +109,9 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION auth.create_score(IN integer, IN integer, IN character varying, IN integer) OWNER TO dirtsand;
 
--- [Required] Adds points to a score--
--- This is necessary because some scores must be constrained to positive values --
--- Please note that you are responsible for ensuring the score exists! --
+-- [Required] Adds points to a score
+-- This is necessary because some scores must be constrained to positive values
+-- Please note that you are responsible for ensuring the score exists!
 CREATE OR REPLACE FUNCTION auth.add_score_points(integer, integer, boolean)
 RETURNS boolean AS
 $BODY$
@@ -135,7 +135,7 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
---- [Required] Transfers points from one score to another ---
+-- [Required] Transfers points from one score to another
 CREATE OR REPLACE FUNCTION auth.transfer_score_points(integer, integer, integer, boolean)
 RETURNS boolean AS
 $BODY$
@@ -160,7 +160,7 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 
 
--- [Optional] Utility to clear an entire vault --
+-- [Optional] Utility to clear an entire vault
 CREATE OR REPLACE FUNCTION clear_vault() RETURNS void AS
 $BODY$
 SELECT setval('vault."GlobalStates_idx_seq"', 1, false);
