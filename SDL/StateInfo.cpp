@@ -470,6 +470,10 @@ void SDL::Variable::copy(const SDL::Variable& rhs) {
     if (m_data->m_desc->m_type != rhs.m_data->m_desc->m_type)
         throw DS::MalformedData();
 
+    m_data->m_timestamp = rhs.m_data->m_timestamp;
+    m_data->m_notificationHint = rhs.m_data->m_notificationHint;
+    m_data->m_flags = rhs.m_data->m_flags;
+
     size_t minsize;
     if (m_data->m_desc->m_size == -1) {
         m_data->resize(rhs.m_data->m_size);
