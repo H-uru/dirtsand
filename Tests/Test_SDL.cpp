@@ -170,7 +170,9 @@ static SDL::State CreateState()
 
     SDL::State state(desc);
     state.data()->m_vars[boolVarIdx->second].data()->m_bool[0] = true;
+    state.data()->m_vars[boolVarIdx->second].data()->m_flags |= SDL::Variable::e_XIsDirty;
     state.data()->m_vars[intVarIdx->second].data()->m_int[0] = 6;
+    state.data()->m_vars[intVarIdx->second].data()->m_flags |= SDL::Variable::e_XIsDirty;
     return state;
 }
 
@@ -212,14 +214,31 @@ TEST_CASE("Test SDL", "[sdl]")
         SDL::State newState = SDL::State::FromBlob(origBlob);
         DS::Blob newBlob = newState.toBlob();
 
+        // Let's check that the blobs are the same
         CHECK(origBlob.size() == newBlob.size());
         CHECK(memcmp(newBlob.buffer(), origBlob.buffer(), origBlob.size()) == 0);
+        // Cool, but let's also check the actual states were preserved in between
+        CHECK_VAR_VALUES(origState, newState, "bTestVar1");
+        CHECK_VAR_VALUES(origState, newState, "iTestVar3");
     }
 
     SECTION("SDL Blob Upgrade") {
         SDL::State origState = CreateState();
         SDL::State newState = origState;
         CHECK(newState.update());
+        CHECK(origState.data()->m_desc->m_version == 1);
+        CHECK(newState.data()->m_desc->m_version == 2);
+        CHECK_VAR_VALUES(origState, newState, "bTestVar1");
+        CHECK_VAR_VALUES(origState, newState, "iTestVar3");
+    }
+
+    SECTION("SDL Blob Upgrade with round trip") {
+        SDL::State origState = CreateState();
+        SDL::State newState = origState;
+        CHECK(newState.update());
+        newState = SDL::State::FromBlob(newState.toBlob());
+        CHECK(origState.data()->m_desc->m_version == 1);
+        CHECK(newState.data()->m_desc->m_version == 2);
         CHECK_VAR_VALUES(origState, newState, "bTestVar1");
         CHECK_VAR_VALUES(origState, newState, "iTestVar3");
     }

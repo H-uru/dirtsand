@@ -430,6 +430,8 @@ void SDL::Variable::write(DS::Stream* stream) const
 
     if (isDefault())
         m_data->m_flags |= e_SameAsDefault;
+    else // Make sure to reset the flag if the var was changed
+        m_data->m_flags &= ~e_SameAsDefault;
     stream->write<uint8_t>(m_data->m_flags & 0xFF);
     if (m_data->m_desc->m_type == e_VarStateDesc) {
         if (m_data->m_desc->m_size == -1)
@@ -467,6 +469,10 @@ void SDL::Variable::copy(const SDL::Variable& rhs) {
     // TODO: Should we support certain type conversions?
     if (m_data->m_desc->m_type != rhs.m_data->m_desc->m_type)
         throw DS::MalformedData();
+
+    m_data->m_timestamp = rhs.m_data->m_timestamp;
+    m_data->m_notificationHint = rhs.m_data->m_notificationHint;
+    m_data->m_flags = rhs.m_data->m_flags;
 
     size_t minsize;
     if (m_data->m_desc->m_size == -1) {
@@ -1001,6 +1007,9 @@ bool SDL::State::update()
         if (vari == m_data->m_desc->m_varmap.end())
             continue;
         newstate.m_data->m_vars[i].copy(m_data->m_vars[vari->second]);
+        // Mark all non-default variables as dirty so that they will get written to blobs
+        if (!newstate.m_data->m_vars[i].isDefault())
+            newstate.m_data->m_vars[i].data()->m_flags |= Variable::e_XIsDirty;
     }
     newstate.m_data->ref();
     m_data->unref();
