@@ -198,6 +198,9 @@ int main(int argc, char* argv[])
 
     OpenSSL_add_all_digests();
 
+    // Force stdout to line-buffered so messages are written (and logged) on line breaks
+    setvbuf(stdout, nullptr, _IOLBF, BUFSIZ);
+
     // Preset some arguments
     ST::string settings = get_install_directory() + "/dirtsand.ini";
     bool restrictLogins = false;
