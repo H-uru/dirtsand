@@ -84,11 +84,19 @@ GameHost_Private* find_game_host(uint32_t ageMcpId)
     {
         std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
         hostmap_t::iterator host_iter = s_gameHosts.find(ageMcpId);
-        if (host_iter != s_gameHosts.end())
+        if (host_iter != s_gameHosts.end()) {
+            // Count this join so a lingering host won't shut down under us
+            ++host_iter->second->m_pendingJoins;
             return host_iter->second;
+        }
     }
     try {
-        return start_game_host(ageMcpId);
+        GameHost_Private* host = start_game_host(ageMcpId);
+        if (host) {
+            std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
+            ++host->m_pendingJoins;
+        }
+        return host;
     } catch (const std::exception& ex) {
         ST::printf(stderr, "[Game] ERROR: {}\n", ex.what());
     }
@@ -134,6 +142,19 @@ void cb_join(GameClient_Private& client)
         SEND_REPLY();
         return;
     }
+
+    // Release our pending-join count however this function exits.  This runs
+    // after we've been added to m_clients below, so there's no gap in which
+    // the host looks empty.
+    struct PendingJoinGuard
+    {
+        GameHost_Private* m_host;
+        ~PendingJoinGuard()
+        {
+            std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
+            --m_host->m_pendingJoins;
+        }
+    } pendingJoin { client.m_host };
 
     // Get player info from the vault
     Auth_NodeInfo nodeInfo;

@@ -87,6 +87,12 @@ struct GameHost_Private
     SDL::State m_ageSdlHook;
 
     bool m_temp;
+
+    // Linger support: an age that empties stays up for its LingerTime before
+    // shutting down, so a player re-linking into the same instance (or anyone
+    // arriving shortly after) doesn't race the shutdown.
+    uint64_t m_lingerToken = 0;     // Host thread only
+    uint32_t m_pendingJoins = 0;    // Guarded by s_gameHostMutex
 };
 
 typedef std::unordered_map<uint32_t, GameHost_Private*> hostmap_t;
@@ -110,7 +116,7 @@ extern agemap_t s_ages;
 enum GameHostMessages
 {
     e_GameShutdown, e_GameDisconnect, e_GameJoinAge, e_GamePropagate,
-    e_GameLocalSdlUpdate, e_GameGlobalSdlUpdate
+    e_GameLocalSdlUpdate, e_GameGlobalSdlUpdate, e_GameLingerCheck
 };
 
 struct Game_ClientMessage
