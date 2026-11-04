@@ -16,6 +16,8 @@
  ******************************************************************************/
 
 #include "GameServer_Private.h"
+#include <atomic>
+#include <chrono>
 #include "PlasMOUL/NetMessages/NetMsgMembersList.h"
 #include "PlasMOUL/NetMessages/NetMsgLoadClone.h"
 #include "PlasMOUL/NetMessages/NetMsgGameState.h"
@@ -167,6 +169,70 @@ void dm_local_sdl_update(GameHost_Private* host, DS::Blob blob)
         fputs("[Game] Error writing SDL node back to vault\n", stderr);
 }
 
+static std::atomic<uint64_t> s_lingerTokens { 0 };
+
+static void dm_schedule_linger_check(GameHost_Private* host)
+{
+    uint32_t lingerSecs = Game_AgeInfo().m_lingerTime;
+    auto age_iter = s_ages.find(host->m_ageFilename);
+    if (age_iter != s_ages.end())
+        lingerSecs = age_iter->second.m_lingerTime;
+
+    // Each disconnect re-arms the timer; only the newest token counts
+    const uint64_t token = ++s_lingerTokens;
+    host->m_lingerToken = token;
+    const uint32_t mcpId = host->m_serverIdx;
+
+    std::thread([host, mcpId, token, lingerSecs]() {
+        std::this_thread::sleep_for(std::chrono::seconds(lingerSecs));
+
+        // Only post if this host is still registered.  It can't be deleted
+        // while we hold this lock, since it unregisters under it first.
+        std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
+        auto host_iter = s_gameHosts.find(mcpId);
+        if (host_iter == s_gameHosts.end() || host_iter->second != host)
+            return;
+        try {
+            host->m_channel.putMessage(e_GameLingerCheck,
+                    reinterpret_cast<void*>(static_cast<uintptr_t>(token)));
+        } catch (const std::exception& ex) {
+            ST::printf(stderr, "[Game] WARNING: {}\n", ex.what());
+        }
+    }).detach();
+}
+
+// Returns true if the host shut down (and has been deleted)
+static bool dm_game_linger_check(GameHost_Private* host, uint64_t token)
+{
+    // A newer disconnect re-armed the timer; let that one decide
+    if (token != host->m_lingerToken)
+        return false;
+
+    {
+        std::lock_guard<std::mutex> gameHostGuard(s_gameHostMutex);
+        {
+            std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
+            if (!host->m_clients.empty())
+                return false;
+        }
+        if (host->m_pendingJoins != 0)
+            return false;
+
+        // Still empty and nobody is on the way in.  Unregister now, so any
+        // new join for this instance starts a fresh host instead of queueing
+        // on this one.
+        for (auto host_iter = s_gameHosts.begin(); host_iter != s_gameHosts.end(); ) {
+            if (host_iter->second == host)
+                host_iter = s_gameHosts.erase(host_iter);
+            else
+                ++host_iter;
+        }
+    }
+
+    dm_game_shutdown(host);
+    return true;
+}
+
 void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
 {
     // Unload the avatar clone if the client committed hara-kiri
@@ -251,11 +317,17 @@ void dm_game_disconnect(GameHost_Private* host, Game_ClientMessage* msg)
     // Good time to write this back to the vault
     dm_local_sdl_update(host, host->m_localState.toBlob());
 
-    // TODO: This should probably respect the age's LingerTime
-    //       As it is, there might be a race condition if another player is
-    //       joining just as the last player is leaving.
-    if (host->m_clients.size() == 0)
-        host->m_channel.putMessage(e_GameShutdown, nullptr);
+    // Respect the age's LingerTime instead of shutting down the moment the
+    // age empties.  Shutting down immediately raced with players re-linking
+    // into the same instance (e.g. Kadish -> Yeesha's vault), whose join
+    // would land on the dying host and never get a reply.
+    bool empty;
+    {
+        std::lock_guard<std::mutex> clientGuard(host->m_clientMutex);
+        empty = host->m_clients.empty();
+    }
+    if (empty)
+        dm_schedule_linger_check(host);
 
     SEND_REPLY(msg, DS::e_NetSuccess);
 }
@@ -813,6 +885,16 @@ void dm_gameHost(GameHost_Private* host)
                 break;
             case e_GameGlobalSdlUpdate:
                 dm_global_sdl_update(host);
+                break;
+            case e_GameLingerCheck:
+                {
+                    const uint64_t token = static_cast<uint64_t>(
+                            reinterpret_cast<uintptr_t>(msg.m_payload));
+                    // Not a client message, so nothing to reply to on error
+                    msg.m_payload = nullptr;
+                    if (dm_game_linger_check(host, token))
+                        return;
+                }
                 break;
             default:
                 /* Invalid message...  This shouldn't happen */
